@@ -1,0 +1,154 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "n8n-deploy"
+version = "2.0.0"
+description = "n8n-deploy - a simple N8N Workflow Manager with SQLite metadata store"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Lehcode", email = "53556648+lehcode@users.noreply.github.com"}
+]
+maintainers = [
+    {name = "Lehcode", email = "53556648+lehcode@users.noreply.github.com"}
+]
+keywords = ["n8n", "workflow", "automation", "cli", "sqlite", "deployment"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Systems Administration",
+    "Topic :: Database",
+    "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
+    "Environment :: Console",
+    "Natural Language :: English",
+]
+requires-python = ">=3.8"
+dependencies = [
+    "click>=8.0.0",
+    "requests>=2.28.0",
+    "pydantic>=2.0.0",
+    "rich>=13.0.0",
+    "python-dateutil>=2.8.0",
+    "tabulate>=0.9.0",
+    "colorama>=0.4.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "black>=22.0.0",
+    "flake8>=4.0.0",
+    "mypy>=1.0.0",
+    "pre-commit>=2.20.0",
+]
+test = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "pytest-mock>=3.10.0",
+    "assertpy>=1.1",
+]
+
+[project.urls]
+Homepage = "https://github.com/lehcode/n8n-deploy"
+Documentation = "https://github.com/lehcode/n8n-deploy/tree/main/docs"
+Repository = "https://github.com/lehcode/n8n-deploy.git"
+"Bug Tracker" = "https://github.com/lehcode/n8n-deploy/issues"
+Changelog = "https://github.com/lehcode/n8n-deploy/releases"
+
+[project.scripts]
+# Legacy entry point maintained for backward compatibility
+# n8n-deploy = "api.cli:main"
+n8n-deploy = "api.cli:main"
+
+[tool.setuptools]
+packages = ["api"]
+include-package-data = true
+
+[tool.setuptools.package-data]
+api = ["*.json", "*.sql"]
+"*" = ["n8n-deploy"]
+
+[tool.black]
+line-length = 88
+target-version = ['py38']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -v --strict-markers --tb=short"
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+markers = [
+    "integration: marks tests as integration tests (deselect with '-m \"not integration\"')",
+]
+log_cli = true
+log_cli_level = "INFO"
+log_cli_format = "%(asctime)s [%(levelname)8s] %(name)s: %(message)s"
+log_cli_date_format = "%Y-%m-%d %H:%M:%S"
+filterwarnings = [
+    "ignore::pydantic.warnings.PydanticDeprecatedSince20",
+    "ignore::DeprecationWarning:pydantic.*",
+    "ignore:datetime.datetime.utcnow.*:DeprecationWarning",
+    "ignore:The default datetime adapter.*:DeprecationWarning",
+    "ignore:`json_encoders` is deprecated.*:pydantic.warnings.PydanticDeprecatedSince20",
+    "ignore:Support for class-based.*:pydantic.warnings.PydanticDeprecatedSince20",
+]
+
+[tool.coverage.run]
+source = ["api"]
+omit = ["*/tests/*", "*/test_*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]

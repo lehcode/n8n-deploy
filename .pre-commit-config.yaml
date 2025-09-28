@@ -1,0 +1,39 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: '\.md$'
+      - id: end-of-file-fixer
+        exclude: '\.md$'
+      - id: check-yaml
+      - id: check-added-large-files
+
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.45.0
+    hooks:
+      - id: markdownlint
+
+  - repo: https://github.com/psf/black
+    rev: 25.9.0
+    hooks:
+      - id: black
+        language_version: python3
+        args: ['--check', '--diff']
+
+  - repo: local
+    hooks:
+      - id: run-tests
+        name: Run unit tests
+        entry: python
+        args: [run_tests.py, --unit, --no-deps-check]
+        language: system
+        stages: [pre-push]
+        pass_filenames: false
+      - id: markdownlint-check
+        name: Markdown lint check
+        entry: markdownlint
+        args: ['--config', '.markdownlint.json']
+        language: node
+        files: '\.md$'
+        stages: [pre-push]

@@ -1,0 +1,7 @@
+include n8n-deploy
+include LICENSE
+include README.md
+recursive-include api *.py
+recursive-include tests *.py
+global-exclude __pycache__
+global-exclude *.py[co]
