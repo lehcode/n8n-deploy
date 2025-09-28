@@ -1,0 +1,129 @@
+{
+  "id": "mock_workflow_123",
+  "name": "Mock Test Workflow",
+  "active": true,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "start_node",
+      "name": "Start",
+      "type": "n8n-nodes-base.start",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Mock function code\nreturn items.map(item => ({\n  ...item,\n  processed: true,\n  timestamp: new Date().toISOString()\n}));"
+      },
+      "id": "function_node",
+      "name": "Process Data",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.processed}}",
+              "operation": "equal",
+              "value2": "true"
+            }
+          ]
+        }
+      },
+      "id": "if_node",
+      "name": "Check If Processed",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "message": "Data processed successfully!"
+      },
+      "id": "success_node",
+      "name": "Success Message",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [900, 200]
+    },
+    {
+      "parameters": {
+        "message": "Processing failed!"
+      },
+      "id": "error_node",
+      "name": "Error Message",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [900, 400]
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Process Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Data": {
+      "main": [
+        [
+          {
+            "node": "Check If Processed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check If Processed": {
+      "main": [
+        [
+          {
+            "node": "Success Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "staticData": {
+    "global": {
+      "version": "1.0.0",
+      "author": "n8n_deploy_ Test Suite"
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "createdAt": "2023-12-01T10:00:00.000Z",
+  "updatedAt": "2023-12-01T12:00:00.000Z",
+  "versionId": "mock_version_abc123",
+  "tags": [
+    {
+      "id": "tag1",
+      "name": "test"
+    },
+    {
+      "id": "tag2",
+      "name": "automation"
+    }
+  ]
+}

@@ -1,0 +1,101 @@
+name: ✨ Feature Request
+description: Suggest a new feature or enhancement
+title: "[Feature]: "
+labels: ["enhancement", "needs-discussion"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a feature! Please provide details about your use case and proposed solution.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Pre-submission Checklist
+      description: Please verify these items before submitting
+      options:
+        - label: I searched existing issues to avoid duplicates
+          required: true
+        - label: This is a feature request, not a bug report
+          required: true
+        - label: I have a clear use case for this feature
+          required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or Use Case
+      description: What problem would this feature solve?
+      placeholder: |
+        Describe the problem you're trying to solve or the use case this feature would enable.
+        Example: "As a workflow manager, I need to..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe your ideal solution
+      placeholder: |
+        How would you like this feature to work?
+        Include command examples, UI mockups, or API changes if applicable.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: What alternatives have you considered?
+      placeholder: |
+        - Alternative solution 1: ...
+        - Alternative solution 2: ...
+        - Why these don't work: ...
+
+  - type: dropdown
+    id: complexity
+    attributes:
+      label: Implementation Complexity
+      description: How complex do you think this feature would be?
+      options:
+        - Simple - Minor change to existing functionality
+        - Medium - New functionality, requires some design
+        - Complex - Major feature requiring significant changes
+        - Unknown - I'm not sure about the complexity
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority for You
+      description: How important is this feature for your workflow?
+      options:
+        - Nice to have - Would be convenient but not essential
+        - Important - Would significantly improve my workflow
+        - Critical - Blocking my ability to use n8n-deploy effectively
+    validations:
+      required: true
+
+  - type: textarea
+    id: examples
+    attributes:
+      label: Examples or Mockups
+      description: Provide examples, command syntax, or mockups
+      placeholder: |
+        # Example command usage:
+        n8n-deploy new-feature --option value
+
+        # Expected output:
+        ✅ Feature completed successfully
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution Interest
+      description: Would you be interested in contributing to this feature?
+      options:
+        - label: I would be willing to implement this feature myself
+        - label: I would be willing to help test this feature
+        - label: I would be willing to help with documentation
