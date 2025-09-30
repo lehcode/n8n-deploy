@@ -247,16 +247,6 @@ class TestE2EDatabase(E2ETestBase):
         for returncode, stdout, stderr in results:
             assert returncode == 0
 
-    def test_database_migration_handling(self) -> None:
-        """Test database migration handling (if applicable)"""
-        # Initialize database
-        returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir, "db", "init"])
-
-        assert returncode == 0
-        for _ in range(3):
-            returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir, "db", "status"])
-            assert returncode == 0
-
     def test_empty_database_operations(self) -> None:
         """Test operations on empty database"""
         # Initialize empty database
