@@ -51,6 +51,8 @@ dev = [
     "flake8>=4.0.0",
     "mypy>=1.0.0",
     "pre-commit>=2.20.0",
+    "types-requests>=2.31.0",
+    "types-click>=7.1.8",
 ]
 test = [
     "pytest>=7.0.0",
