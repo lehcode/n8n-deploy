@@ -90,6 +90,24 @@ def cli() -> None:
     """🎭 n8n-deploy - a simple N8N Workflow Manager
 
     Use 'n8n-deploy COMMAND --help' for detailed command options.
+
+    \b
+    📂 Core Directories:
+
+    App Directory (--app-dir):
+      Stores application data (database, backups)
+      Priority: --app-dir CLI option > N8N_DEPLOY_APP_DIR env > REQUIRED
+      Default file: n8n-deploy.db
+
+    Flow Directory (--flow-dir):
+      Contains workflow JSON files
+      Priority: --flow-dir CLI option > N8N_FLOW_DIR env > current directory
+      Default location: ./workflows/
+
+    \b
+    🌐 Server Configuration:
+      n8n Server URL: --server-url CLI option > N8N_SERVER_URL env
+      API Keys: Stored in database, managed via 'apikey' commands
     """
     pass
 

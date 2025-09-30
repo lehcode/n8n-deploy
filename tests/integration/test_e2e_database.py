@@ -82,11 +82,9 @@ class TestE2EDatabase(E2ETestBase):
         self.run_cli_command(["--app-dir", self.temp_dir, "db", "init"])
         self.run_cli_command(["--app-dir", self.temp_dir, "db", "backup"])
 
-        # List backups
+        # List backups (wf list-backups only uses --backup-dir, not --app-dir)
         backup_dir = Path(self.temp_dir) / "backups"
-        returncode, stdout, stderr = self.run_cli_command(
-            ["--app-dir", self.temp_dir, "wf", "list-backups", "--backup-dir", str(backup_dir)]
-        )
+        returncode, stdout, stderr = self.run_cli_command(["wf", "list-backups", "--backup-dir", str(backup_dir)])
 
         # Should succeed (even if no backups exist yet)
         assert returncode == 0, f"Command failed with returncode {returncode}\nSTDOUT: {stdout}\nSTDERR: {stderr}"

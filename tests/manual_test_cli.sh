@@ -323,17 +323,21 @@ test_database_operations() {
     # Database initialization
     run_test "DB init" "echo '1' | $CLI_COMMAND db init --app-dir $app_dir --no-emoji" 0 "Initialize database"
 
+    # Test --existing flag (accept existing database without prompt)
+    run_test "DB init with --existing" "$CLI_COMMAND db init --app-dir $app_dir --existing --no-emoji" 0 "Initialize with existing database flag"
+
     # Database status
-    run_test "DB status table" "$CLI_COMMAND db status --app-dir $app_dir" 0 "Check database status"
-    run_test "DB status JSON" "$CLI_COMMAND db status --app-dir $app_dir --format json" 0 "Check database status in JSON"
-    validate_output "DB status content" "$CLI_COMMAND db status --app-dir $app_dir" "Database Path"
+    run_test "DB status table" "$CLI_COMMAND db status --app-dir $app_dir --no-emoji" 0 "Check database status"
+    run_test "DB status JSON" "$CLI_COMMAND db status --app-dir $app_dir --format json --no-emoji" 0 "Check database status in JSON"
+    validate_output "DB status content" "$CLI_COMMAND db status --app-dir $app_dir --no-emoji" "Database Path"
 
     # Database maintenance
-    run_test "DB compact" "$CLI_COMMAND db compact --app-dir $app_dir" 0 "Compact database"
+    run_test "DB compact" "$CLI_COMMAND db compact --app-dir $app_dir --no-emoji" 0 "Compact database"
+    run_test "DB compact with emoji" "$CLI_COMMAND db compact --app-dir $app_dir" 0 "Compact database with emoji output"
 
     # Database backup
     local backup_file="$TEST_BASE_DIR/backup/test_backup.db"
-    run_test "DB backup" "$CLI_COMMAND db backup $backup_file --app-dir $app_dir" 0 "Create database backup"
+    run_test "DB backup" "$CLI_COMMAND db backup $backup_file --app-dir $app_dir --no-emoji" 0 "Create database backup"
 
     # Test backup file exists
     if [[ -f "$backup_file" ]]; then
@@ -422,10 +426,14 @@ test_workflow_operations() {
     # List backupable workflows only
     run_test "List backupable only" "$CLI_COMMAND wf list --only --app-dir $app_dir --flow-dir $flow_dir --no-emoji" 0 "List only backupable workflows"
 
+    # Test add workflow with JSON format output
+    run_test "Add workflow JSON output" "$CLI_COMMAND wf add workflows/${SAMPLE_WF_ID}.json 'Second Test Workflow' --app-dir $app_dir --flow-dir $flow_dir --format json" 0 "Add workflow with JSON output"
 
     # Search workflows
-    run_test "Search workflows" "$CLI_COMMAND wf search 'test' --app-dir $app_dir --flow-dir $flow_dir" 0 "Search workflows by name"
-    validate_output "Search results" "$CLI_COMMAND wf search 'test' --app-dir $app_dir --flow-dir $flow_dir" "$SAMPLE_WF_NAME"
+    run_test "Search workflows by name" "$CLI_COMMAND wf search 'test' --app-dir $app_dir --flow-dir $flow_dir --no-emoji" 0 "Search workflows by name"
+    validate_output "Search results" "$CLI_COMMAND wf search 'test' --app-dir $app_dir --flow-dir $flow_dir --no-emoji" "$SAMPLE_WF_NAME"
+    run_test "Search workflows by ID" "$CLI_COMMAND wf search '$SAMPLE_WF_ID' --app-dir $app_dir --flow-dir $flow_dir --no-emoji" 0 "Search workflows by workflow ID"
+    run_test "Search workflows JSON" "$CLI_COMMAND wf search 'test' --app-dir $app_dir --flow-dir $flow_dir --format json" 0 "Search workflows with JSON output"
 
     # Get workflow stats
     run_test "Workflow stats table" "$CLI_COMMAND wf stats $SAMPLE_WF_ID --app-dir $app_dir --flow-dir $flow_dir" 0 "Get workflow statistics"
@@ -567,7 +575,7 @@ test_directory_options() {
     mkdir -p "$app_dir2" "$flow_dir2/workflows"
 
     # Initialize second database
-    run_test "Init second DB" "echo '1' | $CLI_COMMAND db init --app-dir $app_dir2 --no-emoji" 0 "Initialize second database"
+    run_test "Init second DB" "$CLI_COMMAND db init --app-dir $app_dir2 --existing --no-emoji" 0 "Initialize second database"
 
     # Test app-dir option
     validate_output "Different app dir" "$CLI_COMMAND db status --app-dir $app_dir2" "$app_dir2"
@@ -642,7 +650,7 @@ test_edge_cases() {
     # Test empty database operations
     local empty_app_dir="$TEST_BASE_DIR/empty_app"
     mkdir -p "$empty_app_dir"
-    run_test "Init empty DB" "echo '1' | $CLI_COMMAND db init --app-dir $empty_app_dir --no-emoji" 0 "Initialize empty database"
+    run_test "Init empty DB" "$CLI_COMMAND db init --app-dir $empty_app_dir --existing --no-emoji" 0 "Initialize empty database"
     run_test "List empty workflows" "$CLI_COMMAND wf list --app-dir $empty_app_dir --no-emoji" 0 "List workflows in empty database"
 
     # Test special characters in workflow names (spaces now allowed, but some symbols should still fail)
