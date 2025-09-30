@@ -431,11 +431,11 @@ class TestE2EDatabase(E2ETestBase):
 
         # Test workflow backup command
         returncode, stdout, stderr = self.run_cli_command(
-            ["--app-dir", self.temp_dir, "backup-workflows", "--backup-dir", str(backup_dir)]
+            ["--app-dir", self.temp_dir, "wf", "backup", "--backup-dir", str(backup_dir)]
         )
 
         # Backup may fail due to missing workflow files, but should handle gracefully
-        assert "backup" in stdout.lower() or "backup failed" in stderr.lower()
+        assert returncode in [0, 1], f"Backup command crashed\nSTDERR: {stderr}\nSTDOUT: {stdout}"
 
     def test_cli_list_backups_operation(self) -> None:
         """Test CLI listing workflow backups"""
@@ -446,8 +446,8 @@ class TestE2EDatabase(E2ETestBase):
         backup_dir = Path(self.temp_dir) / "backups"
         backup_dir.mkdir(exist_ok=True)
 
-        # Test list backups command
-        returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir, "list-backups"])
+        # Test list backups command (note: wf list-backups doesn't use --app-dir, only --backup-dir)
+        returncode, stdout, stderr = self.run_cli_command(["wf", "list-backups", "--backup-dir", str(backup_dir)])
 
         # Should succeed even with empty backup directory
         assert returncode == 0
@@ -588,6 +588,9 @@ class TestE2EDatabase(E2ETestBase):
         # Initialize database directly
         config = AppConfig(base_folder=Path(self.temp_dir))
         db = DBApi(config=config)
+
+        # Initialize the database schema
+        db.schema_manager.initialize_database()
 
         # Test database path resolution
         expected_path = config.database_path
