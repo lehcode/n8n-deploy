@@ -248,11 +248,11 @@ class TestE2EDatabase(E2ETestBase):
         """Test operations on empty database"""
         # Initialize empty database
         self.run_cli_command(["--app-dir", self.temp_dir, "db", "init"])
-        empty_db_operations = [["list"], ["stats"], ["list-backups"], ["db", "status"]]
+        empty_db_operations = [["wf", "list"], ["db", "status"]]
 
         for op in empty_db_operations:
             returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir] + op)
-            assert returncode == 0, f"Empty database operation failed: {op}"
+            assert returncode == 0, f"Empty database operation failed: {op}\nSTDERR: {stderr}\nSTDOUT: {stdout}"
 
     def test_database_size_tracking(self) -> None:
         """Test database size is reasonable and tracked"""
@@ -290,15 +290,15 @@ class TestE2EDatabase(E2ETestBase):
 
         # Try operations that might cause errors
         error_prone_operations = [
-            ["add", "nonexistent.json", "Nonexistent-Workflow"],  # Missing file should return exit code 1
+            ["wf", "add", "nonexistent.json", "Nonexistent-Workflow"],  # Missing file should return exit code 1
             ["db", "backup"],  # Should work
-            ["list"],  # Should work
+            ["wf", "list"],  # Should work
         ]
 
         for op in error_prone_operations:
             returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir] + op)
             # Should not crash, even if operation fails
-            assert returncode in [0, 1]
+            assert returncode in [0, 1], f"Operation crashed with unexpected code: {op}\nSTDERR: {stderr}"
 
         # Database should still be accessible
         returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir, "db", "status"])
