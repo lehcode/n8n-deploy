@@ -2,7 +2,7 @@
 """
 Database schema management for n8n-deploy
 
-Handles database initialization, schema versioning, and migrations.
+Handles database initialization and schema versioning.
 """
 
 import sqlite3
@@ -15,7 +15,7 @@ from ..config import AppConfig
 
 
 class SchemaApi:
-    """Manages database schema initialization and migrations"""
+    """Manages database schema initialization and versioning"""
 
     SCHEMA_VERSION = 1
 
@@ -172,17 +172,3 @@ class SchemaApi:
             except sqlite3.OperationalError:
                 # Table doesn't exist yet
                 return 0
-
-    def needs_migration(self) -> bool:
-        """Check if database needs migration"""
-        current_version = self.get_schema_version()
-        return current_version < self.SCHEMA_VERSION
-
-    def migrate_database(self) -> None:
-        """Migrate database to current schema version"""
-        current_version = self.get_schema_version()
-
-        if current_version < self.SCHEMA_VERSION:
-            # For now, just reinitialize if migration needed
-            # In future versions, add specific migration logic
-            self.initialize_database()
