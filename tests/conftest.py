@@ -140,7 +140,7 @@ def test_workflow_file(test_config: AppConfig) -> Path:
 def populated_test_db(test_db: DBApi, mock_workflow_data: Dict[str, Any]) -> DBApi:
     """Database populated with test workflows"""
     workflow = Workflow(**mock_workflow_data)
-    test_db.create_workflow(workflow)
+    test_db.add_workflow(workflow)
     return test_db
 
 

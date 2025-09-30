@@ -275,6 +275,18 @@ pause_if_requested() {
     fi
 }
 
+# Check if database exists (must be initialized with 'db init' first)
+check_database_exists() {
+    local app_dir="$1"
+    local test_section="$2"
+    if [[ ! -f "$app_dir/n8n-deploy.db" ]]; then
+        log_warning "Database not initialized for $test_section tests"
+        log_warning "Run 'db' test section first or manually run: n8n-deploy db init --app-dir $app_dir"
+        return 1
+    fi
+    return 0
+}
+
 # =============================================================================
 # TEST CATEGORIES
 # =============================================================================
@@ -342,6 +354,13 @@ test_api_key_management() {
 
     local app_dir="$TEST_BASE_DIR/app"
 
+    # Check database exists (must be initialized with 'db init' first)
+    if ! check_database_exists "$app_dir" "API Key"; then
+        ((SKIPPED_TESTS+=12))  # Skip all API key tests
+        ((TOTAL_TESTS+=12))
+        return
+    fi
+
     # Add API key
     run_test "Add API key" "echo '$SAMPLE_API_KEY' | $CLI_COMMAND apikey add - --name test_key --app-dir $app_dir --no-emoji" 0 "Add new API key"
 
@@ -385,6 +404,13 @@ test_workflow_operations() {
     local flow_dir="$TEST_BASE_DIR/flow"
     local workflow_file="$flow_dir/workflows/${SAMPLE_WF_ID}.json"
 
+    # Check database exists (must be initialized with 'db init' first)
+    if ! check_database_exists "$app_dir" "Workflow"; then
+        ((SKIPPED_TESTS+=10))  # Skip all workflow tests
+        ((TOTAL_TESTS+=10))
+        return
+    fi
+
     # Add workflow
     run_test "Add workflow" "$CLI_COMMAND wf add workflows/${SAMPLE_WF_ID}.json '$SAMPLE_WF_NAME' --app-dir $app_dir --flow-dir $flow_dir" 0 "Add workflow to database"
 
@@ -426,6 +452,13 @@ test_backup_operations() {
     local flow_dir="$TEST_BASE_DIR/flow"
     local backup_dir="$TEST_BASE_DIR/backup"
 
+    # Check database exists (must be initialized with 'db init' first)
+    if ! check_database_exists "$app_dir" "Backup"; then
+        ((SKIPPED_TESTS+=6))  # Skip all backup tests
+        ((TOTAL_TESTS+=6))
+        return
+    fi
+
     # Create workflow backup
     run_test "Create workflow backup" "$CLI_COMMAND wf backup --backup-dir $backup_dir --app-dir $app_dir --flow-dir $flow_dir --no-emoji" 0 "Create tar.gz backup of workflows"
 
@@ -461,6 +494,13 @@ test_server_integration() {
     local flow_dir="$TEST_BASE_DIR/flow"
     local mock_server="http://localhost:12345"  # Non-existent server for testing
 
+    # Check database exists (must be initialized with 'db init' first)
+    if ! check_database_exists "$app_dir" "Server Integration"; then
+        ((SKIPPED_TESTS+=5))  # Skip all server integration tests
+        ((TOTAL_TESTS+=5))
+        return
+    fi
+
     # Test list-server with no server
     run_test "List server (no URL)" "$CLI_COMMAND wf list-server --app-dir $app_dir --flow-dir $flow_dir --no-emoji" 1 "List server workflows without URL"
 
@@ -487,6 +527,13 @@ test_output_formats() {
 
     local app_dir="$TEST_BASE_DIR/app"
     local flow_dir="$TEST_BASE_DIR/flow"
+
+    # Check database exists (must be initialized with 'db init' first)
+    if ! check_database_exists "$app_dir" "Output Format"; then
+        ((SKIPPED_TESTS+=6))  # Skip all output format tests
+        ((TOTAL_TESTS+=6))
+        return
+    fi
 
     # Test emoji vs no-emoji output
     validate_output "Emoji output" "$CLI_COMMAND wf list --app-dir $app_dir --flow-dir $flow_dir" "📋"
@@ -584,6 +631,13 @@ test_edge_cases() {
 
     local app_dir="$TEST_BASE_DIR/app"
     local flow_dir="$TEST_BASE_DIR/flow"
+
+    # Check database exists (must be initialized with 'db init' first)
+    if ! check_database_exists "$app_dir" "Edge Cases"; then
+        ((SKIPPED_TESTS+=11))  # Skip all edge case tests
+        ((TOTAL_TESTS+=11))
+        return
+    fi
 
     # Test empty database operations
     local empty_app_dir="$TEST_BASE_DIR/empty_app"

@@ -619,7 +619,7 @@ class TestE2EDatabase(E2ETestBase):
         workflow = Workflow(**workflow_data)
 
         # Test create workflow
-        result = db.create_workflow(workflow)
+        result = db.add_workflow(workflow)
         assert result == workflow.id
 
         # Test get workflow
@@ -688,12 +688,12 @@ class TestE2EDatabase(E2ETestBase):
         workflow2 = Workflow(**workflow_data)  # Same ID
 
         # First creation should succeed
-        result1 = db.create_workflow(workflow1)
+        result1 = db.add_workflow(workflow1)
         assert result1 == workflow1.id
 
         # Second creation with same ID should fail
         try:
-            db.create_workflow(workflow2)
+            db.add_workflow(workflow2)
             assert False, "Expected IntegrityError for duplicate workflow ID"
         except sqlite3.IntegrityError:
             # Expected behavior
