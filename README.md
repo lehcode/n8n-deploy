@@ -16,7 +16,7 @@
 [![Downloads](https://img.shields.io/pypi/dm/n8n-deploy?style=flat-square)](https://pypi.org/project/n8n-deploy/)
 -->
 
-## Overview
+**A privacy-first Python CLI tool for managing n8n workflows with SQLite metadata storage.**
 
 `n8n-deploy` is a powerful Python CLI tool designed to simplify n8n workflow management through a database-first approach. It provides a flexible, efficient solution for managing n8n workflows, especially in environments without direct web UI access.
 
@@ -53,9 +53,11 @@
 
 ### Installation
 
+### Option 1: PyPI (Recommended)
 ```bash
 # Pip install
 pip install n8n-deploy
+```
 
 # Use uv for faster setup and virtual environment
 uv venv --python /usr/bin/python3 .venv
@@ -65,6 +67,7 @@ uv pip install n8n-deploy
 
 ### Quick Start
 
+### Step 1: Initialize (one-time setup)
 ```bash
 # Initialize database
 n8n-deploy db init --data-dir ~/.n8n-deploy
