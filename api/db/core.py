@@ -36,7 +36,7 @@ class DBApi:
         finally:
             conn.close()
 
-    def add_workflow(self, workflow: Workflow) -> None:
+    def add_workflow(self, workflow: Workflow) -> str:
         """Add a new workflow to the database"""
         with self.get_connection() as conn:
             conn.execute(
@@ -54,6 +54,7 @@ class DBApi:
                 ),
             )
             conn.commit()
+            return workflow.id
 
     def get_workflow(self, workflow_id: str) -> Optional[Workflow]:
         """Get a workflow by its ID"""
