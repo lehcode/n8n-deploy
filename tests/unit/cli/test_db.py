@@ -51,7 +51,7 @@ class TestDatabaseCommands:
         assert "Initialize n8n-deploy database" in result.output
         assert "--app-dir" in result.output
         assert "--no-emoji" in result.output
-        assert "--force" in result.output
+        assert "--existing" in result.output
 
     def test_status_command_help(self):
         """Test status command help"""
