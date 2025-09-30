@@ -112,7 +112,8 @@ def init(app_dir: Optional[str], no_emoji: bool, force: bool) -> None:
             return
 
     # Initialize database
-    DBApi(config=config)
+    db_api = DBApi(config=config)
+    db_api.schema_manager.initialize_database()
     if no_emoji:
         console.print("Database initialized")
     else:
