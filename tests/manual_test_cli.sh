@@ -33,7 +33,7 @@ TEST_SECTIONS=()
 
 # Sample data
 readonly SAMPLE_API_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkNGEyODkxMy04ODQxLTRhMTAtODIzNC1iODQ2OTE1MmJhZTYiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzU4NzY3MDI4LCJleHAiOjE3NjEyNzg0MDB9.d9u2SovTMfUGZ8EzD4SDLYNUTBarHpdwhv96pO-5imE"
-readonly SAMPLE_WF_ID="550e8400-e29b-41d4-a716-446655440000"
+readonly SAMPLE_WF_ID="deAVBp391wvomsWY"
 readonly SAMPLE_WF_NAME="Test Workflow Manual"
 
 # =============================================================================
@@ -207,7 +207,7 @@ create_sample_workflow() {
 
     cat > "$workflow_dir/${SAMPLE_WF_ID}.json" << 'EOF'
 {
-  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "id": "deAVBp391wvomsWY",
   "name": "Test Workflow Manual",
   "active": false,
   "nodes": [
