@@ -323,8 +323,8 @@ test_database_operations() {
     # Database initialization
     run_test "DB init" "echo '1' | $CLI_COMMAND db init --app-dir $app_dir --no-emoji" 0 "Initialize database"
 
-    # Test --existing flag (accept existing database without prompt)
-    run_test "DB init with --existing" "$CLI_COMMAND db init --app-dir $app_dir --existing --no-emoji" 0 "Initialize with existing database flag"
+    # Test --import flag (accept existing database without prompt)
+    run_test "DB init with --import" "$CLI_COMMAND db init --app-dir $app_dir --import --no-emoji" 0 "Initialize with existing database flag"
 
     # Database status
     run_test "DB status table" "$CLI_COMMAND db status --app-dir $app_dir --no-emoji" 0 "Check database status"
@@ -575,7 +575,7 @@ test_directory_options() {
     mkdir -p "$app_dir2" "$flow_dir2/workflows"
 
     # Initialize second database
-    run_test "Init second DB" "$CLI_COMMAND db init --app-dir $app_dir2 --existing --no-emoji" 0 "Initialize second database"
+    run_test "Init second DB" "$CLI_COMMAND db init --app-dir $app_dir2 --import --no-emoji" 0 "Initialize second database"
 
     # Test app-dir option
     validate_output "Different app dir" "$CLI_COMMAND db status --app-dir $app_dir2" "$app_dir2"
@@ -650,7 +650,7 @@ test_edge_cases() {
     # Test empty database operations
     local empty_app_dir="$TEST_BASE_DIR/empty_app"
     mkdir -p "$empty_app_dir"
-    run_test "Init empty DB" "$CLI_COMMAND db init --app-dir $empty_app_dir --existing --no-emoji" 0 "Initialize empty database"
+    run_test "Init empty DB" "$CLI_COMMAND db init --app-dir $empty_app_dir --import --no-emoji" 0 "Initialize empty database"
     run_test "List empty workflows" "$CLI_COMMAND wf list --app-dir $empty_app_dir --no-emoji" 0 "List workflows in empty database"
 
     # Test special characters in workflow names (spaces now allowed, but some symbols should still fail)
