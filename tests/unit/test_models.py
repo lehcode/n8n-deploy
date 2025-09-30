@@ -12,58 +12,44 @@ from assertpy import assert_that
 
 from api.models import (
     Workflow,
-    WorkflowDependency,
-    WorkflowConfiguration,
-    DatabaseStats,
-    WorkflowType,
     WorkflowStatus,
-    DependencyType,
 )
 
-from tests.test_utils import TestAssertions, TestDataFactory, UtilityPatterns
+from tests.test_utils import TestAssertions, TestDataFactory
 
 
-class TestEnums:
-    """Test enum classes and their values"""
-
-    def test_workflow_type_enum_values(self):
-        """Test WorkflowType enum has correct values"""
-        UtilityPatterns.test_enum_values(WorkflowType, ["main", "subflow", "utility"])
-
-    def test_workflow_status_enum_values(self):
-        """Test WorkflowStatus enum has correct values"""
-        UtilityPatterns.test_enum_values(
-            WorkflowStatus, ["active", "inactive", "archived"]
-        )
-
-
+# === Workflow Model Tests ===
 class TestWorkflowModel:
     """Test Workflow model validation and functionality"""
 
-    @pytest.mark.parametrize(
-        "workflow_type", [WorkflowType.MAIN, WorkflowType.SUBFLOW, WorkflowType.UTILITY]
-    )
-    def test_workflow_types(self, workflow_type):
-        """Test workflow creation with different types"""
+    def test_workflow_creation_basic(self):
+        """Test basic workflow creation"""
+        workflow = Workflow(id="test_workflow", name="Test Workflow")
+
+        assert workflow.id == "test_workflow"
+        assert workflow.name == "Test Workflow"
+        assert workflow.status == WorkflowStatus.ACTIVE  # Default value
+        assert workflow.push_count == 0  # Default value
+        assert workflow.pull_count == 0  # Default value
+
+    def test_workflow_creation_with_all_fields(self):
+        """Test workflow creation with all optional fields"""
+        from datetime import datetime
+
         workflow = Workflow(
-            id=f"type_test_{workflow_type.value}",
-            name=f"Test {workflow_type.value} Workflow",
-            file_path="test.json",
-            type=workflow_type,
+            id="full_workflow",
+            name="Full Test Workflow",
+            status=WorkflowStatus.INACTIVE,
+            push_count=5,
+            pull_count=3,
+            n8n_version_id="test_version_123",
+            last_synced=datetime.utcnow(),
         )
 
-        assert workflow.type == workflow_type
-
-    @pytest.mark.parametrize(
-        "workflow_status", [WorkflowStatus.ACTIVE, WorkflowStatus.INACTIVE]
-    )
-    def test_workflow_statuses(self, workflow_status):
-        """Test workflow creation with different statuses"""
-        workflow = Workflow(
-            id=f"status_test_{workflow_status.value}",
-            name=f"Test {workflow_status.value} Workflow",
-            file_path="test.json",
-            status=workflow_status,
-        )
-
-        assert workflow.status == workflow_status
+        assert workflow.id == "full_workflow"
+        assert workflow.name == "Full Test Workflow"
+        assert workflow.status == WorkflowStatus.INACTIVE
+        assert workflow.push_count == 5
+        assert workflow.pull_count == 3
+        assert workflow.n8n_version_id == "test_version_123"
+        assert workflow.last_synced is not None

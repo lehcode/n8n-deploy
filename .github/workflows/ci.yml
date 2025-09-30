@@ -1,11 +1,13 @@
 # GitHub Actions CI/CD Pipeline for n8n-deploy
 # Python CLI tool for n8n workflow management
+# Mirrors GitLab CI/CD pipeline structure exactly
 
 name: CI/CD Pipeline
 
 on:
   push:
     branches: [ master, main, feat/*, develop ]
+    tags: [ 'v*' ]
   pull_request:
     branches: [ master, main ]
   release:
@@ -16,20 +18,11 @@ env:
   PYTHON_VERSION: "3.9"
 
 jobs:
-  # Security scanning
-  security:
+  # Security stage
+  sast:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-
-    - name: Run secret detection with TruffleHog
-      uses: trufflesecurity/trufflehog@main
-      with:
-        path: ./
-        base: main
-        head: HEAD
-        extra_args: --debug --only-verified
-      continue-on-error: true
 
     - name: Set up Python 3.9
       uses: actions/setup-python@v4
@@ -55,9 +48,42 @@ jobs:
       run: |
         python -m semgrep --config=auto api/ --json || true
 
-  # Quality checks
-  quality:
+  secret-detection:
     runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Run secret detection with TruffleHog
+      uses: trufflesecurity/trufflehog@main
+      with:
+        path: ./
+        base: main
+        head: HEAD
+        extra_args: --debug --only-verified
+      continue-on-error: true
+
+  dependency-scanning:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.9"
+
+    - name: Install safety
+      run: |
+        python -m pip install --upgrade pip
+        pip install safety
+
+    - name: Dependency vulnerability scanning
+      run: safety check --json || true
+
+  # Quality stage
+  quality-mypy:
+    runs-on: ubuntu-latest
+    needs: [sast, secret-detection, dependency-scanning]
     steps:
     - uses: actions/checkout@v4
 
@@ -91,14 +117,79 @@ jobs:
     - name: Run type checking
       run: |
         source .venv/bin/activate
-        mypy api/ --strict
+        rm -rf .mypy_cache/
+        mypy api/ --strict --show-error-codes
         echo "✅ Type checking passed"
+
+  quality-black:
+    runs-on: ubuntu-latest
+    needs: [sast, secret-detection, dependency-scanning]
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.9"
+
+    - name: Install uv
+      run: |
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/uv
+          .venv
+        key: ${{ runner.os }}-uv-3.9-${{ hashFiles('pyproject.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-uv-3.9-
+
+    - name: Install dependencies
+      run: |
+        uv venv --python python3 .venv
+        source .venv/bin/activate
+        uv pip install -e ".[test,dev]"
 
     - name: Check code formatting
       run: |
         source .venv/bin/activate
         black --check api/
         echo "✅ Code formatting check passed"
+
+  quality-coverage:
+    runs-on: ubuntu-latest
+    needs: [sast, secret-detection, dependency-scanning]
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.9"
+
+    - name: Install uv
+      run: |
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/uv
+          .venv
+        key: ${{ runner.os }}-uv-3.9-${{ hashFiles('pyproject.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-uv-3.9-
+
+    - name: Install dependencies
+      run: |
+        uv venv --python python3 .venv
+        source .venv/bin/activate
+        uv pip install -e ".[test,dev]"
 
     - name: Generate coverage report
       run: |
@@ -122,37 +213,10 @@ jobs:
         file: ./coverage.xml
         fail_ci_if_error: false
 
-  # Test matrix across Python versions
-  test-matrix:
+  # Test stage
+  test-unit:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11"]
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
-
-    - name: Install uv
-      run: |
-        curl -LsSf https://astral.sh/uv/install.sh | sh
-        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-
-    - name: Install dependencies and run tests
-      run: |
-        uv venv --python python3 .venv
-        source .venv/bin/activate
-        uv pip install -e ".[test,dev]"
-        export N8N_DEPLOY_TESTING=1
-        python run_tests.py --unit --no-deps-check --quiet
-
-  # Integration tests
-  test-integration:
-    runs-on: ubuntu-latest
-    needs: [security, quality]
+    needs: [quality-mypy, quality-black, quality-coverage]
     steps:
     - uses: actions/checkout@v4
 
@@ -166,6 +230,50 @@ jobs:
         curl -LsSf https://astral.sh/uv/install.sh | sh
         echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/uv
+          .venv
+        key: ${{ runner.os }}-uv-3.9-${{ hashFiles('pyproject.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-uv-3.9-
+
+    - name: Install dependencies and run unit tests
+      run: |
+        uv venv --python python3 .venv
+        source .venv/bin/activate
+        uv pip install -e ".[test,dev]"
+        python run_tests.py --unit --no-deps-check --quiet
+        echo "✅ Unit tests passed"
+
+  test-integration:
+    runs-on: ubuntu-latest
+    needs: [quality-mypy, quality-black, quality-coverage]
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.9"
+
+    - name: Install uv
+      run: |
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/uv
+          .venv
+        key: ${{ runner.os }}-uv-3.9-${{ hashFiles('pyproject.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-uv-3.9-
+
     - name: Install dependencies and run integration tests
       run: |
         uv venv --python python3 .venv
@@ -175,10 +283,94 @@ jobs:
         python run_tests.py --integration --no-deps-check --quiet
         echo "✅ Integration tests passed"
 
-  # Package build and deploy
-  deploy:
+  # Build-matrix stage
+  build-validation:
     runs-on: ubuntu-latest
-    needs: [security, quality, test-matrix, test-integration]
+    needs: [test-unit, test-integration]
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.9"
+
+    - name: Install uv
+      run: |
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/uv
+          .venv
+        key: ${{ runner.os }}-uv-3.9-${{ hashFiles('pyproject.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-uv-3.9-
+
+    - name: Install dependencies and run validation build
+      run: |
+        uv venv --python python3 .venv
+        source .venv/bin/activate
+        uv pip install -e ".[test,dev]"
+        echo "🔧 Running final validation build..."
+        uv pip install build
+        python -m build --wheel
+        pip install dist/*.whl
+        n8n-deploy --version
+        echo "✅ Package build and installation validation completed"
+
+    - name: Upload validation artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: validation-dist
+        path: dist/
+        retention-days: 1
+
+  build-python-matrix:
+    runs-on: ubuntu-latest
+    needs: [build-validation]
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11"]
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install uv
+      run: |
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+    - name: Build and test package for Python ${{ matrix.python-version }}
+      run: |
+        uv venv --python python3 .venv
+        source .venv/bin/activate
+        uv pip install -e ".[test,dev]"
+        uv pip install build
+        echo "🔧 Building package for Python ${{ matrix.python-version }}..."
+        python -m build --wheel --sdist
+        pip install dist/*.whl
+        n8n-deploy --version
+        echo "✅ Build successful for Python ${{ matrix.python-version }}"
+
+    - name: Upload matrix build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: matrix-dist-${{ matrix.python-version }}
+        path: dist/
+        retention-days: 1
+
+  # Build stage
+  build-production:
+    runs-on: ubuntu-latest
+    needs: [build-validation, build-python-matrix]
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
     steps:
     - uses: actions/checkout@v4
@@ -193,35 +385,57 @@ jobs:
         curl -LsSf https://astral.sh/uv/install.sh | sh
         echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
-    - name: Install dependencies and build package
+    - name: Install dependencies and build final package
       run: |
         uv venv --python python3 .venv
         source .venv/bin/activate
         uv pip install -e ".[test,dev]"
         uv pip install build twine
-        python -m build
+        python -m build --wheel --sdist
         twine check dist/*
-        echo "✅ Package built successfully"
+        echo "🚀 Production environment build completed successfully"
+        echo "All pipeline stages have passed validation for production release"
 
-    - name: Upload package artifacts
+    - name: Upload production artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: dist
+        name: production-dist
         path: dist/
         retention-days: 7
 
-  # Deploy to PyPI (on tags only)
+  # Deploy to TestPyPI (on pre-release tags like v2.0.0-rc1)
+  deploy-test-pypi:
+    runs-on: ubuntu-latest
+    needs: [build-production]
+    if: startsWith(github.ref, 'refs/tags/') && (contains(github.ref, '-rc') || contains(github.ref, '-beta') || contains(github.ref, '-alpha'))
+    environment: test-pypi
+
+    steps:
+    - name: Download production artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: production-dist
+        path: dist/
+
+    - name: Publish to TestPyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        user: __token__
+        password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+        repository_url: https://test.pypi.org/legacy/
+
+  # Deploy to PyPI (on stable release tags)
   deploy-pypi:
     runs-on: ubuntu-latest
-    needs: [deploy]
-    if: startsWith(github.ref, 'refs/tags/')
+    needs: [build-production]
+    if: startsWith(github.ref, 'refs/tags/') && !contains(github.ref, '-rc') && !contains(github.ref, '-beta') && !contains(github.ref, '-alpha')
     environment: pypi
 
     steps:
-    - name: Download package artifacts
+    - name: Download production artifacts
       uses: actions/download-artifact@v4
       with:
-        name: dist
+        name: production-dist
         path: dist/
 
     - name: Publish to PyPI

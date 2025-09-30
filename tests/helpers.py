@@ -4,12 +4,12 @@ Test helpers and utilities for consistent testing patterns
 """
 
 from datetime import datetime, timezone, timedelta
-from typing import Dict, Any, List, Optional, Union
+from typing import Dict, Any, List, Optional
 from pathlib import Path
 import json
 
-from api.models import Workflow, WorkflowType, WorkflowStatus
-from api.config import n8n_deploy_Config
+from api.models import Workflow
+from api.config import AppConfig
 
 
 def now_utc() -> datetime:
@@ -20,8 +20,6 @@ def now_utc() -> datetime:
 def create_test_workflow(
     workflow_id: str = "test_workflow",
     name: str = "Test Workflow",
-    workflow_type: WorkflowType = WorkflowType.MAIN,
-    status: WorkflowStatus = WorkflowStatus.ACTIVE,
     file_path: str = "workflows/test.json",
     **kwargs: Any,
 ) -> Workflow:
@@ -29,8 +27,6 @@ def create_test_workflow(
     return Workflow(
         id=workflow_id,
         name=name,
-        type=workflow_type,
-        status=status,
         file_path=file_path,
         created_at=now_utc(),
         updated_at=now_utc(),
@@ -45,10 +41,7 @@ def create_test_workflow_data(
     return {
         "id": workflow_id,
         "name": name,
-        "type": "main",
-        "status": "active",
         "file_path": "workflows/test.json",
-        "node_count": 0,
         "tags": [],
         "created_at": now_utc().isoformat(),
         "updated_at": now_utc().isoformat(),
@@ -61,27 +54,22 @@ def create_test_workflow_data(
 def create_test_workflow_json(
     workflow_id: str = "test_workflow",
     name: str = "Test Workflow",
-    node_count: int = 2,
     **kwargs: Any,
 ) -> Dict[str, Any]:
     """Create test n8n workflow JSON structure."""
-    nodes = []
-    for i in range(node_count):
-        node = {
+    # Simple test workflow with one start node
+    nodes = [
+        {
             "parameters": {},
-            "id": f"node_{i}",
-            "name": f"Node {i}",
-            "type": "n8n-nodes-base.start" if i == 0 else "n8n-nodes-base.function",
+            "id": "start_node",
+            "name": "Start",
+            "type": "n8n-nodes-base.start",
             "typeVersion": 1,
-            "position": [250 + (i * 200), 300],
+            "position": [250, 300],
         }
-        nodes.append(node)
+    ]
 
     connections = {}
-    for i in range(node_count - 1):
-        connections[f"Node {i}"] = {
-            "main": [[{"node": f"Node {i + 1}", "type": "main", "index": 0}]]
-        }
 
     return {
         "id": workflow_id,
@@ -104,7 +92,6 @@ def create_test_api_key_data(
     **kwargs: Any,
 ) -> Dict[str, Any]:
     """Create test API key data."""
-    service = "n8n"  # Default service type
     return {
         "name": name,
         "api_key": api_key,
@@ -115,7 +102,7 @@ def create_test_api_key_data(
 
 
 def create_workflow_file(
-    config: n8n_deploy_Config,
+    config: AppConfig,
     workflow_id: str,
     name: str = "Test Workflow",
     file_path: Optional[str] = None,
@@ -134,16 +121,11 @@ def create_workflow_file(
     return full_path
 
 
-def assert_workflow_equals(
-    actual: Workflow, expected: Workflow, ignore_timestamps: bool = True
-) -> None:
+def assert_workflow_equals(actual: Workflow, expected: Workflow, ignore_timestamps: bool = True) -> None:
     """Assert two workflows are equal, optionally ignoring timestamps."""
     assert actual.id == expected.id
     assert actual.name == expected.name
-    assert actual.type == expected.type
-    assert actual.status == expected.status
     assert actual.file_path == expected.file_path
-    assert actual.node_count == expected.node_count
     assert actual.tags == expected.tags
     assert actual.description == expected.description
     assert actual.last_synced == expected.last_synced
@@ -161,31 +143,23 @@ def assert_datetime_recent(dt: datetime, tolerance_seconds: int = 5) -> None:
     assert diff <= tolerance_seconds, f"Datetime {dt} is not recent (diff: {diff}s)"
 
 
-def assert_list_contains_ids(
-    items: List[Dict[str, Any]], expected_ids: List[str]
-) -> None:
+def assert_list_contains_ids(items: List[Dict[str, Any]], expected_ids: List[str]) -> None:
     """Assert that a list of dictionaries contains specific IDs."""
     actual_ids = [item["id"] for item in items]
     for expected_id in expected_ids:
-        assert (
-            expected_id in actual_ids
-        ), f"ID '{expected_id}' not found in {actual_ids}"
+        assert expected_id in actual_ids, f"ID '{expected_id}' not found in {actual_ids}"
 
 
 def assert_json_schema_valid(data: Dict[str, Any], required_fields: List[str]) -> None:
     """Assert that JSON data has required fields."""
     for field in required_fields:
-        assert (
-            field in data
-        ), f"Required field '{field}' missing from {list(data.keys())}"
+        assert field in data, f"Required field '{field}' missing from {list(data.keys())}"
 
 
 class MockResponse:
     """Mock HTTP response for testing."""
 
-    def __init__(
-        self, status_code: int = 200, json_data: Optional[Dict[str, Any]] = None
-    ):
+    def __init__(self, status_code: int = 200, json_data: Optional[Dict[str, Any]] = None):
         self.status_code = status_code
         self._json_data = json_data or {}
 
@@ -193,9 +167,7 @@ class MockResponse:
         return self._json_data
 
 
-def create_mock_n8n_response(
-    workflow_id: str = "test_workflow", name: str = "Test Workflow"
-) -> MockResponse:
+def create_mock_n8n_response(workflow_id: str = "test_workflow", name: str = "Test Workflow") -> MockResponse:
     """Create mock n8n API response."""
     return MockResponse(
         200,
@@ -253,17 +225,9 @@ def create_test_backup_metadata(
     ]
 
 
-# Common test data patterns
-COMMON_WORKFLOW_TYPES = [WorkflowType.MAIN, WorkflowType.SUBFLOW, WorkflowType.UTILITY]
-COMMON_WORKFLOW_STATUSES = [
-    WorkflowStatus.ACTIVE,
-    WorkflowStatus.INACTIVE,
-    WorkflowStatus.ARCHIVED,
-]
 COMMON_SERVICES = ["n8n", "openai", "anthropic", "custom"]
 
 
-# Test data generators
 def generate_test_workflows(count: int = 3) -> List[Dict[str, Any]]:
     """Generate multiple test workflows."""
     workflows = []
@@ -272,10 +236,6 @@ def generate_test_workflows(count: int = 3) -> List[Dict[str, Any]]:
             create_test_workflow_data(
                 workflow_id=f"test_workflow_{i}",
                 name=f"Test Workflow {i}",
-                type=COMMON_WORKFLOW_TYPES[i % len(COMMON_WORKFLOW_TYPES)].value,
-                status=COMMON_WORKFLOW_STATUSES[
-                    i % len(COMMON_WORKFLOW_STATUSES)
-                ].value,
                 file_path=f"workflows/test_{i}.json",
             )
         )

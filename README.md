@@ -1,516 +1,337 @@
-# n8n-deploy - N8N Workflow Manager
+# n8n-deploy
 
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://gitlab.pirouter.dev:8443/n8n/n8n-deploy)
-[![Python Version](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://python.org)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![Type Checking: MyPy](https://img.shields.io/badge/type%20checking-mypy-blue.svg)](https://mypy-lang.org/)
+[![GitHub](https://img.shields.io/badge/GitHub-lehcode%2Fn8n--deploy-blue?style=flat-square&logo=github)](https://github.com/lehcode/n8n-deploy)
+[![CI/CD Pipeline](https://github.com/lehcode/n8n-deploy/workflows/CI/CD%20Pipeline/badge.svg)](https://github.com/lehcode/n8n-deploy/actions)
+[![GitHub stars](https://img.shields.io/github/stars/lehcode/n8n-deploy?style=flat-square&logo=github)](https://github.com/lehcode/n8n-deploy/stargazers)
+[![GitHub last commit](https://img.shields.io/github/last-commit/lehcode/n8n-deploy?style=flat-square&logo=github)](https://github.com/lehcode/n8n-deploy/commits/master)
+[![GitHub issues](https://img.shields.io/github/issues/lehcode/n8n-deploy?style=flat-square&logo=github)](https://github.com/lehcode/n8n-deploy/issues)
 
-> *"If builders built buildings the way programmers wrote programs, then the first woodpecker that came along would destroy civilization."* - Arthur Bloch's Law
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue?style=flat-square&logo=python)](https://github.com/lehcode/n8n-deploy)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://github.com/lehcode/n8n-deploy/blob/master/LICENSE)
+[![Coverage](https://img.shields.io/codecov/c/github/lehcode/n8n-deploy?style=flat-s
+  quare)](https://codecov.io/gh/lehcode/n8n-deploy)
+[![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg?style=flat-square)](https://github.com/psf/black)
+[![PyPI](https://img.shields.io/pypi/v/n8n-deploy?style=flat-square&logo=pypi)](https://pypi.org/project/n8n-deploy/)
+[![Downloads](https://img.shields.io/pypi/dm/n8n-deploy?style=flat-square)](https://pypi.org/project/n8n-deploy/)
 
-**Essential tool for remote n8n deployments** - manage workflows from your local machine without slow export/import through web UI. Database-first workflow management with plain text API keys and flexible directory configuration.
+> *"The first rule of intelligent tinkering is to save all the parts."* - Paul R. Ehrlich
 
-## Overview
+**A privacy-first Python CLI tool for managing n8n workflows with SQLite metadata storage.**
 
-n8n-deploy is a Python CLI tool that provides database-first workflow management for n8n automation platform. It excels in scenarios where n8n runs on remote servers and web UI access is limited or slow.
+n8n-deploy is designed for n8n users who need better workflow management, especially when working with remote servers where web UI access isn't available. It provides database-first workflow management with complete local control and zero data collection.
 
-**Key Use Cases:**
+## 🔒 Privacy & Transparency
 
-- **Remote Server Management**: Deploy workflows to headless n8n servers via SSH
-- **Local Development Workflow**: Edit workflows locally, deploy remotely
-- **Backup and Restore**: Create versioned backups with integrity verification
-- **Team Collaboration**: Share workflow metadata through SQLite database
+**Your data stays on your machine, period.**
 
-## Features
+- **Zero data collection** - No analytics, no tracking, no telemetry
+- **No external communications** except to YOUR specified n8n server when YOU tell it to
+- **Local-first storage** - Everything stored in local SQLite database
+- **Open source transparency** - Complete source code available on GitHub
 
-### Database-First Architecture
+## ⚡ Install in 30 Seconds
 
-- **SQLite Metadata Store**: Complete workflow tracking with simple table schema
-- **File System Integration**: Flexible base folder and flow folder configuration
-- **Backup System**: `tar.gz` archives with SHA256 integrity verification
-- **Full-Text Search**: Built-in FTS5 search across workflow content
-
-### CLI Management
-
-- **Rich Interface**: Emoji-enabled tables with `--no-emoji` for script compatibility
-- **Global Access**: Install once, use from anywhere with shell aliases
-- **Comprehensive Commands**: 13 main commands covering all workflow operations
-- **API Key Storage**: Plain text keys for simplicity (local-only storage)
-
-### Configuration Flexibility
-
-- **Dual Directory System**: Separate app data (database, backups) and workflow files
-- **Environment Variables**: N8N_FLOW_DIR environment variable to specify workflow files location
-- **CLI Options**: `--app-dir` and `--flow-dir` for runtime configuration
-- **Legacy Compatibility**: Seamless migration from older configurations
-
-## Quick Start
-
-### 1. Installation
-
+### Option 1: PyPI (Recommended)
 ```bash
-# Option 1: Direct installation (recommended for production)
 pip install n8n-deploy
+```
 
-# Option 2: Development installation from source
+### Option 2: GitHub Latest
+```bash
+pip install git+https://github.com/lehcode/n8n-deploy.git
+```
+
+### Option 3: No Installation Required
+```bash
 git clone https://github.com/lehcode/n8n-deploy.git
 cd n8n-deploy
-pip install -e .
-
-# Option 3: Using uv (faster dependency resolution)
-uv venv .venv && source .venv/bin/activate
-uv pip install -e .
+./n8n-deploy --help  # Works immediately
 ```
 
-### 2. Global Shell Integration (Optional but Recommended)
+## 🚀 Get Started in 3 Steps
 
+### Step 1: Initialize (one-time setup)
 ```bash
-# Create global aliases for convenient access
-./setup.sh
-
-# Now use from anywhere:
-n8n-deploy list         # List all workflows
-n8n-deploy init        # Initialize database
-```
-
-### 3. Basic Configuration
-
-```bash
-# Initialize database (creates n8n-deploy.db in current directory)
 n8n-deploy db init
-
-# Add API key for n8n server
-n8n-deploy apikey add n8n_main --key YOUR_N8N_API_KEY
-
-# Set workflow files location (optional)
-export N8N_FLOW_DIR=/path/to/your/workflow/files
 ```
 
-### 4. Workflow Management
-
+### Step 2: Add your n8n server API key (optional)
 ```bash
-# List all workflows
+echo "your-n8n-api-token" | n8n-deploy apikey add --name my_serverKey
+```
+
+### Step 3: Start managing workflows
+```bash
+# List your workflows
 n8n-deploy list
 
-# Add workflow to management
-n8n-deploy add "workflow-id" "My Workflow" "workflows/my-workflow.json"
+# Pull from your n8n server
+N8N_SERVER_URL=http://localhost:5678 n8n-deploy pull workflow_name
 
-# Pull from n8n server
-n8n-deploy pull workflow-id
-
-# Push to n8n server
-n8n-deploy push workflow-id
-
-# Create backup
-n8n-deploy backup-workflows
-
-# Search workflows
-n8n-deploy search "email"
+# Create backups
+n8n-deploy backup-workflows --backup-dir ./backups
 ```
 
-## Directory Structure
+**That's it!** You're ready to manage workflows like a pro.
 
-n8n-deploy uses a dual-directory system for maximum flexibility:
+## ✨ Core Features
 
-```
-# App Base Directory (--app-dir or current directory)
-/app/base/
-├── n8n-deploy.db           # SQLite metadata database
-└── backups/                # Workflow backup archives
-    └── backup_20240924_123456.tar.gz
+### 🎯 Simple Workflow Management
+- **Manage workflows** with intuitive commands
+- **Search and filter** workflows by name, description, or tags
+- **Sync metadata** automatically from JSON files
+- **Beautiful, colorful output** that's also script-friendly
 
-# Flow Directory (N8N_FLOW_DIR or --flow-dir or same as base)
-/flow/directory/
-└── workflows/              # Your workflow JSON files
-    ├── main-workflow.json
-    └── subflow.json
-```
+### 🌐 n8n Server Integration
+- **Push/pull workflows** to/from any n8n server
+- **Official n8n REST API** - Uses only the official n8n public API endpoints
+- **API key storage** (locally, in plain text)
+- **SSL verification** with optional skip for dev environments
 
-## Core Commands
+### 💾 Backup & Restore
+- **Workflow backups** with SHA256 integrity verification
+- **Metadata preservation** - restore exactly what you backed up
+- **Selective restoration** - choose what to restore
+- **Backup verification** to ensure data integrity
 
-| Command | Description | Example |
-|---------|-------------|---------|
-| `list` | Show all workflows with status | `n8n-deploy list --format=table` |
-| `add` | Add workflow to management | `n8n-deploy add ID "Name" "file.json"` |
-| `pull` | Download from n8n server | `n8n-deploy pull workflow-id` |
-| `push` | Upload to n8n server | `n8n-deploy push workflow-id` |
-| `search` | Find workflows by content | `n8n-deploy search "webhook"` |
-| `backup-workflows` | Create tar.gz backup | `n8n-deploy backup-workflows` |
-| `restore-workflows` | Restore from backup | `n8n-deploy restore-workflows backup.tar.gz` |
-| `apikey add` | Store API key | `n8n-deploy apikey add server1 --key KEY` |
-| `db status` | Database statistics | `n8n-deploy db status` |
+### 🗄️ Local Database Management
+- **SQLite backend** - fast, reliable, and portable
+- **Schema versioning** with automatic migrations
+- **Database optimization** tools (compact)
+- **Full backup capabilities** backup data DB in plain text
 
-### Command Groups
+## 📚 Configuration (All Optional)
 
-**Workflow Management:**
-- `add`, `remove`, `list`, `search`, `stats`, `sync`
-
-**n8n Integration:**
-- `pull`, `push` (requires API key configuration)
-
-**Backup Operations:**
-- `backup-workflows`, `restore-workflows`, `verify-backup`, `list-backups`
-
-**Database Management:**
-- `db init`, `db status`, `db backup`, `db vacuum`, `db compact`
-
-**API Key Management:**
-- `apikey add`, `apikey list`, `apikey get`, `apikey delete`, `apikey test`
-
-## Database Schema
-
-n8n-deploy uses a 6-table SQLite schema for comprehensive workflow management:
-
-### Core Tables
-
-1. **workflows** - Main workflow metadata
-   - `id` (TEXT PRIMARY KEY), `name`, `type`, `description`
-   - `file_path`, `node_count`, `status`, `tags`
-   - `created_at`, `updated_at`, `last_synced`, `n8n_version_id`
-
-2. **api_keys** - Plain text API key storage
-   - `id`, `name`, `api_key`, `created_at`, `last_used`
-   - `expires_at`, `is_active`, `description`
-
-3. **configurations** - Workflow configuration snapshots
-   - `workflow_id`, `config_type`, `config_data`
-   - `created_at`, `is_active`
-
-### Schema Tables (Future Features)
-4. **versions** - Version tracking preparation
-5. **dependencies** - Workflow dependency mapping
-6. **schema_info** - Database versioning
-
-### Full-Text Search
-- **workflows_fts** - FTS5 virtual table for content search
-- Automatic triggers maintain search index consistency
-
-## Configuration Options
-
-### Environment Variables
+n8n-deploy works out of the box with smart defaults, but you can customize everything:
 
 ```bash
-# Workflow files directory (user's JSON files)
-N8N_FLOW_DIR=/path/to/workflow/files
+# Where to store n8n-deploy data (database, backups)
+export N8N_DEPLOY_APP_DIR="/path/to/n8n-deply-app/data"
 
-# Testing mode (prevents default workflow initialization)
-N8N_DEPLOY_TESTING=1
+# Where your workflow JSON file is located
+export N8N_FLOW_DIR="/path/to/your/workflows"
 
-# Future n8n server configuration
-N8N_API_URL=https://n8n.example.com
-N8N_API_KEY=default_api_key
+# Your n8n server URL (for push/pull operations)
+export N8N_SERVER_URL="http://localhost:5678"
+
+# Your n8n API key (fallback when no database API keys exist)
+export N8N_API_KEY="your-n8n-api-key"
 ```
 
-### CLI Options
+### Configuration Priority
+1. **Command-line flags** (highest priority)
+2. **Environment variables**
+3. **Smart defaults** (current directory, intelligent path resolution)
 
+### Use Custom Directories
 ```bash
-# Directory for app data (database, backups) - defaults to current directory
---app-dir /custom/app/location
+# Use custom directories
+n8n-deploy --app-dir /custom/app/path --flow-dir /custom/workflows list
 
-# Directory for workflow files - overrides N8N_FLOW_DIR
---flow-dir /custom/workflow/location
-
-# Disable emoji output for script parsing
---no-emoji
-
-# Show version information
---version
+# Or set environment variables
+export N8N_DEPLOY_APP_DIR="/team/shared/n8n-deploy"
+export N8N_FLOW_DIR="/team/shared/workflows"
+n8n-deploy list
 ```
 
-## Python API Usage
+## 🎮 Usage Examples
 
-n8n-deploy can be used as a Python library:
-
-```python
-from api.config import get_config
-from api.manager import WorkflowManager
-from api.n8n_deploy_db import n8n_deploy_DB
-
-# Initialize with custom configuration
-config = get_config(
-    base_folder="/app/data",
-    flow_folder="/workflow/files"
-)
-
-# Create manager instance
-manager = WorkflowManager(config=config)
-
-# List workflows
-workflows = manager.list_workflows()
-
-# Add workflow
-manager.add_workflow("wf-123", "My Workflow", "workflows/my.json")
-
-# Direct database access
-db = n8n_deploy_DB(config=config)
-workflow = db.get_workflow("wf-123")
-```
-
-## Development
-
-### Environment Setup
-
+### Daily Workflow Management
 ```bash
-# Using uv (recommended - faster dependency resolution)
-uv venv .venv && source .venv/bin/activate
-uv pip install -r requirements.txt
+# List all workflows with status
+n8n-deploy list
 
-# Traditional pip
-python -m venv .venv && source .venv/bin/activate
-pip install -e .[test,dev]
+# Search for specific workflows
+n8n-deploy search "googleEmail-collect"
+
+# Get detailed stats about a workflow
+n8n-deploy stats deAVBp391wvomsWY
+
+# Sync file changes to database
+n8n-deploy sync deAVBp391wvomsWY
 ```
 
-### Testing
-
+### Working with n8n Servers
 ```bash
-# Comprehensive test runner with verbose output
-python run_tests.py --unit                    # Unit tests only
-python run_tests.py --integration             # Integration tests only
-python run_tests.py --unit --coverage         # With coverage report
-python run_tests.py --quality                 # Code quality checks
-python run_tests.py --report                  # Full test report
-python run_tests.py --specific tests/unit/test_models.py  # Specific tests
+# List workflows on your server
+n8n-deploy --server-url http://localhost:5678 list-server
 
-# Direct pytest usage
-pytest tests/unit/ -v                         # Verbose unit tests
-pytest tests/integration/ -v                  # Verbose integration tests
+# Pull a workflow from server (see note below about finding Workflow ID)
+n8n-deploy pull deAVBp391wvomsWY
+
+# Push local changes to server
+n8n-deploy push deAVBp391wvomsWY
+
+# Override server URL for one command
+n8n-deploy --server-url http://staging.example.com list-server
 ```
 
-### Code Quality
+**💡 Finding Workflow ID:** The Workflow ID is the last part of your n8n workflow URL. For example, in `https://user-n8n-server.dev:5678/workflow/deAVBp391wvomsWY`, the Workflow ID is `deAVBp391wvomsWY`. You can also find the workflow ID in your n8n workflow settings or by using the n8n API to list workflows.
 
+**🔌 n8n API Integration:** n8n-deploy exclusively uses the official n8n public REST API for all server communications. This ensures compatibility with all n8n versions and maintains the security and reliability standards of the official n8n platform.
+
+### Backup Operations
 ```bash
-# Code formatting
-black api/
+# Create a complete backup
+n8n-deploy backup-workflows --backup-dir /safe/location
 
-# Type checking (zero errors in strict mode)
-mypy api/ --strict
-
-# Install type stubs for external dependencies
-pip install types-requests types-click
-```
-
-### Building Packages
-
-```bash
-# Build wheel and source distribution
-python -m build
-
-# Install built package
-pip install dist/*.whl
-
-# Verify installation
-n8n-deploy --version
-```
-
-## GitLab CI/CD Pipeline
-
-The project uses an efficient merge request pipeline with comprehensive validation:
-
-### Pipeline Stages
-
-**Quality Stage:**
-- `quality:mypy` - Strict type checking
-- `quality:black` - Code formatting validation
-- `quality:coverage` - Comprehensive test coverage report
-
-**Security Stage:**
-- `secret_detection` - Secret scanning
-- `sast` - Static Application Security Testing
-
-**Test Stage:**
-- `test:unit` - Unit tests with coverage
-- `test:integration` - Integration tests
-
-**Build Matrix Stage:**
-- `build:python-matrix` - Multi-version testing (Python 3.9-3.11)
-- `build:validation` - Package build validation
-
-**Build Stage:**
-- `build:production` - Final production validation
-
-### Developer Workflow
-
-```bash
-# Feature development - no CI triggered
-git push origin feature-branch
-
-# Create merge request - full pipeline runs
-# All quality, security, and test gates must pass
-
-# Post-merge to master - deployment builds
-# Automatic package creation and validation
-```
-
-## Advanced Usage
-
-### Backup Strategy
-
-```bash
-# Create workflow backup with metadata
-n8n-deploy backup-workflows --backup-dir /backups
-
-# List available backups with integrity status
-n8n-deploy list-backups
+# List all available backups
+n8n-deploy list-backups --backup-dir /safe/location
 
 # Verify backup integrity
-n8n-deploy verify-backup backup_20240924_123456.tar.gz
+n8n-deploy verify-backup /safe/location/backup.tar.gz
 
-# Restore from backup with confirmation
-n8n-deploy restore-workflows backup.tar.gz --force
-```
-
-### Multi-Environment Management
-
-```bash
-# Development environment
-n8n-deploy --app-dir ~/dev/n8n-deploy list
-
-# Production environment
-n8n-deploy --app-dir /opt/n8n-deploy --flow-dir /data/workflows list
-
-# Staging with environment variable
-export N8N_FLOW_DIR=/staging/workflows
-n8n-deploy list
+# Restore from backup
+n8n-deploy restore-workflows /safe/location/backup.tar.gz
 ```
 
 ### API Key Management
-
 ```bash
-# Add API key with expiration
-n8n-deploy apikey add prod_server --expires-days 90 --description "Production server key"
+# Add a new API key
+echo "jwt-token-here" | n8n-deploy apikey add --name production
 
-# List all keys with status
+# List all stored keys (keys hidden by default)
 n8n-deploy apikey list
 
-# Test key connectivity
-n8n-deploy apikey test prod_server
+# Test a key
+n8n-deploy apikey test production
 
-# Deactivate expired key
-n8n-deploy apikey delete old_key --confirm
+# Retrieve a key (use with caution)
+n8n-deploy apikey get production --show-key
 ```
 
-### Database Management
-
+### Script-Friendly Output
 ```bash
-# View database statistics
-n8n-deploy db status --format=json
+# Disable emojis for automation
+n8n-deploy --no-emoji list
+
+# JSON output for parsing
+n8n-deploy list --format json
+
+# Database status as JSON
+n8n-deploy db status --format json
+```
+
+## 🛠️ Advanced Usage
+
+### Multiple n8n Servers
+```bash
+# Store different API keys for different servers
+echo "prod-token" | n8n-deploy apikey add --name production
+echo "dev-token" | n8n-deploy apikey add --name development
+
+# Switch between servers easily
+n8n-deploy --server-url http://prod.example.com list-server
+n8n-deploy --server-url http://dev.example.com list-server
+```
+
+### Database Maintenance
+```bash
+# Check database status
+n8n-deploy db status
+
+# Optimize database storage
+n8n-deploy db compact
 
 # Create database backup
-n8n-deploy db backup /backups/db_backup.db
-
-# Optimize database performance
-n8n-deploy db vacuum
-n8n-deploy db compact
+n8n-deploy db backup /backup/path/database-backup.db
 ```
 
-## Troubleshooting
+### SQLite Database Browsing
 
-### Common Issues
+Want to explore your workflow data directly? Use these popular SQLite tools:
 
-**Database Initialization Fails:**
+**GUI Tools:**
+- **[DB Browser for SQLite](https://sqlitebrowser.org/)** - Cross-platform, user-friendly interface
+- **[SQLiteStudio](https://sqlitestudio.pl/)** - Feature-rich with advanced query capabilities
+
+**Command Line:**
+- **sqlite3** (built into most systems) - `sqlite3 ~/.local/share/n8n-deploy/n8n-deploy.db`
+- **[litecli](https://litecli.com/)** - Modern CLI with syntax highlighting
+
 ```bash
-# Check directory permissions
-ls -la $(pwd)
-# Initialize with specific app directory
-n8n-deploy --app-dir /writable/path db init
+# Quick database inspection
+sqlite3 ~/.local/share/n8n-deploy/n8n-deploy.db ".tables"
+sqlite3 ~/.local/share/n8n-deploy/n8n-deploy.db "SELECT name, status FROM workflows;"
 ```
 
-**Workflow Files Not Found:**
+## 🔧 Development & Contributing
+
+### Local Development Setup
 ```bash
-# Verify flow directory configuration
-echo $N8N_FLOW_DIR
-# Use explicit flow directory
-n8n-deploy --flow-dir /actual/workflow/path list
-```
-
-**API Key Connection Issues:**
-```bash
-# Test stored API key
-n8n-deploy apikey test your_key_name
-# Verify key format and server accessibility
-```
-
-### Performance Optimization
-
-```bash
-# Regular database maintenance
-n8n-deploy db vacuum      # Reclaim space
-n8n-deploy db compact     # Optimize structure
-
-# FTS index rebuild (if search is slow)
-# Handled automatically by triggers
-```
-
-## Migration Guide
-
-### From Version 1.x to 2.x
-
-n8n-deploy 2.0 introduces configuration system improvements:
-
-```bash
-# Old: Fixed project-relative paths
-# New: Flexible base and flow directories
-
-# Update workflow (no breaking changes to CLI interface)
-# Database schema automatically migrates
-# API keys remain in plain text format
-```
-
-### Environment Variable Changes
-
-```bash
-# New in 2.0: Flow directory configuration
-export N8N_FLOW_DIR=/your/workflow/files
-
-# Testing mode (existing)
-export N8N_DEPLOY_TESTING=1
-```
-
-## Contributing
-
-### Development Setup
-
-```bash
-# Clone repository
 git clone https://github.com/lehcode/n8n-deploy.git
 cd n8n-deploy
 
-# Setup development environment
-uv venv .venv && source .venv/bin/activate
-uv pip install -e .[test,dev]
+# Option 1: Using uv (faster)
+uv venv --python /usr/bin/python3 .venv
+source .venv/bin/activate
+uv pip install -r requirements.txt
 
-# Install pre-commit hooks
-pre-commit install
+# Option 2: Standard pip
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
 
-# Run full test suite
-python run_tests.py --report
+# Development installation
+pip install -e .
+
+# Run tests
+python run_tests.py --unit
+python run_tests.py --integration
 ```
 
-### Testing Guidelines
+### Project Structure
+```
+n8n-deploy/
+├── api/                    # Core application modules
+│   ├── cli/               # CLI command modules
+│   ├── database/          # Database operations
+│   └── workflow/          # Workflow management
+├── tests/                 # Comprehensive test suite
+│   ├── unit/              # Unit tests
+│   ├── integration/       # Integration tests
+│   └── e2e/               # End-to-end tests
+└── n8n-deploy            # Wrapper script (no installation)
+```
 
-- Use `N8N_DEPLOY_TESTING=1` environment variable in tests
-- Design tests for both user and CI environments
-- Use `/dev/null/invalid_path` patterns for reliable failure testing
-- Run tests with `--quiet` flag for automated environments
+## 💡 FAQ
 
-### Code Standards
+### Q: Is my data safe?
+**A:** Absolutely. n8n-deploy stores everything locally on your machine. No data is ever sent anywhere except to YOUR n8n server when YOU explicitly request it.
 
-- **Black formatting**: 88 character line length
-- **MyPy type checking**: Strict mode, zero errors
-- **Pydantic models**: Comprehensive data validation
-- **Click CLI**: Rich interface with --no-emoji compatibility
+### Q: Do I need to configure anything?
+**A:** No! n8n-deploy works out of the box. Configuration is only needed if you want to customize paths or work with remote n8n servers.
 
-## License
+### Q: Can I use this with multiple n8n servers?
+**A:** Yes! You can store multiple API keys and switch between servers using command-line flags or environment variables.
 
-MIT License - see [LICENSE](LICENSE) file for details.
+### Q: What happens to my workflow files?
+**A:** Your JSON files are never modified by n8n-deploy. The tool only reads them and stores minimal metadata in its own database. Your original files remain untouched.
 
-## Links
+### Q: Can I automate this in scripts?
+**A:** Absolutely! Use the `--no-emoji` flag and/or `--format json` options for script-friendly output. All commands are designed to work well in automation.
 
-- **Repository**: https://github.com/lehcode/n8n-deploy
-- **Issues**: https://github.com/lehcode/n8n-deploy/issues
-- **Documentation**: [ARCHITECTURE.md](ARCHITECTURE.md), [CLI-REFERENCE.md](CLI-REFERENCE.md)
-- **GitLab CI**: https://gitlab.pirouter.dev:8443/n8n/n8n-deploy
+## 📋 System Requirements
+
+- **Python 3.8+** (tested on 3.8-3.12)
+- **Operating System:** Linux, macOS, Windows
+- **Dependencies:** Minimal (click, rich, pydantic, requests)
+- **Storage:** SQLite database (no external database required)
+
+## 📄 License
+
+MIT License - see [LICENSE](LICENSE) for details.
+
+## 🔗 Links
+
+- **GitHub Repository:** https://github.com/lehcode/n8n-deploy
+- **PyPI Package:** https://pypi.org/project/n8n-deploy/
+- **Issue Tracker:** https://github.com/lehcode/n8n-deploy/issues
+- **Changelog:** [CHANGELOG.md](CHANGELOG.md)
 
 ---
 
-*n8n-deploy: Making remote workflow management simple and reliable.*
+**Happy workflow managing!** 🎭✨
+
+*n8n-deploy: Because your workflows deserve better management.*

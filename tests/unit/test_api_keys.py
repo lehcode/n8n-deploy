@@ -9,9 +9,10 @@ from unittest.mock import patch, Mock
 
 from assertpy import assert_that
 
-from api.api_keys import ApiKeyManager, ApiKey
+from api.api_keys import KeyApi, ApiKey
 
 
+# === API Key Model Tests ===
 class TestApiKey:
     """Test ApiKey dataclass functionality"""
 
@@ -21,13 +22,13 @@ class TestApiKey:
             (
                 "basic_creation",
                 {
-                    "id": "test_key_123",
+                    "id": 123,
                     "name": "test_key",
                     "plain_key": "plain_api_key_value",
                     "created_at": None,  # Will be set in test
                 },
                 {
-                    "id": "test_key_123",
+                    "id": 123,
                     "name": "test_key",
                     "plain_key": "plain_api_key_value",
                     "is_active": True,
@@ -39,7 +40,7 @@ class TestApiKey:
             (
                 "all_fields_creation",
                 {
-                    "id": "full_key_456",
+                    "id": 456,
                     "name": "full_test_key",
                     "plain_key": "full_plain_key_value",
                     "created_at": None,  # Will be set in test
@@ -49,7 +50,7 @@ class TestApiKey:
                     "description": "Full test API key",
                 },
                 {
-                    "id": "full_key_456",
+                    "id": 456,
                     "name": "full_test_key",
                     "is_active": False,
                     "description": "Full test API key",
@@ -59,46 +60,43 @@ class TestApiKey:
     )
     def test_api_key_creation_scenarios(self, scenario, key_data, expected_attrs):
         """Test creating API key with different field combinations"""
-        # Setup timestamps
         created_time = datetime.now(timezone.utc)
         key_data["created_at"] = created_time
 
-        # Handle special timestamp fields
         if key_data.get("last_used") == "offset_hours_1":
             key_data["last_used"] = created_time + timedelta(hours=1)
         if key_data.get("expires_at") == "offset_days_30":
             key_data["expires_at"] = created_time + timedelta(days=30)
 
-        # Create key
         key = ApiKey(**key_data)
 
-        # Verify expected attributes
         for attr_name, expected_value in expected_attrs.items():
             actual_value = getattr(key, attr_name)
             assert_that(actual_value).is_equal_to(expected_value)
 
-        # Scenario-specific checks
         if scenario == "all_fields_creation":
             assert_that(key.last_used).is_equal_to(key_data["last_used"])
             assert_that(key.expires_at).is_equal_to(key_data["expires_at"])
 
 
-class TestApiKeyManager:
-    """Test ApiKeyManager functionality"""
+# === API Key Manager Tests ===
+class TestKeyApi:
+    """Test KeyApi functionality"""
 
-    def test_manager_initialization_with_config(self, test_config):
+    def test_manager_initialization_with_config(self, test_config, test_db):
         """Test manager initialization with config"""
-        manager = ApiKeyManager(config=test_config)
+        manager = KeyApi(db=test_db, config=test_config)
         assert_that(manager.config).is_equal_to(test_config)
         assert_that(manager.db).is_not_none()
 
-    def test_manager_initialization_without_config(self):
+    def test_manager_initialization_without_config(self, test_db):
         """Test manager initialization without config"""
-        manager = ApiKeyManager()
+        manager = KeyApi(db=test_db)
         assert_that(manager.config).is_none()
         assert_that(manager.db).is_not_none()
 
 
+# === Add API Key Tests ===
 class TestAddApiKey:
     """Test API key addition functionality"""
 
@@ -135,23 +133,22 @@ class TestAddApiKey:
         key_id = test_api_key_manager.add_api_key(**kwargs)
         assert_that(key_id).is_not_none()
 
-        retrieved_key = test_api_key_manager.get_api_key(key_id)
+        retrieved_key = test_api_key_manager.get_api_key(name)
         assert_that(retrieved_key).is_equal_to(api_key)
 
 
+# === Get API Key Tests ===
 class TestGetApiKey:
     """Test API key retrieval functionality"""
 
     def test_get_api_key_existing(self, test_api_key_manager, test_api_key_data):
         """Test retrieving existing API key"""
-        # Add key first
         key_id = test_api_key_manager.add_api_key(
             name=test_api_key_data["name"],
             api_key=test_api_key_data["api_key"],
         )
 
-        # Retrieve key (returns key string)
-        retrieved_key = test_api_key_manager.get_api_key(key_id)
+        retrieved_key = test_api_key_manager.get_api_key(test_api_key_data["name"])
 
         assert_that(retrieved_key).is_not_none()
         assert_that(retrieved_key).is_instance_of(str)
@@ -159,47 +156,41 @@ class TestGetApiKey:
 
     def test_get_api_key_nonexistent(self, test_api_key_manager):
         """Test retrieving non-existent API key returns None"""
-        retrieved_key = test_api_key_manager.get_api_key("nonexistent_key_id")
+        retrieved_key = test_api_key_manager.get_api_key("nonexistent_key_name")
         assert_that(retrieved_key).is_none()
 
 
+# === API Key Lifecycle Tests ===
 class TestApiKeyLifecycle:
     """Test API key lifecycle management"""
 
     def test_deactivate_api_key(self, test_api_key_manager, test_api_key_data):
         """Test deactivating an API key"""
-        # Add key
         key_id = test_api_key_manager.add_api_key(
             name=test_api_key_data["name"],
             api_key=test_api_key_data["api_key"],
         )
 
-        # Verify key is accessible
-        key = test_api_key_manager.get_api_key(key_id)
+        key = test_api_key_manager.get_api_key(test_api_key_data["name"])
         assert_that(key).is_not_none()
 
-        # Deactivate key
-        result = test_api_key_manager.deactivate_api_key(key_id)
+        # Deactivate key by name
+        result = test_api_key_manager.deactivate_api_key(test_api_key_data["name"])
         assert_that(result).is_true()
 
-        # Verify key is no longer accessible (deactivated keys return None)
-        key = test_api_key_manager.get_api_key(key_id)
+        key = test_api_key_manager.get_api_key(test_api_key_data["name"])
         assert_that(key).is_none()
 
     def test_delete_api_key(self, test_api_key_manager, test_api_key_data):
         """Test deleting an API key"""
-        # Add key
         key_id = test_api_key_manager.add_api_key(
             name=test_api_key_data["name"],
             api_key=test_api_key_data["api_key"],
         )
 
-        # Verify key exists
-        assert_that(test_api_key_manager.get_api_key(key_id)).is_not_none()
+        assert_that(test_api_key_manager.get_api_key(test_api_key_data["name"])).is_not_none()
 
-        # Delete key (requires confirm=True)
-        result = test_api_key_manager.delete_api_key(key_id, confirm=True)
+        result = test_api_key_manager.delete_api_key(test_api_key_data["name"], confirm=True)
         assert_that(result).is_true()
 
-        # Verify key is deleted
-        assert_that(test_api_key_manager.get_api_key(key_id)).is_none()
+        assert_that(test_api_key_manager.get_api_key(test_api_key_data["name"])).is_none()

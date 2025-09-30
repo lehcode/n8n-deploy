@@ -41,13 +41,13 @@ cache:
   before_script:
     # Configure APT proxy for faster package installation
     - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy || true
-    - apt-get update && apt-get install -y git
-    - python -m pip install --upgrade pip
-    - pip install uv
+    - apt-get -q update && apt-get install -q -y git
+    - python -m pip install --quiet --upgrade pip
+    - pip install --quiet uv
     - uv venv --python python3 .venv
     - source .venv/bin/activate
-    - uv pip install -e ".[test,dev]"
-    - uv pip install types-requests types-click
+    - uv pip install --quiet -e ".[test,dev]"
+    - uv pip install --quiet types-requests types-click
 
 # Quality stage - Type checking
 quality:mypy:
@@ -137,14 +137,14 @@ build:python-matrix:
   before_script:
     # Configure APT proxy for faster package installation
     - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy || true
-    - apt-get update && apt-get install -y git
-    - python -m pip install --upgrade pip
-    - pip install uv
+    - apt-get -q update && apt-get -q install -y git
+    - python -m pip install --quiet --upgrade pip
+    - pip install --quiet uv
   script:
     - uv venv --python python3 .venv
     - source .venv/bin/activate
-    - uv pip install -e ".[test,dev]"
-    - uv pip install build
+    - uv pip install --quiet -e ".[test,dev]"
+    - uv pip install --quiet build
     - echo "🔧 Building package for Python ${PYTHON_VERSION}..."
     - python -m build --wheel --sdist
     - pip install dist/*.whl
