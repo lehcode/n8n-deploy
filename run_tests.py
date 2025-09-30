@@ -14,9 +14,7 @@ from pathlib import Path
 def run_command(cmd, cwd=None):
     """Run a command and return the result"""
     try:
-        result = subprocess.run(
-            cmd, shell=True, cwd=cwd, capture_output=True, text=True, check=False
-        )
+        result = subprocess.run(cmd, shell=True, cwd=cwd, capture_output=True, text=True, check=False)
         return result.returncode, result.stdout, result.stderr
     except Exception as e:
         return 1, "", str(e)
@@ -95,14 +93,15 @@ def run_unit_tests(quiet=False, coverage=False):
 
 
 def run_integration_tests(quiet=False):
-    """Run integration tests"""
+    """Run integration tests (excluding E2E manual tests)"""
     print("🔗 Running integration tests...")
 
     # Set environment variable for integration tests
     env = os.environ.copy()
     env["N8N_DEPLOY_TESTING"] = "1"
 
-    cmd = "N8N_DEPLOY_TESTING=1 python -m pytest tests/integration/"
+    # Exclude E2E manual tests from regular integration tests
+    cmd = "N8N_DEPLOY_TESTING=1 python -m pytest tests/integration/ --ignore=tests/integration/test_e2e_manual_cli.py --ignore=tests/integration/test_e2e_manual_database.py --ignore=tests/integration/test_e2e_manual_apikeys.py --ignore=tests/integration/test_e2e_manual_workflows.py --ignore=tests/integration/test_e2e_manual_server.py"
     if quiet:
         cmd += " -q"  # Quiet mode
     # Default output from pyproject.toml (-v)
@@ -110,9 +109,7 @@ def run_integration_tests(quiet=False):
     # Use real-time output unless quiet mode
     if quiet:
         try:
-            result = subprocess.run(
-                cmd, shell=True, capture_output=True, text=True, check=False, env=env
-            )
+            result = subprocess.run(cmd, shell=True, capture_output=True, text=True, check=False, env=env)
             code, stdout, stderr = result.returncode, result.stdout, result.stderr
         except Exception as e:
             code, stdout, stderr = 1, "", str(e)
@@ -124,6 +121,47 @@ def run_integration_tests(quiet=False):
         print("✅ Integration tests passed")
     else:
         print("❌ Integration tests failed")
+        if quiet and stdout:
+            # Show failure summary in quiet mode
+            lines = stdout.split("\n")
+            for line in lines:
+                if "FAILED" in line or "ERROR" in line or "short test summary" in line:
+                    print(line)
+        if quiet and stderr:
+            print(f"Error: {stderr}")
+
+    return code == 0
+
+
+def run_e2e_tests(quiet=False):
+    """Run End-to-End manual tests"""
+    print("🎭 Running E2E manual tests...")
+
+    # Set environment variable for E2E tests
+    env = os.environ.copy()
+    env["N8N_DEPLOY_TESTING"] = "1"
+
+    # Run only E2E manual tests
+    cmd = "N8N_DEPLOY_TESTING=1 python -m pytest tests/integration/test_e2e_manual_*.py"
+    if quiet:
+        cmd += " -q"  # Quiet mode
+    # Default output from pyproject.toml (-v)
+
+    # Use real-time output unless quiet mode
+    if quiet:
+        try:
+            result = subprocess.run(cmd, shell=True, capture_output=True, text=True, check=False, env=env)
+            code, stdout, stderr = result.returncode, result.stdout, result.stderr
+        except Exception as e:
+            code, stdout, stderr = 1, "", str(e)
+    else:
+        code = subprocess.run(cmd, shell=True, env=env).returncode
+        stdout = stderr = ""
+
+    if code == 0:
+        print("✅ E2E manual tests passed")
+    else:
+        print("❌ E2E manual tests failed")
         if quiet and stdout:
             # Show failure summary in quiet mode
             lines = stdout.split("\n")
@@ -167,9 +205,12 @@ def run_specific_test(test_path, quiet=False):
     return code == 0
 
 
-def run_all_tests(quiet=False, coverage=False):
+def run_all_tests(quiet=False, coverage=False, include_e2e=False):
     """Run all tests"""
-    print("🚀 Running all tests...")
+    if include_e2e:
+        print("🚀 Running all tests (including E2E)...")
+    else:
+        print("🚀 Running all tests (unit + integration)...")
 
     # Run unit tests first
     print("\n📋 Running unit tests...")
@@ -179,17 +220,28 @@ def run_all_tests(quiet=False, coverage=False):
     print("\n📋 Running integration tests...")
     integration_success = run_integration_tests(quiet)
 
+    # Run E2E tests if requested
+    e2e_success = True
+    if include_e2e:
+        print("\n📋 Running E2E manual tests...")
+        e2e_success = run_e2e_tests(quiet)
+
     # Overall result
-    success = unit_success and integration_success
+    success = unit_success and integration_success and e2e_success
 
     if success:
-        print("✅ All tests passed")
+        if include_e2e:
+            print("✅ All tests (unit + integration + E2E) passed")
+        else:
+            print("✅ All tests passed")
     else:
         print("❌ Some tests failed")
         if not unit_success:
             print("   - Unit tests had failures")
         if not integration_success:
             print("   - Integration tests had failures")
+        if include_e2e and not e2e_success:
+            print("   - E2E manual tests had failures")
 
     return success
 
@@ -252,14 +304,26 @@ def check_code_quality():
     return success
 
 
-def generate_test_report():
+def generate_test_report(include_e2e=False):
     """Generate comprehensive test report"""
-    print("📊 Generating comprehensive test report...")
+    if include_e2e:
+        print("📊 Generating comprehensive test report (including E2E)...")
+        # Run all tests including E2E with coverage and JUnit XML output
+        cmd = "N8N_DEPLOY_TESTING=1 python -m pytest tests/ --cov=api --cov-report=html --cov-report=xml --cov-report=term --junit-xml=test-results.xml -v"
+    else:
+        print("📊 Generating comprehensive test report...")
+        # Run tests excluding E2E manual tests
+        cmd = "N8N_DEPLOY_TESTING=1 python -m pytest tests/ --ignore=tests/integration/test_e2e_manual_cli.py --ignore=tests/integration/test_e2e_manual_database.py --ignore=tests/integration/test_e2e_manual_apikeys.py --ignore=tests/integration/test_e2e_manual_workflows.py --ignore=tests/integration/test_e2e_manual_server.py --cov=api --cov-report=html --cov-report=xml --cov-report=term --junit-xml=test-results.xml -v"
 
-    # Run tests with coverage and JUnit XML output
-    cmd = "python -m pytest tests/ --cov=api --cov-report=html --cov-report=xml --cov-report=term --junit-xml=test-results.xml -v"
+    # Set environment variable
+    env = os.environ.copy()
+    env["N8N_DEPLOY_TESTING"] = "1"
 
-    code, stdout, stderr = run_command(cmd)
+    try:
+        result = subprocess.run(cmd, shell=True, capture_output=True, text=True, check=False, env=env)
+        code, stdout, stderr = result.returncode, result.stdout, result.stderr
+    except Exception as e:
+        code, stdout, stderr = 1, "", str(e)
 
     if code == 0:
         print("✅ Test report generated successfully")
@@ -267,6 +331,8 @@ def generate_test_report():
         print("📄 JUnit XML: test-results.xml")
     else:
         print("❌ Failed to generate test report")
+        if stderr:
+            print(f"Error: {stderr}")
 
     return code == 0
 
@@ -279,46 +345,61 @@ def main():
         epilog="""
 Examples:
   python run_tests.py --unit                   # Run unit tests only
-  python run_tests.py --integration            # Run integration tests only
+  python run_tests.py --integration            # Run integration tests only (excluding E2E)
+  python run_tests.py --e2e                    # Run E2E manual tests only
   python run_tests.py --fast                   # Run fast tests only
-  python run_tests.py --all                    # Run all tests (unit + integration)
+  python run_tests.py --all                    # Run all tests (unit + integration, excluding E2E)
+  python run_tests.py --all-e2e                # Run all tests including E2E manual tests
   python run_tests.py --unit --coverage        # Run unit tests with coverage
   python run_tests.py --quality                # Run code quality checks
   python run_tests.py --specific tests/unit/test_models.py  # Run specific test
-  python run_tests.py --report                 # Generate comprehensive report
+  python run_tests.py --report                 # Generate comprehensive report (excluding E2E)
+  python run_tests.py --report-e2e             # Generate comprehensive report including E2E
 
-Note: You must specify a test type (--unit, --integration, --fast, --all, --report, --quality, or --specific)
+Note: You must specify a test type (--unit, --integration, --e2e, --fast, --all, --all-e2e, --report, --report-e2e, --quality, or --specific)
         """,
     )
 
     parser.add_argument("--unit", action="store_true", help="Run unit tests only")
 
     parser.add_argument(
-        "--integration", action="store_true", help="Run integration tests only"
+        "--integration",
+        action="store_true",
+        help="Run integration tests only (excluding E2E)",
+    )
+
+    parser.add_argument("--e2e", action="store_true", help="Run E2E manual tests only")
+
+    parser.add_argument("--fast", action="store_true", help="Run fast tests only (excluding slow tests)")
+
+    parser.add_argument(
+        "--all",
+        action="store_true",
+        help="Run all tests (unit + integration, excluding E2E)",
     )
 
     parser.add_argument(
-        "--fast", action="store_true", help="Run fast tests only (excluding slow tests)"
+        "--all-e2e",
+        action="store_true",
+        help="Run all tests including E2E manual tests",
+    )
+
+    parser.add_argument("--coverage", action="store_true", help="Run tests with coverage reporting")
+
+    parser.add_argument("--quality", action="store_true", help="Run code quality checks (black, mypy)")
+
+    parser.add_argument("--specific", type=str, help="Run specific test file or function")
+
+    parser.add_argument(
+        "--report",
+        action="store_true",
+        help="Generate comprehensive test report (excluding E2E)",
     )
 
     parser.add_argument(
-        "--all", action="store_true", help="Run all tests (unit + integration)"
-    )
-
-    parser.add_argument(
-        "--coverage", action="store_true", help="Run tests with coverage reporting"
-    )
-
-    parser.add_argument(
-        "--quality", action="store_true", help="Run code quality checks (black, mypy)"
-    )
-
-    parser.add_argument(
-        "--specific", type=str, help="Run specific test file or function"
-    )
-
-    parser.add_argument(
-        "--report", action="store_true", help="Generate comprehensive test report"
+        "--report-e2e",
+        action="store_true",
+        help="Generate comprehensive test report including E2E",
     )
 
     parser.add_argument(
@@ -327,9 +408,7 @@ Note: You must specify a test type (--unit, --integration, --fast, --all, --repo
         action="store_true",
         help="Quiet output (suppress default output)",
     )
-    parser.add_argument(
-        "--no-deps-check", action="store_true", help="Skip dependency check"
-    )
+    parser.add_argument("--no-deps-check", action="store_true", help="Skip dependency check")
 
     args = parser.parse_args()
 
@@ -361,24 +440,36 @@ Note: You must specify a test type (--unit, --integration, --fast, --all, --repo
     elif args.integration:
         success &= run_integration_tests(args.quiet)
 
+    elif args.e2e:
+        success &= run_e2e_tests(args.quiet)
+
     elif args.fast:
         success &= run_fast_tests(args.quiet)
 
     elif args.all:
-        success &= run_all_tests(args.quiet, args.coverage)
+        success &= run_all_tests(args.quiet, args.coverage, include_e2e=False)
+
+    elif args.all_e2e:
+        success &= run_all_tests(args.quiet, args.coverage, include_e2e=True)
 
     elif args.report:
-        success &= generate_test_report()
+        success &= generate_test_report(include_e2e=False)
+
+    elif args.report_e2e:
+        success &= generate_test_report(include_e2e=True)
 
     elif not args.quality and not args.specific:
         # No test type specified - show help and exit
         print("❌ No test type specified!")
         print("📋 Available options:")
         print("  --unit         Run unit tests only")
-        print("  --integration  Run integration tests only")
+        print("  --integration  Run integration tests only (excluding E2E)")
+        print("  --e2e          Run E2E manual tests only")
         print("  --fast         Run fast tests only")
-        print("  --all          Run all tests (unit + integration)")
-        print("  --report       Generate comprehensive test report")
+        print("  --all          Run all tests (unit + integration, excluding E2E)")
+        print("  --all-e2e      Run all tests including E2E manual tests")
+        print("  --report       Generate comprehensive test report (excluding E2E)")
+        print("  --report-e2e   Generate comprehensive test report including E2E")
         print("  --quality      Run code quality checks")
         print("  --specific     Run specific test file/function")
         print("\n💡 Example: python run_tests.py --unit")

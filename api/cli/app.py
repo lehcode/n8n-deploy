@@ -1,0 +1,130 @@
+#!/usr/bin/env python3
+"""
+Main CLI entry point for n8n-deploy
+
+Handles CLI initialization, version/help commands, and basic CLI infrastructure.
+"""
+
+from typing import Any, List
+
+import click
+from rich.console import Console
+
+console = Console()
+
+
+class CustomGroup(click.Group):
+    """Custom Click Group that formats usage as 'COMMAND [OPTIONS]...' instead of '[OPTIONS] COMMAND [ARGS]...'"""
+
+    def collect_usage_pieces(self, ctx: click.Context) -> List[str]:
+        """Override to collect custom usage pieces"""
+        # Get the original pieces first for the program name
+        original_pieces = super().collect_usage_pieces(ctx)
+        rv = []
+        # Keep the program name from the original
+        if original_pieces:
+            rv.append(original_pieces[0])
+        # Add just the command part - we'll handle OPTIONS separately
+        rv.append("COMMAND")
+        return rv
+
+    def format_usage(self, ctx: click.Context, formatter: click.HelpFormatter) -> None:
+        """Override format_usage to completely control the output"""
+        # Build the complete usage string we want
+        usage_line = "n8n-deploy|./n8n-deploy COMMAND [OPTIONS]..."
+
+        # Write it directly
+        formatter.write(f"Usage: {usage_line}\n\n")
+
+    def parse_args(self, ctx: click.Context, args: List[str]) -> List[str]:
+        """Override to handle version/help mutual exclusion and no-args behavior"""
+        # Check for both --help and --version
+        has_help = any(arg in ["--help", "-h"] for arg in args)
+        has_version = "--version" in args
+
+        if has_help and has_version:
+            # Silently exit when both are used
+            ctx.exit(0)
+
+        return super().parse_args(ctx, args)
+
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:
+        """Override __call__ to handle no-args case with exit code 0"""
+        import sys
+
+        try:
+            return super().__call__(*args, **kwargs)
+        except click.exceptions.NoArgsIsHelpError as e:
+            # When no arguments are provided, Click raises NoArgsIsHelpError
+            # We want to show help and exit with code 0 instead of the default behavior
+            print(str(e))
+            sys.exit(0)
+
+
+def handle_version_help(ctx: click.Context, _param: click.Parameter, value: Any) -> None:
+    """Handle version/help mutual exclusion - silently ignore when both used"""
+    if not value or ctx.resilient_parsing:
+        return
+
+    # Check if both version and help are requested
+    import sys
+
+    args = sys.argv[1:]
+    has_help = any(arg in ["--help", "-h"] for arg in args)
+    has_version = "--version" in args
+
+    if has_help and has_version:
+        # Silently ignore when both are used - exit with no output
+        ctx.exit(0)
+
+    # Show version only if help is not present
+    click.echo("n8n-deploy, version 2.0.0")
+    ctx.exit()
+
+
+@click.group(cls=CustomGroup, context_settings={"help_option_names": ["-h", "--help"]}, no_args_is_help=True)
+@click.option(
+    "--version", is_flag=True, expose_value=False, is_eager=True, callback=handle_version_help, help="Show version and exit"
+)
+def cli() -> None:
+    """🎭 n8n-deploy - a simple N8N Workflow Manager
+
+    Simple n8n workflow deployment tool with SQLite metadata store.
+
+    \\b
+    Installation Methods:
+      n8n-deploy     - Installed globally via pip (recommended)
+      ./n8n-deploy   - Development wrapper script (no installation)
+
+    Use 'n8n-deploy COMMAND --help' for detailed command options.
+    """
+    pass
+
+
+# Register command groups
+def register_commands() -> None:
+    """Register all command groups with the main CLI"""
+    from .apikey import apikey
+    from .db import db
+    from .wf import wf
+
+    # Register command groups
+    cli.add_command(wf)
+    cli.add_command(db)
+    cli.add_command(apikey)
+
+
+# Auto-register commands when module is imported
+register_commands()
+
+
+# This will be the main CLI app that other modules will extend
+def get_cli_app() -> click.Group:
+    """Get the main CLI application with all commands registered"""
+    register_commands()
+    return cli
+
+
+if __name__ == "__main__":
+    register_commands()
+    cli()

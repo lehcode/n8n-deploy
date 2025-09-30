@@ -114,3 +114,6 @@ secrets.yaml
 *token*.txt
 
 test-results.xml
+*test_workflow*.json
+test-env
+tests/sequence.txt

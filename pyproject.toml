@@ -7,12 +7,12 @@ name = "n8n-deploy"
 version = "2.0.0"
 description = "n8n-deploy - a simple N8N Workflow Manager with SQLite metadata store"
 readme = "README.md"
-license = {text = "MIT"}
+license = { text = "MIT" }
 authors = [
-    {name = "Lehcode", email = "53556648+lehcode@users.noreply.github.com"}
+    { name = "Lehcode", email = "53556648+lehcode@users.noreply.github.com" },
 ]
 maintainers = [
-    {name = "Lehcode", email = "53556648+lehcode@users.noreply.github.com"}
+    { name = "Lehcode", email = "53556648+lehcode@users.noreply.github.com" },
 ]
 keywords = ["n8n", "workflow", "automation", "cli", "sqlite", "deployment"]
 classifiers = [
@@ -67,8 +67,6 @@ Repository = "https://github.com/lehcode/n8n-deploy.git"
 Changelog = "https://github.com/lehcode/n8n-deploy/releases"
 
 [project.scripts]
-# Legacy entry point maintained for backward compatibility
-# n8n-deploy = "api.cli:main"
 n8n-deploy = "api.cli:main"
 
 [tool.setuptools]
@@ -80,8 +78,8 @@ api = ["*.json", "*.sql"]
 "*" = ["n8n-deploy"]
 
 [tool.black]
-line-length = 88
-target-version = ['py38']
+line-length = 127
+target-version = ['py39']
 include = '\.pyi?$'
 extend-exclude = '''
 /(
@@ -152,3 +150,8 @@ exclude_lines = [
     "class .*\\bProtocol\\):",
     "@(abc\\.)?abstractmethod",
 ]
+
+[tool.flake8]
+max-line-length = 120
+extend-ignore = "E203"
+ignore = "E501"

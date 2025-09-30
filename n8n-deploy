@@ -22,4 +22,4 @@ else
 fi
 
 # Run the CLI with all arguments
-python api/cli.py "$@"
+python -m api.cli "$@"

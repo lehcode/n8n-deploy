@@ -191,14 +191,14 @@ fi
         try:
             # Try importing the main module
             sys.path.insert(0, str(self.project_root))
-            from api import WorkflowManager
-            from api.n8n_deploy_db import n8n_deploy_DB
+            from api import WorkflowApi
+            from api.db import DBApi
 
             # Test basic functionality
-            db = n8n_deploy_DB()
+            db = DBApi()
             stats = db.get_database_stats()
 
-            manager = WorkflowManager()
+            manager = WorkflowApi()
             workflows = manager.list_workflows()
 
             print(f"  ✅ n8n_deploy_ database: {len(stats.tables)} tables")
