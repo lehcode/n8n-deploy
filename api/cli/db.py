@@ -35,12 +35,12 @@ def db() -> None:
 @db.command()
 @click.option("--app-dir", type=click.Path(), help="Application directory for database and backups")
 @click.option("--no-emoji", is_flag=True, help="Disable emoji output for automation/scripting")
-@click.option("--force", is_flag=True, help="Use existing database without prompting")
-def init(app_dir: Optional[str], no_emoji: bool, force: bool) -> None:
-    """Initialize n8n-deploy database
+@click.option("--existing", is_flag=True, help="Accept existing database without prompting (skip interactive menu)")
+def init(app_dir: Optional[str], no_emoji: bool, existing: bool) -> None:
+    """🎬 Initialize n8n-deploy database
 
     Create the SQLite database with the required schema.
-    Will prompt if database already exists.
+    Will prompt if database already exists unless --existing is used.
     """
     # Database init only needs base folder, not workflow directories
     from ..config import AppConfig
@@ -53,8 +53,8 @@ def init(app_dir: Optional[str], no_emoji: bool, force: bool) -> None:
     if db_path.exists():
         import sys
 
-        # If force flag is set or running in non-interactive mode, use existing database
-        if force or not sys.stdin.isatty():
+        # If existing flag is set or running in non-interactive mode, use existing database
+        if existing or not sys.stdin.isatty():
             if no_emoji:
                 console.print(f"Database already exists: {db_path}")
                 console.print("Using existing database")
@@ -144,8 +144,9 @@ def init(app_dir: Optional[str], no_emoji: bool, force: bool) -> None:
     default="table",
     help="Output format",
 )
-def status(app_dir: Optional[str], format: str) -> None:
-    """Show database status and statistics
+@click.option("--no-emoji", is_flag=True, help="Disable emoji output for automation/scripting")
+def status(app_dir: Optional[str], format: str, no_emoji: bool) -> None:
+    """📊 Show database status and statistics
 
     Display database path, size, schema version, and record counts.
     Use --format json for machine-readable output.
@@ -184,7 +185,7 @@ def status(app_dir: Optional[str], format: str) -> None:
 @click.option("--app-dir", type=click.Path(), help="Application directory for database and backups")
 @click.option("--no-emoji", is_flag=True, help="Disable emoji output for automation/scripting")
 def compact(app_dir: Optional[str], no_emoji: bool) -> None:
-    """Compact database to optimize storage"""
+    """🗜️ Compact database to optimize storage"""
     config = get_config(base_folder=app_dir)
     db = DBApi(config=config)
 
@@ -209,7 +210,7 @@ def backup(
     backup_path: Optional[str],
     app_dir: Optional[str],
 ) -> None:
-    """Create database backup"""
+    """💾 Create database backup"""
     config = get_config(base_folder=app_dir)
 
     if not backup_path:

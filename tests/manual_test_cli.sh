@@ -475,8 +475,8 @@ test_backup_operations() {
         # Verify backup integrity
         run_test "Verify backup integrity" "$CLI_COMMAND wf verify-backup '$backup_file' --app-dir $app_dir --flow-dir $flow_dir --no-emoji" 0 "Verify backup file integrity"
 
-        # Test restore (with force to skip confirmation)
-        run_test "Restore workflows" "$CLI_COMMAND wf restore '$backup_file' --app-dir $app_dir --flow-dir $flow_dir --force" 0 "Restore workflows from backup"
+        # Test restore
+        run_test "Restore workflows" "$CLI_COMMAND wf restore '$backup_file' --app-dir $app_dir --flow-dir $flow_dir" 0 "Restore workflows from backup"
     else
         log_error "No backup file found to test verification and restore"
         ((FAILED_TESTS += 2))
