@@ -56,6 +56,7 @@ test = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
     "pytest-mock>=3.10.0",
+    "pytest-order>=1.0.0",
     "assertpy>=1.1",
 ]
 
@@ -112,8 +113,27 @@ strict_equality = true
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "-ra -v --strict-markers --tb=short"
-testpaths = ["tests"]
+addopts = "-ra -v -x --strict-markers --tb=short"
+testpaths = [
+    # Unit tests first (fast, foundational)
+    "tests/unit/test_models.py",
+    "tests/unit/test_config.py",
+    "tests/unit/test_api_keys.py",
+    "tests/unit/test_database_search.py",
+    "tests/unit/test_manager.py",
+    "tests/unit/test_cli.py",
+    "tests/unit/cli",
+    # E2E tests (full system)
+    "tests/integration/test_e2e_database.py",
+    "tests/integration/test_e2e_cli.py",
+    "tests/integration/test_e2e_apikeys.py",
+    "tests/integration/test_e2e_workflows.py",
+    "tests/integration/test_e2e_server.py",
+    "tests/integration/test_end_to_end_scenarios.py",
+    "tests/integration/test_discovered_issues.py",
+    # Utility tests
+    "tests/test_utils.py",
+]
 python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
