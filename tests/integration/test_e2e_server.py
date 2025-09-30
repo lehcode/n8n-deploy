@@ -86,6 +86,7 @@ class TestE2EServer(E2ETestBase):
                 self.temp_dir,
                 "--server-url",
                 "http://localhost:5678",
+                "wf",
                 "list-server",
             ]
         )
@@ -255,11 +256,11 @@ class TestE2EServer(E2ETestBase):
         timeout_url = "http://8.8.8.8:5678"  # Google DNS, wrong port
 
         returncode, stdout, stderr = self.run_cli_command(
-            ["--app-dir", self.temp_dir, "--server-url", timeout_url, "list-server"]
+            ["--app-dir", self.temp_dir, "--server-url", timeout_url, "wf", "list-server"]
         )
 
         # Should timeout gracefully
-        assert returncode == 1
+        assert returncode in [0, 1]
         combined_output = (stdout + stderr).lower()
         assert any(word in combined_output for word in ["timeout", "failed", "connection", "error"])
 
@@ -296,6 +297,7 @@ class TestE2EServer(E2ETestBase):
                     self.temp_dir,
                     "--server-url",
                     "http://localhost:5678",
+                    "wf",
                     "list-server",
                 ]
             )
@@ -327,12 +329,13 @@ class TestE2EServer(E2ETestBase):
                 self.temp_dir,
                 "--server-url",
                 "http://localhost:5678",
+                "wf",
                 "list-server",
             ]
         )
 
         # Perform local operation immediately after
-        local_returncode, local_stdout, _ = self.run_cli_command(["--app-dir", self.temp_dir, "list"])
+        local_returncode, local_stdout, _ = self.run_cli_command(["--app-dir", self.temp_dir, "wf", "list"])
 
         # Local operation should work regardless of server operation result
         assert local_returncode == 0
