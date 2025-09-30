@@ -34,14 +34,18 @@ def db() -> None:
 
 @db.command()
 @click.option("--app-dir", type=click.Path(), help="Application directory for database and backups")
+@click.option("--format", type=click.Choice(["table", "json"]), default="table", help="Output format")
 @click.option("--no-emoji", is_flag=True, help="Disable emoji output for automation/scripting")
 @click.option("--existing", is_flag=True, help="Accept existing database without prompting (skip interactive menu)")
-def init(app_dir: Optional[str], no_emoji: bool, existing: bool) -> None:
+def init(app_dir: Optional[str], format: str, no_emoji: bool, existing: bool) -> None:
     """🎬 Initialize n8n-deploy database
 
     Create the SQLite database with the required schema.
     Will prompt if database already exists unless --existing is used.
     """
+    # JSON format implies no emoji
+    if format == "json":
+        no_emoji = True
     # Database init only needs base folder, not workflow directories
     from ..config import AppConfig
 
@@ -55,7 +59,21 @@ def init(app_dir: Optional[str], no_emoji: bool, existing: bool) -> None:
 
         # If existing flag is set or running in non-interactive mode, use existing database
         if existing or not sys.stdin.isatty():
-            if no_emoji:
+            import os
+
+            flow_dir = os.environ.get("N8N_FLOW_DIR")
+
+            if format == "json":
+                result = {
+                    "success": True,
+                    "database_path": str(db_path),
+                    "message": "Using existing database",
+                    "already_exists": True,
+                    "flow_dir_configured": bool(flow_dir),
+                    "flow_dir": flow_dir if flow_dir else None,
+                }
+                console.print(json.dumps(result, indent=2))
+            elif no_emoji:
                 console.print(f"Database already exists: {db_path}")
                 console.print("Using existing database")
             else:
@@ -114,26 +132,40 @@ def init(app_dir: Optional[str], no_emoji: bool, existing: bool) -> None:
     # Initialize database
     db_api = DBApi(config=config)
     db_api.schema_manager.initialize_database()
-    if no_emoji:
-        console.print("Database initialized")
-    else:
-        console.print("✅ Database initialized")
 
-    # Issue helpful warnings for unspecified directories
+    # Check flow directory configuration
     import os
 
     flow_dir = os.environ.get("N8N_FLOW_DIR")
-    if not flow_dir:
+
+    # Output based on format
+    if format == "json":
+        result = {
+            "success": True,
+            "database_path": str(db_path),
+            "message": "Database initialized",
+            "flow_dir_configured": bool(flow_dir),
+            "flow_dir": flow_dir if flow_dir else None,
+        }
+        console.print(json.dumps(result, indent=2))
+    else:
         if no_emoji:
-            console.print()
-            console.print("NOTE: Workflow directory not configured.")
-            console.print("Set N8N_FLOW_DIR environment variable or use --flow-dir option")
-            console.print("for workflow operations (add, list, etc.)")
+            console.print("Database initialized")
         else:
-            console.print()
-            console.print("📁 NOTE: Workflow directory not configured.")
-            console.print("Set N8N_FLOW_DIR environment variable or use --flow-dir option")
-            console.print("for workflow operations (add, list, etc.)")
+            console.print("✅ Database initialized")
+
+        # Issue helpful warnings for unspecified directories
+        if not flow_dir:
+            if no_emoji:
+                console.print()
+                console.print("NOTE: Workflow directory not configured.")
+                console.print("Set N8N_FLOW_DIR environment variable or use --flow-dir option")
+                console.print("for workflow operations (add, list, etc.)")
+            else:
+                console.print()
+                console.print("⚠️ NOTE: Workflow directory not configured.")
+                console.print("Set N8N_FLOW_DIR environment variable or use --flow-dir option")
+                console.print("for workflow operations (add, list, etc.)")
 
 
 @db.command()
