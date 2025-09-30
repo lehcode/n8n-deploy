@@ -78,7 +78,7 @@ class E2ETestBase:
             # apikey subcommands that support --no-emoji
             no_emoji_apikey_subcommands = {"add", "list", "get"}
             # db subcommands that support --no-emoji
-            no_emoji_db_subcommands = {"status", "stats"}
+            no_emoji_db_subcommands = {"init", "status", "compact"}
 
             if command in no_emoji_commands:
                 cmd.append("--no-emoji")

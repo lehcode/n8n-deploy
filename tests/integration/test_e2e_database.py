@@ -54,7 +54,7 @@ class TestE2EDatabase(E2ETestBase):
         """Test stats command handles null timestamps correctly"""
         # Initialize database
         self.run_cli_command(["--app-dir", self.temp_dir, "db", "init"])
-        returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir, "stats"])
+        returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir, "wf", "stats"])
 
         assert returncode == 0
 
@@ -85,11 +85,11 @@ class TestE2EDatabase(E2ETestBase):
         # List backups
         backup_dir = Path(self.temp_dir) / "backups"
         returncode, stdout, stderr = self.run_cli_command(
-            ["--app-dir", self.temp_dir, "list-backups", "--backup-dir", str(backup_dir)]
+            ["--app-dir", self.temp_dir, "wf", "list-backups", "--backup-dir", str(backup_dir)]
         )
 
         # Should succeed (even if no backups exist yet)
-        assert returncode == 0
+        assert returncode == 0, f"Command failed with returncode {returncode}\nSTDOUT: {stdout}\nSTDERR: {stderr}"
 
     def test_backup_workflows_complete_cycle(self) -> None:
         """Test complete backup cycle with workflows"""
