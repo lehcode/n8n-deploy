@@ -29,6 +29,7 @@ class TestWorkflowBackupIntegration:
     def manager_with_real_workflows(self, test_config: AppConfig) -> WorkflowApi:
         """Create manager with real workflow files and database entries"""
         manager = WorkflowApi(config=test_config)
+        manager.db.schema_manager.initialize_database()
         with manager.db.get_connection() as conn:
             conn.execute("DELETE FROM workflows")
             conn.commit()
@@ -90,7 +91,7 @@ class TestWorkflowBackupIntegration:
             # Set the file_folder to the actual directory where the file is located
             wf_data_with_folder = {**wf_data, "file_folder": str(test_workflows_dir)}
             workflow = Workflow(**wf_data_with_folder)
-            workflow_id = manager.db.create_workflow(workflow)
+            workflow_id = manager.db.add_workflow(workflow)
             assert workflow_id == wf_data["id"], f"Failed to create workflow {wf_data['id']}"
         created_workflows = manager.list_workflows()
         assert len(created_workflows) == 2, f"Expected 2 workflows, created {len(created_workflows)}"
@@ -259,6 +260,7 @@ class TestWorkflowManagerIntegration:
     def integrated_manager(self, test_config: AppConfig) -> WorkflowApi:
         """Create a fully integrated workflow manager"""
         manager = WorkflowApi(config=test_config)
+        manager.db.schema_manager.initialize_database()
         with manager.db.get_connection() as conn:
             conn.execute("DELETE FROM workflows")
             conn.execute("DELETE FROM api_keys")
@@ -285,7 +287,7 @@ class TestWorkflowManagerIntegration:
             name="API Integration Workflow",
         )
 
-        manager.db.create_workflow(workflow)
+        manager.db.add_workflow(workflow)
         # Create the file in test_workflows subdirectory
         test_workflows_dir = manager.config.workflows_path / "test_workflows"
         test_workflows_dir.mkdir(parents=True, exist_ok=True)
@@ -334,7 +336,7 @@ class TestWorkflowManagerIntegration:
             name="Error Recovery Test",
         )
 
-        manager.db.create_workflow(workflow)
+        manager.db.add_workflow(workflow)
         with patch("builtins.open", side_effect=PermissionError("Permission denied")):
             # Manager should handle file operation errors gracefully
             workflows = manager.list_workflows()

@@ -140,7 +140,7 @@ class UtilityPatterns:
 @pytest.fixture
 def sample_workflow() -> Workflow:
     """Fixture providing a standard test workflow"""
-    return TestDataFactory.create_workflow()
+    return TestDataFactory.add_workflow()
 
 
 @pytest.fixture

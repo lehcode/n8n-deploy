@@ -28,6 +28,7 @@ class BaseCLITest:
     def cli_test_setup(self, test_config: AppConfig) -> Tuple[WorkflowApi, AppConfig]:
         """Create test environment with workflows, API keys, and backup files"""
         manager = WorkflowApi(config=test_config)
+        manager.db.schema_manager.initialize_database()
         with manager.db.get_connection() as conn:
             conn.execute("DELETE FROM workflows")
             conn.execute("DELETE FROM api_keys")
@@ -62,7 +63,7 @@ class BaseCLITest:
             with open(workflow_file, "w") as f:
                 json.dump(workflow_content, f, indent=2)
             workflow = Workflow(**wf_data)
-            manager.db.create_workflow(workflow)
+            manager.db.add_workflow(workflow)
         manager.key_api.add_api_key(
             name="test_api_key",
             api_key="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
@@ -237,7 +238,7 @@ class TestCLIWorkflowCommands(BaseCLITest):
 
             # Add to database
             workflow = Workflow(**wf_data)
-            manager.db.create_workflow(workflow)
+            manager.db.add_workflow(workflow)
 
         # Test 1: Search by exact n8n workflow ID
         result = self.run_cli_command(config, ["wf", "search", "deAVBp391wvomsWY"])
