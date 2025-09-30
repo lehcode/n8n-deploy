@@ -6,6 +6,7 @@ Real CLI execution tests for basic operations, output formatting,
 environment variable handling, and configuration consistency.
 """
 
+import pytest
 from pathlib import Path
 
 import pytest
