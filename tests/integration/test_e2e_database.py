@@ -7,8 +7,8 @@ backup/restore functionality, and stats display.
 """
 
 import hashlib
+import json
 import os
-import subprocess
 import tarfile
 import tempfile
 from pathlib import Path
@@ -160,14 +160,13 @@ class TestE2EDatabase(E2ETestBase):
         # Perform various operations
         operations = [
             ["db", "status"],
-            ["list"],
-            ["stats"],
+            ["wf", "list"],
             ["db", "status"],  # Repeat to check consistency
         ]
 
         for op in operations:
             returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir] + op)
-            assert returncode == 0, f"Database integrity failed after: {op}"
+            assert returncode == 0, f"Database integrity failed after: {op}\nSTDERR: {stderr}\nSTDOUT: {stdout}"
         db_path = Path(self.temp_dir) / "n8n-deploy.db"
         assert db_path.exists()
         assert db_path.stat().st_size > 0
@@ -226,7 +225,7 @@ class TestE2EDatabase(E2ETestBase):
 
         results = []
 
-        def run_db_command():
+        def run_db_command() -> None:
             returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir, "db", "status"])
             results.append((returncode, stdout, stderr))
 
