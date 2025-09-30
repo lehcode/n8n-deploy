@@ -54,9 +54,10 @@ class CustomGroup(click.Group):
 
         try:
             return super().__call__(*args, **kwargs)
-        except click.exceptions.NoArgsIsHelpError as e:
+        except click.exceptions.NoArgsIsHelpError as e:  # type: ignore[attr-defined]
             # When no arguments are provided, Click raises NoArgsIsHelpError
             # We want to show help and exit with code 0 instead of the default behavior
+            # Note: This exception exists at runtime but is not exposed in type stubs
             print(str(e))
             sys.exit(0)
 

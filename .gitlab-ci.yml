@@ -47,7 +47,6 @@ cache:
     - uv venv --python python3 .venv
     - source .venv/bin/activate
     - uv pip install --quiet -e ".[test,dev]"
-    - uv pip install --quiet types-requests types-click
 
 # Quality stage - Type checking
 quality:mypy:
