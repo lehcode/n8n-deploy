@@ -321,10 +321,14 @@ test_database_operations() {
     local app_dir="$TEST_BASE_DIR/app"
 
     # Database initialization
-    run_test "DB init" "echo '1' | $CLI_COMMAND db init --app-dir $app_dir --no-emoji" 0 "Initialize database"
+    run_test "DB init" "$CLI_COMMAND db init --app-dir $app_dir --no-emoji --import" 0 "Initialize database"
 
-    # Test --import flag (accept existing database without prompt)
-    run_test "DB init with --import" "$CLI_COMMAND db init --app-dir $app_dir --import --no-emoji" 0 "Initialize with existing database flag"
+    # Test --import flag with existing database
+    run_test "DB init with --import (existing)" "$CLI_COMMAND db init --app-dir $app_dir --import --no-emoji" 0 "Import existing database without prompt"
+
+    # Test JSON format output
+    run_test "DB init JSON format" "$CLI_COMMAND db init --app-dir $app_dir --format json --import" 0 "Initialize with JSON output"
+    validate_output "DB init JSON content" "$CLI_COMMAND db init --app-dir $app_dir --format json --import" '"success": true'
 
     # Database status
     run_test "DB status table" "$CLI_COMMAND db status --app-dir $app_dir --no-emoji" 0 "Check database status"

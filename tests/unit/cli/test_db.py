@@ -94,6 +94,77 @@ class TestDatabaseCommands:
         assert "Database initialized" in result.output
         mock_db.assert_called_once()
 
+    def test_init_import_flag_new_database(self):
+        """Test --import flag with new database (should create it)"""
+        result = self.runner.invoke(db, ["init", "--app-dir", self.temp_dir, "--import", "--no-emoji"])
+
+        assert result.exit_code == 0
+        assert "Database initialized" in result.output
+        db_path = Path(self.temp_dir) / "n8n-deploy.db"
+        assert db_path.exists()
+
+    def test_init_import_flag_existing_database(self):
+        """Test --import flag with existing database (should accept without prompt)"""
+        # First create the database
+        result1 = self.runner.invoke(db, ["init", "--app-dir", self.temp_dir, "--import", "--no-emoji"])
+        assert result1.exit_code == 0
+
+        # Run again with --import flag
+        result2 = self.runner.invoke(db, ["init", "--app-dir", self.temp_dir, "--import", "--no-emoji"])
+
+        assert result2.exit_code == 0
+        assert "Using existing database" in result2.output
+        assert "Database already exists" in result2.output
+
+    def test_init_import_flag_json_format(self):
+        """Test --import flag with JSON format output"""
+        # Create database
+        result1 = self.runner.invoke(db, ["init", "--app-dir", self.temp_dir, "--import", "--format", "json"])
+        assert result1.exit_code == 0
+
+        # Parse JSON output
+        import json
+
+        output1 = json.loads(result1.output)
+        assert output1["success"] is True
+        assert output1["message"] == "Database initialized"
+        assert "database_path" in output1
+        # New database should not have already_exists field or it should be False
+        assert output1.get("already_exists", False) is False
+
+        # Run again with existing database
+        result2 = self.runner.invoke(db, ["init", "--app-dir", self.temp_dir, "--import", "--format", "json"])
+        assert result2.exit_code == 0
+
+        # Parse second JSON output
+        output2 = json.loads(result2.output)
+        assert output2["success"] is True
+        assert output2["message"] == "Using existing database"
+        assert output2["already_exists"] is True
+
+    def test_init_import_flag_with_no_emoji(self):
+        """Test --import flag combined with --no-emoji"""
+        result = self.runner.invoke(db, ["init", "--app-dir", self.temp_dir, "--import", "--no-emoji"])
+
+        assert result.exit_code == 0
+        assert "Database initialized" in result.output
+        # Verify no emoji in output
+        assert "✅" not in result.output
+        assert "🗄️" not in result.output
+        assert "⚠️" not in result.output
+
+    def test_init_json_format_implies_no_emoji(self):
+        """Test that JSON format automatically disables emoji"""
+        result = self.runner.invoke(db, ["init", "--app-dir", self.temp_dir, "--import", "--format", "json"])
+
+        assert result.exit_code == 0
+        # JSON output should not contain emoji
+        import json
+
+        output = json.loads(result.output)
+        assert isinstance(output, dict)
+        assert "success" in output
+
     @patch("api.cli.db.DBApi")
     @patch("api.cli.db.get_config")
     def test_status_command_table_format(self, mock_get_config, mock_db):
