@@ -36,12 +36,14 @@ def db() -> None:
 @click.option("--app-dir", type=click.Path(), help="Application directory for database and backups")
 @click.option("--format", type=click.Choice(["table", "json"]), default="table", help="Output format")
 @click.option("--no-emoji", is_flag=True, help="Disable emoji output for automation/scripting")
-@click.option("--existing", is_flag=True, help="Accept existing database without prompting (skip interactive menu)")
-def init(app_dir: Optional[str], format: str, no_emoji: bool, existing: bool) -> None:
+@click.option("--import", "import_db", is_flag=True, help="Import existing database without prompting")
+def init(app_dir: Optional[str], format: str, no_emoji: bool, import_db: bool) -> None:
     """🎬 Initialize n8n-deploy database
 
     Create the SQLite database with the required schema.
-    Will prompt if database already exists unless --existing is used.
+    Will prompt if database already exists unless --import is used.
+
+    NOTE: Database must be initialized before using other commands.
     """
     # JSON format implies no emoji
     if format == "json":
@@ -57,8 +59,8 @@ def init(app_dir: Optional[str], format: str, no_emoji: bool, existing: bool) ->
     if db_path.exists():
         import sys
 
-        # If existing flag is set or running in non-interactive mode, use existing database
-        if existing or not sys.stdin.isatty():
+        # If import flag is set or running in non-interactive mode, use existing database
+        if import_db or not sys.stdin.isatty():
             import os
 
             flow_dir = os.environ.get("N8N_FLOW_DIR")

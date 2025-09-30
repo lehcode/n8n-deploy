@@ -91,6 +91,8 @@ def cli() -> None:
 
     Use 'n8n-deploy COMMAND --help' for detailed command options.
 
+    ⚠️  NOTE: Run 'n8n-deploy db init' before using other commands.
+
     \b
     📂 Core Directories:
 
