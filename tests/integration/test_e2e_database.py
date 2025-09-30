@@ -665,6 +665,9 @@ class TestE2EDatabase(E2ETestBase):
         config = AppConfig(base_folder=Path(self.temp_dir))
         db = DBApi(config=config)
 
+        # Initialize the database schema
+        db.schema_manager.initialize_database()
+
         # Create first workflow
         workflow_data = {
             "id": "duplicate_test_001",
