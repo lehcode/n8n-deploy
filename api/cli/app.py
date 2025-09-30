@@ -89,13 +89,6 @@ def handle_version_help(ctx: click.Context, _param: click.Parameter, value: Any)
 def cli() -> None:
     """🎭 n8n-deploy - a simple N8N Workflow Manager
 
-    Simple n8n workflow deployment tool with SQLite metadata store.
-
-    \\b
-    Installation Methods:
-      n8n-deploy     - Installed globally via pip (recommended)
-      ./n8n-deploy   - Development wrapper script (no installation)
-
     Use 'n8n-deploy COMMAND --help' for detailed command options.
     """
     pass
