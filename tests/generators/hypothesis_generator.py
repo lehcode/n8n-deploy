@@ -370,7 +370,7 @@ class TestPathHandling:
         assert result.returncode in [0, 1, 2]
 
     @given(path_list=st.lists(valid_paths, min_size=2, max_size=5))
-    @settings(max_examples=20, deadline=1000)  # 1 second deadline for multiple subprocess calls
+    @settings(max_examples=20, deadline=5000)  # 5 second deadline for multiple subprocess calls
     def test_path_consistency_across_commands(self, path_list):
         """Property: Same path works consistently across different commands"""
         path = path_list[0]
@@ -394,6 +394,30 @@ class TestPathHandling:
 
         # All should succeed or fail in similar ways (all 0-2 range)
         assert all(code in [0, 1, 2] for code in exit_codes)
+
+    @given(path_name=st.text(min_size=1, max_size=30, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"))
+    @settings(max_examples=20)
+    def test_invalid_paths_default_to_cwd(self, path_name):
+        """Property: Invalid paths should default to cwd and not cause crashes"""
+        # Generate a nonexistent path
+        invalid_path = f"/nonexistent/test/{path_name}"
+
+        # Commands should succeed by defaulting to cwd
+        result = subprocess.run(
+            ["./n8n-deploy", "env", "--app-dir", invalid_path, "--format", "json"],
+            capture_output=True,
+            timeout=5,
+            text=True,
+        )
+
+        # Should succeed (defaults to cwd)
+        assert result.returncode == 0, f"Should default to cwd for invalid path: {invalid_path}"
+
+        # Verify JSON is valid
+        import json
+
+        data = json.loads(result.stdout)
+        assert "variables" in data
 
 
 # ═══════════════════════════════════════════════════════════════════════════

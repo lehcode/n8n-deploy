@@ -9,7 +9,6 @@ Provides a consistent 'wf' command group for all workflow operations including:
 """
 
 import os
-import re
 from pathlib import Path
 from typing import Optional
 
@@ -20,12 +19,15 @@ from rich.table import Table
 
 from ..config import get_config
 from ..workflow import WorkflowApi
-from .app import CustomGroup
+from .app import CustomGroup, HELP_APP_DIR, HELP_FLOW_DIR, HELP_SERVER_URL, HELP_NO_EMOJI, HELP_FORMAT
 from .output import (
     output_json_or_table,
     print_backup_files_table,
     print_workflow_search_table,
     print_workflow_table,
+    print_error,
+    print_success,
+    cli_error,
 )
 
 console = Console()
@@ -39,76 +41,76 @@ def wf() -> None:
 
 # Basic workflow operations
 @wf.command()
-@click.argument("json_file_path")
 @click.argument("name")
-@click.option("--app-dir", type=click.Path(), help="Application directory for database and backups")
-@click.option("--flow-dir", type=click.Path(), help="Plain directory where workflow JSON files are located")
+@click.option("--app-dir", type=click.Path(), help=HELP_APP_DIR)
+@click.option("--flow-dir", type=click.Path(), help=HELP_FLOW_DIR)
+@click.option("--server-url", help=HELP_SERVER_URL)
 @click.option(
     "--format",
     type=click.Choice(["table", "json"]),
     default="table",
-    help="Output format",
+    help=HELP_FORMAT,
 )
-@click.option("--no-emoji", is_flag=True, help="Disable emoji output for automation/scripting")
+@click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
 def add(
-    json_file_path: str,
     name: str,
     app_dir: Optional[str],
     flow_dir: Optional[str],
+    server_url: Optional[str],
     format: str,
     no_emoji: bool,
 ) -> None:
-    """➕ Add new workflow to management
+    """➕ Add workflow to database
 
-    Add a workflow by specifying the JSON file path and workflow name.
-    The workflow name is a user-friendly alias and can contain spaces.
+    Pulls workflow from remote n8n server and adds to database (requires API key and server URL).
+
+    \b
+    Example:
+      n8n-deploy wf add MyWorkflow  # Pulls from server
     """
     # Validate workflow name - allow UTF-8 characters, spaces, and common punctuation
     # Only reject control characters, null bytes, and path separators for security
     stripped_name = name.strip()
     if not stripped_name or any(c in stripped_name for c in "\x00/\\"):
-        error_msg = f"Workflow name '{name}' is invalid. Name cannot be empty or contain null bytes or path separators (/ \\)"
-        if no_emoji:
-            console.print(error_msg)
-        else:
-            console.print(f"[red]{error_msg}[/red]")
-        raise click.Abort()
+        cli_error(
+            f"Workflow name '{name}' is invalid. Name cannot be empty or contain null bytes or path separators (/ \\)",
+            no_emoji,
+        )
 
     try:
-        config = get_config(base_folder=app_dir, flow_folder=flow_dir)
+        config = get_config(base_folder=app_dir, flow_folder=flow_dir, n8n_url=server_url)
     except ValueError as e:
-        console.print(f"[red]{e}[/red]")
-        raise click.Abort()
+        cli_error(str(e), no_emoji)
 
     try:
         manager = WorkflowApi(config=config)
-        manager.add_workflow_from_file(json_file_path, name)
 
-        success_msg = f"Added workflow '{name}' from {json_file_path}"
-        if no_emoji:
-            console.print(success_msg)
-        else:
-            console.print(f"[green]✓ {success_msg}[/green]")
+        # Pull workflow from server
+        # Check if API key and server URL are configured
+        if not config.n8n_url:
+            cli_error(
+                "Server URL not configured. Use --server-url or set N8N_DEPLOY_SERVER_URL environment variable", no_emoji
+            )
+
+        # Try to pull workflow from server
+        success = manager.pull_workflow(name)
+        if not success:
+            cli_error(f"Failed to pull workflow '{name}' from server", no_emoji)
 
     except Exception as e:
-        error_msg = f"Failed to add workflow: {e}"
-        if no_emoji:
-            console.print(error_msg)
-        else:
-            console.print(f"[red]{error_msg}[/red]")
-        raise click.Abort()
+        cli_error(f"Failed to add workflow: {e}", no_emoji)
 
 
 @wf.command("list")
-@click.option("--app-dir", type=click.Path(), help="Application directory for database and backups")
-@click.option("--flow-dir", type=click.Path(), help="Plain directory where workflow JSON files are located")
+@click.option("--app-dir", type=click.Path(), help=HELP_APP_DIR)
+@click.option("--flow-dir", type=click.Path(), help=HELP_FLOW_DIR)
 @click.option(
     "--format",
     type=click.Choice(["table", "json"]),
     default="table",
-    help="Output format",
+    help=HELP_FORMAT,
 )
-@click.option("--no-emoji", is_flag=True, help="Disable emoji output for automation/scripting")
+@click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
 @click.option("--only", is_flag=True, help="Show only workflows with existing JSON files (backupable)")
 def list(
     app_dir: Optional[str],
@@ -155,9 +157,9 @@ def list(
 
 
 @wf.command()
-@click.option("--app-dir", type=click.Path(), help="Application directory for database and backups")
-@click.option("--flow-dir", type=click.Path(), help="Plain directory where workflow JSON files are located")
-@click.option("--no-emoji", is_flag=True, help="Disable emoji output for automation/scripting")
+@click.option("--app-dir", type=click.Path(), help=HELP_APP_DIR)
+@click.option("--flow-dir", type=click.Path(), help=HELP_FLOW_DIR)
+@click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
 @click.option("--yes", is_flag=True, help="Skip confirmation prompt")
 @click.argument("workflow_id", metavar="workflow-id")
 def remove(
@@ -221,15 +223,15 @@ def remove(
 
 @wf.command()
 @click.argument("query")
-@click.option("--app-dir", type=click.Path(), help="Application directory for database and backups")
-@click.option("--flow-dir", type=click.Path(), help="Plain directory where workflow JSON files are located")
+@click.option("--app-dir", type=click.Path(), help=HELP_APP_DIR)
+@click.option("--flow-dir", type=click.Path(), help=HELP_FLOW_DIR)
 @click.option(
     "--format",
     type=click.Choice(["table", "json"]),
     default="table",
-    help="Output format",
+    help=HELP_FORMAT,
 )
-@click.option("--no-emoji", is_flag=True, help="Disable emoji output for automation/scripting")
+@click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
 def search(
     query: str,
     app_dir: Optional[str],
@@ -267,15 +269,15 @@ def search(
 
 
 @wf.command()
-@click.option("--app-dir", type=click.Path(), help="Application directory for database and backups")
-@click.option("--flow-dir", type=click.Path(), help="Plain directory where workflow JSON files are located")
+@click.option("--app-dir", type=click.Path(), help=HELP_APP_DIR)
+@click.option("--flow-dir", type=click.Path(), help=HELP_FLOW_DIR)
 @click.option(
     "--format",
     type=click.Choice(["table", "json"]),
     default="table",
-    help="Output format",
+    help=HELP_FORMAT,
 )
-@click.option("--no-emoji", is_flag=True, help="Disable emoji output for automation/scripting")
+@click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
 @click.argument("workflow_id", required=False, metavar="workflow-id")
 def stats(
     workflow_id: Optional[str],
@@ -338,10 +340,10 @@ def stats(
 
 # Server operations
 @wf.command()
-@click.option("--server-url", help="n8n server URL (overrides N8N_DEPLOY_SERVER_URL)")
-@click.option("--app-dir", type=click.Path(), help="Application directory for database and backups")
-@click.option("--flow-dir", type=click.Path(), help="Plain directory where workflow JSON files are located")
-@click.option("--no-emoji", is_flag=True, help="Disable emoji output for automation/scripting")
+@click.option("--server-url", help=HELP_SERVER_URL)
+@click.option("--app-dir", type=click.Path(), help=HELP_APP_DIR)
+@click.option("--flow-dir", type=click.Path(), help=HELP_FLOW_DIR)
+@click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
 @click.argument("workflow_id", metavar="workflow-id")
 def pull(
     workflow_id: str,
@@ -402,10 +404,10 @@ def pull(
 
 
 @wf.command()
-@click.option("--server-url", help="n8n server URL (overrides N8N_DEPLOY_SERVER_URL)")
-@click.option("--app-dir", type=click.Path(), help="Application directory for database and backups")
-@click.option("--flow-dir", type=click.Path(), help="Plain directory where workflow JSON files are located")
-@click.option("--no-emoji", is_flag=True, help="Disable emoji output for automation/scripting")
+@click.option("--server-url", help=HELP_SERVER_URL)
+@click.option("--app-dir", type=click.Path(), help=HELP_APP_DIR)
+@click.option("--flow-dir", type=click.Path(), help=HELP_FLOW_DIR)
+@click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
 @click.argument("workflow_id", metavar="workflow-id")
 def push(
     workflow_id: str,
@@ -465,16 +467,16 @@ def push(
 
 
 @wf.command("server")
-@click.option("--server-url", help="n8n server URL (overrides N8N_DEPLOY_SERVER_URL)")
-@click.option("--app-dir", type=click.Path(), help="Application directory for database and backups")
-@click.option("--flow-dir", type=click.Path(), help="Plain directory where workflow JSON files are located")
+@click.option("--server-url", help=HELP_SERVER_URL)
+@click.option("--app-dir", type=click.Path(), help=HELP_APP_DIR)
+@click.option("--flow-dir", type=click.Path(), help=HELP_FLOW_DIR)
 @click.option(
     "--format",
     type=click.Choice(["table", "json"]),
     default="table",
-    help="Output format",
+    help=HELP_FORMAT,
 )
-@click.option("--no-emoji", is_flag=True, help="Disable emoji output for automation/scripting")
+@click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
 def list_server(
     server_url: Optional[str],
     app_dir: Optional[str],
@@ -556,9 +558,9 @@ def get_backup_dir(backup_dir_param: Optional[str]) -> Path:
 
 @wf.command("createbackup")
 @click.option("--backup-dir", type=click.Path(), help="Backup directory (overrides N8N_BACKUP_DIR, default: cwd)")
-@click.option("--app-dir", type=click.Path(), help="Application directory for database and backups")
-@click.option("--flow-dir", type=click.Path(), help="Plain directory where workflow JSON files are located")
-@click.option("--no-emoji", is_flag=True, help="Disable emoji output for automation/scripting")
+@click.option("--app-dir", type=click.Path(), help=HELP_APP_DIR)
+@click.option("--flow-dir", type=click.Path(), help=HELP_FLOW_DIR)
+@click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
 def backup(
     backup_dir: Optional[str],
     app_dir: Optional[str],
@@ -609,9 +611,9 @@ def backup(
 @wf.command()
 @click.argument("backup_file")
 @click.option("--backup-dir", type=click.Path(), help="Backup directory (overrides N8N_BACKUP_DIR, default: cwd)")
-@click.option("--app-dir", type=click.Path(), help="Application directory for database and backups")
-@click.option("--flow-dir", type=click.Path(), help="Plain directory where workflow JSON files are located")
-@click.option("--no-emoji", is_flag=True, help="Disable emoji output for automation/scripting")
+@click.option("--app-dir", type=click.Path(), help=HELP_APP_DIR)
+@click.option("--flow-dir", type=click.Path(), help=HELP_FLOW_DIR)
+@click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
 def restore(
     backup_file: str,
     backup_dir: Optional[str],
@@ -667,9 +669,9 @@ def restore(
     "--format",
     type=click.Choice(["table", "json"]),
     default="table",
-    help="Output format",
+    help=HELP_FORMAT,
 )
-@click.option("--no-emoji", is_flag=True, help="Disable emoji output for automation/scripting")
+@click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
 def list_backups(
     backup_dir: Optional[str],
     format: str,
@@ -719,7 +721,7 @@ def list_backups(
 @wf.command("verify")
 @click.argument("backup_file")
 @click.option("--backup-dir", type=click.Path(), help="Backup directory (overrides N8N_BACKUP_DIR, default: cwd)")
-@click.option("--no-emoji", is_flag=True, help="Disable emoji output for automation/scripting")
+@click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
 def verify_backup(
     backup_file: str,
     backup_dir: Optional[str],

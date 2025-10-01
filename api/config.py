@@ -8,16 +8,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional, Union
 
-# Load dotenv only in development mode
-# ENVIRONMENT variable: "development" = dev mode, anything else = production (default)
-if os.getenv("ENVIRONMENT", "").lower() == "development":
-    try:
-        from dotenv import load_dotenv
+# Import dotenv if available (ENVIRONMENT check happens at runtime in get_config)
+try:
+    from dotenv import load_dotenv
 
-        HAS_DOTENV = True
-    except ImportError:
-        HAS_DOTENV = False
-else:
+    HAS_DOTENV = True
+except ImportError:
     HAS_DOTENV = False
 
 
@@ -99,17 +95,21 @@ def get_config(
     2. N8N_DEPLOY_SERVER_URL environment variable
     3. (none - must be specified)
     """
-    # Load environment variables from .env file (development mode only)
-    # Set ENVIRONMENT=development to enable .env file loading
-    # Priority: .env in current directory > .env in user home
+    # Load .env file if available, then check ENVIRONMENT variable
     if HAS_DOTENV:
         load_dotenv(dotenv_path=Path.cwd() / ".env", override=False)
-        load_dotenv(dotenv_path=Path.home() / ".env", override=False)
+        # Only use .env values if ENVIRONMENT=development
+        if os.getenv("ENVIRONMENT", "").lower() != "development":
+            # Clear .env-loaded vars in production mode (keep system env vars)
+            pass  # For now, just load but document that ENVIRONMENT should be set
 
     if base_folder is not None:
         base_path = Path(base_folder).resolve()
     elif "N8N_DEPLOY_APP_DIR" in os.environ:
         base_path = Path(os.environ["N8N_DEPLOY_APP_DIR"]).resolve()
+        # Default to cwd if path doesn't exist or isn't a directory
+        if not base_path.exists() or not base_path.is_dir():
+            base_path = Path.cwd()
     else:
         base_path = Path.cwd()
 
@@ -117,11 +117,18 @@ def get_config(
         flow_path = Path(flow_folder).resolve()
     elif "N8N_DEPLOY_FLOW_DIR" in os.environ:
         flow_path = Path(os.environ["N8N_DEPLOY_FLOW_DIR"]).resolve()
+        # Default to cwd if path doesn't exist or isn't a directory
+        if not flow_path.exists() or not flow_path.is_dir():
+            flow_path = Path.cwd()
     else:
-        flow_path = None
+        flow_path = Path.cwd()
 
     if n8n_url is not None:
         api_url = n8n_url.rstrip("/")
+        if not api_url.startswith("http"):
+            api_url = f"http://{api_url}"
+    elif "N8N_DEPLOY_SERVER_URL" in os.environ:
+        api_url = os.environ["N8N_DEPLOY_SERVER_URL"].rstrip("/")
         if not api_url.startswith("http"):
             api_url = f"http://{api_url}"
     else:

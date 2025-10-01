@@ -20,7 +20,7 @@ from rich.table import Table
 from ..api_keys import KeyApi
 from ..config import AppConfig
 from ..db import DBApi
-from .app import CustomGroup
+from .app import CustomGroup, HELP_APP_DIR, HELP_NO_EMOJI
 from .output import cli_error
 
 console = Console()
@@ -39,11 +39,11 @@ def apikey() -> None:
 
 @apikey.command("add")
 @click.argument("key", required=False)
-@click.option("--name", required=True, help="API key name (alphanumeric, underscore, dash only)")
+@click.option("--name", required=True, help="API key name (UTF-8 supported, no path separators)")
 @click.option("--description", help="Description of the API key")
 @click.option("--expires-in", type=int, help="Number of days until expiration")
-@click.option("--app-dir", type=click.Path(), help="Application directory for database and backups")
-@click.option("--no-emoji", is_flag=True, help="Disable emoji output for automation/scripting")
+@click.option("--app-dir", type=click.Path(), help=HELP_APP_DIR)
+@click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
 def add_apikey(
     key: Optional[str],
     name: str,
@@ -69,14 +69,17 @@ def add_apikey(
             cli_error("No API key provided via stdin", no_emoji)
 
     # Validate API key name format - handle edge cases gracefully
-    if len(name.strip()) == 0:
+    stripped_name = name.strip()
+
+    if len(stripped_name) == 0:
         cli_error("API key name cannot be empty", no_emoji)
 
     if len(name) > 100:  # Reasonable limit for name length
         cli_error("API key name too long (maximum 100 characters)", no_emoji)
 
-    if not re.match(r"^[a-zA-Z0-9_-]+$", name):
-        cli_error("API key name must contain only letters, numbers, underscores, and dashes", no_emoji)
+    # Allow UTF-8 characters and spaces, only block security risks (null bytes, path separators)
+    if any(c in stripped_name for c in "\x00/\\"):
+        cli_error("API key name cannot contain null bytes or path separators (/ \\)", no_emoji)
 
     # Validate API key format - handle edge cases gracefully
     key = key.strip()  # Remove whitespace
@@ -138,8 +141,8 @@ def add_apikey(
     default="table",
     help="Output format",
 )
-@click.option("--app-dir", type=click.Path(), help="Application directory for database and backups")
-@click.option("--no-emoji", is_flag=True, help="Disable emoji output for automation/scripting")
+@click.option("--app-dir", type=click.Path(), help=HELP_APP_DIR)
+@click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
 def list_apikeys(show_keys: bool, format: str, app_dir: Optional[str], no_emoji: bool) -> None:
     """📋 List all stored API keys
 
@@ -223,8 +226,8 @@ def list_apikeys(show_keys: bool, format: str, app_dir: Optional[str], no_emoji:
     default="table",
     help="Output format",
 )
-@click.option("--app-dir", type=click.Path(), help="Application directory for database and backups")
-@click.option("--no-emoji", is_flag=True, help="Disable emoji output for automation/scripting")
+@click.option("--app-dir", type=click.Path(), help=HELP_APP_DIR)
+@click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
 def get_apikey(key_name_or_id: str, show_key: bool, format: str, app_dir: Optional[str], no_emoji: bool) -> None:
     """🔍 Get API key details"""
     # API key operations only need base folder, not workflow directories
@@ -273,7 +276,7 @@ def get_apikey(key_name_or_id: str, show_key: bool, format: str, app_dir: Option
 
 @apikey.command("deactivate")
 @click.argument("key_name")
-@click.option("--app-dir", type=click.Path(), help="Application directory for database and backups")
+@click.option("--app-dir", type=click.Path(), help=HELP_APP_DIR)
 def deactivate_apikey(key_name: str, app_dir: Optional[str]) -> None:
     """🚫 Deactivate API key (soft delete)"""
     try:
@@ -292,7 +295,7 @@ def deactivate_apikey(key_name: str, app_dir: Optional[str]) -> None:
 @apikey.command("delete")
 @click.argument("key_name")
 @click.option("--confirm", is_flag=True, help="Confirm permanent deletion")
-@click.option("--app-dir", type=click.Path(), help="Application directory for database and backups")
+@click.option("--app-dir", type=click.Path(), help=HELP_APP_DIR)
 def delete_apikey(key_name: str, confirm: bool, app_dir: Optional[str]) -> None:
     """🗑️ Permanently delete an API key"""
     try:
@@ -310,7 +313,7 @@ def delete_apikey(key_name: str, confirm: bool, app_dir: Optional[str]) -> None:
 
 @apikey.command("test")
 @click.argument("key_name")
-@click.option("--app-dir", type=click.Path(), help="Application directory for database and backups")
+@click.option("--app-dir", type=click.Path(), help=HELP_APP_DIR)
 def test_apikey(key_name: str, app_dir: Optional[str]) -> None:
     """🧪 Test API key validity"""
     try:

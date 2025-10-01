@@ -218,3 +218,15 @@ class TestCLIHelpVersionCombinations:
         result2 = self.runner.invoke(cli, ["--version", "--help"])
         assert result2.exit_code == 0
         assert result2.output == ""
+
+
+class TestCustomGroupMethods:
+    """Tests for CustomGroup class methods (0% coverage)"""
+
+    def test_get_command(self):
+        """TODO: Test CustomGroup.get_command method"""
+        pytest.skip("TODO: Implement test for CustomGroup.get_command (disables prefix matching)")
+
+    def test_format_usage(self):
+        """TODO: Test CustomGroup.format_usage method"""
+        pytest.skip("TODO: Implement test for CustomGroup.format_usage")

@@ -582,10 +582,10 @@ class TestE2EAPIKeys(E2ETestBase):
         self.setup_database()
         test_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dGVzdA.c2lnbmF0dXJl"
 
+        # Only path separators and null bytes are invalid - spaces and UTF-8 are valid
         invalid_names = [
-            "invalid name",  # Spaces
-            "invalid@name",  # Special chars
-            "invalid/name",  # Slashes
+            "invalid/name",  # Forward slash (path separator)
+            "invalid\\name",  # Backslash (path separator)
         ]
 
         for invalid_name in invalid_names:
@@ -601,8 +601,37 @@ class TestE2EAPIKeys(E2ETestBase):
                 ]
             )
 
-            # Should fail validation for invalid names
-            assert returncode == 1
+            # Should fail validation for path separators
+            assert returncode == 1, f"Name with path separator should be rejected: {invalid_name}"
+
+    def test_apikey_valid_name_with_spaces_and_special_chars(self) -> None:
+        """Test that API key names can contain spaces and special characters (except path separators)"""
+        self.setup_database()
+        test_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dGVzdA.c2lnbmF0dXJl"
+
+        # Spaces, UTF-8, and special chars (except path separators) are valid
+        valid_names = [
+            "valid name with spaces",
+            "valid@email.com",
+            "válid-ütf8-ñame",
+        ]
+
+        for valid_name in valid_names:
+            returncode, stdout, stderr = self.run_cli_command(
+                [
+                    "apikey",
+                    "add",
+                    test_key,
+                    "--name",
+                    valid_name,
+                    "--app-dir",
+                    self.temp_dir,
+                ]
+            )
+
+            # Should succeed - these names are valid
+            assert returncode == 0, f"Valid name should be accepted: {valid_name}"
+            assert "added successfully" in stdout.lower()
 
     def test_apikey_invalid_jwt_format_validation(self) -> None:
         """Test apikey add validates JWT format"""

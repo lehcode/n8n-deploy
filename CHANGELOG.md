@@ -35,6 +35,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - 763 lines of testing strategy, tools, and best practices documentation
 
 #### CLI Features
+- **UTF-8 Workflow Name Support**
+  - Allow full Unicode support in workflow names (emojis, international characters)
+  - Support for spaces and special characters in workflow names
+  - Examples: 'My Workflow 🚀', '日本語ワークフロー', 'Processus de données'
+  - Only reject null bytes and path separators for security
+  - Simplified validation from restrictive regex to minimal safety checks
+
 - **Environment Configuration Display Command**
   - New `env` command to display all environment variables and their values
   - Support for JSON (`--format json`) and table (`--format table`) output
