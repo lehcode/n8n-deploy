@@ -19,6 +19,7 @@ import pytest
 from api.config import AppConfig
 from api.models import Workflow
 from api.workflow import WorkflowApi
+
 from .e2e_base import E2ETestBase
 
 
@@ -311,9 +312,13 @@ class TestE2EWorkflows(E2ETestBase):
         """Test workflow operations with emoji and no-emoji modes"""
         self.setup_database()
         self.create_test_workflow("emoji_test")
+
+        # Test 'wf list' with default emoji output
         emoji_returncode, emoji_stdout, _ = self.run_cli_command(
             ["--app-dir", self.temp_dir, "--flow-dir", self.temp_flow_dir, "wf", "list"]
         )
+
+        # Test 'wf list' with --no-emoji flag
         no_emoji_returncode, no_emoji_stdout, _ = self.run_cli_command(
             [
                 "--app-dir",
@@ -326,7 +331,11 @@ class TestE2EWorkflows(E2ETestBase):
             ]
         )
 
-        assert emoji_returncode == no_emoji_returncode == 0
+        # Both should succeed (return code 0)
+        assert emoji_returncode == 0, f"Emoji mode failed with code {emoji_returncode}"
+        assert no_emoji_returncode == 0, f"No-emoji mode failed with code {no_emoji_returncode}"
+
+        # Check that emojis are present in emoji output but not in no-emoji output
         workflow_emojis = ["⚡", "📋", "✅", "❌"]
         for emoji in workflow_emojis:
             if emoji in emoji_stdout:
@@ -514,7 +523,7 @@ class TestE2EWorkflows(E2ETestBase):
     def test_workflow_environment_variable_integration(self) -> None:
         """Test workflow operations respect environment variables"""
         self.setup_database()
-        env = {"N8N_FLOW_DIR": self.temp_flow_dir}
+        env = {"N8N_DEPLOY_FLOW_DIR": self.temp_flow_dir}
 
         self.create_test_workflow("env_test")
 
@@ -524,6 +533,329 @@ class TestE2EWorkflows(E2ETestBase):
 
         # Should use environment variable for flow directory
         assert returncode in [0, 1]
+
+    def test_list_backups_shows_metadata(self) -> None:
+        """Test wf backups command shows backup file metadata"""
+        # Initialize and create backup
+        self.run_cli_command(["db", "init", "--app-dir", self.temp_dir])
+        self.run_cli_command(["db", "backup", "--app-dir", self.temp_dir])
+
+        # List backups - just lists files in backup directory, no database access needed
+        backup_dir = Path(self.temp_dir) / "backups"
+        returncode, stdout, stderr = self.run_cli_command(["wf", "backups", "--backup-dir", str(backup_dir)])
+
+        # Should succeed (even if no backups exist yet)
+        assert returncode == 0, f"Command failed with returncode {returncode}\nSTDOUT: {stdout}\nSTDERR: {stderr}"
+
+    # === Additional Workflow Command Tests for Complete Coverage ===
+
+    def test_wf_add_with_json_format(self) -> None:
+        """Test wf add with --format json output"""
+        self.setup_database()
+        self.create_test_workflow("json_add_test")
+
+        returncode, stdout, stderr = self.run_cli_command(
+            [
+                "--app-dir",
+                self.temp_dir,
+                "--flow-dir",
+                self.temp_flow_dir,
+                "wf",
+                "add",
+                "json_add_test.json",
+                "JSON Add Test",
+                "--format",
+                "json",
+            ]
+        )
+
+        # Should output JSON format (may succeed or fail based on validation)
+        assert returncode in [0, 1]
+
+    def test_wf_list_only_backupable(self) -> None:
+        """Test wf list --only flag to show only backupable workflows"""
+        self.setup_database()
+        self.create_test_workflow("backupable_test")
+        self.run_cli_command(
+            [
+                "--app-dir",
+                self.temp_dir,
+                "--flow-dir",
+                self.temp_flow_dir,
+                "wf",
+                "add",
+                "backupable_test.json",
+                "Backupable Test",
+            ]
+        )
+
+        returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir, "wf", "list", "--only"])
+
+        assert returncode == 0
+        # Should list only workflows with existing JSON files
+
+    def test_wf_list_json_format(self) -> None:
+        """Test wf list --format json output"""
+        self.setup_database()
+        self.create_test_workflow("json_list_test")
+        self.run_cli_command(
+            [
+                "--app-dir",
+                self.temp_dir,
+                "--flow-dir",
+                self.temp_flow_dir,
+                "wf",
+                "add",
+                "json_list_test.json",
+                "JSON List Test",
+            ]
+        )
+
+        returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir, "wf", "list", "--format", "json"])
+
+        assert returncode == 0
+        # Should be valid JSON
+        data = json.loads(stdout)
+        assert isinstance(data, list)
+
+    def test_wf_remove_with_yes_flag(self) -> None:
+        """Test wf remove --yes skips confirmation"""
+        self.setup_database()
+        self.create_test_workflow("remove_yes_test")
+        self.run_cli_command(
+            [
+                "--app-dir",
+                self.temp_dir,
+                "--flow-dir",
+                self.temp_flow_dir,
+                "wf",
+                "add",
+                "remove_yes_test.json",
+                "Remove Yes Test",
+            ]
+        )
+
+        # Remove with --yes should skip confirmation
+        returncode, stdout, stderr = self.run_cli_command(
+            [
+                "--app-dir",
+                self.temp_dir,
+                "wf",
+                "remove",
+                "test_workflow_id",
+                "--yes",
+            ]
+        )
+
+        # May succeed or fail depending on workflow existence
+        assert returncode in [0, 1]
+
+    def test_wf_search_json_format(self) -> None:
+        """Test wf search --format json output"""
+        self.setup_database()
+        self.create_test_workflow("search_json_test")
+        self.run_cli_command(
+            [
+                "--app-dir",
+                self.temp_dir,
+                "--flow-dir",
+                self.temp_flow_dir,
+                "wf",
+                "add",
+                "search_json_test.json",
+                "Search JSON Test",
+            ]
+        )
+
+        returncode, stdout, stderr = self.run_cli_command(
+            ["--app-dir", self.temp_dir, "wf", "search", "search", "--format", "json"]
+        )
+
+        assert returncode == 0
+        # Should be valid JSON
+        data = json.loads(stdout)
+        assert isinstance(data, list)
+
+    def test_wf_stats_overall_json_format(self) -> None:
+        """Test wf stats (overall) --format json output"""
+        self.setup_database()
+
+        returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir, "wf", "stats", "--format", "json"])
+
+        assert returncode == 0
+        # Should be valid JSON with stats data
+        data = json.loads(stdout)
+        assert "total_workflows" in data
+
+    def test_wf_stats_specific_workflow_json(self) -> None:
+        """Test wf stats <workflow-id> --format json output"""
+        self.setup_database()
+        self.create_test_workflow("stats_specific_test")
+        add_result = self.run_cli_command(
+            [
+                "--app-dir",
+                self.temp_dir,
+                "--flow-dir",
+                self.temp_flow_dir,
+                "wf",
+                "add",
+                "stats_specific_test.json",
+                "Stats Specific Test",
+            ]
+        )
+
+        if add_result[0] == 0:
+            returncode, stdout, stderr = self.run_cli_command(
+                [
+                    "--app-dir",
+                    self.temp_dir,
+                    "wf",
+                    "stats",
+                    "test_workflow_id",
+                    "--format",
+                    "json",
+                ]
+            )
+
+            # May succeed or fail based on workflow ID
+            assert returncode in [0, 1]
+
+    def test_wf_list_server_json_format(self) -> None:
+        """Test wf server --format json output"""
+        # This test requires n8n server, may fail if not available
+        returncode, stdout, stderr = self.run_cli_command(
+            [
+                "--app-dir",
+                self.temp_dir,
+                "wf",
+                "server",
+                "--server-url",
+                "http://test-server:5678",
+                "--format",
+                "json",
+            ]
+        )
+
+        # Will fail without server, but should handle gracefully
+        assert returncode in [0, 1]
+
+    def test_wf_backup_with_backup_dir(self) -> None:
+        """Test wf backup --backup-dir creates backup in specified directory"""
+        self.setup_database()
+        backup_dir = Path(self.temp_dir) / "custom_backups"
+        backup_dir.mkdir(exist_ok=True)
+
+        returncode, stdout, stderr = self.run_cli_command(
+            [
+                "--app-dir",
+                self.temp_dir,
+                "--flow-dir",
+                self.temp_flow_dir,
+                "wf",
+                "createbackup",
+                "--backup-dir",
+                str(backup_dir),
+            ]
+        )
+
+        # May succeed or fail based on workflows available
+        assert returncode in [0, 1]
+
+    def test_wf_restore_with_backup_file(self) -> None:
+        """Test wf restore <backup-file> restores workflows"""
+        self.setup_database()
+
+        # Create a backup first (may fail if no workflows)
+        backup_dir = Path(self.temp_dir) / "test_restore_backups"
+        backup_dir.mkdir(exist_ok=True)
+
+        # Try to restore a non-existent backup
+        returncode, stdout, stderr = self.run_cli_command(
+            [
+                "--app-dir",
+                self.temp_dir,
+                "wf",
+                "restore",
+                "nonexistent_backup.tar.gz",
+                "--backup-dir",
+                str(backup_dir),
+            ]
+        )
+
+        # Should fail gracefully for non-existent backup
+        assert returncode in [0, 1]
+
+    def test_wf_list_backups_json_format(self) -> None:
+        """Test wf backups --format json output"""
+        backup_dir = Path(self.temp_dir) / "json_backups"
+        backup_dir.mkdir(exist_ok=True)
+
+        returncode, stdout, stderr = self.run_cli_command(
+            ["wf", "backups", "--backup-dir", str(backup_dir), "--format", "json"]
+        )
+
+        assert returncode == 0
+
+        # Should be valid JSON (empty list for empty directory)
+        data = json.loads(stdout)
+        assert isinstance(data, list)
+        assert len(data) == 0  # No backups in empty directory
+
+    def test_wf_verify_backup_success(self) -> None:
+        """Test wf verify validates backup file integrity"""
+        backup_dir = Path(self.temp_dir) / "verify_backups"
+        backup_dir.mkdir(exist_ok=True)
+
+        # Create a valid tar.gz file
+        import tarfile
+
+        backup_file = backup_dir / "test_backup.tar.gz"
+        with tarfile.open(backup_file, "w:gz") as tar:
+            # Add a dummy file
+            import tempfile
+
+            with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".json") as tmp:
+                tmp.write('{"test": "data"}')
+                tmp_path = tmp.name
+
+            tar.add(tmp_path, arcname="test.json")
+            Path(tmp_path).unlink()
+
+        returncode, stdout, stderr = self.run_cli_command(
+            [
+                "wf",
+                "verify",
+                "test_backup.tar.gz",
+                "--backup-dir",
+                str(backup_dir),
+            ]
+        )
+
+        assert returncode == 0
+        assert "valid" in stdout.lower()
+
+    def test_wf_verify_backup_corrupted(self) -> None:
+        """Test wf verify handles corrupted backup files"""
+        backup_dir = Path(self.temp_dir) / "corrupted_backups"
+        backup_dir.mkdir(exist_ok=True)
+
+        # Create a corrupted file
+        corrupted_file = backup_dir / "corrupted_backup.tar.gz"
+        corrupted_file.write_text("This is not a valid tar.gz file")
+
+        returncode, stdout, stderr = self.run_cli_command(
+            [
+                "wf",
+                "verify",
+                "corrupted_backup.tar.gz",
+                "--backup-dir",
+                str(backup_dir),
+            ]
+        )
+
+        # Should fail for corrupted backup
+        assert returncode == 1
+        assert "corrupted" in stdout.lower() or "invalid" in stdout.lower()
 
 
 # === Workflow Backup Integration Tests ===

@@ -22,21 +22,22 @@ USAGE:
     python test_cli_e2e_manual.py --category server_integration
 """
 
-import pytest
-import tempfile
-import subprocess
+import argparse
+import hashlib
 import json
-import sys
 import os
 import shutil
-import argparse
+import subprocess
+import sys
+import tempfile
 import time
-from pathlib import Path
-from typing import Dict, List, Tuple, Optional, Any
-from click.testing import CliRunner
 from dataclasses import dataclass
 from enum import Enum
-import hashlib
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional, Tuple
+
+import pytest
+from click.testing import CliRunner
 
 
 class TestCategory(Enum):
@@ -190,7 +191,7 @@ class N8nDeployE2ETester:
 
         return app_dir, flow_dir
 
-    def cleanup_environment(self):
+    def cleanup_environment(self) -> None:
         """Clean up temporary directories"""
         for temp_dir in self.temp_dirs:
             if os.path.exists(temp_dir):
@@ -266,7 +267,7 @@ class N8nDeployE2ETester:
         lines = output.strip().split("\n")
         return len(lines) >= 2 and ("┌" in lines[0] or "│" in output or "Name" in output)
 
-    def run_test(self, test_func, category: TestCategory) -> TestResult:
+    def run_test(self, test_func: Callable[[], None], category: TestCategory) -> TestResult:
         """Run a single test function and capture results"""
         start_time = time.time()
         test_name = test_func.__name__
@@ -285,7 +286,7 @@ class N8nDeployE2ETester:
 
     # === CLI Structure Tests ===
 
-    def test_help_command(self):
+    def test_help_command(self) -> None:
         """Test help command display"""
         exit_code, output, stderr = self.run_cli_command(["--help"])
         assert exit_code == 0, f"Help command failed: {stderr}"
@@ -293,19 +294,19 @@ class N8nDeployE2ETester:
         assert "COMMAND" in output, "Help output missing command structure"
         assert "workflow deployment tool" in output.lower(), "Help missing description"
 
-    def test_version_command(self):
+    def test_version_command(self) -> None:
         """Test version command"""
         exit_code, output, stderr = self.run_cli_command(["--version"])
         assert exit_code == 0, f"Version command failed: {stderr}"
         assert "2.0.0" in output, f"Version output incorrect: {output}"
 
-    def test_invalid_command(self):
+    def test_invalid_command(self) -> None:
         """Test invalid command handling"""
         exit_code, output, stderr = self.run_cli_command(["invalid-command"])
         assert exit_code != 0, "Invalid command should fail"
         assert "No such command" in stderr or "Usage:" in output, "Missing error message"
 
-    def test_command_help_consistency(self):
+    def test_command_help_consistency(self) -> None:
         """Test individual command help messages"""
         commands = ["list", "add", "remove", "sync", "search", "stats"]
         for command in commands:
@@ -313,7 +314,7 @@ class N8nDeployE2ETester:
             assert exit_code == 0, f"Help for {command} failed: {stderr}"
             assert "Usage:" in output, f"Help for {command} missing usage"
 
-    def test_subcommand_help(self):
+    def test_subcommand_help(self) -> None:
         """Test subcommand group help"""
         subcommands = ["db", "apikey"]
         for subcommand in subcommands:
@@ -323,7 +324,7 @@ class N8nDeployE2ETester:
 
     # === Database Operation Tests ===
 
-    def test_database_initialization(self):
+    def test_database_initialization(self) -> None:
         """Test database initialization"""
         app_dir, _ = self.setup_test_environment()
 
@@ -333,7 +334,7 @@ class N8nDeployE2ETester:
         db_path = Path(app_dir) / "n8n-deploy.db"
         assert db_path.exists(), "Database file not created"
 
-    def test_database_status(self):
+    def test_database_status(self) -> None:
         """Test database status command"""
         app_dir, _ = self.setup_test_environment()
 
@@ -345,7 +346,7 @@ class N8nDeployE2ETester:
         assert "Schema Version" in output, "Status missing schema version"
         assert app_dir in output, "Status missing database location"
 
-    def test_database_backup(self):
+    def test_database_backup(self) -> None:
         """Test database backup functionality"""
         app_dir, _ = self.setup_test_environment()
 
@@ -360,7 +361,7 @@ class N8nDeployE2ETester:
         backup_files = list(backup_dir.glob("*.tar.gz"))
         assert len(backup_files) > 0, "No backup files created"
 
-    def test_database_compact(self):
+    def test_database_compact(self) -> None:
         """Test database maintenance operations"""
         app_dir, _ = self.setup_test_environment()
 
@@ -373,7 +374,7 @@ class N8nDeployE2ETester:
 
     # === API Key Management Tests ===
 
-    def test_apikey_add_jwt(self):
+    def test_apikey_add_jwt(self) -> None:
         """Test adding JWT API key"""
         app_dir, _ = self.setup_test_environment()
 
@@ -387,7 +388,7 @@ class N8nDeployE2ETester:
         assert exit_code == 0, f"API key add failed: {stderr}"
         assert "successfully added" in output.lower() or "added" in output.lower(), "Missing success message"
 
-    def test_apikey_list_formats(self):
+    def test_apikey_list_formats(self) -> None:
         """Test API key listing in different formats"""
         app_dir, _ = self.setup_test_environment()
 
@@ -406,7 +407,7 @@ class N8nDeployE2ETester:
         assert exit_code == 0, f"API key list JSON failed: {stderr}"
         assert self.validate_json_output(output), "Invalid JSON format"
 
-    def test_apikey_get_show_key(self):
+    def test_apikey_get_show_key(self) -> None:
         """Test retrieving specific API key"""
         app_dir, _ = self.setup_test_environment()
 
@@ -426,7 +427,7 @@ class N8nDeployE2ETester:
         assert exit_code == 0, f"API key get with show failed: {stderr}"
         assert jwt_token in output, "Key value should be shown"
 
-    def test_apikey_lifecycle(self):
+    def test_apikey_lifecycle(self) -> None:
         """Test complete API key lifecycle"""
         app_dir, _ = self.setup_test_environment()
 
@@ -449,7 +450,7 @@ class N8nDeployE2ETester:
         exit_code, output, stderr = self.run_cli_command(["apikey", "get", "lifecycle_key"])
         assert exit_code != 0, "Deleted key should not be found"
 
-    def test_apikey_test_connection(self):
+    def test_apikey_test_connection(self) -> None:
         """Test API key connection testing"""
         app_dir, _ = self.setup_test_environment()
 
@@ -461,14 +462,14 @@ class N8nDeployE2ETester:
         # Test connection (will fail without real server, but should handle gracefully)
         exit_code, output, stderr = self.run_cli_command(
             ["apikey", "test", "test_connection_key"],
-            env={"N8N_SERVER_URL": self.test_server_url},
+            env={"N8N_DEPLOY_SERVER_URL": self.test_server_url},
         )
         # Don't assert exit code as connection will fail, just ensure it doesn't crash
         assert "test_connection_key" in output or "connection" in output.lower(), "Missing test output"
 
     # === Workflow Operation Tests ===
 
-    def test_workflow_add_and_list(self):
+    def test_workflow_add_and_list(self) -> None:
         """Test adding and listing workflows"""
         app_dir, flow_dir = self.setup_test_environment()
 
@@ -498,7 +499,7 @@ class N8nDeployE2ETester:
         assert exit_code == 0, f"Workflow list failed: {stderr}"
         assert "test_workflow" in output, "Added workflow not in list"
 
-    def test_workflow_search_and_stats(self):
+    def test_workflow_search_and_stats(self) -> None:
         """Test workflow search and statistics"""
         app_dir, flow_dir = self.setup_test_environment()
 
@@ -545,7 +546,7 @@ class N8nDeployE2ETester:
         assert exit_code == 0, f"Workflow stats failed: {stderr}"
         assert "Total" in output and "2" in output, "Stats missing workflow count"
 
-    def test_workflow_sync_operation(self):
+    def test_workflow_sync_operation(self) -> None:
         """Test workflow synchronization"""
         app_dir, flow_dir = self.setup_test_environment()
 
@@ -569,7 +570,7 @@ class N8nDeployE2ETester:
         assert exit_code == 0, f"Workflow sync failed: {stderr}"
         assert "sync_test" in output or "Synchronized" in output, "Sync results missing"
 
-    def test_workflow_remove(self):
+    def test_workflow_remove(self) -> None:
         """Test workflow removal"""
         app_dir, flow_dir = self.setup_test_environment()
 
@@ -601,7 +602,7 @@ class N8nDeployE2ETester:
 
     # === Backup Operation Tests ===
 
-    def test_backup_workflows(self):
+    def test_backup_workflows(self) -> None:
         """Test workflow backup creation"""
         app_dir, flow_dir = self.setup_test_environment()
         backup_dir = tempfile.mkdtemp(prefix="n8n_backup_")
@@ -641,7 +642,7 @@ class N8nDeployE2ETester:
         backup_files = list(Path(backup_dir).glob("*.tar.gz"))
         assert len(backup_files) > 0, "No backup files created"
 
-    def test_list_backups(self):
+    def test_list_backups(self) -> None:
         """Test backup listing"""
         app_dir, flow_dir = self.setup_test_environment()
         backup_dir = tempfile.mkdtemp(prefix="n8n_backup_")
@@ -679,7 +680,7 @@ class N8nDeployE2ETester:
         assert exit_code == 0, f"List backups failed: {stderr}"
         assert ".tar.gz" in output, "Backup files not listed"
 
-    def test_verify_backup(self):
+    def test_verify_backup(self) -> None:
         """Test backup verification"""
         app_dir, flow_dir = self.setup_test_environment()
         backup_dir = tempfile.mkdtemp(prefix="n8n_backup_")
@@ -723,7 +724,7 @@ class N8nDeployE2ETester:
 
     # === Server Integration Tests (Mock) ===
 
-    def test_list_server_no_connection(self):
+    def test_list_server_no_connection(self) -> None:
         """Test server listing without connection"""
         app_dir, _ = self.setup_test_environment()
 
@@ -737,7 +738,7 @@ class N8nDeployE2ETester:
             "connection" in output.lower() or "error" in output.lower() or "failed" in stderr.lower()
         ), "Missing connection error message"
 
-    def test_pull_push_server_operations(self):
+    def test_pull_push_server_operations(self) -> None:
         """Test pull/push operations with server URL"""
         app_dir, flow_dir = self.setup_test_environment()
 
@@ -794,7 +795,7 @@ class N8nDeployE2ETester:
 
     # === Output Format Tests ===
 
-    def test_emoji_vs_no_emoji_modes(self):
+    def test_emoji_vs_no_emoji_modes(self) -> None:
         """Test emoji and no-emoji output modes"""
         app_dir, flow_dir = self.setup_test_environment()
 
@@ -827,7 +828,7 @@ class N8nDeployE2ETester:
         # Both should contain the workflow name
         assert "emoji_test" in output_emoji and "emoji_test" in output_no_emoji, "Workflow missing from outputs"
 
-    def test_json_format_output(self):
+    def test_json_format_output(self) -> None:
         """Test JSON format output"""
         app_dir, flow_dir = self.setup_test_environment()
 
@@ -861,7 +862,7 @@ class N8nDeployE2ETester:
 
     # === Error Handling Tests ===
 
-    def test_invalid_directory_paths(self):
+    def test_invalid_directory_paths(self) -> None:
         """Test handling of invalid directory paths"""
         # Test invalid app directory
         exit_code, output, stderr = self.run_cli_command(["db", "status", "--app-dir", "/dev/null/invalid_path"])
@@ -877,7 +878,7 @@ class N8nDeployE2ETester:
         # May succeed with empty list or fail gracefully
         assert exit_code == 0 or "error" in stderr.lower(), "Should handle invalid flow directory"
 
-    def test_missing_workflow_file(self):
+    def test_missing_workflow_file(self) -> None:
         """Test handling of missing workflow files"""
         app_dir, flow_dir = self.setup_test_environment()
 
@@ -898,7 +899,7 @@ class N8nDeployE2ETester:
         assert exit_code != 0, "Should fail when adding nonexistent workflow"
         assert "not found" in stderr.lower() or "error" in stderr.lower(), "Missing error message"
 
-    def test_invalid_api_key_operations(self):
+    def test_invalid_api_key_operations(self) -> None:
         """Test invalid API key operations"""
         app_dir, _ = self.setup_test_environment()
 
@@ -912,7 +913,7 @@ class N8nDeployE2ETester:
         exit_code, output, stderr = self.run_cli_command(["apikey", "delete", "nonexistent_key", "--confirm"])
         assert exit_code != 0, "Should fail when deleting nonexistent key"
 
-    def test_malformed_workflow_json(self):
+    def test_malformed_workflow_json(self) -> None:
         """Test handling of malformed workflow JSON"""
         app_dir, flow_dir = self.setup_test_environment()
 
@@ -940,7 +941,7 @@ class N8nDeployE2ETester:
 
     # === Environment and Configuration Tests ===
 
-    def test_environment_variable_precedence(self):
+    def test_environment_variable_precedence(self) -> None:
         """Test environment variable vs CLI option precedence"""
         app_dir, flow_dir = self.setup_test_environment()
         env_flow_dir = tempfile.mkdtemp(prefix="n8n_env_flow_")
@@ -962,7 +963,7 @@ class N8nDeployE2ETester:
                 "--app-dir",
                 app_dir,
             ],
-            env={"N8N_FLOW_DIR": env_flow_dir},
+            env={"N8N_DEPLOY_FLOW_DIR": env_flow_dir},
         )
         self.run_cli_command(
             [
@@ -979,18 +980,18 @@ class N8nDeployE2ETester:
 
         # Test with environment variable
         exit_code, output, stderr = self.run_cli_command(
-            ["sync", "env_dir_workflow", "--app-dir", app_dir], env={"N8N_FLOW_DIR": env_flow_dir}
+            ["sync", "env_dir_workflow", "--app-dir", app_dir], env={"N8N_DEPLOY_FLOW_DIR": env_flow_dir}
         )
         assert exit_code == 0, f"Sync with env var failed: {stderr}"
 
         # Test CLI override of environment variable
         exit_code, output, stderr = self.run_cli_command(
             ["sync", "cli_dir_workflow", "--app-dir", app_dir, "--flow-dir", flow_dir],
-            env={"N8N_FLOW_DIR": env_flow_dir},
+            env={"N8N_DEPLOY_FLOW_DIR": env_flow_dir},
         )
         assert exit_code == 0, f"Sync with CLI override failed: {stderr}"
 
-    def test_server_url_configuration(self):
+    def test_server_url_configuration(self) -> None:
         """Test server URL configuration methods"""
         app_dir, _ = self.setup_test_environment()
 
@@ -998,7 +999,7 @@ class N8nDeployE2ETester:
 
         # Test with environment variable
         exit_code, output, stderr = self.run_cli_command(
-            ["list-server", "--app-dir", app_dir], env={"N8N_SERVER_URL": self.test_server_url}
+            ["list-server", "--app-dir", app_dir], env={"N8N_DEPLOY_SERVER_URL": self.test_server_url}
         )
         # Will fail to connect but should show server URL
         assert (
@@ -1009,7 +1010,7 @@ class N8nDeployE2ETester:
         test_cli_url = "http://cli-override:5678"
         exit_code, output, stderr = self.run_cli_command(
             ["list-server", "--app-dir", app_dir, "--server-url", test_cli_url],
-            env={"N8N_SERVER_URL": self.test_server_url},
+            env={"N8N_DEPLOY_SERVER_URL": self.test_server_url},
         )
         # CLI option should take precedence
         assert test_cli_url in output or "connection" in output.lower(), "CLI server URL override not working"
@@ -1090,8 +1091,8 @@ class N8nDeployE2ETester:
 
     def run_all_tests(self, categories: List[TestCategory] = None) -> Dict[TestCategory, List[TestResult]]:
         """Run all tests or specific categories"""
-        if categories is None:
-            categories = list(TestCategory)
+        # if categories is None:
+        #     categories = list(TestCategory)
 
         all_results = {}
 
@@ -1113,23 +1114,23 @@ class N8nDeployE2ETester:
 
         return all_results
 
-    def print_summary(self, results: Dict[TestCategory, List[TestResult]], total_time: float):
+    def print_summary(self, results: Dict[TestCategory, List[TestResult]], total_time: float) -> None:
         """Print test execution summary"""
         total_tests = sum(len(category_results) for category_results in results.values())
         passed_tests = sum(len([r for r in category_results if r.passed]) for category_results in results.values())
         failed_tests = total_tests - passed_tests
 
-        print(f"\n{'='*60}")
-        print(f"🎯 n8n-deploy E2E Test Summary")
-        print(f"{'='*60}")
+        print(f"\n{'=' * 60}")
+        print("🎯 n8n-deploy E2E Test Summary")
+        print(f"{'=' * 60}")
         print(f"⏱️  Total time: {total_time:.2f}s")
         print(f"📊 Total tests: {total_tests}")
         print(f"✅ Passed: {passed_tests}")
         print(f"❌ Failed: {failed_tests}")
-        print(f"📈 Success rate: {(passed_tests/total_tests*100):.1f}%")
+        print(f"📈 Success rate: {(passed_tests / total_tests * 100):.1f}%")
 
         # Category breakdown
-        print(f"\n📋 Category Breakdown:")
+        print("\n📋 Category Breakdown:")
         for category, category_results in results.items():
             category_passed = len([r for r in category_results if r.passed])
             category_total = len(category_results)
@@ -1137,16 +1138,16 @@ class N8nDeployE2ETester:
 
         # Failed tests details
         if failed_tests > 0:
-            print(f"\n❌ Failed Tests:")
+            print("\n❌ Failed Tests:")
             for category_results in results.values():
                 for result in category_results:
                     if not result.passed:
                         print(f"  • {result.name}: {result.error_message}")
 
-        print(f"\n{'='*60}")
+        print("\n{'=' * 60}")
 
 
-def main():
+def main() -> int:
     """Main entry point for the E2E testing script"""
     parser = argparse.ArgumentParser(description="n8n-deploy E2E Manual CLI Testing")
     parser.add_argument(

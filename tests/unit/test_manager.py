@@ -135,7 +135,7 @@ class TestN8nApiIntegration:
             assert credentials["headers"]["Content-Type"] == "application/json"
 
     def test_get_n8n_credentials_with_environment_variable(self, test_manager: WorkflowApi) -> None:
-        """Test fallback to N8N_API_KEY environment variable"""
+        """Test fallback to N8N_DEPLOY_SERVER_KEY environment variable"""
         # Mock API key manager to return None (no stored keys)
         with (
             patch.object(test_manager.key_api, "get_api_key", return_value=None),
