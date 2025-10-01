@@ -144,7 +144,7 @@ test:hypothesis:
     - source .venv/bin/activate
     - export N8N_DEPLOY_TESTING=1
     - echo "Running property-based tests with Hypothesis..."
-    - pytest tests/generators/hypothesis_generator.py -v --tb=short --hypothesis-show-statistics
+    - pytest tests/generators/hypothesis_generator.py -v --tb=short --hypothesis-show-statistics --junit-xml=hypothesis-results.xml
     - echo "✅ Property-based tests passed (755 generated examples)"
   artifacts:
     when: always
@@ -152,6 +152,7 @@ test:hypothesis:
       junit: hypothesis-results.xml
     paths:
       - .hypothesis/
+      - hypothesis-results.xml
     expire_in: 7 days
 
 # Build Matrix stage - Multi-version package builds
