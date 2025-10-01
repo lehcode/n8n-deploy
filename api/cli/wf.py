@@ -45,6 +45,7 @@ def wf() -> None:
 @click.option("--app-dir", type=click.Path(), help=HELP_APP_DIR)
 @click.option("--flow-dir", type=click.Path(), help=HELP_FLOW_DIR)
 @click.option("--server-url", help=HELP_SERVER_URL)
+@click.option("--skip-ssl-verify", is_flag=True, help="Skip SSL certificate verification for self-signed certificates")
 @click.option(
     "--format",
     type=click.Choice(["table", "json"]),
@@ -57,6 +58,7 @@ def add(
     app_dir: Optional[str],
     flow_dir: Optional[str],
     server_url: Optional[str],
+    skip_ssl_verify: bool,
     format: str,
     no_emoji: bool,
 ) -> None:
@@ -83,7 +85,7 @@ def add(
         cli_error(str(e), no_emoji)
 
     try:
-        manager = WorkflowApi(config=config)
+        manager = WorkflowApi(config=config, skip_ssl_verify=skip_ssl_verify)
 
         # Pull workflow from server
         # Check if API key and server URL are configured
@@ -341,6 +343,7 @@ def stats(
 # Server operations
 @wf.command()
 @click.option("--server-url", help=HELP_SERVER_URL)
+@click.option("--skip-ssl-verify", is_flag=True, help="Skip SSL certificate verification for self-signed certificates")
 @click.option("--app-dir", type=click.Path(), help=HELP_APP_DIR)
 @click.option("--flow-dir", type=click.Path(), help=HELP_FLOW_DIR)
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
@@ -348,6 +351,7 @@ def stats(
 def pull(
     workflow_id: str,
     server_url: Optional[str],
+    skip_ssl_verify: bool,
     app_dir: Optional[str],
     flow_dir: Optional[str],
     no_emoji: bool,
@@ -364,7 +368,7 @@ def pull(
         raise click.Abort()
 
     try:
-        manager = WorkflowApi(config=config)
+        manager = WorkflowApi(config=config, skip_ssl_verify=skip_ssl_verify)
         # Override server URL if provided
         if server_url:
             # Set temporary environment variable for this operation
@@ -405,6 +409,7 @@ def pull(
 
 @wf.command()
 @click.option("--server-url", help=HELP_SERVER_URL)
+@click.option("--skip-ssl-verify", is_flag=True, help="Skip SSL certificate verification for self-signed certificates")
 @click.option("--app-dir", type=click.Path(), help=HELP_APP_DIR)
 @click.option("--flow-dir", type=click.Path(), help=HELP_FLOW_DIR)
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
@@ -412,6 +417,7 @@ def pull(
 def push(
     workflow_id: str,
     server_url: Optional[str],
+    skip_ssl_verify: bool,
     app_dir: Optional[str],
     flow_dir: Optional[str],
     no_emoji: bool,
@@ -428,7 +434,7 @@ def push(
         raise click.Abort()
 
     try:
-        manager = WorkflowApi(config=config)
+        manager = WorkflowApi(config=config, skip_ssl_verify=skip_ssl_verify)
         # Override server URL if provided
         if server_url:
             original_url = os.environ.get("N8N_DEPLOY_SERVER_URL")
@@ -468,6 +474,7 @@ def push(
 
 @wf.command("server")
 @click.option("--server-url", help=HELP_SERVER_URL)
+@click.option("--skip-ssl-verify", is_flag=True, help="Skip SSL certificate verification for self-signed certificates")
 @click.option("--app-dir", type=click.Path(), help=HELP_APP_DIR)
 @click.option("--flow-dir", type=click.Path(), help=HELP_FLOW_DIR)
 @click.option(
@@ -479,6 +486,7 @@ def push(
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
 def list_server(
     server_url: Optional[str],
+    skip_ssl_verify: bool,
     app_dir: Optional[str],
     flow_dir: Optional[str],
     format: str,
@@ -492,7 +500,7 @@ def list_server(
         raise click.Abort()
 
     try:
-        manager = WorkflowApi(config=config)
+        manager = WorkflowApi(config=config, skip_ssl_verify=skip_ssl_verify)
         # Override server URL if provided
         if server_url:
             original_url = os.environ.get("N8N_DEPLOY_SERVER_URL")

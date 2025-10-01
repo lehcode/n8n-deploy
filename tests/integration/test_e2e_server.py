@@ -459,3 +459,25 @@ class TestE2EServer(E2ETestBase):
 
             # Should handle large workflows
             assert push_returncode in [0, 1]
+
+    def test_skip_ssl_verify_option_available(self) -> None:
+        """Test that --skip-ssl-verify option is available on all remote commands"""
+        self.setup_database_with_api_key()
+
+        # Commands that should support --skip-ssl-verify
+        commands = [
+            ["wf", "add", "TestWorkflow", "--skip-ssl-verify"],
+            ["wf", "pull", "test123", "--skip-ssl-verify"],
+            ["wf", "push", "test123", "--skip-ssl-verify"],
+            ["wf", "server", "--skip-ssl-verify"],
+        ]
+
+        for cmd in commands:
+            # Run with --server-url to avoid missing URL errors
+            full_cmd = ["--app-dir", self.temp_dir, "--server-url", "https://localhost:5678"] + cmd
+            returncode, stdout, stderr = self.run_cli_command(full_cmd)
+
+            # Should not error on unknown option (returns 0 or 1, not 2)
+            assert returncode in [0, 1], f"Command {cmd} rejected --skip-ssl-verify option: {stderr}"
+            # Should not show "No such option" error
+            assert "no such option" not in stderr.lower(), f"Command {cmd} does not support --skip-ssl-verify"
