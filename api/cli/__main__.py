@@ -9,7 +9,7 @@ import io
 import sys
 from contextlib import redirect_stderr
 
-from .app import cli
+from .app import cli, PROG_NAME
 
 if __name__ == "__main__":
 
@@ -18,7 +18,7 @@ if __name__ == "__main__":
         stderr_capture = io.StringIO()
         try:
             with redirect_stderr(stderr_capture):
-                cli()
+                cli(prog_name=PROG_NAME)
         except SystemExit:
             # Print captured stderr to stdout instead
             captured_output = stderr_capture.getvalue()
@@ -28,4 +28,4 @@ if __name__ == "__main__":
             sys.exit(0)
     else:
         # Normal behavior for other cases
-        cli()
+        cli(prog_name=PROG_NAME)

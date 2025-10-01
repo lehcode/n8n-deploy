@@ -298,16 +298,16 @@ class TestE2EDatabase(E2ETestBase):
         # Initialize database
         self.run_cli_command(["--app-dir", self.temp_dir, "db", "init"])
 
-        # Try operations that might cause errors
+        # Try operations that might cause errors or succeed
         error_prone_operations = [
-            ["wf", "add", "nonexistent.json", "Nonexistent-Workflow"],  # Missing file should return exit code 1
+            ["wf", "search", "nonexistent"],  # Search for non-existent workflow (returns 0 with no results)
             ["db", "backup"],  # Should work
             ["wf", "list"],  # Should work
         ]
 
         for op in error_prone_operations:
             returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir] + op)
-            # Should not crash, even if operation fails
+            # Should not crash with unexpected error codes
             assert returncode in [0, 1], f"Operation crashed with unexpected code: {op}\nSTDERR: {stderr}"
 
         # Database should still be accessible

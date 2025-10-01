@@ -183,3 +183,31 @@ class TestE2EEnv(E2ETestBase):
         assert "N8N_DEPLOY_SERVER_KEY" in data["variables"]
         assert data["variables"]["N8N_DEPLOY_SERVER_KEY"]["value"] == "***"
         assert "secret_api_key_should_be_hidden" not in stdout
+
+    def test_env_defaults_to_cwd_when_app_dir_invalid(self) -> None:
+        """Test that invalid N8N_DEPLOY_APP_DIR defaults to cwd"""
+        env = {"N8N_DEPLOY_APP_DIR": "/nonexistent/invalid/path"}
+
+        returncode, stdout, stderr = self.run_cli_command(["env", "--format", "json"], env=env)
+
+        self.assert_command_details(returncode, stdout, stderr, 0, "Invalid app dir defaults to cwd")
+
+        # Verify command succeeds (falls back to cwd instead of crashing)
+        data = json.loads(stdout)
+        assert "N8N_DEPLOY_APP_DIR" in data["variables"]
+        # Source shows the environment variable name
+        assert data["variables"]["N8N_DEPLOY_APP_DIR"]["source"] == "N8N_DEPLOY_APP_DIR"
+
+    def test_env_defaults_to_cwd_when_flow_dir_invalid(self) -> None:
+        """Test that invalid N8N_DEPLOY_FLOW_DIR defaults to cwd"""
+        env = {"N8N_DEPLOY_FLOW_DIR": "/nonexistent/invalid/flow/path"}
+
+        returncode, stdout, stderr = self.run_cli_command(["env", "--format", "json"], env=env)
+
+        self.assert_command_details(returncode, stdout, stderr, 0, "Invalid flow dir defaults to cwd")
+
+        # Verify command succeeds (falls back to cwd instead of crashing)
+        data = json.loads(stdout)
+        assert "N8N_DEPLOY_FLOW_DIR" in data["variables"]
+        # Source shows the environment variable name
+        assert data["variables"]["N8N_DEPLOY_FLOW_DIR"]["source"] == "N8N_DEPLOY_FLOW_DIR"

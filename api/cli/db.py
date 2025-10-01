@@ -23,7 +23,7 @@ from rich.table import Table
 
 from ..config import get_config
 from ..db import DBApi
-from .app import CustomGroup
+from .app import CustomGroup, HELP_APP_DIR, HELP_FLOW_DIR, HELP_NO_EMOJI
 
 console = Console()
 
@@ -107,9 +107,9 @@ def db() -> None:
 
 
 @db.command()
-@click.option("--app-dir", type=click.Path(), help="Application directory for database and backups")
+@click.option("--app-dir", type=click.Path(), help=HELP_APP_DIR)
 @click.option("--format", type=click.Choice(["table", "json"]), default="table", help="Output format")
-@click.option("--no-emoji", is_flag=True, help="Disable emoji output for automation/scripting")
+@click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
 @click.option("--import", "import_db", is_flag=True, help="Import existing database without prompting")
 def init(app_dir: Optional[str], format: str, no_emoji: bool, import_db: bool) -> None:
     """🎬 Initialize n8n-deploy database
@@ -269,9 +269,9 @@ def init(app_dir: Optional[str], format: str, no_emoji: bool, import_db: bool) -
 
 
 @db.command()
-@click.option("--app-dir", type=click.Path(), help="Application directory for database and backups")
+@click.option("--app-dir", type=click.Path(), help=HELP_APP_DIR)
 @click.option("--format", type=click.Choice(["json"]), help="JSON output, implies no emoji")
-@click.option("--no-emoji", is_flag=True, help="Disable emoji output for automation/scripting")
+@click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
 def status(app_dir: Optional[str], format: Optional[str], no_emoji: bool) -> None:
     """📊 Show database status and statistics
 
@@ -355,8 +355,8 @@ def status(app_dir: Optional[str], format: Optional[str], no_emoji: bool) -> Non
 
 
 @db.command()
-@click.option("--app-dir", type=click.Path(), help="Application directory for database and backups")
-@click.option("--no-emoji", is_flag=True, help="Disable emoji output for automation/scripting")
+@click.option("--app-dir", type=click.Path(), help=HELP_APP_DIR)
+@click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
 def compact(app_dir: Optional[str], no_emoji: bool) -> None:
     """🗜️ Compact database to optimize storage"""
     config = get_config(base_folder=app_dir)
@@ -383,7 +383,7 @@ def compact(app_dir: Optional[str], no_emoji: bool) -> None:
 
 @db.command()
 @click.argument("backup_path", required=False)
-@click.option("--app-dir", type=click.Path(), help="Application directory for database and backups")
+@click.option("--app-dir", type=click.Path(), help=HELP_APP_DIR)
 def backup(
     backup_path: Optional[str],
     app_dir: Optional[str],

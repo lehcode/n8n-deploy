@@ -10,16 +10,31 @@ This module provides modular CLI commands organized by functional areas:
 - apikey: API key lifecycle management
 """
 
-from .app import get_cli_app, cli
+from .app import (
+    get_cli_app,
+    cli,
+    PROG_NAME,
+    HELP_APP_DIR,
+    HELP_FLOW_DIR,
+    HELP_SERVER_URL,
+    HELP_NO_EMOJI,
+    HELP_FORMAT,
+)
 
 
 def main() -> None:
     """Main entry point for the CLI application"""
-    cli()
+    cli(prog_name=PROG_NAME)
 
 
 __all__ = [
     "get_cli_app",
     "cli",
     "main",
+    "PROG_NAME",
+    "HELP_APP_DIR",
+    "HELP_FLOW_DIR",
+    "HELP_SERVER_URL",
+    "HELP_NO_EMOJI",
+    "HELP_FORMAT",
 ]

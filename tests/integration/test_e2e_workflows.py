@@ -50,26 +50,24 @@ class TestE2EWorkflows(E2ETestBase):
         workflow_file.write_text(json.dumps(workflow_data, indent=2))
         return workflow_file
 
-    def test_workflow_add_basic(self) -> None:
-        """Test adding a basic workflow"""
+    def test_workflow_add_requires_server(self) -> None:
+        """Test that wf add command requires server URL (pulls from remote)"""
         self.setup_database()
-        self.create_test_workflow("basic_test")
 
+        # wf add now pulls from server, so without server URL it should fail gracefully
         returncode, stdout, stderr = self.run_cli_command(
             [
                 "--app-dir",
                 self.temp_dir,
-                "--flow-dir",
-                self.temp_flow_dir,
                 "wf",
                 "add",
-                "basic_test.json",
-                "Basic_Test",
+                "TestWorkflow",
             ]
         )
 
-        # Should succeed or provide meaningful error
-        assert returncode in [0, 1]
+        # Should fail with meaningful error about missing server URL
+        assert returncode == 1
+        assert "server" in stderr.lower() or "server" in stdout.lower()
 
     def test_workflow_list_empty(self) -> None:
         """Test listing workflows when none exist"""
@@ -269,44 +267,43 @@ class TestE2EWorkflows(E2ETestBase):
         """Test adding nonexistent workflow file"""
         self.setup_database()
 
+        # wf add now pulls from server, so this tests server pull of nonexistent workflow
         returncode, stdout, stderr = self.run_cli_command(
             [
                 "--app-dir",
                 self.temp_dir,
-                "--flow-dir",
-                self.temp_flow_dir,
                 "wf",
                 "add",
-                "nonexistent_workflow.json",
-                "Nonexistent-Workflow",
+                "NonexistentWorkflow",
             ]
         )
 
-        # Should fail gracefully
-        assert returncode in [0, 1]
-        assert "not found" in stderr.lower() or "not found" in stdout.lower()
+        # Should fail gracefully - either no server URL or workflow not found on server
+        assert returncode == 1
+        assert (
+            "server" in stderr.lower()
+            or "server" in stdout.lower()
+            or "not found" in stderr.lower()
+            or "not found" in stdout.lower()
+        )
 
     def test_workflow_add_invalid_json(self) -> None:
-        """Test adding workflow with invalid JSON"""
+        """Test that wf add validates workflow name format"""
         self.setup_database()
-        invalid_file = Path(self.temp_flow_dir) / "invalid.json"
-        invalid_file.write_text("{ invalid json content")
 
+        # Test with invalid workflow name characters
         returncode, stdout, stderr = self.run_cli_command(
             [
                 "--app-dir",
                 self.temp_dir,
-                "--flow-dir",
-                self.temp_flow_dir,
                 "wf",
                 "add",
-                "invalid.json",
-                "Invalid-JSON",
+                "Invalid/Name",  # Forward slash is invalid in workflow names
             ]
         )
 
-        # Should handle invalid JSON gracefully
-        assert returncode in [0, 1]
+        # Should fail gracefully - either validation error or server URL missing
+        assert returncode == 1
 
     def test_workflow_operations_emoji_consistency(self) -> None:
         """Test workflow operations with emoji and no-emoji modes"""
@@ -342,87 +339,58 @@ class TestE2EWorkflows(E2ETestBase):
                 assert emoji not in no_emoji_stdout
 
     def test_workflow_path_resolution(self) -> None:
-        """Test workflow file path resolution"""
+        """Test workflow search command handles different flow directory paths"""
         self.setup_database()
         subdir = Path(self.temp_flow_dir) / "subdir"
         subdir.mkdir()
 
-        workflow_data = {"name": "path_test", "nodes": [], "connections": {}}
-        workflow_file = subdir / "path_test.json"
-        workflow_file.write_text(json.dumps(workflow_data))
-
-        # Try to add workflow (may not find it in subdirectory)
+        # Test that search command works with custom flow directory
         returncode, stdout, stderr = self.run_cli_command(
-            ["--app-dir", self.temp_dir, "--flow-dir", str(subdir), "wf", "add", "path_test.json", "Path-Test"]
+            ["--app-dir", self.temp_dir, "--flow-dir", str(subdir), "wf", "search", "TestWorkflow"]
         )
 
-        # Should handle path resolution
-        assert returncode in [0, 1]
+        # Should handle path resolution and return success (even if no results)
+        assert returncode == 0
 
     def test_workflow_large_file_handling(self) -> None:
-        """Test handling of large workflow files"""
+        """Test that workflow commands handle operations efficiently"""
         self.setup_database()
-        large_workflow_data = {
-            "name": "large_workflow",
-            "nodes": [
-                {
-                    "id": f"node_{i}",
-                    "type": "test",
-                    "typeVersion": 1,
-                    "position": [i * 100, i * 50],
-                }
-                for i in range(100)  # 100 nodes
-            ],
-            "connections": {},
-            "active": False,
-        }
 
-        self.create_test_workflow("large_test", large_workflow_data)
-
+        # Test that list command handles database operations efficiently
         returncode, stdout, stderr = self.run_cli_command(
             [
                 "--app-dir",
                 self.temp_dir,
-                "--flow-dir",
-                self.temp_flow_dir,
                 "wf",
-                "add",
-                "large_test.json",
-                "Large-Test",
+                "list",
             ]
         )
 
-        # Should handle large files
-        assert returncode in [0, 1]
+        # Should handle operations efficiently
+        assert returncode == 0
 
     def test_workflow_concurrent_operations(self) -> None:
         """Test concurrent workflow operations"""
         import threading
 
         self.setup_database()
-        for i in range(3):
-            self.create_test_workflow(f"concurrent_test_{i}")
 
         results = []
 
-        def add_workflow(workflow_id) -> None:
+        def list_workflows(thread_id) -> None:
             returncode, stdout, stderr = self.run_cli_command(
                 [
                     "--app-dir",
                     self.temp_dir,
-                    "--flow-dir",
-                    self.temp_flow_dir,
                     "wf",
-                    "add",
-                    f"concurrent_test_{workflow_id}.json",
-                    f"Concurrent-Test-{workflow_id}",
+                    "list",
                 ]
             )
-            results.append((workflow_id, returncode, stdout, stderr))
+            results.append((thread_id, returncode, stdout, stderr))
 
         threads = []
         for i in range(3):
-            thread = threading.Thread(target=add_workflow, args=(i,))
+            thread = threading.Thread(target=list_workflows, args=(i,))
             threads.append(thread)
             thread.start()
 
@@ -430,72 +398,59 @@ class TestE2EWorkflows(E2ETestBase):
             thread.join()
         assert len(results) == 3
         # Operations should complete without crashes
-        for workflow_id, returncode, stdout, stderr in results:
-            assert returncode in [0, 1]
+        for thread_id, returncode, stdout, stderr in results:
+            assert returncode == 0, f"Thread {thread_id} failed with returncode {returncode}"
 
     def test_workflow_unicode_names(self) -> None:
-        """Test workflows with Unicode names"""
+        """Test that wf add command handles Unicode workflow names"""
         self.setup_database()
         unicode_names = ["测试工作流", "тест_поток", "workflow_émojis", "流程_テスト"]
 
         for name in unicode_names:
             try:
-                workflow_data = {"name": name, "nodes": [], "connections": {}}
-                workflow_file = Path(self.temp_flow_dir) / f"{name}.json"
-                workflow_file.write_text(json.dumps(workflow_data, ensure_ascii=False))
-
+                # Test that wf add accepts Unicode names (will fail due to no server, but validates name)
                 returncode, stdout, stderr = self.run_cli_command(
                     [
                         "--app-dir",
                         self.temp_dir,
-                        "--flow-dir",
-                        self.temp_flow_dir,
                         "wf",
                         "add",
-                        f"{name}.json",
-                        name.replace("_", "-"),
+                        name,
                     ]
                 )
 
-                # Should handle Unicode names
-                assert returncode in [0, 1]
+                # Should handle Unicode names - will fail due to no server URL but validates name first
+                assert returncode == 1
+                # Should show server error, not encoding error
+                assert "server" in stderr.lower() or "server" in stdout.lower()
 
-            except (UnicodeError, OSError):
-                # Skip if filesystem doesn't support Unicode
-                pytest.skip(f"Filesystem doesn't support Unicode name: {name}")
+            except UnicodeError:
+                # Skip if system doesn't support Unicode
+                pytest.skip(f"System doesn't support Unicode name: {name}")
 
     def test_workflow_type_classification(self) -> None:
-        """Test workflow type classification (if implemented)"""
+        """Test workflow search handles different workflow name patterns"""
         self.setup_database()
-        workflow_types = [
-            ("api_workflow", {"nodes": [{"id": "webhook", "type": "webhook"}]}),
-            ("scheduled_workflow", {"nodes": [{"id": "cron", "type": "cron"}]}),
-            ("manual_workflow", {"nodes": [{"id": "manual", "type": "manual"}]}),
+        workflow_names = [
+            "api_workflow",
+            "scheduled_workflow",
+            "manual_workflow",
         ]
 
-        for name, node_data in workflow_types:
-            workflow_data = {
-                "name": name,
-                "nodes": node_data["nodes"],
-                "connections": {},
-                "active": False,
-            }
-            self.create_test_workflow(name, workflow_data)
-
+        for name in workflow_names:
+            # Test that search command handles different naming patterns
             returncode, stdout, stderr = self.run_cli_command(
                 [
                     "--app-dir",
                     self.temp_dir,
-                    "--flow-dir",
-                    self.temp_flow_dir,
                     "wf",
-                    "add",
-                    f"{name}.json",
-                    name.replace("_", " ").title(),
+                    "search",
+                    name,
                 ]
             )
 
-            assert returncode in [0, 1]
+            # Should succeed (returns 0 even with no results)
+            assert returncode == 0
 
     def test_workflow_backup_integration(self) -> None:
         """Test workflow operations integrate with backup system"""
@@ -525,14 +480,11 @@ class TestE2EWorkflows(E2ETestBase):
         self.setup_database()
         env = {"N8N_DEPLOY_FLOW_DIR": self.temp_flow_dir}
 
-        self.create_test_workflow("env_test")
+        # Test that search command uses environment variable for flow directory
+        returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir, "wf", "list"], env=env)
 
-        returncode, stdout, stderr = self.run_cli_command(
-            ["--app-dir", self.temp_dir, "wf", "add", "env_test.json", "Env-Test"], env=env
-        )
-
-        # Should use environment variable for flow directory
-        assert returncode in [0, 1]
+        # Should use environment variable for flow directory and succeed
+        assert returncode == 0
 
     def test_list_backups_shows_metadata(self) -> None:
         """Test wf backups command shows backup file metadata"""
@@ -552,25 +504,21 @@ class TestE2EWorkflows(E2ETestBase):
     def test_wf_add_with_json_format(self) -> None:
         """Test wf add with --format json output"""
         self.setup_database()
-        self.create_test_workflow("json_add_test")
 
         returncode, stdout, stderr = self.run_cli_command(
             [
                 "--app-dir",
                 self.temp_dir,
-                "--flow-dir",
-                self.temp_flow_dir,
                 "wf",
                 "add",
-                "json_add_test.json",
-                "JSON Add Test",
+                "JSONAddTest",
                 "--format",
                 "json",
             ]
         )
 
-        # Should output JSON format (may succeed or fail based on validation)
-        assert returncode in [0, 1]
+        # Should fail with server URL error and output in JSON format if requested
+        assert returncode == 1
 
     def test_wf_list_only_backupable(self) -> None:
         """Test wf list --only flag to show only backupable workflows"""

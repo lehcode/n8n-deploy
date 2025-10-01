@@ -12,6 +12,16 @@ from rich.console import Console
 
 console = Console()
 
+# Program name constant for consistent CLI help messages
+PROG_NAME = "n8n-deploy|./n8n-deploy"
+
+# Common CLI option help texts
+HELP_APP_DIR = "Application directory for database and backups"
+HELP_FLOW_DIR = "Plain directory where workflow JSON files are located"
+HELP_SERVER_URL = "n8n server URL (overrides N8N_DEPLOY_SERVER_URL)"
+HELP_NO_EMOJI = "Disable emoji output for automation/scripting"
+HELP_FORMAT = "Output format"
+
 
 class CustomGroup(click.Group):
     """Custom Click Group that formats usage as 'COMMAND [OPTIONS]...' instead of '[OPTIONS] COMMAND [ARGS]...'"""
