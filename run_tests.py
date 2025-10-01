@@ -57,11 +57,20 @@ def check_dependencies():
     return True
 
 
-def run_unit_tests(quiet=False, coverage=False):
+def run_unit_tests(quiet=False, coverage=False, test_class=None):
     """Run unit tests"""
-    print("🧪 Running unit tests...")
+    if test_class:
+        print(f"🧪 Running unit tests for class: {test_class}")
+    else:
+        print("🧪 Running unit tests...")
 
     cmd = "python -m pytest tests/unit/"
+
+    # Add class filter if specified
+    if test_class:
+        # Use -k to filter by class name
+        cmd += f" -k {test_class}"
+
     if quiet:
         cmd += " -q"  # Quiet mode
     # Default output from pyproject.toml (-v)
@@ -92,9 +101,12 @@ def run_unit_tests(quiet=False, coverage=False):
     return code == 0
 
 
-def run_integration_tests(quiet=False):
+def run_integration_tests(quiet=False, test_class=None):
     """Run integration tests (excluding E2E manual tests)"""
-    print("🔗 Running integration tests...")
+    if test_class:
+        print(f"🔗 Running integration tests for class: {test_class}")
+    else:
+        print("🔗 Running integration tests...")
 
     # Set environment variable for integration tests
     env = os.environ.copy()
@@ -102,6 +114,12 @@ def run_integration_tests(quiet=False):
 
     # Exclude E2E manual tests from regular integration tests
     cmd = "N8N_DEPLOY_TESTING=1 python -m pytest tests/integration/ --ignore=tests/integration/test_e2e_manual_cli.py --ignore=tests/integration/test_e2e_manual_database.py --ignore=tests/integration/test_e2e_manual_apikeys.py --ignore=tests/integration/test_e2e_manual_workflows.py --ignore=tests/integration/test_e2e_manual_server.py"
+
+    # Add class filter if specified
+    if test_class:
+        # Use -k to filter by class name
+        cmd += f" -k {test_class}"
+
     if quiet:
         cmd += " -q"  # Quiet mode
     # Default output from pyproject.toml (-v)
@@ -133,9 +151,12 @@ def run_integration_tests(quiet=False):
     return code == 0
 
 
-def run_e2e_tests(quiet=False):
+def run_e2e_tests(quiet=False, test_class=None):
     """Run End-to-End manual tests"""
-    print("🎭 Running E2E manual tests...")
+    if test_class:
+        print(f"🎭 Running E2E manual tests for class: {test_class}")
+    else:
+        print("🎭 Running E2E manual tests...")
 
     # Set environment variable for E2E tests
     env = os.environ.copy()
@@ -143,6 +164,12 @@ def run_e2e_tests(quiet=False):
 
     # Run only E2E manual tests
     cmd = "N8N_DEPLOY_TESTING=1 python -m pytest tests/integration/test_e2e_manual_*.py"
+
+    # Add class filter if specified
+    if test_class:
+        # Use -k to filter by class name
+        cmd += f" -k {test_class}"
+
     if quiet:
         cmd += " -q"  # Quiet mode
     # Default output from pyproject.toml (-v)
@@ -198,6 +225,76 @@ def run_specific_test(test_path, quiet=False):
             lines = stdout.split("\n")
             for line in lines:
                 if "FAILED" in line or "ERROR" in line or "short test summary" in line:
+                    print(line)
+        if stderr:
+            print(f"Error: {stderr}")
+
+    return code == 0
+
+
+def run_hypothesis_tests(quiet=False, show_statistics=False):
+    """Run property-based tests with Hypothesis"""
+    print("🔬 Running property-based tests (Hypothesis)...")
+
+    # Set environment variable for tests
+    env = os.environ.copy()
+    env["N8N_DEPLOY_TESTING"] = "1"
+
+    cmd = "python -m pytest tests/generators/hypothesis_generator.py -v --tb=short"
+    if show_statistics:
+        cmd += " --hypothesis-show-statistics"
+    if quiet:
+        cmd += " -q"
+
+    # Use real-time output unless quiet mode
+    if quiet:
+        code, stdout, stderr = run_command(cmd)
+    else:
+        # Run with environment and real-time output
+        code = subprocess.run(cmd, shell=True, env=env).returncode
+        stdout = stderr = ""
+
+    if code == 0:
+        print("✅ Property-based tests passed (755 generated examples)")
+    else:
+        print("❌ Property-based tests failed")
+        if quiet and stdout:
+            # Show failure summary in quiet mode
+            lines = stdout.split("\n")
+            for line in lines:
+                if "FAILED" in line or "ERROR" in line or "Falsifying example" in line:
+                    print(line)
+        if stderr:
+            print(f"Error: {stderr}")
+
+    return code == 0
+
+
+def run_generated_tests(quiet=False):
+    """Run auto-generated CLI tests"""
+    print("🤖 Running auto-generated CLI tests...")
+
+    # Set environment variable for tests
+    env = os.environ.copy()
+    env["N8N_DEPLOY_TESTING"] = "1"
+
+    cmd = "python -m pytest tests/generated/test_cli_generated.py -v --tb=short"
+    if quiet:
+        cmd += " -q"
+
+    # Run command with environment
+    code = subprocess.run(cmd, shell=True, env=env, capture_output=quiet, text=True).returncode
+    stdout = stderr = ""
+
+    if code == 0:
+        print("✅ Auto-generated CLI tests passed (88 test scenarios)")
+    else:
+        print("❌ Auto-generated CLI tests failed")
+        if quiet and stdout:
+            # Show failure summary in quiet mode
+            lines = stdout.split("\n")
+            for line in lines:
+                if "FAILED" in line or "ERROR" in line:
                     print(line)
         if stderr:
             print(f"Error: {stderr}")
@@ -347,6 +444,12 @@ Examples:
   python run_tests.py --unit                   # Run unit tests only
   python run_tests.py --integration            # Run integration tests only (excluding E2E)
   python run_tests.py --e2e                    # Run E2E manual tests only
+  python run_tests.py --integration --class TestE2EDatabase  # Run specific test class
+  python run_tests.py --integration --class TestE2EEnv       # Run env tests only
+  python run_tests.py --integration --class TestE2EWorkflows # Run workflow tests only
+  python run_tests.py --integration --class TestE2EAPIKeys   # Run API key tests only
+  python run_tests.py --integration --class TestE2EServer    # Run server tests only
+  python run_tests.py --hypothesis             # Run property-based tests with Hypothesis
   python run_tests.py --fast                   # Run fast tests only
   python run_tests.py --all                    # Run all tests (unit + integration, excluding E2E)
   python run_tests.py --all-e2e                # Run all tests including E2E manual tests
@@ -356,7 +459,7 @@ Examples:
   python run_tests.py --report                 # Generate comprehensive report (excluding E2E)
   python run_tests.py --report-e2e             # Generate comprehensive report including E2E
 
-Note: You must specify a test type (--unit, --integration, --e2e, --fast, --all, --all-e2e, --report, --report-e2e, --quality, or --specific)
+Note: You must specify a test type (--unit, --integration, --e2e, --hypothesis, --fast, --all, --all-e2e, --report, --report-e2e, --quality, or --specific)
         """,
     )
 
@@ -369,6 +472,12 @@ Note: You must specify a test type (--unit, --integration, --e2e, --fast, --all,
     )
 
     parser.add_argument("--e2e", action="store_true", help="Run E2E manual tests only")
+
+    parser.add_argument(
+        "--hypothesis", action="store_true", help="Run property-based tests with Hypothesis (755 generated examples)"
+    )
+
+    parser.add_argument("--generated", action="store_true", help="Run auto-generated CLI tests (all commands and options)")
 
     parser.add_argument("--fast", action="store_true", help="Run fast tests only (excluding slow tests)")
 
@@ -389,6 +498,13 @@ Note: You must specify a test type (--unit, --integration, --e2e, --fast, --all,
     parser.add_argument("--quality", action="store_true", help="Run code quality checks (black, mypy)")
 
     parser.add_argument("--specific", type=str, help="Run specific test file or function")
+
+    parser.add_argument(
+        "--class",
+        type=str,
+        dest="test_class",
+        help="Run tests for a specific test class (e.g., TestE2EDatabase, TestE2EEnv)",
+    )
 
     parser.add_argument(
         "--report",
@@ -435,13 +551,19 @@ Note: You must specify a test type (--unit, --integration, --e2e, --fast, --all,
 
     # Run test suites - require explicit test type selection
     if args.unit:
-        success &= run_unit_tests(args.quiet, args.coverage)
+        success &= run_unit_tests(args.quiet, args.coverage, args.test_class)
 
     elif args.integration:
-        success &= run_integration_tests(args.quiet)
+        success &= run_integration_tests(args.quiet, args.test_class)
 
     elif args.e2e:
-        success &= run_e2e_tests(args.quiet)
+        success &= run_e2e_tests(args.quiet, args.test_class)
+
+    elif args.hypothesis:
+        success &= run_hypothesis_tests(args.quiet, show_statistics=not args.quiet)
+
+    elif args.generated:
+        success &= run_generated_tests(args.quiet)
 
     elif args.fast:
         success &= run_fast_tests(args.quiet)

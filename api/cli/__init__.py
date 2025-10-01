@@ -12,7 +12,14 @@ This module provides modular CLI commands organized by functional areas:
 
 from .app import get_cli_app, cli
 
+
+def main() -> None:
+    """Main entry point for the CLI application"""
+    cli()
+
+
 __all__ = [
     "get_cli_app",
     "cli",
+    "main",
 ]

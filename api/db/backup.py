@@ -8,14 +8,14 @@ Handles backup metadata storage, retrieval, and management.
 import sqlite3
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Any, Union, Iterator
-from contextlib import contextmanager
+from typing import Dict, List, Optional, Any, Union
 
 from ..config import AppConfig
+from .base import BaseDB
 from .schema import SchemaApi
 
 
-class BackupApi:
+class BackupApi(BaseDB):
     """Manages backup-related database operations"""
 
     def __init__(
@@ -24,14 +24,8 @@ class BackupApi:
         db_path: Optional[Union[str, Path]] = None,
     ):
         """Initialize backup"""
+        super().__init__(config=config, db_path=db_path)
         self.schema = SchemaApi(config=config, db_path=db_path)
-        self.db_path = self.schema.db_path
-
-    @contextmanager
-    def get_connection(self) -> Iterator[sqlite3.Connection]:
-        """Context for database connections"""
-        with self.schema.get_connection() as conn:
-            yield conn
 
     def create_backup_record(self, backup_metadata: Dict[str, Any]) -> bool:
         """Create a record of a backup operation"""

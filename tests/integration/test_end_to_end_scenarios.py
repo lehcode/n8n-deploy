@@ -31,7 +31,7 @@ class TestEndToEndEnvironmentIntegration:
     @pytest.mark.skip(reason="TODO: Implement test for environment variable display")
     def test_list_command_shows_environment_variables(self, test_config: AppConfig) -> None:
         """
-        Test that 'n8n-deploy list' command displays N8N_DEPLOY_APP_DIR and N8N_FLOW_DIR
+        Test that 'n8n-deploy list' command displays N8N_DEPLOY_APP_DIR and N8N_DEPLOY_FLOW_DIR
 
         Scenario: User runs list command and sees current environment configuration
         Expected: CLI shows both directory paths and environment variable values
@@ -40,7 +40,7 @@ class TestEndToEndEnvironmentIntegration:
         - App Directory: {actual_path}
         - N8N_DEPLOY_APP_DIR: {env_value}
         - Flow Directory: {actual_path}
-        - N8N_FLOW_DIR: {env_value}
+        - N8N_DEPLOY_FLOW_DIR: {env_value}
         """
         pass
 
@@ -109,11 +109,11 @@ class TestEndToEndServerIntegration:
         """
         Test server commands fail gracefully when no server URL is configured
 
-        Scenario: User runs server commands without N8N_SERVER_URL or --server-url
+        Scenario: User runs server commands without N8N_DEPLOY_SERVER_URL or --server-url
         Expected: Clear error message directing user to configure server URL
 
         TODO: Implement test for commands:
-        - list-server: Should show "No n8n server URL configured"
+        - server: Should show "No n8n server URL configured"
         - pull workflow_id: Should show configuration error
         - push workflow_id: Should show configuration error
         """
@@ -124,11 +124,11 @@ class TestEndToEndServerIntegration:
         """
         Test server URL configuration priority (CLI flag > environment variable)
 
-        Scenario: Both --server-url and N8N_SERVER_URL are set
+        Scenario: Both --server-url and N8N_DEPLOY_SERVER_URL are set
         Expected: CLI flag takes precedence over environment variable
 
         TODO: Implement test that:
-        - Sets N8N_SERVER_URL=http://env-server.com
+        - Sets N8N_DEPLOY_SERVER_URL=http://env-server.com
         - Uses --server-url http://cli-server.com
         - Verifies connection attempt goes to cli-server.com
         """
@@ -201,7 +201,7 @@ class TestEndToEndBackupOperations:
         1. Creates multiple test workflows with actual files
         2. Runs backup-workflows command
         3. Verifies backup file created with correct naming pattern
-        4. Runs verify-backup command
+        4. Runs verify command
         5. Confirms backup contains expected workflows
         6. Validates backup metadata and checksums
         """
@@ -210,14 +210,14 @@ class TestEndToEndBackupOperations:
     @pytest.mark.skip(reason="TODO: Implement test for backup listing and metadata")
     def test_list_backups_shows_metadata(self, test_config: AppConfig) -> None:
         """
-        Test that list-backups shows backup metadata correctly
+        Test that backups shows backup metadata correctly
 
         Scenario: Multiple backups exist with different timestamps and sizes
         Expected: List shows backups sorted by date with size and workflow count
 
         TODO: Implement test that:
         1. Creates multiple backup files
-        2. Runs list-backups command
+        2. Runs backups command
         3. Verifies output includes timestamps, sizes, workflow counts
         4. Tests both table and JSON output formats
         """

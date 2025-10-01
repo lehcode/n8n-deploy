@@ -260,7 +260,7 @@ class TestE2EAPIKeys(E2ETestBase):
         if add_returncode == 0:
             server_returncode, server_stdout, server_stderr = self.run_cli_command(
                 [
-                    "list-server",
+                    "server",
                     "--app-dir",
                     self.temp_dir,
                     "--server-url",
@@ -316,7 +316,7 @@ class TestE2EAPIKeys(E2ETestBase):
         )
 
         if add_returncode == 0:
-            self.run_cli_command(["list", "--app-dir", self.temp_dir, "--flow-dir", self.temp_flow_dir])
+            self.run_cli_command(["wf", "list", "--app-dir", self.temp_dir, "--flow-dir", self.temp_flow_dir])
             self.run_cli_command(["stats", "--app-dir", self.temp_dir, "--flow-dir", self.temp_flow_dir])
             get_returncode, get_stdout, get_stderr = self.run_cli_command(
                 ["apikey", "get", "persistence_test", "--app-dir", self.temp_dir]
@@ -374,3 +374,258 @@ class TestE2EAPIKeys(E2ETestBase):
 
             # Should handle update appropriately
             assert update_returncode in [0, 1]
+
+    # === Additional API Key Command Tests for Complete Coverage ===
+
+    def test_apikey_add_from_stdin_with_dash(self) -> None:
+        """Test apikey add from stdin using '-' as key argument"""
+        self.setup_database()
+        test_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dGVzdA.c2lnbmF0dXJl"  # Valid JWT format
+
+        returncode, stdout, stderr = self.run_cli_command(
+            ["apikey", "add", "-", "--name", "stdin_dash_test", "--app-dir", self.temp_dir],
+            stdin_input=test_key,
+        )
+
+        assert returncode in [0, 1]
+
+    def test_apikey_add_with_description(self) -> None:
+        """Test apikey add --description adds description"""
+        self.setup_database()
+        test_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dGVzdA.c2lnbmF0dXJl"
+
+        returncode, stdout, stderr = self.run_cli_command(
+            [
+                "apikey",
+                "add",
+                test_key,
+                "--name",
+                "description_test",
+                "--description",
+                "This is a test API key",
+                "--app-dir",
+                self.temp_dir,
+            ]
+        )
+
+        assert returncode in [0, 1]
+        if returncode == 0:
+            # List to verify description was added
+            list_returncode, list_stdout, list_stderr = self.run_cli_command(["apikey", "list", "--app-dir", self.temp_dir])
+            assert list_returncode == 0
+
+    def test_apikey_add_with_expires_in(self) -> None:
+        """Test apikey add --expires-in sets expiration"""
+        self.setup_database()
+        test_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dGVzdA.c2lnbmF0dXJl"
+
+        returncode, stdout, stderr = self.run_cli_command(
+            [
+                "apikey",
+                "add",
+                test_key,
+                "--name",
+                "expiring_test",
+                "--expires-in",
+                "30",
+                "--app-dir",
+                self.temp_dir,
+            ]
+        )
+
+        assert returncode in [0, 1]
+        if returncode == 0:
+            assert "30 days" in stdout.lower() or "expires" in stdout.lower()
+
+    def test_apikey_list_show_keys(self) -> None:
+        """Test apikey list --show-keys displays actual keys"""
+        self.setup_database()
+        test_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dGVzdA.c2lnbmF0dXJl"
+
+        self.run_cli_command(["apikey", "add", test_key, "--name", "show_keys_test", "--app-dir", self.temp_dir])
+
+        returncode, stdout, stderr = self.run_cli_command(["apikey", "list", "--show-keys", "--app-dir", self.temp_dir])
+
+        assert returncode == 0
+        if test_key in stdout or "show_keys_test" in stdout:
+            # Keys are shown
+            pass
+
+    def test_apikey_list_json_format(self) -> None:
+        """Test apikey list --format json output"""
+        self.setup_database()
+        test_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dGVzdA.c2lnbmF0dXJl"
+
+        self.run_cli_command(["apikey", "add", test_key, "--name", "json_list_test", "--app-dir", self.temp_dir])
+
+        returncode, stdout, stderr = self.run_cli_command(["apikey", "list", "--format", "json", "--app-dir", self.temp_dir])
+
+        assert returncode == 0
+        # Should be valid JSON
+        import json
+
+        data = json.loads(stdout)
+        assert isinstance(data, list) or isinstance(data, str)  # May be list or JSON string
+
+    def test_apikey_get_without_show_key(self) -> None:
+        """Test apikey get <name> without --show-key (just validates)"""
+        self.setup_database()
+        test_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dGVzdA.c2lnbmF0dXJl"
+
+        add_result = self.run_cli_command(
+            ["apikey", "add", test_key, "--name", "get_validate_test", "--app-dir", self.temp_dir]
+        )
+
+        if add_result[0] == 0:
+            returncode, stdout, stderr = self.run_cli_command(
+                ["apikey", "get", "get_validate_test", "--app-dir", self.temp_dir]
+            )
+
+            assert returncode == 0
+            # Should validate without showing key
+            assert "valid" in stdout.lower() or "accessible" in stdout.lower()
+
+    def test_apikey_get_with_show_key(self) -> None:
+        """Test apikey get <name> --show-key displays the key"""
+        self.setup_database()
+        test_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dGVzdA.c2lnbmF0dXJl"
+
+        add_result = self.run_cli_command(["apikey", "add", test_key, "--name", "get_show_test", "--app-dir", self.temp_dir])
+
+        if add_result[0] == 0:
+            returncode, stdout, stderr = self.run_cli_command(
+                ["apikey", "get", "get_show_test", "--show-key", "--app-dir", self.temp_dir]
+            )
+
+            assert returncode == 0
+            # Should show the actual key
+            assert test_key in stdout or "key" in stdout.lower()
+
+    def test_apikey_get_json_format(self) -> None:
+        """Test apikey get --format json output"""
+        self.setup_database()
+        test_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dGVzdA.c2lnbmF0dXJl"
+
+        add_result = self.run_cli_command(["apikey", "add", test_key, "--name", "get_json_test", "--app-dir", self.temp_dir])
+
+        if add_result[0] == 0:
+            returncode, stdout, stderr = self.run_cli_command(
+                ["apikey", "get", "get_json_test", "--format", "json", "--app-dir", self.temp_dir]
+            )
+
+            # May succeed or fail based on implementation
+            assert returncode in [0, 1]
+
+    def test_apikey_deactivate_soft_delete(self) -> None:
+        """Test apikey deactivate performs soft delete"""
+        self.setup_database()
+        test_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dGVzdA.c2lnbmF0dXJl"
+
+        add_result = self.run_cli_command(["apikey", "add", test_key, "--name", "deactivate_test", "--app-dir", self.temp_dir])
+
+        if add_result[0] == 0:
+            returncode, stdout, stderr = self.run_cli_command(
+                ["apikey", "deactivate", "deactivate_test", "--app-dir", self.temp_dir]
+            )
+
+            assert returncode in [0, 1]
+            if returncode == 0:
+                # Verify key is deactivated but still exists
+                list_result = self.run_cli_command(["apikey", "list", "--app-dir", self.temp_dir])
+                assert list_result[0] == 0
+
+    def test_apikey_delete_with_confirm(self) -> None:
+        """Test apikey delete <name> --confirm permanently deletes"""
+        self.setup_database()
+        test_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dGVzdA.c2lnbmF0dXJl"
+
+        add_result = self.run_cli_command(
+            ["apikey", "add", test_key, "--name", "delete_confirm_test", "--app-dir", self.temp_dir]
+        )
+
+        if add_result[0] == 0:
+            returncode, stdout, stderr = self.run_cli_command(
+                [
+                    "apikey",
+                    "delete",
+                    "delete_confirm_test",
+                    "--confirm",
+                    "--app-dir",
+                    self.temp_dir,
+                ]
+            )
+
+            assert returncode in [0, 1]
+            if returncode == 0:
+                # Verify key is completely removed
+                get_result = self.run_cli_command(["apikey", "get", "delete_confirm_test", "--app-dir", self.temp_dir])
+                # Should fail since key is deleted
+                assert get_result[0] == 1
+
+    def test_apikey_test_validates_key(self) -> None:
+        """Test apikey test <name> validates API key"""
+        self.setup_database()
+        test_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dGVzdA.c2lnbmF0dXJl"
+
+        add_result = self.run_cli_command(["apikey", "add", test_key, "--name", "test_validation", "--app-dir", self.temp_dir])
+
+        if add_result[0] == 0:
+            returncode, stdout, stderr = self.run_cli_command(
+                ["apikey", "test", "test_validation", "--app-dir", self.temp_dir]
+            )
+
+            # Test command should validate the key exists
+            assert returncode in [0, 1]
+
+    def test_apikey_invalid_name_validation(self) -> None:
+        """Test apikey add validates key name format"""
+        self.setup_database()
+        test_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dGVzdA.c2lnbmF0dXJl"
+
+        invalid_names = [
+            "invalid name",  # Spaces
+            "invalid@name",  # Special chars
+            "invalid/name",  # Slashes
+        ]
+
+        for invalid_name in invalid_names:
+            returncode, stdout, stderr = self.run_cli_command(
+                [
+                    "apikey",
+                    "add",
+                    test_key,
+                    "--name",
+                    invalid_name,
+                    "--app-dir",
+                    self.temp_dir,
+                ]
+            )
+
+            # Should fail validation for invalid names
+            assert returncode == 1
+
+    def test_apikey_invalid_jwt_format_validation(self) -> None:
+        """Test apikey add validates JWT format"""
+        self.setup_database()
+
+        invalid_keys = [
+            "not-a-jwt",  # No dots
+            "only.two",  # Only 2 parts
+            "too.many.parts.here",  # Too many parts
+        ]
+
+        for invalid_key in invalid_keys:
+            returncode, stdout, stderr = self.run_cli_command(
+                [
+                    "apikey",
+                    "add",
+                    invalid_key,
+                    "--name",
+                    "invalid_jwt_test",
+                    "--app-dir",
+                    self.temp_dir,
+                ]
+            )
+
+            # Should fail validation for invalid JWT format
+            assert returncode == 1

@@ -1,40 +1,30 @@
 #!/usr/bin/env python3
 
 import sqlite3
-from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from api.config import AppConfig, get_config
+from api.db.base import BaseDB
 from api.db.schema import SchemaApi
 from api.models import DatabaseStats, Workflow, WorkflowStatus
 
 
-class DBApi:
+class DBApi(BaseDB):
     """Core database manager for workflow CRUD operations"""
 
     def __init__(self, config: Optional[AppConfig] = None, db_path: Optional[Union[str, Path]] = None):
         """Initialize with database path and schema manager"""
+        # Initialize base class first
         if config:
-            self.db_path = config.database_path
+            super().__init__(config=config)
         elif db_path:
-            self.db_path = Path(db_path)
+            super().__init__(db_path=db_path)
         else:
-            self.db_path = get_config().database_path
+            super().__init__(config=get_config())
 
-        self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self.schema_manager = SchemaApi(db_path=self.db_path)
-
-    @contextmanager
-    def get_connection(self) -> Iterator[sqlite3.Connection]:
-        """Context manager for database connections"""
-        conn = sqlite3.connect(self.db_path)
-        conn.row_factory = sqlite3.Row
-        try:
-            yield conn
-        finally:
-            conn.close()
 
     def add_workflow(self, workflow: Workflow) -> str:
         """Add a new workflow to the database"""

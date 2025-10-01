@@ -1,174 +1,154 @@
 #!/usr/bin/env python3
 """
-Installation and setup script for n8n Workflow Manager
-Creates symlinks and shell aliases for convenient access
+Installation and setup script for n8n-deploy
+
+Creates symlinks, checks for conflicts, and warns about existing environment variables.
 """
 
 import os
-import sys
 import stat
+import sys
 from pathlib import Path
-from typing import List, Dict
+from typing import Dict, List, Tuple
 
 
-class n8n_deploy_Installer:
-    """Installer for n8n Workflow Manager"""
+class N8nDeployInstaller(object):
+    """Installer for n8n-deploy CLI tool"""
 
-    def __init__(self):
+    # Environment variables used by n8n-deploy
+    ENV_VARS = {
+        "N8N_DEPLOY_APP_DIR": "Application directory for database and app data",
+        "N8N_FLOW_DIR": "User workflow files directory path",
+        "N8N_SERVER_URL": "n8n server URL for remote operations",
+        "N8N_API_KEY": "Default API key for n8n server",
+        "N8N_DEPLOY_TESTING": "Testing mode flag (internal use)",
+    }
+
+    def __init__(self) -> None:
         self.project_root = Path(__file__).parent.absolute()
         self.home_dir = Path.home()
         self.bin_dir = self.home_dir / ".local" / "bin"
-        self.shell_rc_files = [
-            self.home_dir / ".bashrc",
-            self.home_dir / ".zshrc",
-            self.home_dir / ".profile",
-        ]
+        self.wrapper_script = self.project_root / "n8n-deploy"
 
-    def create_symlinks(self) -> bool:
-        """Create symlinks for easy command access"""
-        print("🔗 Creating symlinks...")
+    def check_environment_conflicts(self) -> Tuple[bool, List[str]]:
+        """
+        Check for existing n8n-deploy environment variables.
+
+        Returns:
+            Tuple of (has_conflicts, list of conflicting vars)
+        """
+        print("🔍 Checking for environment variable conflicts...")
+
+        conflicts = []
+        for env_var, description in self.ENV_VARS.items():
+            if env_var in os.environ and env_var != "N8N_DEPLOY_TESTING":
+                value = os.environ[env_var]
+                conflicts.append(f"  • {env_var}={value}")
+                print(f"  ⚠️  Found: {env_var}={value}")
+
+        if conflicts:
+            print("\n❌ Environment variable conflicts detected!")
+            print("\nThe following n8n-deploy environment variables are already set:")
+            for conflict in conflicts:
+                print(conflict)
+
+            print("\n⚠️  WARNING: These variables may interfere with n8n-deploy operation.")
+            print("\nOptions:")
+            print("  1. Unset these variables before running n8n-deploy")
+            print("  2. Ensure they point to the correct directories")
+            print("  3. Use CLI options (--app-dir, --flow-dir, --server-url) to override")
+
+            response = input("\nContinue installation anyway? [y/N]: ").strip().lower()
+            if response not in ["y", "yes"]:
+                print("\n❌ Installation aborted by user")
+                return False, conflicts
+
+            print("⚠️  Continuing installation despite conflicts...")
+
+        else:
+            print("  ✅ No environment variable conflicts found")
+
+        return True, conflicts
+
+    def check_wrapper_script(self) -> bool:
+        """Check if wrapper script exists and is executable"""
+        print("🔍 Checking wrapper script...")
+
+        if not self.wrapper_script.exists():
+            print(f"  ❌ Wrapper script not found: {self.wrapper_script}")
+            print("  Run: chmod +x n8n-deploy")
+            return False
+
+        if not os.access(self.wrapper_script, os.X_OK):
+            print("  ⚠️  Wrapper script not executable, fixing...")
+            self.wrapper_script.chmod(self.wrapper_script.stat().st_mode | stat.S_IEXEC)
+            print("  ✅ Made wrapper script executable")
+
+        print(f"  ✅ Wrapper script ready: {self.wrapper_script}")
+        return True
+
+    def create_symlink(self) -> bool:
+        """Create symlink in ~/.local/bin"""
+        print("🔗 Creating symlink...")
 
         # Ensure .local/bin directory exists
         self.bin_dir.mkdir(parents=True, exist_ok=True)
 
         # Check if .local/bin is in PATH
         if str(self.bin_dir) not in os.environ.get("PATH", ""):
-            print(f"⚠️  Warning: {self.bin_dir} is not in your PATH")
-            print(f"   Add this line to your shell rc file:")
-            print(f'   export PATH="{self.bin_dir}:$PATH"')
+            print(f"  ⚠️  Warning: {self.bin_dir} is not in your PATH")
+            print("  Add this line to your ~/.bashrc or ~/.zshrc:")
+            print('  export PATH="$HOME/.local/bin:$PATH"')
 
-        symlinks = [
-            ("n8n-deploy", self.project_root / "api" / "cli.py"),
-        ]
+        link_path = self.bin_dir / "n8n-deploy"
 
-        success = True
-        for link_name, target in symlinks:
-            link_path = self.bin_dir / link_name
+        try:
+            # Remove existing symlink/file
+            if link_path.exists() or link_path.is_symlink():
+                old_target = link_path.resolve() if link_path.is_symlink() else link_path
+                print(f"  ℹ️  Removing existing: {link_path} -> {old_target}")
+                link_path.unlink()
 
-            try:
-                # Remove existing symlink/file
-                if link_path.exists() or link_path.is_symlink():
-                    link_path.unlink()
+            # Create symlink
+            link_path.symlink_to(self.wrapper_script)
+            print(f"  ✅ Created symlink: {link_path} -> {self.wrapper_script}")
 
-                # Create symlink
-                link_path.symlink_to(target)
+            return True
 
-                # Make target executable
-                target.chmod(target.stat().st_mode | stat.S_IEXEC)
-
-                print(f"  ✅ Created symlink: {link_name} -> {target}")
-
-            except Exception as e:
-                print(f"  ❌ Failed to create symlink {link_name}: {e}")
-                success = False
-
-        return success
-
-    def create_shell_aliases(self) -> bool:
-        """Create shell aliases in rc files"""
-        print("🐚 Creating shell aliases...")
-
-        aliases = {
-            # Main command (short and memorable)
-            "n8n-deploy": f"python3 {self.project_root}/api/cli.py",
-            # Essential workflow commands
-            "n8n-deploy-list": f"python3 {self.project_root}/api/cli.py list",
-            "n8n-deploy-pull": f"python3 {self.project_root}/api/cli.py pull",
-            "n8n-deploy-push": f"python3 {self.project_root}/api/cli.py push",
-            # Essential backup commands
-            "n8n-deploy-backup-workflows": f"python3 {self.project_root}/api/cli.py backup-workflows",
-            "n8n-deploy-restore-workflows": f"python3 {self.project_root}/api/cli.py restore-workflows",
-            # Essential database commands
-            "n8n-deploy-init": f"python3 {self.project_root}/api/cli.py db init",
-            "n8n-deploy-status": f"python3 {self.project_root}/api/cli.py db status",
-        }
-
-        # Alias block to add to shell rc files
-        alias_block = f"""
-# 🎭 n8n Workflow Manager Aliases
-# Generated by n8n_deploy_ installer on {Path(__file__).stat().st_mtime}
-
-"""
-        for alias_name, command in aliases.items():
-            alias_block += f"alias {alias_name}='{command}'\n"
-
-        alias_block += f"""
-# Add n8n_deploy_ to PATH if not already there
-if [[ ":$PATH:" != *":{self.bin_dir}:"* ]]; then
-    export PATH="{self.bin_dir}:$PATH"
-fi
-
-"""
-
-        success = True
-        for rc_file in self.shell_rc_files:
-            if not rc_file.exists():
-                continue
-
-            try:
-                # Read existing content
-                content = rc_file.read_text() if rc_file.exists() else ""
-
-                # Remove existing n8n_deploy_ aliases
-                lines = content.split("\n")
-                new_lines = []
-                skip_section = False
-
-                for line in lines:
-                    if "🎭 n8n Workflow Manager Aliases" in line:
-                        skip_section = True
-                        continue
-                    elif skip_section and line.strip() == "":
-                        # Empty line might indicate end of section
-                        if not any(
-                            keyword in line
-                            for keyword in [
-                                "alias n8n-deploy",
-                                "alias n8n-deploy",
-                                "alias itzam-n8n",
-                            ]
-                        ):
-                            skip_section = False
-                    elif (
-                        skip_section
-                        and not line.startswith("alias ")
-                        and not line.startswith("export PATH")
-                        and not line.startswith("#")
-                    ):
-                        skip_section = False
-
-                    if not skip_section:
-                        new_lines.append(line)
-
-                # Add new aliases
-                new_content = "\n".join(new_lines).rstrip() + "\n" + alias_block
-
-                # Write back
-                rc_file.write_text(new_content)
-                print(f"  ✅ Updated aliases in: {rc_file}")
-
-            except Exception as e:
-                print(f"  ❌ Failed to update {rc_file}: {e}")
-                success = False
-
-        return success
+        except Exception as e:
+            print(f"  ❌ Failed to create symlink: {e}")
+            return False
 
     def install_dependencies(self) -> bool:
         """Install Python dependencies"""
-        print("📦 Installing Python dependencies...")
+        print("📦 Checking Python dependencies...")
 
         try:
+            # Check if running in virtual environment
+            in_venv = sys.prefix != sys.base_prefix
+            if not in_venv:
+                print("  ⚠️  Not in a virtual environment")
+                print("  Recommended: Create a venv first")
+                print("    python -m venv .venv")
+                print("    source .venv/bin/activate  # or .venv/Scripts/activate on Windows")
+                print("    python install.py")
+
+                response = input("\n  Install globally anyway? [y/N]: ").strip().lower()
+                if response not in ["y", "yes"]:
+                    print("  ❌ Installation aborted - create venv and try again")
+                    return False
+
             import subprocess
 
+            requirements_file = self.project_root / "requirements.txt"
+            if not requirements_file.exists():
+                print(f"  ❌ requirements.txt not found at {requirements_file}")
+                return False
+
+            print(f"  📥 Installing from {requirements_file}...")
+
             result = subprocess.run(
-                [
-                    sys.executable,
-                    "-m",
-                    "pip",
-                    "install",
-                    "-r",
-                    str(self.project_root / "requirements.txt"),
-                ],
+                [sys.executable, "-m", "pip", "install", "-r", str(requirements_file)],
                 capture_output=True,
                 text=True,
             )
@@ -177,7 +157,8 @@ fi
                 print("  ✅ Dependencies installed successfully")
                 return True
             else:
-                print(f"  ❌ Failed to install dependencies: {result.stderr}")
+                print("  ❌ Failed to install dependencies:")
+                print(f"  {result.stderr}")
                 return False
 
         except Exception as e:
@@ -189,112 +170,122 @@ fi
         print("🧪 Verifying installation...")
 
         try:
-            # Try importing the main module
-            sys.path.insert(0, str(self.project_root))
-            from api import WorkflowApi
-            from api.db import DBApi
+            import subprocess
 
-            # Test basic functionality
-            db = DBApi()
-            stats = db.get_database_stats()
+            # Test help command
+            result = subprocess.run(
+                [str(self.wrapper_script), "--help"],
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
 
-            manager = WorkflowApi()
-            workflows = manager.list_workflows()
+            if result.returncode == 0:
+                print("  ✅ n8n-deploy command works")
 
-            print(f"  ✅ n8n_deploy_ database: {len(stats.tables)} tables")
-            print(f"  ✅ Workflow manager: {len(workflows)} workflows configured")
+                # Check for key help text
+                if "n8n-deploy - a simple N8N Workflow Manager" in result.stdout:
+                    print("  ✅ CLI help output correct")
+                else:
+                    print("  ⚠️  Help output may be incomplete")
 
-            return True
+                return True
+            else:
+                print(f"  ❌ Command failed: {result.stderr}")
+                return False
 
         except Exception as e:
             print(f"  ❌ Verification failed: {e}")
             return False
 
-    def run_installation(self):
-        """Run the complete installation process"""
-        print("🎭 n8n Workflow Manager Installation")
-        print("=" * 50)
+    def show_next_steps(self, has_conflicts: bool) -> None:
+        """Show post-installation instructions"""
+        print("\n" + "=" * 60)
+        print("🎉 Installation completed!")
+        print("=" * 60)
 
+        print("\n📋 Next steps:")
+        print("1. Test installation:")
+        print("   n8n-deploy --help")
+        print("   ./n8n-deploy --help  # Alternative if symlink not in PATH")
+
+        print("\n2. Initialize database:")
+        print("   n8n-deploy --app-dir /path/to/app/dir db init")
+        print("   Or set N8N_DEPLOY_APP_DIR environment variable")
+
+        print("\n3. Configure workflow directory:")
+        print("   export N8N_FLOW_DIR=/path/to/your/workflows")
+        print("   Or use --flow-dir option")
+
+        if has_conflicts:
+            print("\n⚠️  WARNING: Environment variable conflicts detected!")
+            print("Review the conflicts shown above and adjust your environment.")
+
+        print("\n📚 Documentation:")
+        print(f"   README: {self.project_root / 'README.md'}")
+        print(f"   Examples: {self.project_root / 'docs' / 'CLAUDE.md'}")
+
+        print("\n🔧 Environment variables (optional):")
+        for env_var, description in self.ENV_VARS.items():
+            if env_var != "N8N_DEPLOY_TESTING":
+                print(f"   • {env_var}: {description}")
+
+    def run_installation(self) -> bool:
+        """Run the complete installation process"""
+        print("🎭 n8n-deploy Installation")
+        print("=" * 60)
+
+        # Check for environment conflicts first
+        continue_install, conflicts = self.check_environment_conflicts()
+        if not continue_install:
+            return False
+
+        # Run installation steps
         steps = [
+            ("Checking wrapper script", self.check_wrapper_script),
             ("Installing dependencies", self.install_dependencies),
-            ("Creating symlinks", self.create_symlinks),
-            ("Creating shell aliases", self.create_shell_aliases),
+            ("Creating symlink", self.create_symlink),
             ("Verifying installation", self.verify_installation),
         ]
 
         for step_name, step_func in steps:
             print(f"\n{step_name}...")
             if not step_func():
-                print(f"❌ Installation failed at: {step_name}")
+                print(f"\n❌ Installation failed at: {step_name}")
                 return False
 
-        print("\n🎉 Installation completed successfully!")
-        print("\nNext steps:")
-        print("1. Restart your shell or run: source ~/.bashrc (or ~/.zshrc)")
-        print("2. Test the installation: n8n-deploy --help")
-        print("3. Initialize the database: n8n-deploy-init")
-        print("4. List available workflows: n8n-deploy-list")
-        print("\n📁 Base Folder Configuration:")
-        print("   • Use --base-folder to specify data directory")
-        print("   • Set N8N_BASE_FOLDER environment variable")
-        print("   • Examples:")
-        print("     n8n-deploy --base-folder /path/to/project list")
-        print("     export N8N_BASE_FOLDER=/home/user/my-workflows")
-
+        # Show next steps
+        self.show_next_steps(has_conflicts=bool(conflicts))
         return True
 
-    def uninstall(self):
-        """Remove n8n_deploy_ installation"""
-        print("🗑️  Uninstalling n8n Workflow Manager...")
+    def uninstall(self) -> None:
+        """Remove n8n-deploy installation"""
+        print("🗑️  Uninstalling n8n-deploy...")
 
-        # Remove symlinks
-        for link_name in ["n8n-deploy"]:
-            link_path = self.bin_dir / link_name
-            if link_path.exists():
-                link_path.unlink()
-                print(f"  ✅ Removed symlink: {link_name}")
+        # Remove symlink
+        link_path = self.bin_dir / "n8n-deploy"
+        if link_path.exists() or link_path.is_symlink():
+            link_path.unlink()
+            print(f"  ✅ Removed symlink: {link_path}")
+        else:
+            print(f"  ℹ️  No symlink found at {link_path}")
 
-        # Remove aliases from shell rc files
-        for rc_file in self.shell_rc_files:
-            if not rc_file.exists():
-                continue
-
-            try:
-                content = rc_file.read_text()
-                lines = content.split("\n")
-                new_lines = []
-                skip_section = False
-
-                for line in lines:
-                    if "🎭 n8n Workflow Manager Aliases" in line:
-                        skip_section = True
-                        continue
-                    elif skip_section and line.strip() == "":
-                        skip_section = False
-                    elif skip_section:
-                        continue
-
-                    if not skip_section:
-                        new_lines.append(line)
-
-                new_content = "\n".join(new_lines)
-                rc_file.write_text(new_content)
-                print(f"  ✅ Cleaned aliases from: {rc_file}")
-
-            except Exception as e:
-                print(f"  ❌ Failed to clean {rc_file}: {e}")
-
-        print("✅ Uninstallation completed")
+        print("\n✅ Uninstallation completed")
+        print("\nNote: Dependencies and project files were not removed.")
+        print("To fully remove:")
+        print(f"  1. Delete project directory: {self.project_root}")
+        print("  2. Optionally uninstall dependencies: pip uninstall -r requirements.txt")
 
 
-def main():
+def main() -> None:
     """Main installation script"""
-    installer = n8n_deploy_Installer()
+    installer = N8nDeployInstaller()
 
     if len(sys.argv) > 1 and sys.argv[1] == "uninstall":
         installer.uninstall()
     else:
-        installer.run_installation()
+        success = installer.run_installation()
+        sys.exit(0 if success else 1)
 
 
 if __name__ == "__main__":

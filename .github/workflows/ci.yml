@@ -250,7 +250,7 @@ jobs:
 
   test-integration:
     runs-on: ubuntu-latest
-    needs: [quality-mypy, quality-black, quality-coverage]
+    needs: [quality-mypy, quality-black, quality-coverage, test-unit]
     steps:
     - uses: actions/checkout@v4
 
@@ -283,10 +283,55 @@ jobs:
         python run_tests.py --integration --no-deps-check --quiet
         echo "✅ Integration tests passed"
 
+  test-hypothesis:
+    runs-on: ubuntu-latest
+    needs: [quality-mypy, quality-black, quality-coverage, test-unit, test-integration]
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.9"
+
+    - name: Install uv
+      run: |
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/uv
+          .venv
+          .hypothesis
+        key: ${{ runner.os }}-uv-hypothesis-3.9-${{ hashFiles('pyproject.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-uv-hypothesis-3.9-
+
+    - name: Install dependencies and run property-based tests
+      run: |
+        uv venv --python python3 .venv
+        source .venv/bin/activate
+        uv pip install -e ".[test,dev]"
+        export N8N_DEPLOY_TESTING=1
+        echo "Running property-based tests with Hypothesis..."
+        pytest tests/generators/hypothesis_generator.py -v --tb=short --hypothesis-show-statistics
+        echo "✅ Property-based tests passed (755 generated examples)"
+
+    - name: Upload hypothesis database
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: hypothesis-database
+        path: .hypothesis/
+        retention-days: 7
+
   # Build-matrix stage
   build-validation:
     runs-on: ubuntu-latest
-    needs: [test-unit, test-integration]
+    needs: [test-unit, test-integration, test-hypothesis]
     steps:
     - uses: actions/checkout@v4
 

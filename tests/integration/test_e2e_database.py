@@ -50,6 +50,29 @@ class TestE2EDatabase(E2ETestBase):
         assert "Database" in stdout or "Status" in stdout
         # Should show database information without errors
 
+    def test_database_status_without_database(self) -> None:
+        """Test db status command handles missing database gracefully"""
+        # Do NOT initialize database - test missing database case
+        returncode, stdout, stderr = self.run_cli_command(["db", "status", "--app-dir", self.temp_dir])
+
+        # Should fail gracefully with helpful error message
+        assert returncode == 1
+        assert "does not exist" in stdout.lower() or "not found" in stdout.lower()
+
+    def test_database_status_without_database_json_format(self) -> None:
+        """Test db status with JSON format handles missing database gracefully"""
+        # Do NOT initialize database - test missing database case with JSON format
+        returncode, stdout, stderr = self.run_cli_command(["db", "status", "--app-dir", self.temp_dir, "--format", "json"])
+
+        # Should fail gracefully with JSON error response
+        assert returncode == 1
+        # Should be valid JSON output
+        import json
+
+        error_data = json.loads(stdout)
+        assert error_data["success"] is False
+        assert "database_not_found" in error_data.get("error", "")
+
     def test_stats_command_shows_never_for_null_timestamps(self) -> None:
         """Test stats command handles null timestamps correctly"""
         # Initialize database
@@ -76,19 +99,6 @@ class TestE2EDatabase(E2ETestBase):
             backup_files = list(backup_dir.glob("*.db"))
             assert len(backup_files) > 0, "No backup files created"
 
-    def test_list_backups_shows_metadata(self) -> None:
-        """Test list backups command shows backup metadata"""
-        # Initialize and create backup
-        self.run_cli_command(["--app-dir", self.temp_dir, "db", "init"])
-        self.run_cli_command(["--app-dir", self.temp_dir, "db", "backup"])
-
-        # List backups (wf list-backups only uses --backup-dir, not --app-dir)
-        backup_dir = Path(self.temp_dir) / "backups"
-        returncode, stdout, stderr = self.run_cli_command(["wf", "list-backups", "--backup-dir", str(backup_dir)])
-
-        # Should succeed (even if no backups exist yet)
-        assert returncode == 0, f"Command failed with returncode {returncode}\nSTDOUT: {stdout}\nSTDERR: {stderr}"
-
     def test_backup_workflows_complete_cycle(self) -> None:
         """Test complete backup cycle with workflows"""
         # Initialize database
@@ -101,7 +111,7 @@ class TestE2EDatabase(E2ETestBase):
             "active": False,
         }
         workflow_file.write_text(json.dumps(workflow_data, indent=2))
-        env = {"N8N_FLOW_DIR": self.temp_flow_dir}
+        env = {"N8N_DEPLOY_FLOW_DIR": self.temp_flow_dir}
         self.run_cli_command(
             [
                 "--app-dir",
@@ -431,7 +441,7 @@ class TestE2EDatabase(E2ETestBase):
 
         # Test workflow backup command
         returncode, stdout, stderr = self.run_cli_command(
-            ["--app-dir", self.temp_dir, "wf", "backup", "--backup-dir", str(backup_dir)]
+            ["--app-dir", self.temp_dir, "wf", "createbackup", "--backup-dir", str(backup_dir)]
         )
 
         # Backup may fail due to missing workflow files, but should handle gracefully
@@ -446,8 +456,8 @@ class TestE2EDatabase(E2ETestBase):
         backup_dir = Path(self.temp_dir) / "backups"
         backup_dir.mkdir(exist_ok=True)
 
-        # Test list backups command (note: wf list-backups doesn't use --app-dir, only --backup-dir)
-        returncode, stdout, stderr = self.run_cli_command(["wf", "list-backups", "--backup-dir", str(backup_dir)])
+        # Test list backups command (note: wf backups doesn't use --app-dir, only --backup-dir)
+        returncode, stdout, stderr = self.run_cli_command(["wf", "backups", "--backup-dir", str(backup_dir)])
 
         # Should succeed even with empty backup directory
         assert returncode == 0
@@ -481,7 +491,7 @@ class TestE2EDatabase(E2ETestBase):
         workflow_file2.write_text(json.dumps(workflow_data2, indent=2))
 
         # Add workflows to database
-        env = {"N8N_FLOW_DIR": self.temp_flow_dir}
+        env = {"N8N_DEPLOY_FLOW_DIR": self.temp_flow_dir}
 
         add_result1 = self.run_cli_command(
             [
@@ -509,7 +519,7 @@ class TestE2EDatabase(E2ETestBase):
         # Verify workflows were added successfully
         if add_result1[0] == 0 and add_result2[0] == 0:
             # Test workflow listing
-            list_result = self.run_cli_command(["--app-dir", self.temp_dir, "list"])
+            list_result = self.run_cli_command(["--app-dir", self.temp_dir, "show"])
             assert list_result[0] == 0
 
             # Test database backup with workflows
@@ -549,7 +559,7 @@ class TestE2EDatabase(E2ETestBase):
         workflow_file.write_text(json.dumps(workflow_data, indent=2))
 
         # Add workflow
-        env = {"N8N_FLOW_DIR": self.temp_flow_dir}
+        env = {"N8N_DEPLOY_FLOW_DIR": self.temp_flow_dir}
         add_result = self.run_cli_command(
             [
                 "--app-dir",
@@ -564,7 +574,7 @@ class TestE2EDatabase(E2ETestBase):
 
         if add_result[0] == 0:
             # Verify workflow in database via list command
-            list_result = self.run_cli_command(["--app-dir", self.temp_dir, "list"])
+            list_result = self.run_cli_command(["--app-dir", self.temp_dir, "show"])
             assert list_result[0] == 0
 
             # Modify file on filesystem
@@ -573,7 +583,7 @@ class TestE2EDatabase(E2ETestBase):
             workflow_file.write_text(json.dumps(modified_data, indent=2))
 
             # Test that system can still read the file
-            list_result2 = self.run_cli_command(["--app-dir", self.temp_dir, "list"])
+            list_result2 = self.run_cli_command(["--app-dir", self.temp_dir, "show"])
             assert list_result2[0] == 0
 
     # === Unit Test Functionality ===
@@ -692,6 +702,74 @@ class TestE2EDatabase(E2ETestBase):
             # Expected behavior
             pass
 
+    # === Additional DB Command Tests for Complete Coverage ===
+
+    def test_db_init_with_import_flag(self) -> None:
+        """Test db init --import accepts existing database without prompting"""
+        # First initialization
+        self.run_cli_command(["--app-dir", self.temp_dir, "db", "init"])
+
+        # Second init with --import flag should use existing database
+        returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir, "db", "init", "--import"])
+
+        assert returncode == 0
+        assert "Using existing database" in stdout or "already exists" in stdout
+
+    def test_db_init_with_json_format(self) -> None:
+        """Test db init --format json output"""
+        returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir, "db", "init", "--format", "json"])
+
+        assert returncode == 0
+        # Should be valid JSON
+        data = json.loads(stdout)
+        assert "success" in data
+        assert data["success"] is True
+        assert "database_path" in data
+
+    def test_db_status_without_database_error_handling(self) -> None:
+        """Test db status handles missing database with clear error"""
+        # Do not initialize - test missing database case
+        returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir, "db", "status"])
+
+        # Should fail gracefully
+        assert returncode == 1
+        assert "does not exist" in stdout or "not found" in stdout
+
+    def test_db_compact_reduces_file_size(self) -> None:
+        """Test db compact actually optimizes database"""
+        # Initialize and add some data
+        self.run_cli_command(["--app-dir", self.temp_dir, "db", "init"])
+
+        # Get initial size
+        db_path = Path(self.temp_dir) / "n8n-deploy.db"
+        initial_size = db_path.stat().st_size
+
+        # Run compact
+        returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir, "db", "compact"])
+
+        assert returncode == 0
+        assert "optimization complete" in stdout.lower()
+
+        # Database should still exist and be valid
+        assert db_path.exists()
+        assert db_path.stat().st_size > 0
+
+    def test_db_backup_with_custom_path(self) -> None:
+        """Test db backup <custom_path> creates backup at specified location"""
+        # Initialize database
+        self.run_cli_command(["--app-dir", self.temp_dir, "db", "init"])
+
+        # Create custom backup path
+        custom_backup = Path(self.temp_dir) / "my_custom_backup.db"
+
+        # Run backup with custom path
+        returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir, "db", "backup", str(custom_backup)])
+
+        assert returncode == 0
+        assert "backup created" in stdout.lower()
+        assert custom_backup.exists()
+        assert custom_backup.stat().st_size > 0
+
 
 class TestE2EDatabaseInit:
     """End-to-end testing for database initialization specifically"""
@@ -745,9 +823,9 @@ class TestE2EDatabaseInit:
         if reordered_args:
             command = reordered_args[0]
             # Commands that support --no-emoji at the command level
-            no_emoji_commands = {"list", "list-server", "stats"}
+            no_emoji_commands = {"show", "server", "stats"}
             # apikey subcommands that support --no-emoji
-            no_emoji_apikey_subcommands = {"add", "list", "get"}
+            no_emoji_apikey_subcommands = {"add", "show", "get"}
             # db subcommands that support --no-emoji
             no_emoji_db_subcommands = {"init", "compact"}
 

@@ -72,9 +72,9 @@ class E2ETestBase:
         if reordered_args:
             command = reordered_args[0]
             # Commands that support --no-emoji at the command level
-            no_emoji_commands = {"list", "list-server"}
+            no_emoji_commands = {"show", "server"}
             # wf subcommands that support --no-emoji
-            no_emoji_wf_subcommands = {"list", "list-server", "add", "search", "stats"}
+            no_emoji_wf_subcommands = {"show", "server", "add", "search", "stats"}
             # apikey subcommands that support --no-emoji
             no_emoji_apikey_subcommands = {"add", "list", "get"}
             # db subcommands that support --no-emoji
