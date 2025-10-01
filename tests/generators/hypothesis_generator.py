@@ -527,9 +527,24 @@ class TestHelpConsistency:
         assert "Usage:" in result.stdout or "usage:" in result.stdout.lower()
 
     @given(
-        command=st.sampled_from(["list", "add", "remove", "search", "stats", "backup", "restore", "pull", "push"]),
+        command=st.sampled_from(
+            [
+                "list",
+                "add",
+                "remove",
+                "search",
+                "stats",
+                "createbackup",
+                "backups",
+                "restore",
+                "pull",
+                "push",
+                "server",
+                "verify",
+            ]
+        ),
     )
-    @settings(max_examples=10)
+    @settings(max_examples=12)
     def test_wf_subcommand_help(self, command):
         """Property: All wf subcommands have help"""
         result = subprocess.run(
