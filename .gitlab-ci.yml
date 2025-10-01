@@ -447,6 +447,7 @@ test:hypothesis:
     when: always
     paths:
       - .hypothesis/
+      - hypothesis-results.xml
     expire_in: 7 days
 
 # ============================================
