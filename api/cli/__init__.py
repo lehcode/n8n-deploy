@@ -30,7 +30,7 @@ def main() -> None:
 
 def main() -> None:
     """Main entry point for the CLI application"""
-    cli()
+    cli(prog_name=PROG_NAME)
 
 
 __all__ = [
