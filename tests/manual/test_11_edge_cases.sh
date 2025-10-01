@@ -27,12 +27,12 @@ print_section "Test Category 10: Edge Cases"
     run_test "Init empty DB" "$CLI_COMMAND db init --app-dir $empty_app_dir --import --no-emoji" 0 "Initialize empty database"
     run_test "List empty workflows" "$CLI_COMMAND wf list --app-dir $empty_app_dir --no-emoji" 0 "List workflows in empty database"
 
-    # Test special characters in workflow names (spaces now allowed, but some symbols should still fail)
+    # Test special characters in workflow names (UTF-8 and spaces allowed, path separators rejected)
     local special_wf_id="special-test-id"
-    local valid_special_name="Workflow with Spaces (test)"
-    local invalid_special_name="workflow@with#invalid&symbols!"
-    run_test "Add workflow with spaces" "$CLI_COMMAND wf add workflows/${SAMPLE_WF_ID}.json '$valid_special_name' --app-dir $app_dir --flow-dir $flow_dir" 0 "Add workflow with spaces and parentheses (should pass)"
-    run_test "Add invalid char workflow" "$CLI_COMMAND wf add workflows/${SAMPLE_WF_ID}.json '$invalid_special_name' --app-dir $app_dir --flow-dir $flow_dir" 1 "Add workflow with invalid characters (should fail)"
+    local valid_special_name="Workflow with Spaces (test) & symbols! 日本語 🎉"
+    local invalid_special_name="workflow/with\\path"
+    run_test "Add workflow with UTF-8" "$CLI_COMMAND wf add workflows/${SAMPLE_WF_ID}.json '$valid_special_name' --app-dir $app_dir --flow-dir $flow_dir" 0 "Add workflow with spaces, UTF-8, and special characters (should pass)"
+    run_test "Add invalid char workflow" "$CLI_COMMAND wf add workflows/${SAMPLE_WF_ID}.json '$invalid_special_name' --app-dir $app_dir --flow-dir $flow_dir" 1 "Add workflow with path separators (should fail)"
 
     # Test very long arguments
     local long_description="This is a very long description that contains many words and should test the handling of lengthy input parameters in the CLI system to ensure robust operation"

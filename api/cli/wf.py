@@ -63,9 +63,11 @@ def add(
     Add a workflow by specifying the JSON file path and workflow name.
     The workflow name is a user-friendly alias and can contain spaces.
     """
-    # Validate workflow name - allow letters, numbers, spaces, underscores, hyphens, and basic punctuation
-    if not re.match(r"^[a-zA-Z0-9_\-\s\.\,\(\)]+$", name.strip()):
-        error_msg = f"Workflow name '{name}' contains invalid characters. Use letters, numbers, spaces, underscores, hyphens, dots, commas, and parentheses"
+    # Validate workflow name - allow UTF-8 characters, spaces, and common punctuation
+    # Only reject control characters, null bytes, and path separators for security
+    stripped_name = name.strip()
+    if not stripped_name or any(c in stripped_name for c in "\x00/\\"):
+        error_msg = f"Workflow name '{name}' is invalid. Name cannot be empty or contain null bytes or path separators (/ \\)"
         if no_emoji:
             console.print(error_msg)
         else:
