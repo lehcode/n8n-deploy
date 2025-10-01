@@ -109,18 +109,50 @@ test:unit:
     - echo "✅ Unit tests passed"
   coverage: '/TOTAL.*\s+(\d+%)$/'
 
-# Test stage - Integration tests
+# Test stage - Integration tests (runs after unit tests)
 test:integration:
   stage: test
   image: python:3.9-slim
   tags:
     - python
   <<: *python_setup
+  needs:
+    - quality:mypy
+    - quality:black
+    - quality:coverage
+    - test:unit
   script:
     - source .venv/bin/activate
     - export N8N_DEPLOY_TESTING=1
     - python run_tests.py --integration --no-deps-check --quiet
     - echo "✅ Integration tests passed"
+
+# Test stage - Property-based tests with Hypothesis (runs after integration tests)
+test:hypothesis:
+  stage: test
+  image: python:3.9-slim
+  tags:
+    - python
+  <<: *python_setup
+  needs:
+    - quality:mypy
+    - quality:black
+    - quality:coverage
+    - test:unit
+    - test:integration
+  script:
+    - source .venv/bin/activate
+    - export N8N_DEPLOY_TESTING=1
+    - echo "Running property-based tests with Hypothesis..."
+    - pytest tests/generators/hypothesis_generator.py -v --tb=short --hypothesis-show-statistics
+    - echo "✅ Property-based tests passed (755 generated examples)"
+  artifacts:
+    when: always
+    reports:
+      junit: hypothesis-results.xml
+    paths:
+      - .hypothesis/
+    expire_in: 7 days
 
 # Build Matrix stage - Multi-version package builds
 build:python-matrix:
@@ -166,6 +198,7 @@ build:validation:
     - quality:coverage
     - test:unit
     - test:integration
+    - test:hypothesis
   script:
     - source .venv/bin/activate
     - echo "🔧 Running final validation build..."

@@ -117,3 +117,4 @@ test-results.xml
 *test_workflow*.json
 test-env
 tests/sequence.txt
+test_backup_path

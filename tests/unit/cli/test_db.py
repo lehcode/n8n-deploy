@@ -16,7 +16,86 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 
-from api.cli.db import db
+from api.cli.db import db, check_database_exists, is_interactive_mode
+
+
+class TestInteractiveModeDetection:
+    """Test interactive mode detection"""
+
+    def test_is_interactive_mode_with_ci_var(self, monkeypatch):
+        """Test non-interactive mode detection via CI variable"""
+        monkeypatch.setenv("CI", "true")
+        assert is_interactive_mode() is False
+
+    def test_is_interactive_mode_with_gitlab_ci(self, monkeypatch):
+        """Test non-interactive mode detection via GITLAB_CI variable"""
+        monkeypatch.setenv("GITLAB_CI", "true")
+        assert is_interactive_mode() is False
+
+    def test_is_interactive_mode_with_github_actions(self, monkeypatch):
+        """Test non-interactive mode detection via GITHUB_ACTIONS variable"""
+        monkeypatch.setenv("GITHUB_ACTIONS", "true")
+        assert is_interactive_mode() is False
+
+    def test_is_interactive_mode_with_dumb_term(self, monkeypatch):
+        """Test non-interactive mode detection via TERM=dumb"""
+        # Clear CI vars first
+        for var in ["CI", "GITLAB_CI", "GITHUB_ACTIONS"]:
+            monkeypatch.delenv(var, raising=False)
+        monkeypatch.setenv("TERM", "dumb")
+        assert is_interactive_mode() is False
+
+    def test_is_interactive_mode_with_no_term(self, monkeypatch):
+        """Test non-interactive mode detection via missing TERM"""
+        # Clear CI vars and TERM
+        for var in ["CI", "GITLAB_CI", "GITHUB_ACTIONS", "TERM"]:
+            monkeypatch.delenv(var, raising=False)
+        # Note: Result depends on stdin.isatty() which varies by environment
+        # Just verify it doesn't crash
+        result = is_interactive_mode()
+        assert isinstance(result, bool)
+
+
+class TestDatabaseHelpers:
+    """Test database helper functions"""
+
+    def test_check_database_exists_function(self):
+        """Test check_database_exists helper function with missing database"""
+        from pathlib import Path
+        import click
+
+        nonexistent_path = Path("/tmp/nonexistent-test-db.db")
+
+        # Should raise click.Abort
+        with pytest.raises(click.Abort):
+            check_database_exists(nonexistent_path, format=None, no_emoji=True)
+
+    def test_check_database_exists_json_format(self):
+        """Test check_database_exists with JSON format"""
+        from pathlib import Path
+        import click
+
+        nonexistent_path = Path("/tmp/nonexistent-test-db.db")
+
+        # Should raise click.Abort with JSON error
+        with pytest.raises(click.Abort):
+            check_database_exists(nonexistent_path, format="json", no_emoji=False)
+
+    def test_check_database_exists_with_existing_db(self):
+        """Test check_database_exists with existing database (should not raise)"""
+        from pathlib import Path
+        import tempfile
+
+        # Create a temporary file to simulate existing database
+        with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp:
+            tmp_path = Path(tmp.name)
+
+        try:
+            # Should not raise
+            check_database_exists(tmp_path, format=None, no_emoji=True)
+        finally:
+            # Clean up
+            tmp_path.unlink()
 
 
 class TestDatabaseCommands:

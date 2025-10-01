@@ -5,7 +5,7 @@ Main CLI entry point for n8n-deploy
 Handles CLI initialization, version/help commands, and basic CLI infrastructure.
 """
 
-from typing import Any, List
+from typing import Any, List, Optional
 
 import click
 from rich.console import Console
@@ -15,6 +15,10 @@ console = Console()
 
 class CustomGroup(click.Group):
     """Custom Click Group that formats usage as 'COMMAND [OPTIONS]...' instead of '[OPTIONS] COMMAND [ARGS]...'"""
+
+    def get_command(self, ctx: click.Context, cmd_name: str) -> Optional[click.Command]:
+        """Override to disable prefix matching - require exact command names"""
+        return self.commands.get(cmd_name)
 
     def collect_usage_pieces(self, ctx: click.Context) -> List[str]:
         """Override to collect custom usage pieces"""
@@ -54,12 +58,12 @@ class CustomGroup(click.Group):
 
         try:
             return super().__call__(*args, **kwargs)
-        except click.exceptions.NoArgsIsHelpError as e:  # type: ignore[attr-defined]
-            # When no arguments are provided, Click raises NoArgsIsHelpError
-            # We want to show help and exit with code 0 instead of the default behavior
-            # Note: This exception exists at runtime but is not exposed in type stubs
-            print(str(e))
-            sys.exit(0)
+        except Exception as e:
+            # Handle NoArgsIsHelpError at runtime (not in type stubs)
+            if e.__class__.__name__ == "NoArgsIsHelpError":
+                print(str(e))
+                sys.exit(0)
+            raise
 
 
 def handle_version_help(ctx: click.Context, _param: click.Parameter, value: Any) -> None:
@@ -99,17 +103,17 @@ def cli() -> None:
 
     App Directory (--app-dir):
       Stores application data (database, backups)
-      Priority: --app-dir CLI option > N8N_DEPLOY_APP_DIR env > REQUIRED
+      Priority: --app-dir CLI option > N8N_DEPLOY_APP_DIR env > current directory
       Default file: n8n-deploy.db
 
     Flow Directory (--flow-dir):
       Contains workflow JSON files
-      Priority: --flow-dir CLI option > N8N_FLOW_DIR env > current directory
-      Default location: ./workflows/
+      Priority: --flow-dir CLI option > N8N_DEPLOY_FLOW_DIR env > current directory
+      Default: current directory
 
     \b
     🌐 Server Configuration:
-      n8n Server URL: --server-url CLI option > N8N_SERVER_URL env
+      n8n Server URL: --server-url CLI option > N8N_DEPLOY_SERVER_URL env
       API Keys: Stored in database, managed via 'apikey' commands
     """
     pass
@@ -120,12 +124,14 @@ def register_commands() -> None:
     """Register all command groups with the main CLI"""
     from .apikey import apikey
     from .db import db
+    from .env import env
     from .wf import wf
 
     # Register command groups
     cli.add_command(wf)
     cli.add_command(db)
     cli.add_command(apikey)
+    cli.add_command(env)
 
 
 # Auto-register commands when module is imported

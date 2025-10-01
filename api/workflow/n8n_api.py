@@ -2,7 +2,7 @@
 """
 n8n server API integration for push/pull operations
 
-Handles: pull, push, list-server operations
+Handles: pull, push, server operations
 """
 
 import json
@@ -43,10 +43,10 @@ class N8nAPI:
                 # Try to use first active key as fallback
                 keys = self.api_manager.list_api_keys()
                 if not keys:
-                    # Fallback to N8N_API_KEY environment variable
+                    # Fallback to N8N_DEPLOY_SERVER_KEY environment variable
                     import os
 
-                    env_api_key = os.getenv("N8N_API_KEY")
+                    env_api_key = os.getenv("N8N_DEPLOY_SERVER_KEY")
                     if env_api_key:
                         return {
                             "api_key": env_api_key,
@@ -71,10 +71,10 @@ class N8nAPI:
                                 },
                             }
 
-                # Fallback to N8N_API_KEY environment variable
+                # Fallback to N8N_DEPLOY_SERVER_KEY environment variable
                 import os
 
-                env_api_key = os.getenv("N8N_API_KEY")
+                env_api_key = os.getenv("N8N_DEPLOY_SERVER_KEY")
                 if env_api_key:
                     return {
                         "api_key": env_api_key,

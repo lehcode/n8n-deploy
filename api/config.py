@@ -4,9 +4,21 @@ n8n_deploy_ Configuration Management
 """
 
 import os
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional, Union
-from dataclasses import dataclass
+
+# Load dotenv only in development mode
+# ENVIRONMENT variable: "development" = dev mode, anything else = production (default)
+if os.getenv("ENVIRONMENT", "").lower() == "development":
+    try:
+        from dotenv import load_dotenv
+
+        HAS_DOTENV = True
+    except ImportError:
+        HAS_DOTENV = False
+else:
+    HAS_DOTENV = False
 
 
 @dataclass
@@ -74,18 +86,25 @@ def get_config(
 
     Base folder priority:
     1. Explicit --app-dir parameter (highest priority)
-    2. N8N_DEPLOY_APP_DIR environment variable (required if --app-dir not specified)
+    2. N8N_DEPLOY_APP_DIR environment variable
+    3. Current working directory (default)
 
     Flow folder priority:
     1. Explicit --flow-dir parameter (highest priority)
-    2. N8N_FLOW_DIR environment variable (if specified)
+    2. N8N_DEPLOY_FLOW_DIR environment variable
     3. Current working directory (default)
 
     n8n URL priority:
     1. Explicit --server-url parameter (highest priority)
-    2. N8N_SERVER_URL environment variable (if specified)
+    2. N8N_DEPLOY_SERVER_URL environment variable
     3. (none - must be specified)
     """
+    # Load environment variables from .env file (development mode only)
+    # Set ENVIRONMENT=development to enable .env file loading
+    # Priority: .env in current directory > .env in user home
+    if HAS_DOTENV:
+        load_dotenv(dotenv_path=Path.cwd() / ".env", override=False)
+        load_dotenv(dotenv_path=Path.home() / ".env", override=False)
 
     if base_folder is not None:
         base_path = Path(base_folder).resolve()
@@ -96,8 +115,8 @@ def get_config(
 
     if flow_folder is not None:
         flow_path = Path(flow_folder).resolve()
-    elif "N8N_FLOW_DIR" in os.environ:
-        flow_path = Path(os.environ["N8N_FLOW_DIR"]).resolve()
+    elif "N8N_DEPLOY_FLOW_DIR" in os.environ:
+        flow_path = Path(os.environ["N8N_DEPLOY_FLOW_DIR"]).resolve()
     else:
         flow_path = None
 

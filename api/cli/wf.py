@@ -4,8 +4,8 @@ Workflow management commands for n8n-deploy CLI
 
 Provides a consistent 'wf' command group for all workflow operations including:
 - Basic operations: add, list, remove, search, stats, sync
-- Server operations: pull, push, list-server
-- Backup operations: backup, restore, list-backups, verify-backup
+- Server operations: pull, push, server
+- Backup operations: backup, restore, backups, verify
 """
 
 import os
@@ -21,7 +21,12 @@ from rich.table import Table
 from ..config import get_config
 from ..workflow import WorkflowApi
 from .app import CustomGroup
-from .output import output_json_or_table, print_workflow_search_table, print_workflow_table, print_backup_files_table
+from .output import (
+    output_json_or_table,
+    print_backup_files_table,
+    print_workflow_search_table,
+    print_workflow_table,
+)
 
 console = Console()
 
@@ -92,7 +97,7 @@ def add(
         raise click.Abort()
 
 
-@wf.command()
+@wf.command("list")
 @click.option("--app-dir", type=click.Path(), help="Application directory for database and backups")
 @click.option("--flow-dir", type=click.Path(), help="Plain directory where workflow JSON files are located")
 @click.option(
@@ -331,7 +336,7 @@ def stats(
 
 # Server operations
 @wf.command()
-@click.option("--server-url", help="n8n server URL (overrides N8N_SERVER_URL)")
+@click.option("--server-url", help="n8n server URL (overrides N8N_DEPLOY_SERVER_URL)")
 @click.option("--app-dir", type=click.Path(), help="Application directory for database and backups")
 @click.option("--flow-dir", type=click.Path(), help="Plain directory where workflow JSON files are located")
 @click.option("--no-emoji", is_flag=True, help="Disable emoji output for automation/scripting")
@@ -359,17 +364,17 @@ def pull(
         # Override server URL if provided
         if server_url:
             # Set temporary environment variable for this operation
-            original_url = os.environ.get("N8N_SERVER_URL")
-            os.environ["N8N_SERVER_URL"] = server_url
+            original_url = os.environ.get("N8N_DEPLOY_SERVER_URL")
+            os.environ["N8N_DEPLOY_SERVER_URL"] = server_url
 
         success = manager.pull_workflow(workflow_id)
 
         # Restore original environment
         if server_url:
             if original_url:
-                os.environ["N8N_SERVER_URL"] = original_url
+                os.environ["N8N_DEPLOY_SERVER_URL"] = original_url
             else:
-                os.environ.pop("N8N_SERVER_URL", None)
+                os.environ.pop("N8N_DEPLOY_SERVER_URL", None)
 
         if success:
             success_msg = f"Pulled workflow '{workflow_id}' from server"
@@ -395,7 +400,7 @@ def pull(
 
 
 @wf.command()
-@click.option("--server-url", help="n8n server URL (overrides N8N_SERVER_URL)")
+@click.option("--server-url", help="n8n server URL (overrides N8N_DEPLOY_SERVER_URL)")
 @click.option("--app-dir", type=click.Path(), help="Application directory for database and backups")
 @click.option("--flow-dir", type=click.Path(), help="Plain directory where workflow JSON files are located")
 @click.option("--no-emoji", is_flag=True, help="Disable emoji output for automation/scripting")
@@ -422,17 +427,17 @@ def push(
         manager = WorkflowApi(config=config)
         # Override server URL if provided
         if server_url:
-            original_url = os.environ.get("N8N_SERVER_URL")
-            os.environ["N8N_SERVER_URL"] = server_url
+            original_url = os.environ.get("N8N_DEPLOY_SERVER_URL")
+            os.environ["N8N_DEPLOY_SERVER_URL"] = server_url
 
         success = manager.push_workflow(workflow_id)
 
         # Restore original environment
         if server_url:
             if original_url:
-                os.environ["N8N_SERVER_URL"] = original_url
+                os.environ["N8N_DEPLOY_SERVER_URL"] = original_url
             else:
-                os.environ.pop("N8N_SERVER_URL", None)
+                os.environ.pop("N8N_DEPLOY_SERVER_URL", None)
 
         if success:
             success_msg = f"Pushed workflow '{workflow_id}' to server"
@@ -457,8 +462,8 @@ def push(
         raise click.Abort()
 
 
-@wf.command("list-server")
-@click.option("--server-url", help="n8n server URL (overrides N8N_SERVER_URL)")
+@wf.command("server")
+@click.option("--server-url", help="n8n server URL (overrides N8N_DEPLOY_SERVER_URL)")
 @click.option("--app-dir", type=click.Path(), help="Application directory for database and backups")
 @click.option("--flow-dir", type=click.Path(), help="Plain directory where workflow JSON files are located")
 @click.option(
@@ -486,17 +491,17 @@ def list_server(
         manager = WorkflowApi(config=config)
         # Override server URL if provided
         if server_url:
-            original_url = os.environ.get("N8N_SERVER_URL")
-            os.environ["N8N_SERVER_URL"] = server_url
+            original_url = os.environ.get("N8N_DEPLOY_SERVER_URL")
+            os.environ["N8N_DEPLOY_SERVER_URL"] = server_url
 
         workflows = manager.list_n8n_workflows()
 
         # Restore original environment
         if server_url:
             if original_url:
-                os.environ["N8N_SERVER_URL"] = original_url
+                os.environ["N8N_DEPLOY_SERVER_URL"] = original_url
             else:
-                os.environ.pop("N8N_SERVER_URL", None)
+                os.environ.pop("N8N_DEPLOY_SERVER_URL", None)
 
         if format == "json":
             console.print(JSON.from_data(workflows))
@@ -547,7 +552,7 @@ def get_backup_dir(backup_dir_param: Optional[str]) -> Path:
     return Path.cwd()
 
 
-@wf.command()
+@wf.command("createbackup")
 @click.option("--backup-dir", type=click.Path(), help="Backup directory (overrides N8N_BACKUP_DIR, default: cwd)")
 @click.option("--app-dir", type=click.Path(), help="Application directory for database and backups")
 @click.option("--flow-dir", type=click.Path(), help="Plain directory where workflow JSON files are located")
@@ -654,7 +659,7 @@ def restore(
         raise click.Abort()
 
 
-@wf.command("list-backups")
+@wf.command("backups")
 @click.option("--backup-dir", type=click.Path(), help="Backup directory (overrides N8N_BACKUP_DIR, default: cwd)")
 @click.option(
     "--format",
@@ -671,14 +676,19 @@ def list_backups(
     """📋 List available workflow backups
 
     Lists tar.gz backup files in the specified directory.
-    Looks in current directory by default, N8N_BACKUP_DIR environment variable,
+    Looks in current directory by default, N8N_DEPLOY_FLOW_DIR environment variable,
     or --backup-dir parameter.
     """
     try:
         backup_path = get_backup_dir(backup_dir)
-        backup_files = list(backup_path.glob("*.tar.gz"))
+        # Use list() builtin explicitly to avoid conflict with Click's list command
+        import builtins
+
+        backup_files = builtins.list(backup_path.glob("*.tar.gz"))
 
         if format == "json":
+            import json as json_module
+
             backup_data = []
             for backup_file in sorted(backup_files):
                 stat = backup_file.stat()
@@ -690,7 +700,8 @@ def list_backups(
                         "modified": stat.st_mtime,
                     }
                 )
-            console.print(JSON.from_data(backup_data))
+            # Always output JSON, even if empty list
+            click.echo(json_module.dumps(backup_data, indent=2))
         else:
             print_backup_files_table(backup_files, no_emoji, str(backup_path))
 
@@ -703,7 +714,7 @@ def list_backups(
         raise click.Abort()
 
 
-@wf.command("verify-backup")
+@wf.command("verify")
 @click.argument("backup_file")
 @click.option("--backup-dir", type=click.Path(), help="Backup directory (overrides N8N_BACKUP_DIR, default: cwd)")
 @click.option("--no-emoji", is_flag=True, help="Disable emoji output for automation/scripting")

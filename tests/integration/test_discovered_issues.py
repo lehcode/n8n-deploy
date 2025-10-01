@@ -152,12 +152,12 @@ class TestDiscoveredHardcodedValueIssues:
         """
         Test that server commands require explicit URL configuration
 
-        Scenario: No N8N_SERVER_URL or --server-url provided
+        Scenario: No N8N_DEPLOY_SERVER_URL or --server-url provided
         Expected: Clear error message directing user to configure server URL
 
         TODO: Implement test that:
         1. Ensures no server URL environment variables set
-        2. Runs list-server, pull, push commands
+        2. Runs server, pull, push commands
         3. Verifies all fail with configuration error
         4. Confirms error messages are helpful and specific
         """
@@ -205,13 +205,13 @@ class TestDiscoveredDisplayIssues:
     @pytest.mark.skip(reason="TODO: Implement test for environment variable display")
     def test_list_command_shows_environment_info(self, test_config: AppConfig) -> None:
         """
-        Test feature: Add N8N_DEPLOY_APP_DIR and N8N_FLOW_DIR to list command
+        Test feature: Add N8N_DEPLOY_APP_DIR and N8N_DEPLOY_FLOW_DIR to list command
 
         Feature: Show environment variable configuration in list command
         Implementation: Display both actual paths and env var values
 
         TODO: Implement test that:
-        1. Sets environment variables N8N_DEPLOY_APP_DIR and N8N_FLOW_DIR
+        1. Sets environment variables N8N_DEPLOY_APP_DIR and N8N_DEPLOY_FLOW_DIR
         2. Runs list command
         3. Verifies output includes directory paths
         4. Confirms environment variable values displayed
@@ -246,11 +246,11 @@ class TestDiscoveredConfigurationIssues:
         """
         Test server URL configuration priority: CLI flag > environment variable
 
-        Scenario: Both --server-url and N8N_SERVER_URL are configured
+        Scenario: Both --server-url and N8N_DEPLOY_SERVER_URL are configured
         Expected: CLI flag takes precedence over environment variable
 
         TODO: Implement test that:
-        1. Sets N8N_SERVER_URL environment variable
+        1. Sets N8N_DEPLOY_SERVER_URL environment variable
         2. Uses --server-url CLI flag with different URL
         3. Mocks server request to capture which URL is used
         4. Verifies CLI flag URL is used, not environment URL
@@ -269,7 +269,7 @@ class TestDiscoveredConfigurationIssues:
         1. Stores API key using apikey add command
         2. Configures server URL
         3. Mocks server response with authentication check
-        4. Runs server command (list-server, pull, push)
+        4. Runs server command (server, pull, push)
         5. Verifies API key included in request headers
         """
         pass

@@ -3,11 +3,11 @@
 Minimal unit tests for n8n_deploy_ configuration management
 """
 
-import pytest
 import os
 from pathlib import Path
 from unittest.mock import patch
 
+import pytest
 from assertpy import assert_that
 
 from api.config import AppConfig, get_config
@@ -48,7 +48,7 @@ class TestGetConfig:
 
     def test_get_config_flow_dir_parameter_priority(self, temp_dir):
         """Test parameter takes priority over environment variable"""
-        with patch.dict(os.environ, {"N8N_FLOW_DIR": "/env/path"}):
+        with patch.dict(os.environ, {"N8N_DEPLOY_FLOW_DIR": "/env/path"}):
             config = get_config(base_folder=temp_dir, flow_folder=temp_dir / "custom")
             assert_that(config.workflows_path).is_equal_to(temp_dir / "custom")
 

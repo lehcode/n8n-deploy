@@ -2,7 +2,7 @@
 """
 Workflow backup and restore operations
 
-Handles: backup-workflows, restore-workflows, verify-backup, list-backups operations
+Handles: backup-workflows, restore-workflows, verify, backups operations
 """
 
 import hashlib

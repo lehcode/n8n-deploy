@@ -6,8 +6,9 @@ Real CLI execution tests for basic operations, output formatting,
 environment variable handling, and configuration consistency.
 """
 
-import pytest
 from pathlib import Path
+
+import pytest
 
 from .e2e_base import E2ETestBase
 
@@ -80,13 +81,13 @@ class TestE2ECLI(E2ETestBase):
         assert returncode2 == 0, f"Version/help combination failed. STDERR: {stderr2}"
         assert stdout2.strip() == "", f"Expected no output in reverse order. STDOUT: {stdout2[:200]}..."
 
-    def test_list_command_shows_environment_variables(self) -> None:
+    def test_wf_list_command_shows_environment_variables(self) -> None:
         """Test list command displays environment configuration"""
         # Initialize database first
         returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir, "db", "init"])
 
         env = {
-            "N8N_FLOW_DIR": self.temp_flow_dir,
+            "N8N_DEPLOY_FLOW_DIR": self.temp_flow_dir,
         }
 
         returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir, "wf", "list"], env=env)
@@ -104,9 +105,16 @@ class TestE2ECLI(E2ETestBase):
             "No workflows found" in stdout or "test_" in stdout
         ), f"Expected workflow list or 'No workflows found'. STDOUT: {stdout[:500]}..."
 
-    def test_cli_help(self) -> None:
+    def test_base_folder_consistency(self) -> None:
         """Test base folder configuration across different commands"""
-        commands_to_test = [["wf", "list"], ["db", "status"], ["apikey", "list"]]
+        # Only test commands that accept --app-dir and don't require other arguments
+        commands_to_test = [
+            ["wf", "list"],
+            ["wf", "stats"],
+            ["db", "status"],
+            ["db", "backup"],
+            ["db", "compact"],
+        ]
         returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir, "db", "init"])
 
         for cmd in commands_to_test:
@@ -122,8 +130,8 @@ class TestE2ECLI(E2ETestBase):
             )
 
     def test_flow_dir_environment_variable_priority(self) -> None:
-        """Test N8N_FLOW_DIR environment variable is respected"""
-        env = {"N8N_FLOW_DIR": self.temp_flow_dir}
+        """Test N8N_DEPLOY_FLOW_DIR environment variable is respected"""
+        env = {"N8N_DEPLOY_FLOW_DIR": self.temp_flow_dir}
         returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir, "db", "init"])
         returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir, "wf", "list"], env=env)
 
@@ -132,13 +140,13 @@ class TestE2ECLI(E2ETestBase):
             stdout,
             stderr,
             0,
-            f"Flow dir environment variable test. N8N_FLOW_DIR={self.temp_flow_dir}",
+            f"Flow dir environment variable test. N8N_DEPLOY_FLOW_DIR={self.temp_flow_dir}",
         )
 
     def test_cli_option_precedence_over_env(self) -> None:
         """Test CLI --flow-dir option takes precedence over environment"""
 
-        env = {"N8N_FLOW_DIR": "/tmp/env-dir"}
+        env = {"N8N_DEPLOY_FLOW_DIR": "/tmp/env-dir"}
         returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir, "db", "init"])
 
         # Use CLI option for different directory
@@ -318,7 +326,7 @@ class TestE2ECLI(E2ETestBase):
         # Initialize database first
         returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir, "db", "init"])
 
-        env1 = {"N8N_FLOW_DIR": self.temp_flow_dir}
+        env1 = {"N8N_DEPLOY_FLOW_DIR": self.temp_flow_dir}
         returncode1, stdout1, stderr1 = self.run_cli_command(["--app-dir", self.temp_dir, "wf", "list"], env=env1)
         returncode2, stdout2, stderr2 = self.run_cli_command(["--app-dir", self.temp_dir, "wf", "list"])
 
@@ -327,7 +335,7 @@ class TestE2ECLI(E2ETestBase):
             stdout1,
             stderr1,
             0,
-            "Environment isolation test with N8N_FLOW_DIR",
+            "Environment isolation test with N8N_DEPLOY_FLOW_DIR",
         )
         self.assert_command_details(
             returncode2,

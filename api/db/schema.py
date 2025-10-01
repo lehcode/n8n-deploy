@@ -6,15 +6,15 @@ Handles database initialization and schema versioning.
 """
 
 import sqlite3
-from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
-from typing import Iterator, Optional, Union
+from typing import Optional, Union
 
 from ..config import AppConfig
+from .base import BaseDB
 
 
-class SchemaApi:
+class SchemaApi(BaseDB):
     """Manages database schema initialization and versioning"""
 
     SCHEMA_VERSION = 1
@@ -25,30 +25,8 @@ class SchemaApi:
         db_path: Optional[Union[str, Path]] = None,
     ):
         """Initialize schema manager with database path"""
-        # Database path resolution: config > direct path > default
-        if config is not None:
-            self.db_path = config.database_path
-        elif db_path is not None:
-            self.db_path = Path(db_path)
-        else:
-            from ..config import get_config
-
-            default_config = get_config()
-            self.db_path = default_config.database_path
-
-        # Ensure database directory exists
-        self.db_path.parent.mkdir(parents=True, exist_ok=True)
+        super().__init__(config=config, db_path=db_path)
         self._connection: Optional[sqlite3.Connection] = None
-
-    @contextmanager
-    def get_connection(self) -> Iterator[sqlite3.Connection]:
-        """Context manager for database connections"""
-        conn = sqlite3.connect(self.db_path)
-        conn.row_factory = sqlite3.Row
-        try:
-            yield conn
-        finally:
-            conn.close()
 
     def initialize_database(self) -> None:
         """Initialize database with schema and tables"""
