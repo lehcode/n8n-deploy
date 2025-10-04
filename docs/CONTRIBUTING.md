@@ -225,7 +225,7 @@ def test_manager_database_integration(test_config):
 # E2E test example (CLI changes)
 def test_e2e_new_command_functionality(temp_dir):
     """E2E test: real subprocess execution"""
-    env = {"N8N_DEPLOY_APP_DIR": str(temp_dir)}
+    env = {"N8N_DEPLOY_DATA": str(temp_dir)}
     result = subprocess.run(
         ["./n8n-deploy", "new-command", "--no-emoji"],
         capture_output=True, text=True, env=env
@@ -484,7 +484,7 @@ git checkout -b feature/add-stats-command
 
 # 2. Add command to api/cli.py
 @cli.command()
-@click.option("--app-dir", type=click.Path())
+@click.option("--data-dir", type=click.Path())
 def stats(app_dir: Optional[str]) -> None:
     """Show workflow statistics"""
     try:
@@ -508,14 +508,14 @@ def get_workflow_stats(self) -> Dict[str, Any]:
 # 4. Add tests
 def test_stats_command_shows_workflow_counts(cli_runner, test_config):
     """Test stats command output"""
-    result = cli_runner.invoke(cli, ['--app-dir', str(test_config.base_folder), 'stats'])
+    result = cli_runner.invoke(cli, ['--data-dir', str(test_config.base_folder), 'stats'])
     assert result.exit_code == 0
     assert "Total workflows:" in result.output
 
 # 5. Add E2E test
 def test_e2e_stats_command(temp_dir):
     """E2E test for stats command"""
-    env = {"N8N_DEPLOY_APP_DIR": str(temp_dir)}
+    env = {"N8N_DEPLOY_DATA": str(temp_dir)}
     result = subprocess.run(
         ["./n8n-deploy", "stats", "--no-emoji"],
         capture_output=True, text=True, env=env
