@@ -7,12 +7,13 @@ that should always hold true for the CLI. Replaces repetitive E2E tests
 with comprehensive property-based edge case testing.
 """
 
-from hypothesis import given, strategies as st, settings, assume
-import subprocess
-from pathlib import Path
 import json
 import re
+import subprocess
+from pathlib import Path
 
+from hypothesis import assume, given, settings
+from hypothesis import strategies as st
 
 # ═══════════════════════════════════════════════════════════════════════════
 # Strategy Definitions
@@ -123,7 +124,7 @@ class TestPropertyBased:
     @settings(max_examples=50)
     def test_env_command_never_crashes_with_valid_paths(self, app_dir):
         """Property: env command should handle any valid path"""
-        result = subprocess.run(["./n8n-deploy", "env", "--app-dir", app_dir], capture_output=True, timeout=5, text=True)
+        result = subprocess.run(["./n8n-deploy", "env", "--data-dir", app_dir], capture_output=True, timeout=5, text=True)
         # Should always exit with known codes
         assert result.returncode in [0, 1, 2], f"Unexpected exit code: {result.returncode}"
 
@@ -131,7 +132,7 @@ class TestPropertyBased:
     @settings(max_examples=30)
     def test_env_command_format_options(self, app_dir, flow_dir, format_choice):
         """Property: env command should handle all format options"""
-        cmd = ["./n8n-deploy", "env", "--app-dir", app_dir, "--flow-dir", flow_dir]
+        cmd = ["./n8n-deploy", "env", "--data-dir", app_dir, "--flows-dir", flow_dir]
         if format_choice:
             cmd.extend(["--format", format_choice])
 
@@ -173,7 +174,7 @@ class TestPropertyBased:
     def test_db_status_handles_all_paths(self, app_dir):
         """Property: db status should handle any valid path"""
         result = subprocess.run(
-            ["./n8n-deploy", "db", "status", "--app-dir", app_dir], capture_output=True, timeout=5, text=True
+            ["./n8n-deploy", "db", "status", "--data-dir", app_dir], capture_output=True, timeout=5, text=True
         )
         # Should exit gracefully even if DB doesn't exist
         assert result.returncode in [0, 1, 2], f"Unexpected exit code: {result.returncode}"
@@ -182,7 +183,7 @@ class TestPropertyBased:
     @settings(max_examples=20)
     def test_wf_list_format_options(self, app_dir, format_choice):
         """Property: wf list should handle all format options"""
-        cmd = ["./n8n-deploy", "wf", "list", "--app-dir", app_dir]
+        cmd = ["./n8n-deploy", "wf", "list", "--data-dir", app_dir]
         if format_choice:
             cmd.extend(["--format", format_choice])
 
@@ -228,7 +229,7 @@ class TestPropertyBased:
     def test_deep_nested_paths_handled(self, path_components):
         """Property: Commands should handle deeply nested paths"""
         deep_path = "/tmp/" + "/".join(path_components)
-        result = subprocess.run(["./n8n-deploy", "env", "--app-dir", deep_path], capture_output=True, timeout=5, text=True)
+        result = subprocess.run(["./n8n-deploy", "env", "--data-dir", deep_path], capture_output=True, timeout=5, text=True)
         assert result.returncode in [0, 1, 2], "Deep nested path caused unexpected behavior"
 
     @given(server_url=server_urls, app_dir=valid_paths)
@@ -236,7 +237,7 @@ class TestPropertyBased:
     def test_combined_options_never_crash(self, server_url, app_dir):
         """Property: Combining multiple options should never crash"""
         result = subprocess.run(
-            ["./n8n-deploy", "env", "--app-dir", app_dir, "--server-url", server_url, "--format", "json"],
+            ["./n8n-deploy", "env", "--data-dir", app_dir, "--server-url", server_url, "--format", "json"],
             capture_output=True,
             timeout=5,
             text=True,
@@ -266,7 +267,7 @@ class TestFormatValidation:
     def test_env_json_always_valid(self, app_dir):
         """Property: env --format json always produces parseable JSON"""
         result = subprocess.run(
-            ["./n8n-deploy", "env", "--app-dir", app_dir, "--format", "json"],
+            ["./n8n-deploy", "env", "--data-dir", app_dir, "--format", "json"],
             capture_output=True,
             timeout=5,
             text=True,
@@ -285,7 +286,7 @@ class TestFormatValidation:
     @settings(max_examples=40)
     def test_db_status_formats(self, app_dir, format_choice):
         """Property: db status supports all format options correctly"""
-        cmd = ["./n8n-deploy", "db", "status", "--app-dir", app_dir]
+        cmd = ["./n8n-deploy", "db", "status", "--data-dir", app_dir]
         if format_choice:
             cmd.extend(["--format", format_choice])
 
@@ -306,7 +307,7 @@ class TestFormatValidation:
     def test_apikey_list_json_structure(self, app_dir):
         """Property: apikey list --format json has consistent structure"""
         result = subprocess.run(
-            ["./n8n-deploy", "apikey", "list", "--app-dir", app_dir, "--format", "json"],
+            ["./n8n-deploy", "apikey", "list", "--data-dir", app_dir, "--format", "json"],
             capture_output=True,
             timeout=5,
             text=True,
@@ -334,7 +335,7 @@ class TestPathHandling:
     def test_special_characters_in_paths(self, path):
         """Property: Special characters in paths never cause crashes"""
         result = subprocess.run(
-            ["./n8n-deploy", "env", "--app-dir", path],
+            ["./n8n-deploy", "env", "--data-dir", path],
             capture_output=True,
             timeout=5,
             text=True,
@@ -350,7 +351,7 @@ class TestPathHandling:
         assume(len(path) < 200)
 
         result = subprocess.run(
-            ["./n8n-deploy", "db", "status", "--app-dir", path],
+            ["./n8n-deploy", "db", "status", "--data-dir", path],
             capture_output=True,
             timeout=5,
             text=True,
@@ -362,7 +363,7 @@ class TestPathHandling:
     def test_matching_special_char_paths(self, app_dir, flow_dir):
         """Property: Both app-dir and flow-dir with special chars work"""
         result = subprocess.run(
-            ["./n8n-deploy", "env", "--app-dir", app_dir, "--flow-dir", flow_dir],
+            ["./n8n-deploy", "env", "--data-dir", app_dir, "--flows-dir", flow_dir],
             capture_output=True,
             timeout=5,
             text=True,
@@ -377,9 +378,9 @@ class TestPathHandling:
 
         # All these commands should handle the path consistently
         commands = [
-            ["env", "--app-dir", path],
-            ["db", "status", "--app-dir", path],
-            ["wf", "list", "--app-dir", path],
+            ["env", "--data-dir", path],
+            ["db", "status", "--data-dir", path],
+            ["wf", "list", "--data-dir", path],
         ]
 
         exit_codes = []
@@ -404,7 +405,7 @@ class TestPathHandling:
 
         # Commands should succeed by defaulting to cwd
         result = subprocess.run(
-            ["./n8n-deploy", "env", "--app-dir", invalid_path, "--format", "json"],
+            ["./n8n-deploy", "env", "--data-dir", invalid_path, "--format", "json"],
             capture_output=True,
             timeout=5,
             text=True,
@@ -578,9 +579,9 @@ class TestOptionCombinations:
         cmd = [
             "./n8n-deploy",
             "env",
-            "--app-dir",
+            "--data-dir",
             app_dir,
-            "--flow-dir",
+            "--flows-dir",
             flow_dir,
             "--server-url",
             server_url,
@@ -604,7 +605,7 @@ class TestOptionCombinations:
     @settings(max_examples=30)
     def test_wf_list_combined_options(self, app_dir, only_flag, format_choice):
         """Property: wf list with --only and format options works"""
-        cmd = ["./n8n-deploy", "wf", "list", "--app-dir", app_dir]
+        cmd = ["./n8n-deploy", "wf", "list", "--data-dir", app_dir]
         if only_flag:
             cmd.append("--only")
         if format_choice:

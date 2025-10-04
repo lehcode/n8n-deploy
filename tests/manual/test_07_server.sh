@@ -23,19 +23,19 @@ print_section "Test Category 6: Server Integration (Mock scenarios)"
     fi
 
     # Test list-server with no server
-    run_test "List server (no URL)" "$CLI_COMMAND wf server --app-dir $app_dir --flow-dir $flow_dir --no-emoji" 1 "List server workflows without URL"
+    run_test "List server (no URL)" "$CLI_COMMAND wf server --data-dir $app_dir --flows-dir $flow_dir --no-emoji" 1 "List server workflows without URL"
 
     # Test list-server with unreachable server
-    run_test "List server (unreachable)" "$CLI_COMMAND wf server --server-url $mock_server --app-dir $app_dir --flow-dir $flow_dir --no-emoji" 1 "List server workflows with unreachable server"
+    run_test "List server (unreachable)" "$CLI_COMMAND wf server --server-url $mock_server --data-dir $app_dir --flows-dir $flow_dir --no-emoji" 1 "List server workflows with unreachable server"
 
     # Test pull with unreachable server
-    run_test "Pull workflow (unreachable)" "$CLI_COMMAND wf pull $SAMPLE_WF_ID --server-url $mock_server --app-dir $app_dir --flow-dir $flow_dir" 1 "Pull workflow from unreachable server"
+    run_test "Pull workflow (unreachable)" "$CLI_COMMAND wf pull $SAMPLE_WF_ID --server-url $mock_server --data-dir $app_dir --flows-dir $flow_dir" 1 "Pull workflow from unreachable server"
 
     # Test push with unreachable server
-    run_test "Push workflow (unreachable)" "$CLI_COMMAND wf push $SAMPLE_WF_ID --server-url $mock_server --app-dir $app_dir --flow-dir $flow_dir" 1 "Push workflow to unreachable server"
+    run_test "Push workflow (unreachable)" "$CLI_COMMAND wf push $SAMPLE_WF_ID --server-url $mock_server --data-dir $app_dir --flows-dir $flow_dir" 1 "Push workflow to unreachable server"
 
     # Test with skip SSL verify flag
-    run_test "List server (skip SSL)" "$CLI_COMMAND wf server --server-url $mock_server --skip-ssl-verify --app-dir $app_dir --flow-dir $flow_dir --no-emoji" 1 "List server with SSL verification disabled"
+    run_test "List server (skip SSL)" "$CLI_COMMAND wf server --server-url $mock_server --skip-ssl-verify --data-dir $app_dir --flows-dir $flow_dir --no-emoji" 1 "List server with SSL verification disabled"
 
     log_warning "Server integration tests use mock/unreachable endpoints - real server testing requires manual setup"
 

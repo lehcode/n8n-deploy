@@ -236,7 +236,7 @@ check_database_exists() {
     local test_section="$2"
     if [[ ! -f "$app_dir/n8n-deploy.db" ]]; then
         log_warning "Database not initialized for $test_section tests"
-        log_warning "Run 'db' test section first or manually run: n8n-deploy db init --app-dir $app_dir"
+        log_warning "Run 'db' test section first or manually run: n8n-deploy db init --data-dir $app_dir"
         return 1
     fi
     return 0
