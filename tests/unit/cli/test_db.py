@@ -5,18 +5,18 @@ Unit tests for database CLI commands module
 Tests the modular database commands: init, status, compact, backup
 """
 
-import pytest
-import tempfile
 import os
-from pathlib import Path
-from unittest.mock import patch, MagicMock
-from click.testing import CliRunner
-
 import sys
+import tempfile
+from pathlib import Path
+from unittest.mock import MagicMock, patch
+
+import pytest
+from click.testing import CliRunner
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 
-from api.cli.db import db, check_database_exists, is_interactive_mode
+from api.cli.db import check_database_exists, db, is_interactive_mode
 
 
 class TestInteractiveModeDetection:
@@ -62,6 +62,7 @@ class TestDatabaseHelpers:
     def test_check_database_exists_function(self):
         """Test check_database_exists helper function with missing database"""
         from pathlib import Path
+
         import click
 
         nonexistent_path = Path("/tmp/nonexistent-test-db.db")
@@ -73,6 +74,7 @@ class TestDatabaseHelpers:
     def test_check_database_exists_json_format(self):
         """Test check_database_exists with JSON format"""
         from pathlib import Path
+
         import click
 
         nonexistent_path = Path("/tmp/nonexistent-test-db.db")
@@ -83,8 +85,8 @@ class TestDatabaseHelpers:
 
     def test_check_database_exists_with_existing_db(self):
         """Test check_database_exists with existing database (should not raise)"""
-        from pathlib import Path
         import tempfile
+        from pathlib import Path
 
         # Create a temporary file to simulate existing database
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp:
@@ -128,7 +130,7 @@ class TestDatabaseCommands:
         result = self.runner.invoke(db, ["init", "--help"])
         assert result.exit_code == 0
         assert "Initialize n8n-deploy database" in result.output
-        assert "--app-dir" in result.output
+        assert "--data-dir" in result.output
         assert "--no-emoji" in result.output
         assert "--import" in result.output
 
@@ -137,7 +139,7 @@ class TestDatabaseCommands:
         result = self.runner.invoke(db, ["status", "--help"])
         assert result.exit_code == 0
         assert "Show database status and statistics" in result.output
-        assert "--app-dir" in result.output
+        assert "--data-dir" in result.output
         assert "--format" in result.output
 
     def test_compact_command_help(self):
@@ -145,7 +147,7 @@ class TestDatabaseCommands:
         result = self.runner.invoke(db, ["compact", "--help"])
         assert result.exit_code == 0
         assert "Compact database to optimize storage" in result.output
-        assert "--app-dir" in result.output
+        assert "--data-dir" in result.output
         assert "--no-emoji" in result.output
 
     def test_backup_command_help(self):
@@ -153,7 +155,7 @@ class TestDatabaseCommands:
         result = self.runner.invoke(db, ["backup", "--help"])
         assert result.exit_code == 0
         assert "Create database backup" in result.output
-        assert "--app-dir" in result.output
+        assert "--data-dir" in result.output
 
     @patch("api.cli.db.DBApi")
     @patch("api.config.AppConfig")
@@ -167,7 +169,7 @@ class TestDatabaseCommands:
         # Mock database path doesn't exist
         db_path = Path(self.temp_dir) / "n8n-deploy.db"
 
-        result = self.runner.invoke(db, ["init", "--app-dir", self.temp_dir, "--no-emoji"])
+        result = self.runner.invoke(db, ["init", "--data-dir", self.temp_dir, "--no-emoji"])
 
         assert result.exit_code == 0
         assert "Database initialized" in result.output
@@ -175,7 +177,7 @@ class TestDatabaseCommands:
 
     def test_init_import_flag_new_database(self):
         """Test --import flag with new database (should create it)"""
-        result = self.runner.invoke(db, ["init", "--app-dir", self.temp_dir, "--import", "--no-emoji"])
+        result = self.runner.invoke(db, ["init", "--data-dir", self.temp_dir, "--import", "--no-emoji"])
 
         assert result.exit_code == 0
         assert "Database initialized" in result.output
@@ -185,11 +187,11 @@ class TestDatabaseCommands:
     def test_init_import_flag_existing_database(self):
         """Test --import flag with existing database (should accept without prompt)"""
         # First create the database
-        result1 = self.runner.invoke(db, ["init", "--app-dir", self.temp_dir, "--import", "--no-emoji"])
+        result1 = self.runner.invoke(db, ["init", "--data-dir", self.temp_dir, "--import", "--no-emoji"])
         assert result1.exit_code == 0
 
         # Run again with --import flag
-        result2 = self.runner.invoke(db, ["init", "--app-dir", self.temp_dir, "--import", "--no-emoji"])
+        result2 = self.runner.invoke(db, ["init", "--data-dir", self.temp_dir, "--import", "--no-emoji"])
 
         assert result2.exit_code == 0
         assert "Using existing database" in result2.output
@@ -198,7 +200,7 @@ class TestDatabaseCommands:
     def test_init_import_flag_json_format(self):
         """Test --import flag with JSON format output"""
         # Create database
-        result1 = self.runner.invoke(db, ["init", "--app-dir", self.temp_dir, "--import", "--format", "json"])
+        result1 = self.runner.invoke(db, ["init", "--data-dir", self.temp_dir, "--import", "--format", "json"])
         assert result1.exit_code == 0
 
         # Parse JSON output
@@ -212,7 +214,7 @@ class TestDatabaseCommands:
         assert output1.get("already_exists", False) is False
 
         # Run again with existing database
-        result2 = self.runner.invoke(db, ["init", "--app-dir", self.temp_dir, "--import", "--format", "json"])
+        result2 = self.runner.invoke(db, ["init", "--data-dir", self.temp_dir, "--import", "--format", "json"])
         assert result2.exit_code == 0
 
         # Parse second JSON output
@@ -223,7 +225,7 @@ class TestDatabaseCommands:
 
     def test_init_import_flag_with_no_emoji(self):
         """Test --import flag combined with --no-emoji"""
-        result = self.runner.invoke(db, ["init", "--app-dir", self.temp_dir, "--import", "--no-emoji"])
+        result = self.runner.invoke(db, ["init", "--data-dir", self.temp_dir, "--import", "--no-emoji"])
 
         assert result.exit_code == 0
         assert "Database initialized" in result.output
@@ -234,7 +236,7 @@ class TestDatabaseCommands:
 
     def test_init_json_format_implies_no_emoji(self):
         """Test that JSON format automatically disables emoji"""
-        result = self.runner.invoke(db, ["init", "--app-dir", self.temp_dir, "--import", "--format", "json"])
+        result = self.runner.invoke(db, ["init", "--data-dir", self.temp_dir, "--import", "--format", "json"])
 
         assert result.exit_code == 0
         # JSON output should not contain emoji
@@ -263,7 +265,7 @@ class TestDatabaseCommands:
         mock_stats.tables = {"workflows": 5, "api_keys": 2}
         mock_db_instance.get_database_stats.return_value = mock_stats
 
-        result = self.runner.invoke(db, ["status", "--app-dir", self.temp_dir])
+        result = self.runner.invoke(db, ["status", "--data-dir", self.temp_dir])
 
         assert result.exit_code == 0
         assert "Database Status" in result.output
@@ -288,7 +290,7 @@ class TestDatabaseCommands:
         mock_stats.tables = {"workflows": 5, "api_keys": 2}
         mock_db_instance.get_database_stats.return_value = mock_stats
 
-        result = self.runner.invoke(db, ["status", "--app-dir", self.temp_dir, "--format", "json"])
+        result = self.runner.invoke(db, ["status", "--data-dir", self.temp_dir, "--format", "json"])
 
         assert result.exit_code == 0
         assert "database_path" in result.output
@@ -307,7 +309,7 @@ class TestDatabaseCommands:
         mock_db_instance = MagicMock()
         mock_db.return_value = mock_db_instance
 
-        result = self.runner.invoke(db, ["compact", "--app-dir", self.temp_dir, "--no-emoji"])
+        result = self.runner.invoke(db, ["compact", "--data-dir", self.temp_dir, "--no-emoji"])
 
         assert result.exit_code == 0
         assert "Optimizing database" in result.output
@@ -327,7 +329,7 @@ class TestDatabaseCommands:
         mock_db.return_value = mock_db_instance
 
         backup_path = str(Path(self.temp_dir) / "backup.db")
-        result = self.runner.invoke(db, ["backup", backup_path, "--app-dir", self.temp_dir])
+        result = self.runner.invoke(db, ["backup", backup_path, "--data-dir", self.temp_dir])
 
         assert result.exit_code == 0
         mock_db_instance.backup.assert_called_once_with(backup_path)
@@ -345,7 +347,7 @@ class TestDatabaseCommands:
         mock_db_instance = MagicMock()
         mock_db.return_value = mock_db_instance
 
-        result = self.runner.invoke(db, ["backup", "--app-dir", self.temp_dir])
+        result = self.runner.invoke(db, ["backup", "--data-dir", self.temp_dir])
 
         assert result.exit_code == 0
         # Should call backup with generated path
