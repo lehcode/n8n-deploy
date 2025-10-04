@@ -36,7 +36,8 @@ from .output import (
     print_workflow_table,
     print_error,
     print_success,
-    cli_error,
+    print_workflow_search_table,
+    print_workflow_table,
 )
 
 console = Console()
