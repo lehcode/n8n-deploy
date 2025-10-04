@@ -80,8 +80,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Environment Variable Standardization**
   - Renamed all environment variables to `N8N_DEPLOY_*` convention
-  - `N8N_FLOW_DIR` → `N8N_DEPLOY_FLOW_DIR`
-  - Added `N8N_DEPLOY_APP_DIR` for application directory
+  - `N8N_DEPLOY_FLOWS` → `N8N_DEPLOY_FLOW_DIR`
+  - Added `N8N_DEPLOY_DATA` for application directory
   - Added `N8N_DEPLOY_SERVER_URL` for n8n server URL
 
 #### Code Quality Improvements
