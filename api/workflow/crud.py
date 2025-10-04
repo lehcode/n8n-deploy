@@ -93,6 +93,15 @@ class WorkflowCRUD:
         db_workflows = self.db.list_workflows()
 
         for workflow in db_workflows:
+            # Determine flow folder: use workflow's file_folder or default to base_path
+            flow_folder = Path(workflow.file_folder) if workflow.file_folder else self.base_path
+            if not flow_folder:
+                flow_folder = Path.cwd()  # Default to current directory
+
+            # Check if workflow file exists: {workflow_id}.json in flow folder
+            workflow_file = flow_folder / f"{workflow.id}.json"
+            file_exists = workflow_file.exists()
+
             workflow_info = {
                 "id": workflow.id,
                 "name": workflow.name,
@@ -102,6 +111,8 @@ class WorkflowCRUD:
                 "updated_at": workflow.updated_at.isoformat() if workflow.updated_at else None,
                 "push_count": workflow.push_count,
                 "pull_count": workflow.pull_count,
+                "file_exists": file_exists,
+                "flow_folder": str(flow_folder),
             }
             workflows.append(workflow_info)
 

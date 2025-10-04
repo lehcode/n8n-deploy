@@ -187,18 +187,27 @@ def print_workflow_table(workflows: List[Dict[str, Any]], no_emoji: bool = False
         return
 
     table = Table()
-    table.add_column("ID", style="cyan", no_wrap=True)
+    table.add_column("n8n ID", style="cyan", no_wrap=True)
     table.add_column("Name", style="magenta")
+    table.add_column("File Exists", justify="center")
     table.add_column("Status", justify="center")
     table.add_column("Created", justify="center")
     table.add_column("Last Synced", justify="center")
-    table.add_column("Push Count", justify="right")
-    table.add_column("Pull Count", justify="right")
+    table.add_column("Push", justify="right")
+    table.add_column("Pull", justify="right")
 
     for wf in workflows:
+        # File existence indicator with color
+        file_exists = wf.get("file_exists", False)
+        if no_emoji:
+            file_status = "Yes" if file_exists else "No"
+        else:
+            file_status = "[green]✓[/green]" if file_exists else "[red]✗[/red]"
+
         table.add_row(
             wf["id"],
             wf["name"],
+            file_status,
             str(wf["status"]),
             str(wf["created_at"])[:10] if wf["created_at"] else "-",
             str(wf["last_synced"])[:10] if wf["last_synced"] else "-",
