@@ -20,7 +20,7 @@ from rich.table import Table
 from ..api_keys import KeyApi
 from ..config import AppConfig
 from ..db import DBApi
-from .app import CustomGroup, HELP_APP_DIR, HELP_NO_EMOJI
+from .app import HELP_APP_DIR, HELP_NO_EMOJI, CustomGroup
 from .output import cli_error
 
 console = Console()
@@ -42,14 +42,14 @@ def apikey() -> None:
 @click.option("--name", required=True, help="API key name (UTF-8 supported, no path separators)")
 @click.option("--description", help="Description of the API key")
 @click.option("--expires-in", type=int, help="Number of days until expiration")
-@click.option("--app-dir", type=click.Path(), help=HELP_APP_DIR)
+@click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
 def add_apikey(
     key: Optional[str],
     name: str,
     description: Optional[str],
     expires_in: Optional[int],
-    app_dir: Optional[str],
+    data_dir: Optional[str],
     no_emoji: bool,
 ) -> None:
     """🔑 Add new API key
@@ -104,7 +104,7 @@ def add_apikey(
 
     try:
         # API key operations only need base folder, not workflow directories
-        base_path = Path(app_dir) if app_dir else Path.cwd()
+        base_path = Path(data_dir) if data_dir else Path.cwd()
         config = AppConfig(base_folder=base_path)
         db_api = DBApi(config=config)
         key_api = KeyApi(db=db_api, config=config)
@@ -141,9 +141,9 @@ def add_apikey(
     default="table",
     help="Output format",
 )
-@click.option("--app-dir", type=click.Path(), help=HELP_APP_DIR)
+@click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
-def list_apikeys(show_keys: bool, format: str, app_dir: Optional[str], no_emoji: bool) -> None:
+def list_apikeys(show_keys: bool, format: str, data_dir: Optional[str], no_emoji: bool) -> None:
     """📋 List all stored API keys
 
     Display all stored API keys with metadata (keys are hidden by default).
@@ -151,7 +151,7 @@ def list_apikeys(show_keys: bool, format: str, app_dir: Optional[str], no_emoji:
     """
     try:
         # API key operations only need base folder, not workflow directories
-        base_path = Path(app_dir) if app_dir else Path.cwd()
+        base_path = Path(data_dir) if data_dir else Path.cwd()
         config = AppConfig(base_folder=base_path)
         db_api = DBApi(config=config)
         key_api = KeyApi(db=db_api, config=config)
@@ -226,13 +226,13 @@ def list_apikeys(show_keys: bool, format: str, app_dir: Optional[str], no_emoji:
     default="table",
     help="Output format",
 )
-@click.option("--app-dir", type=click.Path(), help=HELP_APP_DIR)
+@click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
-def get_apikey(key_name_or_id: str, show_key: bool, format: str, app_dir: Optional[str], no_emoji: bool) -> None:
+def get_apikey(key_name_or_id: str, show_key: bool, format: str, data_dir: Optional[str], no_emoji: bool) -> None:
     """🔍 Get API key details"""
     # API key operations only need base folder, not workflow directories
     try:
-        base_path = Path(app_dir) if app_dir else Path.cwd()
+        base_path = Path(data_dir) if data_dir else Path.cwd()
         config = AppConfig(base_folder=base_path)
         db_api = DBApi(config=config)
         key_api = KeyApi(db=db_api, config=config)
@@ -276,12 +276,12 @@ def get_apikey(key_name_or_id: str, show_key: bool, format: str, app_dir: Option
 
 @apikey.command("deactivate")
 @click.argument("key_name")
-@click.option("--app-dir", type=click.Path(), help=HELP_APP_DIR)
-def deactivate_apikey(key_name: str, app_dir: Optional[str]) -> None:
+@click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
+def deactivate_apikey(key_name: str, data_dir: Optional[str]) -> None:
     """🚫 Deactivate API key (soft delete)"""
     try:
         # API key operations only need base folder, not workflow directories
-        base_path = Path(app_dir) if app_dir else Path.cwd()
+        base_path = Path(data_dir) if data_dir else Path.cwd()
         config = AppConfig(base_folder=base_path)
         db_api = DBApi(config=config)
         key_api = KeyApi(db=db_api, config=config)
@@ -295,12 +295,12 @@ def deactivate_apikey(key_name: str, app_dir: Optional[str]) -> None:
 @apikey.command("delete")
 @click.argument("key_name")
 @click.option("--confirm", is_flag=True, help="Confirm permanent deletion")
-@click.option("--app-dir", type=click.Path(), help=HELP_APP_DIR)
-def delete_apikey(key_name: str, confirm: bool, app_dir: Optional[str]) -> None:
+@click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
+def delete_apikey(key_name: str, confirm: bool, data_dir: Optional[str]) -> None:
     """🗑️ Permanently delete an API key"""
     try:
         # API key operations only need base folder, not workflow directories
-        base_path = Path(app_dir) if app_dir else Path.cwd()
+        base_path = Path(data_dir) if data_dir else Path.cwd()
         config = AppConfig(base_folder=base_path)
         db_api = DBApi(config=config)
         key_api = KeyApi(db=db_api, config=config)
@@ -313,12 +313,12 @@ def delete_apikey(key_name: str, confirm: bool, app_dir: Optional[str]) -> None:
 
 @apikey.command("test")
 @click.argument("key_name")
-@click.option("--app-dir", type=click.Path(), help=HELP_APP_DIR)
-def test_apikey(key_name: str, app_dir: Optional[str]) -> None:
+@click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
+def test_apikey(key_name: str, data_dir: Optional[str]) -> None:
     """🧪 Test API key validity"""
     try:
         # API key operations only need base folder, not workflow directories
-        base_path = Path(app_dir) if app_dir else Path.cwd()
+        base_path = Path(data_dir) if data_dir else Path.cwd()
         config = AppConfig(base_folder=base_path)
         db_api = DBApi(config=config)
         key_api = KeyApi(db=db_api, config=config)

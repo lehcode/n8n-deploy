@@ -26,8 +26,8 @@ if os.getenv("ENVIRONMENT", "").lower() == "development":
 
 
 @click.command()
-@click.option("--app-dir", type=click.Path(), help="Application directory path")
-@click.option("--flow-dir", type=click.Path(), help="Flow directory path")
+@click.option("--data-dir", type=click.Path(), help="Application directory path")
+@click.option("--flows-dir", type=click.Path(), help="Flow directory path")
 @click.option("--server-url", type=str, help="n8n server URL")
 @click.option(
     "--format",
@@ -36,8 +36,8 @@ if os.getenv("ENVIRONMENT", "").lower() == "development":
     help="Output format: table (emoji tables) or json (structured data). Default: plain text",
 )
 def env(
-    app_dir: Optional[str],
-    flow_dir: Optional[str],
+    data_dir: Optional[str],
+    flows_dir: Optional[str],
     server_url: Optional[str],
     format: Optional[str],
 ) -> None:
@@ -61,14 +61,14 @@ def env(
     config_items = []
 
     # App Directory
-    app_dir_value = app_dir or os.getenv("N8N_DEPLOY_APP_DIR") or str(Path.cwd())
-    app_dir_source = "CLI" if app_dir else ("N8N_DEPLOY_APP_DIR" if os.getenv("N8N_DEPLOY_APP_DIR") else "default (cwd)")
-    config_items.append(("N8N_DEPLOY_APP_DIR", app_dir_value, app_dir_source))
+    data_dir_value = data_dir or os.getenv("N8N_DEPLOY_DATA") or str(Path.cwd())
+    data_dir_source = "CLI" if data_dir else ("N8N_DEPLOY_DATA" if os.getenv("N8N_DEPLOY_DATA") else "default (cwd)")
+    config_items.append(("N8N_DEPLOY_DATA", data_dir_value, data_dir_source))
 
     # Flow Directory
-    flow_dir_value = flow_dir or os.getenv("N8N_DEPLOY_FLOW_DIR") or str(Path.cwd())
-    flow_dir_source = "CLI" if flow_dir else ("N8N_DEPLOY_FLOW_DIR" if os.getenv("N8N_DEPLOY_FLOW_DIR") else "default (cwd)")
-    config_items.append(("N8N_DEPLOY_FLOW_DIR", flow_dir_value, flow_dir_source))
+    flows_dir_value = flows_dir or os.getenv("N8N_DEPLOY_FLOWS") or str(Path.cwd())
+    flows_dir_source = "CLI" if flows_dir else ("N8N_DEPLOY_FLOWS" if os.getenv("N8N_DEPLOY_FLOWS") else "default (cwd)")
+    config_items.append(("N8N_DEPLOY_FLOWS", flows_dir_value, flows_dir_source))
 
     # Server URL
     server_url_value = server_url or os.getenv("N8N_DEPLOY_SERVER_URL") or "not set"
@@ -98,15 +98,15 @@ def env(
         # Priority order depends on whether dotenv is enabled
         if HAS_DOTENV:
             priority_order = [
-                "CLI options (--app-dir, --flow-dir, --server-url)",
-                "Environment variables (N8N_DEPLOY_APP_DIR, N8N_DEPLOY_FLOW_DIR, etc.)",
+                "CLI options (--data-dir, --flows-dir, --server-url)",
+                "Environment variables (N8N_DEPLOY_DATA, N8N_DEPLOY_FLOWS, etc.)",
                 ".env files (current directory > user home)",
                 "Defaults (current working directory)",
             ]
         else:
             priority_order = [
-                "CLI options (--app-dir, --flow-dir, --server-url)",
-                "Environment variables (N8N_DEPLOY_APP_DIR, N8N_DEPLOY_FLOW_DIR, etc.)",
+                "CLI options (--data-dir, --flows-dir, --server-url)",
+                "Environment variables (N8N_DEPLOY_DATA, N8N_DEPLOY_FLOWS, etc.)",
                 "Defaults (current working directory)",
             ]
 
@@ -154,8 +154,8 @@ def env(
 
         # Priority order
         console.print("\n📌 [bold cyan]Priority Order[/bold cyan]")
-        console.print("  1️⃣  CLI options (--app-dir, --flow-dir, --server-url)")
-        console.print("  2️⃣  Environment variables (N8N_DEPLOY_APP_DIR, N8N_DEPLOY_FLOW_DIR, etc.)")
+        console.print("  1️⃣  CLI options (--data-dir, --flows-dir, --server-url)")
+        console.print("  2️⃣  Environment variables (N8N_DEPLOY_DATA, N8N_DEPLOY_FLOWS, etc.)")
         if HAS_DOTENV:
             console.print("  3️⃣  .env files (current directory > user home)")
             console.print("  4️⃣  Defaults (current working directory)")
@@ -173,8 +173,8 @@ def env(
             display_value = f"{value} (.env: {dotenv_status})" if var == "ENVIRONMENT" else value
             console.print(f"{var:25} = {display_value:40} (source: {source})")
         console.print("\n=== Priority Order ===")
-        console.print("1. CLI options (--app-dir, --flow-dir, --server-url)")
-        console.print("2. Environment variables (N8N_DEPLOY_APP_DIR, N8N_DEPLOY_FLOW_DIR, etc.)")
+        console.print("1. CLI options (--data-dir, --flows-dir, --server-url)")
+        console.print("2. Environment variables (N8N_DEPLOY_DATA, N8N_DEPLOY_FLOWS, etc.)")
         if HAS_DOTENV:
             console.print("3. .env files (current directory > user home)")
             console.print("4. Defaults (current working directory)")

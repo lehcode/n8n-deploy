@@ -23,7 +23,7 @@ from rich.table import Table
 
 from ..config import get_config
 from ..db import DBApi
-from .app import CustomGroup, HELP_APP_DIR, HELP_FLOW_DIR, HELP_NO_EMOJI
+from .app import HELP_APP_DIR, HELP_FLOW_DIR, HELP_NO_EMOJI, CustomGroup
 
 console = Console()
 
@@ -107,11 +107,11 @@ def db() -> None:
 
 
 @db.command()
-@click.option("--app-dir", type=click.Path(), help=HELP_APP_DIR)
+@click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
 @click.option("--format", type=click.Choice(["table", "json"]), default="table", help="Output format")
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
 @click.option("--import", "import_db", is_flag=True, help="Import existing database without prompting")
-def init(app_dir: Optional[str], format: str, no_emoji: bool, import_db: bool) -> None:
+def init(data_dir: Optional[str], format: str, no_emoji: bool, import_db: bool) -> None:
     """🎬 Initialize n8n-deploy database
 
     Create the SQLite database with the required schema.
@@ -125,7 +125,7 @@ def init(app_dir: Optional[str], format: str, no_emoji: bool, import_db: bool) -
     # Database init only needs base folder, not workflow directories
     from ..config import AppConfig
 
-    base_path = Path(app_dir) if app_dir else Path.cwd()
+    base_path = Path(data_dir) if data_dir else Path.cwd()
     config = AppConfig(base_folder=base_path)
     db_path = config.base_folder / "n8n-deploy.db"
 
@@ -141,7 +141,7 @@ def init(app_dir: Optional[str], format: str, no_emoji: bool, import_db: bool) -
 
             if schema_version > 0:
                 # Database is initialized, use it
-                flow_dir = os.environ.get("N8N_DEPLOY_FLOW_DIR")
+                flow_dir = os.environ.get("N8N_DEPLOY_FLOWS")
 
                 if format == "json":
                     result = {
@@ -236,7 +236,7 @@ def init(app_dir: Optional[str], format: str, no_emoji: bool, import_db: bool) -
     # Check flow directory configuration
     import os
 
-    flow_dir = os.environ.get("N8N_DEPLOY_FLOW_DIR")
+    flow_dir = os.environ.get("N8N_DEPLOY_FLOWS")
 
     # Output based on format
     if format == "json":
@@ -259,20 +259,20 @@ def init(app_dir: Optional[str], format: str, no_emoji: bool, import_db: bool) -
             if no_emoji:
                 console.print()
                 console.print("NOTE: Workflow directory not configured.")
-                console.print("Set N8N_DEPLOY_FLOW_DIR environment variable or use --flow-dir option")
+                console.print("Set N8N_DEPLOY_FLOWS environment variable or use --flows-dir option")
                 console.print("for workflow operations (add, push, pull, etc.)")
             else:
                 console.print()
                 console.print("⚠️ NOTE: Workflow directory not configured.")
-                console.print("Set N8N_DEPLOY_FLOW_DIR environment variable or use --flow-dir option")
+                console.print("Set N8N_DEPLOY_FLOWS environment variable or use --flows-dir option")
                 console.print("for workflow operations (add, push, pull, etc.)")
 
 
 @db.command()
-@click.option("--app-dir", type=click.Path(), help=HELP_APP_DIR)
+@click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
 @click.option("--format", type=click.Choice(["json"]), help="JSON output, implies no emoji")
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
-def status(app_dir: Optional[str], format: Optional[str], no_emoji: bool) -> None:
+def status(data_dir: Optional[str], format: Optional[str], no_emoji: bool) -> None:
     """📊 Show database status and statistics
 
     Use '--format json' for machine-readable output.
@@ -281,7 +281,7 @@ def status(app_dir: Optional[str], format: Optional[str], no_emoji: bool) -> Non
     if format == "json":
         no_emoji = True
 
-    config = get_config(base_folder=app_dir)
+    config = get_config(base_folder=data_dir)
     db_path = config.database_path
 
     # Check if database exists
@@ -355,11 +355,11 @@ def status(app_dir: Optional[str], format: Optional[str], no_emoji: bool) -> Non
 
 
 @db.command()
-@click.option("--app-dir", type=click.Path(), help=HELP_APP_DIR)
+@click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
-def compact(app_dir: Optional[str], no_emoji: bool) -> None:
+def compact(data_dir: Optional[str], no_emoji: bool) -> None:
     """🗜️ Compact database to optimize storage"""
-    config = get_config(base_folder=app_dir)
+    config = get_config(base_folder=data_dir)
     db_path = config.database_path
 
     # Check if database exists
@@ -383,13 +383,13 @@ def compact(app_dir: Optional[str], no_emoji: bool) -> None:
 
 @db.command()
 @click.argument("backup_path", required=False)
-@click.option("--app-dir", type=click.Path(), help=HELP_APP_DIR)
+@click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
 def backup(
     backup_path: Optional[str],
-    app_dir: Optional[str],
+    data_dir: Optional[str],
 ) -> None:
     """💾 Create database backup"""
-    config = get_config(base_folder=app_dir)
+    config = get_config(base_folder=data_dir)
     db_path = config.database_path
 
     # Check if database exists
