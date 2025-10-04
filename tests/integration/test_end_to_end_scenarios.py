@@ -31,16 +31,16 @@ class TestEndToEndEnvironmentIntegration:
     @pytest.mark.skip(reason="TODO: Implement test for environment variable display")
     def test_list_command_shows_environment_variables(self, test_config: AppConfig) -> None:
         """
-        Test that 'n8n-deploy list' command displays N8N_DEPLOY_APP_DIR and N8N_DEPLOY_FLOW_DIR
+        Test that 'n8n-deploy list' command displays N8N_DEPLOY_DATA and N8N_DEPLOY_FLOWS
 
         Scenario: User runs list command and sees current environment configuration
         Expected: CLI shows both directory paths and environment variable values
 
         TODO: Implement CLI execution and verify output contains:
         - App Directory: {actual_path}
-        - N8N_DEPLOY_APP_DIR: {env_value}
+        - N8N_DEPLOY_DATA: {env_value}
         - Flow Directory: {actual_path}
-        - N8N_DEPLOY_FLOW_DIR: {env_value}
+        - N8N_DEPLOY_FLOWS: {env_value}
         """
         pass
 
@@ -373,13 +373,13 @@ class TestEndToEndCLIConsistency:
     @pytest.mark.skip(reason="TODO: Implement test for base folder configuration consistency")
     def test_cli_base_folder_configuration_consistency(self, test_config: AppConfig) -> None:
         """
-        Test that --app-dir parameter works consistently across all commands
+        Test that --data-dir parameter works consistently across all commands
 
-        Scenario: All commands use same --app-dir parameter
+        Scenario: All commands use same --data-dir parameter
         Expected: All commands operate on same database and directory structure
 
         TODO: Implement test that:
-        1. Uses --app-dir with various commands
+        1. Uses --data-dir with various commands
         2. Verifies all commands use specified directory
         3. Confirms database operations are isolated per app-dir
         4. Tests workflow file resolution relative to configuration

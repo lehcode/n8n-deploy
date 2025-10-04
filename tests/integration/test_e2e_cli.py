@@ -84,13 +84,13 @@ class TestE2ECLI(E2ETestBase):
     def test_wf_list_command_shows_environment_variables(self) -> None:
         """Test list command displays environment configuration"""
         # Initialize database first
-        returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir, "db", "init"])
+        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "db", "init"])
 
         env = {
-            "N8N_DEPLOY_FLOW_DIR": self.temp_flow_dir,
+            "N8N_DEPLOY_FLOWS": self.temp_flow_dir,
         }
 
-        returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir, "wf", "list"], env=env)
+        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "wf", "list"], env=env)
 
         self.assert_command_details(
             returncode,
@@ -107,7 +107,7 @@ class TestE2ECLI(E2ETestBase):
 
     def test_base_folder_consistency(self) -> None:
         """Test base folder configuration across different commands"""
-        # Only test commands that accept --app-dir and don't require other arguments
+        # Only test commands that accept --data-dir and don't require other arguments
         commands_to_test = [
             ["wf", "list"],
             ["wf", "stats"],
@@ -115,10 +115,10 @@ class TestE2ECLI(E2ETestBase):
             ["db", "backup"],
             ["db", "compact"],
         ]
-        returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir, "db", "init"])
+        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "db", "init"])
 
         for cmd in commands_to_test:
-            returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir] + cmd)
+            returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir] + cmd)
 
             # All commands should succeed with the same base folder
             self.assert_command_details(
@@ -130,28 +130,28 @@ class TestE2ECLI(E2ETestBase):
             )
 
     def test_flow_dir_environment_variable_priority(self) -> None:
-        """Test N8N_DEPLOY_FLOW_DIR environment variable is respected"""
-        env = {"N8N_DEPLOY_FLOW_DIR": self.temp_flow_dir}
-        returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir, "db", "init"])
-        returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir, "wf", "list"], env=env)
+        """Test N8N_DEPLOY_FLOWS environment variable is respected"""
+        env = {"N8N_DEPLOY_FLOWS": self.temp_flow_dir}
+        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "db", "init"])
+        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "wf", "list"], env=env)
 
         self.assert_command_details(
             returncode,
             stdout,
             stderr,
             0,
-            f"Flow dir environment variable test. N8N_DEPLOY_FLOW_DIR={self.temp_flow_dir}",
+            f"Flow dir environment variable test. N8N_DEPLOY_FLOWS={self.temp_flow_dir}",
         )
 
     def test_cli_option_precedence_over_env(self) -> None:
-        """Test CLI --flow-dir option takes precedence over environment"""
+        """Test CLI --flows-dir option takes precedence over environment"""
 
-        env = {"N8N_DEPLOY_FLOW_DIR": "/tmp/env-dir"}
-        returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir, "db", "init"])
+        env = {"N8N_DEPLOY_FLOWS": "/tmp/env-dir"}
+        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "db", "init"])
 
         # Use CLI option for different directory
         returncode, stdout, stderr = self.run_cli_command(
-            ["--app-dir", self.temp_dir, "--flow-dir", self.temp_flow_dir, "wf", "list"],
+            ["--data-dir", self.temp_dir, "--flows-dir", self.temp_flow_dir, "wf", "list"],
             env=env,
         )
 
@@ -166,7 +166,7 @@ class TestE2ECLI(E2ETestBase):
     def test_database_commands_consistency(self) -> None:
         """Test database commands work consistently with configuration"""
         # Initialize database
-        returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir, "db", "init"])
+        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "db", "init"])
         self.assert_command_details(
             returncode,
             stdout,
@@ -174,7 +174,7 @@ class TestE2ECLI(E2ETestBase):
             0,
             f"Database initialization. App dir: {self.temp_dir}",
         )
-        returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir, "db", "status"])
+        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "db", "status"])
         self.assert_command_details(
             returncode,
             stdout,
@@ -188,10 +188,10 @@ class TestE2ECLI(E2ETestBase):
     def test_no_duplicate_initialization_messages(self) -> None:
         """Test no duplicate database initialization messages"""
         # First initialization
-        returncode1, stdout1, stderr1 = self.run_cli_command(["--app-dir", self.temp_dir, "db", "init"])
+        returncode1, stdout1, stderr1 = self.run_cli_command(["--data-dir", self.temp_dir, "db", "init"])
 
         # Second initialization (should not duplicate)
-        returncode2, stdout2, stderr2 = self.run_cli_command(["--app-dir", self.temp_dir, "db", "init"])
+        returncode2, stdout2, stderr2 = self.run_cli_command(["--data-dir", self.temp_dir, "db", "init"])
 
         self.assert_command_details(returncode1, stdout1, stderr1, 0, "First database init")
         self.assert_command_details(
@@ -210,7 +210,7 @@ class TestE2ECLI(E2ETestBase):
             ["db", "--help"],
             ["wf", "list", "--help"],
         ]
-        returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir, "db", "init"])
+        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "db", "init"])
 
         for cmd in commands_with_help:
             returncode, stdout, stderr = self.run_cli_command(cmd)
@@ -234,9 +234,9 @@ class TestE2ECLI(E2ETestBase):
     def test_output_format_data_consistency(self) -> None:
         """Test output format is consistent between runs"""
         # Initialize database first
-        returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir, "db", "init"])
+        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "db", "init"])
 
-        cmd = ["--app-dir", self.temp_dir, "wf", "list"]
+        cmd = ["--data-dir", self.temp_dir, "wf", "list"]
 
         returncode1, stdout1, stderr1 = self.run_cli_command(cmd)
         returncode2, stdout2, stderr2 = self.run_cli_command(cmd)
@@ -249,8 +249,8 @@ class TestE2ECLI(E2ETestBase):
 
         sub_dir = Path(self.temp_dir) / "subdir"
         sub_dir.mkdir()
-        returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir, "db", "init"])
-        returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir, "wf", "list"], cwd=str(sub_dir))
+        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "db", "init"])
+        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "wf", "list"], cwd=str(sub_dir))
 
         self.assert_command_details(
             returncode,
@@ -267,7 +267,7 @@ class TestE2ECLI(E2ETestBase):
         for i in range(5):
             long_path = long_path / f"very_long_directory_name_{i}"
         long_path.mkdir(parents=True)
-        returncode, stdout, stderr = self.run_cli_command(["--app-dir", str(long_path), "db", "status"])
+        returncode, stdout, stderr = self.run_cli_command(["--data-dir", str(long_path), "db", "status"])
 
         # Should handle long paths gracefully
         assert returncode in [
@@ -282,7 +282,7 @@ class TestE2ECLI(E2ETestBase):
             special_dir = Path(self.temp_dir) / "test-dir with spaces"
             special_dir.mkdir()
 
-            returncode, stdout, stderr = self.run_cli_command(["--app-dir", str(special_dir), "db", "status"])
+            returncode, stdout, stderr = self.run_cli_command(["--data-dir", str(special_dir), "db", "status"])
 
             # Should handle special characters in paths
             assert returncode in [
@@ -298,12 +298,12 @@ class TestE2ECLI(E2ETestBase):
         import threading
 
         # Initialize database first
-        returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir, "db", "init"])
+        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "db", "init"])
 
         results = []
 
         def run_command() -> None:
-            returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir, "wf", "list"])
+            returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "wf", "list"])
             results.append((returncode, stdout, stderr))
 
         threads = []
@@ -324,18 +324,18 @@ class TestE2ECLI(E2ETestBase):
     def test_environment_isolation(self) -> None:
         """Test environment variable isolation between commands"""
         # Initialize database first
-        returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir, "db", "init"])
+        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "db", "init"])
 
-        env1 = {"N8N_DEPLOY_FLOW_DIR": self.temp_flow_dir}
-        returncode1, stdout1, stderr1 = self.run_cli_command(["--app-dir", self.temp_dir, "wf", "list"], env=env1)
-        returncode2, stdout2, stderr2 = self.run_cli_command(["--app-dir", self.temp_dir, "wf", "list"])
+        env1 = {"N8N_DEPLOY_FLOWS": self.temp_flow_dir}
+        returncode1, stdout1, stderr1 = self.run_cli_command(["--data-dir", self.temp_dir, "wf", "list"], env=env1)
+        returncode2, stdout2, stderr2 = self.run_cli_command(["--data-dir", self.temp_dir, "wf", "list"])
 
         self.assert_command_details(
             returncode1,
             stdout1,
             stderr1,
             0,
-            "Environment isolation test with N8N_DEPLOY_FLOW_DIR",
+            "Environment isolation test with N8N_DEPLOY_FLOWS",
         )
         self.assert_command_details(
             returncode2,
@@ -348,7 +348,7 @@ class TestE2ECLI(E2ETestBase):
     def test_command_chaining_independence(self) -> None:
         """Test commands don't interfere with each other"""
         # Initialize database first
-        returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir, "db", "init"])
+        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "db", "init"])
 
         commands = [
             ["db", "status"],
@@ -358,7 +358,7 @@ class TestE2ECLI(E2ETestBase):
         ]
 
         for cmd in commands:
-            returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir] + cmd)
+            returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir] + cmd)
             self.assert_command_details(
                 returncode,
                 stdout,

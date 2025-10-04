@@ -42,14 +42,14 @@ class E2ETestBase:
     ) -> Tuple[int, str, str]:
         """Execute n8n-deploy CLI command and return result"""
         # Reorder arguments to handle global options correctly
-        # Convert ["--app-dir", "/path", "command", ...] to ["command", "--app-dir", "/path", ...]
+        # Convert ["--data-dir", "/path", "command", ...] to ["command", "--data-dir", "/path", ...]
         reordered_args = []
         global_options = []
         i = 0
 
         # Extract global options from the beginning
         while i < len(args):
-            if args[i] in ["--app-dir", "--flow-dir", "--server-url"] and i + 1 < len(args):
+            if args[i] in ["--data-dir", "--flows-dir", "--server-url"] and i + 1 < len(args):
                 global_options.extend([args[i], args[i + 1]])
                 i += 2
             elif args[i] in ["--no-emoji", "--confirm", "--show-key", "--only"]:
@@ -154,18 +154,18 @@ class E2ETestBase:
 
     def setup_database(self) -> None:
         """Initialize database for testing"""
-        returncode, stdout, stderr = self.run_cli_command(["db", "init", "--app-dir", self.temp_dir])
+        returncode, stdout, stderr = self.run_cli_command(["db", "init", "--data-dir", self.temp_dir])
         self.assert_command_details(returncode, stdout, stderr, 0, "Database setup for E2E tests")
 
     def setup_database_with_api_key(self, api_key: str = "test-api-key-12345") -> bool:
         """Initialize database and add test API key"""
-        returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir, "db", "init"])
+        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "db", "init"])
         if returncode != 0:
             return False
 
         # Add API key
         returncode, stdout, stderr = self.run_cli_command(
-            ["--app-dir", self.temp_dir, "apikey", "add", "test_server"],
+            ["--data-dir", self.temp_dir, "apikey", "add", "test_server"],
             stdin_input=f"{api_key}\n",
         )
         return returncode == 0

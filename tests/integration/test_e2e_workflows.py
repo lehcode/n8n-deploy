@@ -57,7 +57,7 @@ class TestE2EWorkflows(E2ETestBase):
         # wf add now pulls from server, so without server URL it should fail gracefully
         returncode, stdout, stderr = self.run_cli_command(
             [
-                "--app-dir",
+                "--data-dir",
                 self.temp_dir,
                 "wf",
                 "add",
@@ -73,7 +73,7 @@ class TestE2EWorkflows(E2ETestBase):
         """Test listing workflows when none exist"""
         self.setup_database()
 
-        returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir, "wf", "list"])
+        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "wf", "list"])
 
         assert returncode == 0
         # Should show empty list or appropriate message
@@ -86,9 +86,9 @@ class TestE2EWorkflows(E2ETestBase):
             self.create_test_workflow(workflow_name)
             self.run_cli_command(
                 [
-                    "--app-dir",
+                    "--data-dir",
                     self.temp_dir,
-                    "--flow-dir",
+                    "--flows-dir",
                     self.temp_flow_dir,
                     "add",
                     f"{workflow_name}.json",
@@ -97,7 +97,7 @@ class TestE2EWorkflows(E2ETestBase):
             )
 
         # List workflows
-        returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir, "wf", "list"])
+        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "wf", "list"])
 
         assert returncode == 0
 
@@ -115,9 +115,9 @@ class TestE2EWorkflows(E2ETestBase):
             self.create_test_workflow(workflow_name)
             self.run_cli_command(
                 [
-                    "--app-dir",
+                    "--data-dir",
                     self.temp_dir,
-                    "--flow-dir",
+                    "--flows-dir",
                     self.temp_flow_dir,
                     "add",
                     f"{workflow_name}.json",
@@ -132,7 +132,7 @@ class TestE2EWorkflows(E2ETestBase):
         ]
 
         for pattern in search_patterns:
-            returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir, "wf", "search", pattern])
+            returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "wf", "search", pattern])
 
             # Search should complete successfully
             assert returncode == 0
@@ -151,9 +151,9 @@ class TestE2EWorkflows(E2ETestBase):
             self.create_test_workflow(workflow_name, data)
             self.run_cli_command(
                 [
-                    "--app-dir",
+                    "--data-dir",
                     self.temp_dir,
-                    "--flow-dir",
+                    "--flows-dir",
                     self.temp_flow_dir,
                     "add",
                     f"{workflow_name}.json",
@@ -170,7 +170,7 @@ class TestE2EWorkflows(E2ETestBase):
         ]
 
         for search_term in comprehensive_searches:
-            returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir, "wf", "search", search_term])
+            returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "wf", "search", search_term])
             assert returncode == 0
 
     def test_workflow_stats_display(self) -> None:
@@ -179,16 +179,16 @@ class TestE2EWorkflows(E2ETestBase):
         self.create_test_workflow("stats_test")
         self.run_cli_command(
             [
-                "--app-dir",
+                "--data-dir",
                 self.temp_dir,
-                "--flow-dir",
+                "--flows-dir",
                 self.temp_flow_dir,
                 "add",
                 "stats_test.json",
                 "Stats-Test",
             ]
         )
-        returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir, "wf", "stats"])
+        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "wf", "stats"])
 
         assert returncode == 0
         # Should show statistics without errors
@@ -222,16 +222,16 @@ class TestE2EWorkflows(E2ETestBase):
             self.create_test_workflow(workflow_name, base_data)
             self.run_cli_command(
                 [
-                    "--app-dir",
+                    "--data-dir",
                     self.temp_dir,
-                    "--flow-dir",
+                    "--flows-dir",
                     self.temp_flow_dir,
                     "add",
                     f"{workflow_name}.json",
                     workflow_name.replace("_", "-"),
                 ]
             )
-        returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir, "wf", "stats"])
+        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "wf", "stats"])
 
         assert returncode == 0
 
@@ -241,9 +241,9 @@ class TestE2EWorkflows(E2ETestBase):
         workflow_file = self.create_test_workflow("existence_test")
         add_returncode, _, _ = self.run_cli_command(
             [
-                "--app-dir",
+                "--data-dir",
                 self.temp_dir,
-                "--flow-dir",
+                "--flows-dir",
                 self.temp_flow_dir,
                 "add",
                 "existence_test.json",
@@ -253,13 +253,13 @@ class TestE2EWorkflows(E2ETestBase):
 
         if add_returncode == 0:
             # List workflows - should show file exists
-            list_returncode, list_stdout, _ = self.run_cli_command(["--app-dir", self.temp_dir, "wf", "list"])
+            list_returncode, list_stdout, _ = self.run_cli_command(["--data-dir", self.temp_dir, "wf", "list"])
             assert list_returncode == 0
             workflow_file.unlink()
 
             # List again - should reflect file no longer exists
             list_after_delete_returncode, list_after_stdout, _ = self.run_cli_command(
-                ["--app-dir", self.temp_dir, "wf", "list"]
+                ["--data-dir", self.temp_dir, "wf", "list"]
             )
             assert list_after_delete_returncode == 0
 
@@ -270,7 +270,7 @@ class TestE2EWorkflows(E2ETestBase):
         # wf add now pulls from server, so this tests server pull of nonexistent workflow
         returncode, stdout, stderr = self.run_cli_command(
             [
-                "--app-dir",
+                "--data-dir",
                 self.temp_dir,
                 "wf",
                 "add",
@@ -294,7 +294,7 @@ class TestE2EWorkflows(E2ETestBase):
         # Test with invalid workflow name characters
         returncode, stdout, stderr = self.run_cli_command(
             [
-                "--app-dir",
+                "--data-dir",
                 self.temp_dir,
                 "wf",
                 "add",
@@ -312,15 +312,15 @@ class TestE2EWorkflows(E2ETestBase):
 
         # Test 'wf list' with default emoji output
         emoji_returncode, emoji_stdout, _ = self.run_cli_command(
-            ["--app-dir", self.temp_dir, "--flow-dir", self.temp_flow_dir, "wf", "list"]
+            ["--data-dir", self.temp_dir, "--flows-dir", self.temp_flow_dir, "wf", "list"]
         )
 
         # Test 'wf list' with --no-emoji flag
         no_emoji_returncode, no_emoji_stdout, _ = self.run_cli_command(
             [
-                "--app-dir",
+                "--data-dir",
                 self.temp_dir,
-                "--flow-dir",
+                "--flows-dir",
                 self.temp_flow_dir,
                 "--no-emoji",
                 "wf",
@@ -346,7 +346,7 @@ class TestE2EWorkflows(E2ETestBase):
 
         # Test that search command works with custom flow directory
         returncode, stdout, stderr = self.run_cli_command(
-            ["--app-dir", self.temp_dir, "--flow-dir", str(subdir), "wf", "search", "TestWorkflow"]
+            ["--data-dir", self.temp_dir, "--flows-dir", str(subdir), "wf", "search", "TestWorkflow"]
         )
 
         # Should handle path resolution and return success (even if no results)
@@ -359,7 +359,7 @@ class TestE2EWorkflows(E2ETestBase):
         # Test that list command handles database operations efficiently
         returncode, stdout, stderr = self.run_cli_command(
             [
-                "--app-dir",
+                "--data-dir",
                 self.temp_dir,
                 "wf",
                 "list",
@@ -380,7 +380,7 @@ class TestE2EWorkflows(E2ETestBase):
         def list_workflows(thread_id) -> None:
             returncode, stdout, stderr = self.run_cli_command(
                 [
-                    "--app-dir",
+                    "--data-dir",
                     self.temp_dir,
                     "wf",
                     "list",
@@ -411,7 +411,7 @@ class TestE2EWorkflows(E2ETestBase):
                 # Test that wf add accepts Unicode names (will fail due to no server, but validates name)
                 returncode, stdout, stderr = self.run_cli_command(
                     [
-                        "--app-dir",
+                        "--data-dir",
                         self.temp_dir,
                         "wf",
                         "add",
@@ -441,7 +441,7 @@ class TestE2EWorkflows(E2ETestBase):
             # Test that search command handles different naming patterns
             returncode, stdout, stderr = self.run_cli_command(
                 [
-                    "--app-dir",
+                    "--data-dir",
                     self.temp_dir,
                     "wf",
                     "search",
@@ -458,16 +458,16 @@ class TestE2EWorkflows(E2ETestBase):
         self.create_test_workflow("backup_integration_test")
         self.run_cli_command(
             [
-                "--app-dir",
+                "--data-dir",
                 self.temp_dir,
-                "--flow-dir",
+                "--flows-dir",
                 self.temp_flow_dir,
                 "add",
                 "backup_integration_test.json",
                 "Backup-Integration-Test",
             ]
         )
-        backup_returncode, _, _ = self.run_cli_command(["--app-dir", self.temp_dir, "backup-workflows"])
+        backup_returncode, _, _ = self.run_cli_command(["--data-dir", self.temp_dir, "backup-workflows"])
 
         if backup_returncode == 0:
             backup_dir = Path(self.temp_dir) / "backups"
@@ -478,10 +478,10 @@ class TestE2EWorkflows(E2ETestBase):
     def test_workflow_environment_variable_integration(self) -> None:
         """Test workflow operations respect environment variables"""
         self.setup_database()
-        env = {"N8N_DEPLOY_FLOW_DIR": self.temp_flow_dir}
+        env = {"N8N_DEPLOY_FLOWS": self.temp_flow_dir}
 
         # Test that search command uses environment variable for flow directory
-        returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir, "wf", "list"], env=env)
+        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "wf", "list"], env=env)
 
         # Should use environment variable for flow directory and succeed
         assert returncode == 0
@@ -489,8 +489,8 @@ class TestE2EWorkflows(E2ETestBase):
     def test_list_backups_shows_metadata(self) -> None:
         """Test wf backups command shows backup file metadata"""
         # Initialize and create backup
-        self.run_cli_command(["db", "init", "--app-dir", self.temp_dir])
-        self.run_cli_command(["db", "backup", "--app-dir", self.temp_dir])
+        self.run_cli_command(["db", "init", "--data-dir", self.temp_dir])
+        self.run_cli_command(["db", "backup", "--data-dir", self.temp_dir])
 
         # List backups - just lists files in backup directory, no database access needed
         backup_dir = Path(self.temp_dir) / "backups"
@@ -507,7 +507,7 @@ class TestE2EWorkflows(E2ETestBase):
 
         returncode, stdout, stderr = self.run_cli_command(
             [
-                "--app-dir",
+                "--data-dir",
                 self.temp_dir,
                 "wf",
                 "add",
@@ -526,9 +526,9 @@ class TestE2EWorkflows(E2ETestBase):
         self.create_test_workflow("backupable_test")
         self.run_cli_command(
             [
-                "--app-dir",
+                "--data-dir",
                 self.temp_dir,
-                "--flow-dir",
+                "--flows-dir",
                 self.temp_flow_dir,
                 "wf",
                 "add",
@@ -537,7 +537,7 @@ class TestE2EWorkflows(E2ETestBase):
             ]
         )
 
-        returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir, "wf", "list", "--only"])
+        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "wf", "list", "--only"])
 
         assert returncode == 0
         # Should list only workflows with existing JSON files
@@ -548,9 +548,9 @@ class TestE2EWorkflows(E2ETestBase):
         self.create_test_workflow("json_list_test")
         self.run_cli_command(
             [
-                "--app-dir",
+                "--data-dir",
                 self.temp_dir,
-                "--flow-dir",
+                "--flows-dir",
                 self.temp_flow_dir,
                 "wf",
                 "add",
@@ -559,7 +559,7 @@ class TestE2EWorkflows(E2ETestBase):
             ]
         )
 
-        returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir, "wf", "list", "--format", "json"])
+        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "wf", "list", "--format", "json"])
 
         assert returncode == 0
         # Should be valid JSON
@@ -572,9 +572,9 @@ class TestE2EWorkflows(E2ETestBase):
         self.create_test_workflow("remove_yes_test")
         self.run_cli_command(
             [
-                "--app-dir",
+                "--data-dir",
                 self.temp_dir,
-                "--flow-dir",
+                "--flows-dir",
                 self.temp_flow_dir,
                 "wf",
                 "add",
@@ -586,7 +586,7 @@ class TestE2EWorkflows(E2ETestBase):
         # Remove with --yes should skip confirmation
         returncode, stdout, stderr = self.run_cli_command(
             [
-                "--app-dir",
+                "--data-dir",
                 self.temp_dir,
                 "wf",
                 "remove",
@@ -604,9 +604,9 @@ class TestE2EWorkflows(E2ETestBase):
         self.create_test_workflow("search_json_test")
         self.run_cli_command(
             [
-                "--app-dir",
+                "--data-dir",
                 self.temp_dir,
-                "--flow-dir",
+                "--flows-dir",
                 self.temp_flow_dir,
                 "wf",
                 "add",
@@ -616,7 +616,7 @@ class TestE2EWorkflows(E2ETestBase):
         )
 
         returncode, stdout, stderr = self.run_cli_command(
-            ["--app-dir", self.temp_dir, "wf", "search", "search", "--format", "json"]
+            ["--data-dir", self.temp_dir, "wf", "search", "search", "--format", "json"]
         )
 
         assert returncode == 0
@@ -628,7 +628,7 @@ class TestE2EWorkflows(E2ETestBase):
         """Test wf stats (overall) --format json output"""
         self.setup_database()
 
-        returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir, "wf", "stats", "--format", "json"])
+        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "wf", "stats", "--format", "json"])
 
         assert returncode == 0
         # Should be valid JSON with stats data
@@ -641,9 +641,9 @@ class TestE2EWorkflows(E2ETestBase):
         self.create_test_workflow("stats_specific_test")
         add_result = self.run_cli_command(
             [
-                "--app-dir",
+                "--data-dir",
                 self.temp_dir,
-                "--flow-dir",
+                "--flows-dir",
                 self.temp_flow_dir,
                 "wf",
                 "add",
@@ -655,7 +655,7 @@ class TestE2EWorkflows(E2ETestBase):
         if add_result[0] == 0:
             returncode, stdout, stderr = self.run_cli_command(
                 [
-                    "--app-dir",
+                    "--data-dir",
                     self.temp_dir,
                     "wf",
                     "stats",
@@ -673,7 +673,7 @@ class TestE2EWorkflows(E2ETestBase):
         # This test requires n8n server, may fail if not available
         returncode, stdout, stderr = self.run_cli_command(
             [
-                "--app-dir",
+                "--data-dir",
                 self.temp_dir,
                 "wf",
                 "server",
@@ -695,9 +695,9 @@ class TestE2EWorkflows(E2ETestBase):
 
         returncode, stdout, stderr = self.run_cli_command(
             [
-                "--app-dir",
+                "--data-dir",
                 self.temp_dir,
-                "--flow-dir",
+                "--flows-dir",
                 self.temp_flow_dir,
                 "wf",
                 "createbackup",
@@ -720,7 +720,7 @@ class TestE2EWorkflows(E2ETestBase):
         # Try to restore a non-existent backup
         returncode, stdout, stderr = self.run_cli_command(
             [
-                "--app-dir",
+                "--data-dir",
                 self.temp_dir,
                 "wf",
                 "restore",
