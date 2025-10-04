@@ -2,11 +2,12 @@
 Unit tests for CLI functionality
 """
 
-import pytest
-import tempfile
 import os
+import tempfile
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
+import pytest
 from click.testing import CliRunner
 
 from api.cli.app import cli
@@ -123,14 +124,14 @@ class TestCLIArgumentParsing:
         assert "No such option: --no-emoji" in result.output
 
     def test_app_dir_flag_position(self):
-        """Test --app-dir flag is not available at root level but is on commands"""
+        """Test --data-dir flag is not available at root level but is on commands"""
         # Should fail at root level
-        result = self.runner.invoke(cli, ["--app-dir", "/tmp", "--help"])
+        result = self.runner.invoke(cli, ["--data-dir", "/tmp", "--help"])
         assert result.exit_code != 0
         assert "No such option" in result.output
 
         # Should work on wf list command
-        result = self.runner.invoke(cli, ["wf", "list", "--app-dir", "/tmp", "--help"])
+        result = self.runner.invoke(cli, ["wf", "list", "--data-dir", "/tmp", "--help"])
         assert result.exit_code == 0
 
 

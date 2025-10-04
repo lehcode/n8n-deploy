@@ -48,7 +48,7 @@ class TestGetConfig:
 
     def test_get_config_flow_dir_parameter_priority(self, temp_dir):
         """Test parameter takes priority over environment variable"""
-        with patch.dict(os.environ, {"N8N_DEPLOY_FLOW_DIR": "/env/path"}):
+        with patch.dict(os.environ, {"N8N_DEPLOY_FLOWS": "/env/path"}):
             config = get_config(base_folder=temp_dir, flow_folder=temp_dir / "custom")
             assert_that(config.workflows_path).is_equal_to(temp_dir / "custom")
 
@@ -61,35 +61,35 @@ class TestGetConfig:
             assert_that(config.workflows_path).is_equal_to(Path.cwd())
 
     def test_get_config_defaults_to_cwd_when_app_dir_not_exists(self):
-        """Test that N8N_DEPLOY_APP_DIR defaults to cwd when path doesn't exist"""
-        with patch.dict(os.environ, {"N8N_DEPLOY_APP_DIR": "/nonexistent/path"}):
+        """Test that N8N_DEPLOY_DATA defaults to cwd when path doesn't exist"""
+        with patch.dict(os.environ, {"N8N_DEPLOY_DATA": "/nonexistent/path"}):
             config = get_config()
             # Should fall back to current working directory
             assert_that(config.base_folder).is_equal_to(Path.cwd())
 
     def test_get_config_defaults_to_cwd_when_app_dir_is_file(self, temp_dir):
-        """Test that N8N_DEPLOY_APP_DIR defaults to cwd when path is a file"""
+        """Test that N8N_DEPLOY_DATA defaults to cwd when path is a file"""
         test_file = temp_dir / "test_file.txt"
         test_file.write_text("test")
 
-        with patch.dict(os.environ, {"N8N_DEPLOY_APP_DIR": str(test_file)}):
+        with patch.dict(os.environ, {"N8N_DEPLOY_DATA": str(test_file)}):
             config = get_config()
             # Should fall back to current working directory
             assert_that(config.base_folder).is_equal_to(Path.cwd())
 
     def test_get_config_defaults_to_cwd_when_flow_dir_not_exists(self):
-        """Test that N8N_DEPLOY_FLOW_DIR defaults to cwd when path doesn't exist"""
-        with patch.dict(os.environ, {"N8N_DEPLOY_FLOW_DIR": "/nonexistent/flow/path"}):
+        """Test that N8N_DEPLOY_FLOWS defaults to cwd when path doesn't exist"""
+        with patch.dict(os.environ, {"N8N_DEPLOY_FLOWS": "/nonexistent/flow/path"}):
             config = get_config()
             # Should fall back to current working directory
             assert_that(config.workflows_path).is_equal_to(Path.cwd())
 
     def test_get_config_defaults_to_cwd_when_flow_dir_is_file(self, temp_dir):
-        """Test that N8N_DEPLOY_FLOW_DIR defaults to cwd when path is a file"""
+        """Test that N8N_DEPLOY_FLOWS defaults to cwd when path is a file"""
         test_file = temp_dir / "flow_file.txt"
         test_file.write_text("test")
 
-        with patch.dict(os.environ, {"N8N_DEPLOY_FLOW_DIR": str(test_file)}):
+        with patch.dict(os.environ, {"N8N_DEPLOY_FLOWS": str(test_file)}):
             config = get_config()
             # Should fall back to current working directory
             assert_that(config.workflows_path).is_equal_to(Path.cwd())
