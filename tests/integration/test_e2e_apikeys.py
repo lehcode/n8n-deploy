@@ -18,7 +18,7 @@ class TestE2EAPIKeys(E2ETestBase):
         self.setup_database()
         test_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkNGEyODkxMy04ODQxLTRhMTAtODIzNC1iODQ2OTE1MmJhZTYiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzU4NzY3MDI4LCJleHAiOjE3NjEyNzg0MDB9.d9u2SovTMfUGZ8EzD4SDLYNUTBarHpdwhv96pO-5imE"
         returncode, stdout, stderr = self.run_cli_command(
-            ["apikey", "add", test_key, "--name", "test_interactive", "--app-dir", self.temp_dir],
+            ["apikey", "add", test_key, "--name", "test_interactive", "--data-dir", self.temp_dir],
         )
 
         # Should succeed
@@ -29,7 +29,7 @@ class TestE2EAPIKeys(E2ETestBase):
         self.setup_database()
         test_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkNGEyODkxMy04ODQxLTRhMTAtODIzNC1iODQ2OTE1MmJhZTYiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzU4NzY3MDI4LCJleHAiOjE3NjEyNzg0MDB9.d9u2SovTMfUGZ8EzD4SDLYNUTBarHpdwhv96pO-5imE"
         returncode, stdout, stderr = self.run_cli_command(
-            ["apikey", "add", "-", "--name", "test_stdin", "--app-dir", self.temp_dir],
+            ["apikey", "add", "-", "--name", "test_stdin", "--data-dir", self.temp_dir],
             stdin_input=test_key,
         )
 
@@ -40,7 +40,7 @@ class TestE2EAPIKeys(E2ETestBase):
         """Test listing API keys when none exist"""
         self.setup_database()
 
-        returncode, stdout, stderr = self.run_cli_command(["apikey", "list", "--app-dir", self.temp_dir])
+        returncode, stdout, stderr = self.run_cli_command(["apikey", "list", "--data-dir", self.temp_dir])
 
         assert returncode == 0
         # Should show empty list or appropriate message
@@ -54,24 +54,24 @@ class TestE2EAPIKeys(E2ETestBase):
 
         # Step 1: Add API key
         add_returncode, add_stdout, add_stderr = self.run_cli_command(
-            ["apikey", "add", key_name, "--app-dir", self.temp_dir],
+            ["apikey", "add", key_name, "--data-dir", self.temp_dir],
             stdin_input=test_key,
         )
 
         if add_returncode == 0:
             # Step 2: List API keys (should show the added key)
-            list_returncode, list_stdout, list_stderr = self.run_cli_command(["apikey", "list", "--app-dir", self.temp_dir])
+            list_returncode, list_stdout, list_stderr = self.run_cli_command(["apikey", "list", "--data-dir", self.temp_dir])
             assert list_returncode == 0
 
             # Step 3: Get specific API key (without showing actual key)
             get_returncode, get_stdout, get_stderr = self.run_cli_command(
-                ["apikey", "get", key_name, "--app-dir", self.temp_dir]
+                ["apikey", "get", key_name, "--data-dir", self.temp_dir]
             )
             assert get_returncode == 0
 
             # Step 4: Get API key with --show-key flag
             show_returncode, show_stdout, show_stderr = self.run_cli_command(
-                ["apikey", "get", key_name, "--show-key", "--app-dir", self.temp_dir]
+                ["apikey", "get", key_name, "--show-key", "--data-dir", self.temp_dir]
             )
             if show_returncode == 0:
                 # Should show the actual key
@@ -79,7 +79,7 @@ class TestE2EAPIKeys(E2ETestBase):
 
             # Step 5: Delete API key
             delete_returncode, delete_stdout, delete_stderr = self.run_cli_command(
-                ["apikey", "delete", key_name, "--confirm", "--app-dir", self.temp_dir]
+                ["apikey", "delete", key_name, "--confirm", "--data-dir", self.temp_dir]
             )
             # Should succeed or ask for confirmation
             assert delete_returncode in [0, 1]
@@ -88,7 +88,7 @@ class TestE2EAPIKeys(E2ETestBase):
         """Test getting nonexistent API key"""
         self.setup_database()
 
-        returncode, stdout, stderr = self.run_cli_command(["apikey", "get", "nonexistent_key", "--app-dir", self.temp_dir])
+        returncode, stdout, stderr = self.run_cli_command(["apikey", "get", "nonexistent_key", "--data-dir", self.temp_dir])
 
         # Should fail gracefully
         assert returncode == 1
@@ -104,7 +104,7 @@ class TestE2EAPIKeys(E2ETestBase):
                 "delete",
                 "nonexistent_key",
                 "--confirm",
-                "--app-dir",
+                "--data-dir",
                 self.temp_dir,
             ]
         )
@@ -120,14 +120,14 @@ class TestE2EAPIKeys(E2ETestBase):
         first_key = "first-key-123"
         second_key = "second-key-456"
         first_returncode, first_stdout, first_stderr = self.run_cli_command(
-            ["apikey", "add", key_name, "--app-dir", self.temp_dir],
+            ["apikey", "add", key_name, "--data-dir", self.temp_dir],
             stdin_input=first_key,
         )
 
         if first_returncode == 0:
             # Try to add second key with same name
             second_returncode, second_stdout, second_stderr = self.run_cli_command(
-                ["apikey", "add", key_name, "--app-dir", self.temp_dir],
+                ["apikey", "add", key_name, "--data-dir", self.temp_dir],
                 stdin_input=second_key,
             )
 
@@ -137,9 +137,9 @@ class TestE2EAPIKeys(E2ETestBase):
     def test_api_key_emoji_vs_no_emoji_output(self) -> None:
         """Test API key commands with and without emoji"""
         self.setup_database()
-        emoji_returncode, emoji_stdout, emoji_stderr = self.run_cli_command(["apikey", "list", "--app-dir", self.temp_dir])
+        emoji_returncode, emoji_stdout, emoji_stderr = self.run_cli_command(["apikey", "list", "--data-dir", self.temp_dir])
         no_emoji_returncode, no_emoji_stdout, no_emoji_stderr = self.run_cli_command(
-            ["apikey", "list", "--app-dir", self.temp_dir]
+            ["apikey", "list", "--data-dir", self.temp_dir]
         )
 
         assert emoji_returncode == no_emoji_returncode == 0
@@ -151,7 +151,7 @@ class TestE2EAPIKeys(E2ETestBase):
         self.setup_database()
         special_key = "test-key-with-special-chars!@#$%^&*()"
         returncode, stdout, stderr = self.run_cli_command(
-            ["apikey", "add", "-", "--name", "special_test", "--app-dir", self.temp_dir],
+            ["apikey", "add", "-", "--name", "special_test", "--data-dir", self.temp_dir],
             stdin_input=special_key,
         )
 
@@ -165,7 +165,7 @@ class TestE2EAPIKeys(E2ETestBase):
         long_key = "very-long-api-key-value-" + "y" * 200
 
         returncode, stdout, stderr = self.run_cli_command(
-            ["apikey", "add", "-", "--name", long_name, "--app-dir", self.temp_dir],
+            ["apikey", "add", "-", "--name", long_name, "--data-dir", self.temp_dir],
             stdin_input=long_key,
         )
 
@@ -176,7 +176,7 @@ class TestE2EAPIKeys(E2ETestBase):
         """Test API key commands with empty input"""
         self.setup_database()
         returncode, stdout, stderr = self.run_cli_command(
-            ["apikey", "add", "-", "--name", "empty_test", "--app-dir", self.temp_dir], stdin_input=""
+            ["apikey", "add", "-", "--name", "empty_test", "--data-dir", self.temp_dir], stdin_input=""
         )
 
         # Should handle empty input appropriately
@@ -187,7 +187,7 @@ class TestE2EAPIKeys(E2ETestBase):
         self.setup_database()
         whitespace_key = "  test-key-with-whitespace  \n"
         returncode, stdout, stderr = self.run_cli_command(
-            ["apikey", "add", "-", "--name", "whitespace_test", "--app-dir", self.temp_dir],
+            ["apikey", "add", "-", "--name", "whitespace_test", "--data-dir", self.temp_dir],
             stdin_input=whitespace_key,
         )
 
@@ -196,8 +196,8 @@ class TestE2EAPIKeys(E2ETestBase):
 
     def run_help_command(self, args: list[str]) -> tuple[int, str, str]:
         """Execute help command without --no-emoji flag"""
-        import subprocess
         import os
+        import subprocess
 
         cmd = ["./n8n-deploy"] + args
 
@@ -235,14 +235,14 @@ class TestE2EAPIKeys(E2ETestBase):
         self.setup_database()
         lower_key = "lowercase-test-key"
         lower_returncode, _, _ = self.run_cli_command(
-            ["apikey", "add", "testkey", "--app-dir", self.temp_dir],
+            ["apikey", "add", "testkey", "--data-dir", self.temp_dir],
             stdin_input=lower_key,
         )
 
         if lower_returncode == 0:
             # Try to get with different case
             upper_returncode, upper_stdout, upper_stderr = self.run_cli_command(
-                ["apikey", "get", "TESTKEY", "--app-dir", self.temp_dir]
+                ["apikey", "get", "TESTKEY", "--data-dir", self.temp_dir]
             )
 
             # Behavior depends on implementation (case sensitive or insensitive)
@@ -253,7 +253,7 @@ class TestE2EAPIKeys(E2ETestBase):
         self.setup_database()
         test_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test"  # Mock JWT format
         add_returncode, _, _ = self.run_cli_command(
-            ["apikey", "add", "n8n_server", "--app-dir", self.temp_dir],
+            ["apikey", "add", "n8n_server", "--data-dir", self.temp_dir],
             stdin_input=test_key,
         )
 
@@ -261,7 +261,7 @@ class TestE2EAPIKeys(E2ETestBase):
             server_returncode, server_stdout, server_stderr = self.run_cli_command(
                 [
                     "server",
-                    "--app-dir",
+                    "--data-dir",
                     self.temp_dir,
                     "--server-url",
                     "http://localhost:5678",
@@ -286,7 +286,7 @@ class TestE2EAPIKeys(E2ETestBase):
                     "apikey",
                     "add",
                     f"concurrent_test_{key_suffix}",
-                    "--app-dir",
+                    "--data-dir",
                     self.temp_dir,
                 ],
                 stdin_input=f"test-key-{key_suffix}",
@@ -311,15 +311,15 @@ class TestE2EAPIKeys(E2ETestBase):
         """Test API keys persist across different command invocations"""
         self.setup_database()
         add_returncode, _, _ = self.run_cli_command(
-            ["apikey", "add", "persistence_test", "--app-dir", self.temp_dir],
+            ["apikey", "add", "persistence_test", "--data-dir", self.temp_dir],
             stdin_input="persistent-test-key",
         )
 
         if add_returncode == 0:
-            self.run_cli_command(["wf", "list", "--app-dir", self.temp_dir, "--flow-dir", self.temp_flow_dir])
-            self.run_cli_command(["stats", "--app-dir", self.temp_dir, "--flow-dir", self.temp_flow_dir])
+            self.run_cli_command(["wf", "list", "--data-dir", self.temp_dir, "--flows-dir", self.temp_flow_dir])
+            self.run_cli_command(["stats", "--data-dir", self.temp_dir, "--flows-dir", self.temp_flow_dir])
             get_returncode, get_stdout, get_stderr = self.run_cli_command(
-                ["apikey", "get", "persistence_test", "--app-dir", self.temp_dir]
+                ["apikey", "get", "persistence_test", "--data-dir", self.temp_dir]
             )
 
             assert get_returncode == 0
@@ -328,14 +328,14 @@ class TestE2EAPIKeys(E2ETestBase):
         """Test API key deletion requires confirmation"""
         self.setup_database()
         add_returncode, _, _ = self.run_cli_command(
-            ["apikey", "add", "deletion_test", "--app-dir", self.temp_dir],
+            ["apikey", "add", "deletion_test", "--data-dir", self.temp_dir],
             stdin_input="deletion-test-key",
         )
 
         if add_returncode == 0:
             # Try to delete without --confirm
             delete_no_confirm_returncode, _, _ = self.run_cli_command(
-                ["apikey", "delete", "deletion_test", "--app-dir", self.temp_dir]
+                ["apikey", "delete", "deletion_test", "--data-dir", self.temp_dir]
             )
 
             # Should require confirmation
@@ -347,7 +347,7 @@ class TestE2EAPIKeys(E2ETestBase):
                         "delete",
                         "deletion_test",
                         "--confirm",
-                        "--app-dir",
+                        "--data-dir",
                         self.temp_dir,
                     ]
                 )
@@ -361,14 +361,14 @@ class TestE2EAPIKeys(E2ETestBase):
         original_key = "original-test-key"
         updated_key = "updated-test-key"
         add_returncode, _, _ = self.run_cli_command(
-            ["apikey", "add", key_name, "--app-dir", self.temp_dir],
+            ["apikey", "add", key_name, "--data-dir", self.temp_dir],
             stdin_input=original_key,
         )
 
         if add_returncode == 0:
             # Try to update/overwrite
             update_returncode, _, _ = self.run_cli_command(
-                ["apikey", "add", key_name, "--app-dir", self.temp_dir],
+                ["apikey", "add", key_name, "--data-dir", self.temp_dir],
                 stdin_input=updated_key,
             )
 
@@ -383,7 +383,7 @@ class TestE2EAPIKeys(E2ETestBase):
         test_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dGVzdA.c2lnbmF0dXJl"  # Valid JWT format
 
         returncode, stdout, stderr = self.run_cli_command(
-            ["apikey", "add", "-", "--name", "stdin_dash_test", "--app-dir", self.temp_dir],
+            ["apikey", "add", "-", "--name", "stdin_dash_test", "--data-dir", self.temp_dir],
             stdin_input=test_key,
         )
 
@@ -403,7 +403,7 @@ class TestE2EAPIKeys(E2ETestBase):
                 "description_test",
                 "--description",
                 "This is a test API key",
-                "--app-dir",
+                "--data-dir",
                 self.temp_dir,
             ]
         )
@@ -411,7 +411,7 @@ class TestE2EAPIKeys(E2ETestBase):
         assert returncode in [0, 1]
         if returncode == 0:
             # List to verify description was added
-            list_returncode, list_stdout, list_stderr = self.run_cli_command(["apikey", "list", "--app-dir", self.temp_dir])
+            list_returncode, list_stdout, list_stderr = self.run_cli_command(["apikey", "list", "--data-dir", self.temp_dir])
             assert list_returncode == 0
 
     def test_apikey_add_with_expires_in(self) -> None:
@@ -428,7 +428,7 @@ class TestE2EAPIKeys(E2ETestBase):
                 "expiring_test",
                 "--expires-in",
                 "30",
-                "--app-dir",
+                "--data-dir",
                 self.temp_dir,
             ]
         )
@@ -442,9 +442,9 @@ class TestE2EAPIKeys(E2ETestBase):
         self.setup_database()
         test_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dGVzdA.c2lnbmF0dXJl"
 
-        self.run_cli_command(["apikey", "add", test_key, "--name", "show_keys_test", "--app-dir", self.temp_dir])
+        self.run_cli_command(["apikey", "add", test_key, "--name", "show_keys_test", "--data-dir", self.temp_dir])
 
-        returncode, stdout, stderr = self.run_cli_command(["apikey", "list", "--show-keys", "--app-dir", self.temp_dir])
+        returncode, stdout, stderr = self.run_cli_command(["apikey", "list", "--show-keys", "--data-dir", self.temp_dir])
 
         assert returncode == 0
         if test_key in stdout or "show_keys_test" in stdout:
@@ -456,9 +456,9 @@ class TestE2EAPIKeys(E2ETestBase):
         self.setup_database()
         test_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dGVzdA.c2lnbmF0dXJl"
 
-        self.run_cli_command(["apikey", "add", test_key, "--name", "json_list_test", "--app-dir", self.temp_dir])
+        self.run_cli_command(["apikey", "add", test_key, "--name", "json_list_test", "--data-dir", self.temp_dir])
 
-        returncode, stdout, stderr = self.run_cli_command(["apikey", "list", "--format", "json", "--app-dir", self.temp_dir])
+        returncode, stdout, stderr = self.run_cli_command(["apikey", "list", "--format", "json", "--data-dir", self.temp_dir])
 
         assert returncode == 0
         # Should be valid JSON
@@ -473,12 +473,12 @@ class TestE2EAPIKeys(E2ETestBase):
         test_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dGVzdA.c2lnbmF0dXJl"
 
         add_result = self.run_cli_command(
-            ["apikey", "add", test_key, "--name", "get_validate_test", "--app-dir", self.temp_dir]
+            ["apikey", "add", test_key, "--name", "get_validate_test", "--data-dir", self.temp_dir]
         )
 
         if add_result[0] == 0:
             returncode, stdout, stderr = self.run_cli_command(
-                ["apikey", "get", "get_validate_test", "--app-dir", self.temp_dir]
+                ["apikey", "get", "get_validate_test", "--data-dir", self.temp_dir]
             )
 
             assert returncode == 0
@@ -490,11 +490,11 @@ class TestE2EAPIKeys(E2ETestBase):
         self.setup_database()
         test_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dGVzdA.c2lnbmF0dXJl"
 
-        add_result = self.run_cli_command(["apikey", "add", test_key, "--name", "get_show_test", "--app-dir", self.temp_dir])
+        add_result = self.run_cli_command(["apikey", "add", test_key, "--name", "get_show_test", "--data-dir", self.temp_dir])
 
         if add_result[0] == 0:
             returncode, stdout, stderr = self.run_cli_command(
-                ["apikey", "get", "get_show_test", "--show-key", "--app-dir", self.temp_dir]
+                ["apikey", "get", "get_show_test", "--show-key", "--data-dir", self.temp_dir]
             )
 
             assert returncode == 0
@@ -506,11 +506,11 @@ class TestE2EAPIKeys(E2ETestBase):
         self.setup_database()
         test_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dGVzdA.c2lnbmF0dXJl"
 
-        add_result = self.run_cli_command(["apikey", "add", test_key, "--name", "get_json_test", "--app-dir", self.temp_dir])
+        add_result = self.run_cli_command(["apikey", "add", test_key, "--name", "get_json_test", "--data-dir", self.temp_dir])
 
         if add_result[0] == 0:
             returncode, stdout, stderr = self.run_cli_command(
-                ["apikey", "get", "get_json_test", "--format", "json", "--app-dir", self.temp_dir]
+                ["apikey", "get", "get_json_test", "--format", "json", "--data-dir", self.temp_dir]
             )
 
             # May succeed or fail based on implementation
@@ -521,17 +521,19 @@ class TestE2EAPIKeys(E2ETestBase):
         self.setup_database()
         test_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dGVzdA.c2lnbmF0dXJl"
 
-        add_result = self.run_cli_command(["apikey", "add", test_key, "--name", "deactivate_test", "--app-dir", self.temp_dir])
+        add_result = self.run_cli_command(
+            ["apikey", "add", test_key, "--name", "deactivate_test", "--data-dir", self.temp_dir]
+        )
 
         if add_result[0] == 0:
             returncode, stdout, stderr = self.run_cli_command(
-                ["apikey", "deactivate", "deactivate_test", "--app-dir", self.temp_dir]
+                ["apikey", "deactivate", "deactivate_test", "--data-dir", self.temp_dir]
             )
 
             assert returncode in [0, 1]
             if returncode == 0:
                 # Verify key is deactivated but still exists
-                list_result = self.run_cli_command(["apikey", "list", "--app-dir", self.temp_dir])
+                list_result = self.run_cli_command(["apikey", "list", "--data-dir", self.temp_dir])
                 assert list_result[0] == 0
 
     def test_apikey_delete_with_confirm(self) -> None:
@@ -540,7 +542,7 @@ class TestE2EAPIKeys(E2ETestBase):
         test_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dGVzdA.c2lnbmF0dXJl"
 
         add_result = self.run_cli_command(
-            ["apikey", "add", test_key, "--name", "delete_confirm_test", "--app-dir", self.temp_dir]
+            ["apikey", "add", test_key, "--name", "delete_confirm_test", "--data-dir", self.temp_dir]
         )
 
         if add_result[0] == 0:
@@ -550,7 +552,7 @@ class TestE2EAPIKeys(E2ETestBase):
                     "delete",
                     "delete_confirm_test",
                     "--confirm",
-                    "--app-dir",
+                    "--data-dir",
                     self.temp_dir,
                 ]
             )
@@ -558,7 +560,7 @@ class TestE2EAPIKeys(E2ETestBase):
             assert returncode in [0, 1]
             if returncode == 0:
                 # Verify key is completely removed
-                get_result = self.run_cli_command(["apikey", "get", "delete_confirm_test", "--app-dir", self.temp_dir])
+                get_result = self.run_cli_command(["apikey", "get", "delete_confirm_test", "--data-dir", self.temp_dir])
                 # Should fail since key is deleted
                 assert get_result[0] == 1
 
@@ -567,11 +569,13 @@ class TestE2EAPIKeys(E2ETestBase):
         self.setup_database()
         test_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dGVzdA.c2lnbmF0dXJl"
 
-        add_result = self.run_cli_command(["apikey", "add", test_key, "--name", "test_validation", "--app-dir", self.temp_dir])
+        add_result = self.run_cli_command(
+            ["apikey", "add", test_key, "--name", "test_validation", "--data-dir", self.temp_dir]
+        )
 
         if add_result[0] == 0:
             returncode, stdout, stderr = self.run_cli_command(
-                ["apikey", "test", "test_validation", "--app-dir", self.temp_dir]
+                ["apikey", "test", "test_validation", "--data-dir", self.temp_dir]
             )
 
             # Test command should validate the key exists
@@ -596,7 +600,7 @@ class TestE2EAPIKeys(E2ETestBase):
                     test_key,
                     "--name",
                     invalid_name,
-                    "--app-dir",
+                    "--data-dir",
                     self.temp_dir,
                 ]
             )
@@ -624,7 +628,7 @@ class TestE2EAPIKeys(E2ETestBase):
                     test_key,
                     "--name",
                     valid_name,
-                    "--app-dir",
+                    "--data-dir",
                     self.temp_dir,
                 ]
             )
@@ -651,7 +655,7 @@ class TestE2EAPIKeys(E2ETestBase):
                     invalid_key,
                     "--name",
                     "invalid_jwt_test",
-                    "--app-dir",
+                    "--data-dir",
                     self.temp_dir,
                 ]
             )

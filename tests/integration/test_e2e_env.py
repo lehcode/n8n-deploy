@@ -68,12 +68,12 @@ class TestE2EEnv(E2ETestBase):
         assert data["variables"]["N8N_DEPLOY_DATA_DIR"]["source"] == "CLI"
 
     def test_env_with_flow_dir_option(self) -> None:
-        """Test env command with --flow-dir CLI option"""
+        """Test env command with --flows-dir CLI option"""
         test_flow_dir = str(Path(self.temp_dir) / "custom_flow")
 
         returncode, stdout, stderr = self.run_cli_command(["env", "--flow-dir", test_flow_dir, "--json"])
 
-        self.assert_command_details(returncode, stdout, stderr, 0, "env with --flow-dir option")
+        self.assert_command_details(returncode, stdout, stderr, 0, "env with --flows-dir option")
 
         # Verify CLI option takes precedence
         data = json.loads(stdout)
@@ -104,7 +104,7 @@ class TestE2EEnv(E2ETestBase):
                 "env",
                 "--data-dir",
                 test_app_dir,
-                "--flow-dir",
+                "--flows-dir",
                 test_flow_dir,
                 "--remote",
                 test_server_url,
