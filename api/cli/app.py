@@ -111,14 +111,14 @@ def cli() -> None:
     \b
     📂 Core Directories:
 
-    App Directory (--app-dir):
+    App Directory (--data-dir):
       Stores application data (database, backups)
-      Priority: --app-dir CLI option > N8N_DEPLOY_APP_DIR env > current directory
+      Priority: --data-dir CLI option > N8N_DEPLOY_DATA env > current directory
       Default file: n8n-deploy.db
 
-    Flow Directory (--flow-dir):
+    Flow Directory (--flows-dir):
       Contains workflow JSON files
-      Priority: --flow-dir CLI option > N8N_DEPLOY_FLOW_DIR env > current directory
+      Priority: --flows-dir CLI option > N8N_DEPLOY_FLOWS env > current directory
       Default: current directory
 
     \b
