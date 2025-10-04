@@ -20,23 +20,23 @@ print_section "Test Category 8: Directory Options"
     mkdir -p "$app_dir2" "$flow_dir2/workflows"
 
     # Initialize second database
-    run_test "Init second DB" "$CLI_COMMAND db init --app-dir $app_dir2 --import --no-emoji" 0 "Initialize second database"
+    run_test "Init second DB" "$CLI_COMMAND db init --data-dir $app_dir2 --import --no-emoji" 0 "Initialize second database"
 
     # Test app-dir option
-    validate_output "Different app dir" "$CLI_COMMAND db status --app-dir $app_dir2" "$app_dir2"
+    validate_output "Different app dir" "$CLI_COMMAND db status --data-dir $app_dir2" "$app_dir2"
 
     # Test flow-dir option
     create_sample_workflow "$flow_dir2/workflows"
-    run_test "Add workflow different dirs" "$CLI_COMMAND wf add workflows/${SAMPLE_WF_ID}.json '$SAMPLE_WF_NAME' --app-dir $app_dir2 --flow-dir $flow_dir2" 0 "Add workflow with different directories"
+    run_test "Add workflow different dirs" "$CLI_COMMAND wf add workflows/${SAMPLE_WF_ID}.json '$SAMPLE_WF_NAME' --data-dir $app_dir2 --flows-dir $flow_dir2" 0 "Add workflow with different directories"
 
     # Test environment variable (simulate)
     export N8N_DEPLOY_FLOW_DIR="$flow_dir2"
-    validate_output "Environment variable flow dir" "$CLI_COMMAND wf list --app-dir $app_dir2 --no-emoji" "$SAMPLE_WF_ID"
+    validate_output "Environment variable flow dir" "$CLI_COMMAND wf list --data-dir $app_dir2 --no-emoji" "$SAMPLE_WF_ID"
     unset N8N_DEPLOY_FLOW_DIR
 
     # Test directory precedence - CLI option should override environment
     export N8N_DEPLOY_FLOW_DIR="$flow_dir1"
-    run_test "Directory precedence" "$CLI_COMMAND wf list --app-dir $app_dir2 --flow-dir $flow_dir2 --no-emoji" 0 "Test directory option precedence"
+    run_test "Directory precedence" "$CLI_COMMAND wf list --data-dir $app_dir2 --flows-dir $flow_dir2 --no-emoji" 0 "Test directory option precedence"
     unset N8N_DEPLOY_FLOW_DIR
 
     pause_if_requested
