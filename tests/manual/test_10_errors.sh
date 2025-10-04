@@ -24,26 +24,26 @@ print_section "Test Category 9: Error Handling"
     run_test "Missing API key name" "$CLI_COMMAND apikey add testkey" 2 "Test missing API key name"
 
     # Test invalid directory paths
-    run_test "Invalid app dir" "$CLI_COMMAND db status --app-dir $invalid_dir" 1 "Test invalid app directory"
-    run_test "Invalid flow dir" "$CLI_COMMAND wf list --app-dir $app_dir --flow-dir $invalid_dir --no-emoji" 1 "Test invalid flow directory (creates directory, fails)"
+    run_test "Invalid app dir" "$CLI_COMMAND db status --data-dir $invalid_dir" 1 "Test invalid app directory"
+    run_test "Invalid flow dir" "$CLI_COMMAND wf list --data-dir $app_dir --flows-dir $invalid_dir --no-emoji" 1 "Test invalid flow directory (creates directory, fails)"
 
     # Test non-existent database operations
     local nonexistent_dir="$TEST_BASE_DIR/nonexistent"
-    run_test "Non-existent DB status" "$CLI_COMMAND db status --app-dir $nonexistent_dir" 1 "Test operations on non-existent database"
+    run_test "Non-existent DB status" "$CLI_COMMAND db status --data-dir $nonexistent_dir" 1 "Test operations on non-existent database"
 
     # Setup database for remove tests
-    "$CLI_COMMAND" db init --app-dir "$app_dir" --import --no-emoji > /dev/null 2>&1
+    "$CLI_COMMAND" db init --data-dir "$app_dir" --import --no-emoji > /dev/null 2>&1
     create_sample_workflow "$flow_dir/workflows"
-    "$CLI_COMMAND" wf add "workflows/${SAMPLE_WF_ID}.json" "$SAMPLE_WF_NAME" --app-dir "$app_dir" --flow-dir "$flow_dir" --no-emoji > /dev/null 2>&1
+    "$CLI_COMMAND" wf add "workflows/${SAMPLE_WF_ID}.json" "$SAMPLE_WF_NAME" --data-dir "$app_dir" --flows-dir "$flow_dir" --no-emoji > /dev/null 2>&1
 
     # Test remove workflow with confirmation (should succeed with 'n' response)
-    run_test "Remove without confirmation" "echo 'n' | $CLI_COMMAND wf remove $SAMPLE_WF_ID --app-dir $app_dir --flow-dir $flow_dir" 0 "Test remove workflow without confirmation (cancels)"
+    run_test "Remove without confirmation" "echo 'n' | $CLI_COMMAND wf remove $SAMPLE_WF_ID --data-dir $app_dir --flows-dir $flow_dir" 0 "Test remove workflow without confirmation (cancels)"
 
     # Test remove workflow with --yes flag (should succeed)
-    run_test "Remove with --yes flag" "$CLI_COMMAND wf remove $SAMPLE_WF_ID --yes --app-dir $app_dir --flow-dir $flow_dir" 0 "Test remove workflow with --yes flag"
+    run_test "Remove with --yes flag" "$CLI_COMMAND wf remove $SAMPLE_WF_ID --yes --data-dir $app_dir --flows-dir $flow_dir" 0 "Test remove workflow with --yes flag"
 
     # Test backup to invalid directory (succeeds with 0 workflows)
-    run_test "Backup to invalid dir" "$CLI_COMMAND wf createbackup --backup-dir $invalid_dir --app-dir $app_dir --flow-dir $flow_dir" 0 "Test backup to invalid directory (succeeds with 0 workflows)"
+    run_test "Backup to invalid dir" "$CLI_COMMAND wf createbackup --backup-dir $invalid_dir --data-dir $app_dir --flows-dir $flow_dir" 0 "Test backup to invalid directory (succeeds with 0 workflows)"
 
     pause_if_requested
 }

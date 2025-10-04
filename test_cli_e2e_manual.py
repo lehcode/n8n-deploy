@@ -328,7 +328,7 @@ class N8nDeployE2ETester:
         """Test database initialization"""
         app_dir, _ = self.setup_test_environment()
 
-        exit_code, output, stderr = self.run_cli_command(["db", "init", "--app-dir", app_dir])
+        exit_code, output, stderr = self.run_cli_command(["db", "init", "--data-dir", app_dir])
         assert exit_code == 0, f"Database init failed: {stderr}"
 
         db_path = Path(app_dir) / "n8n-deploy.db"
@@ -339,9 +339,9 @@ class N8nDeployE2ETester:
         app_dir, _ = self.setup_test_environment()
 
         # Initialize database first
-        self.run_cli_command(["db", "init", "--app-dir", app_dir])
+        self.run_cli_command(["db", "init", "--data-dir", app_dir])
 
-        exit_code, output, stderr = self.run_cli_command(["db", "status", "--app-dir", app_dir])
+        exit_code, output, stderr = self.run_cli_command(["db", "status", "--data-dir", app_dir])
         assert exit_code == 0, f"Database status failed: {stderr}"
         assert "Schema Version" in output, "Status missing schema version"
         assert app_dir in output, "Status missing database location"
@@ -351,9 +351,9 @@ class N8nDeployE2ETester:
         app_dir, _ = self.setup_test_environment()
 
         # Initialize database
-        self.run_cli_command(["db", "init", "--app-dir", app_dir])
+        self.run_cli_command(["db", "init", "--data-dir", app_dir])
 
-        exit_code, output, stderr = self.run_cli_command(["db", "backup", "--app-dir", app_dir])
+        exit_code, output, stderr = self.run_cli_command(["db", "backup", "--data-dir", app_dir])
         assert exit_code == 0, f"Database backup failed: {stderr}"
 
         backup_dir = Path(app_dir) / "backups"
@@ -366,10 +366,10 @@ class N8nDeployE2ETester:
         app_dir, _ = self.setup_test_environment()
 
         # Initialize database
-        self.run_cli_command(["db", "init", "--app-dir", app_dir])
+        self.run_cli_command(["db", "init", "--data-dir", app_dir])
 
         # Test compact
-        exit_code, output, stderr = self.run_cli_command(["db", "compact", "--app-dir", app_dir])
+        exit_code, output, stderr = self.run_cli_command(["db", "compact", "--data-dir", app_dir])
         assert exit_code == 0, f"Database compact failed: {stderr}"
 
     # === API Key Management Tests ===
@@ -379,7 +379,7 @@ class N8nDeployE2ETester:
         app_dir, _ = self.setup_test_environment()
 
         # Initialize database
-        self.run_cli_command(["db", "init", "--app-dir", app_dir])
+        self.run_cli_command(["db", "init", "--data-dir", app_dir])
 
         # Valid JWT token for testing
         jwt_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0IiwiaWF0IjoxNjE2MjM5MDIyfQ.test"
@@ -393,7 +393,7 @@ class N8nDeployE2ETester:
         app_dir, _ = self.setup_test_environment()
 
         # Initialize and add a key
-        self.run_cli_command(["db", "init", "--app-dir", app_dir])
+        self.run_cli_command(["db", "init", "--data-dir", app_dir])
         jwt_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0IiwiaWF0IjoxNjE2MjM5MDIyfQ.test"
         self.run_cli_command(["apikey", "add", jwt_token, "--name", "test_key"])
 
@@ -412,7 +412,7 @@ class N8nDeployE2ETester:
         app_dir, _ = self.setup_test_environment()
 
         # Setup
-        self.run_cli_command(["db", "init", "--app-dir", app_dir])
+        self.run_cli_command(["db", "init", "--data-dir", app_dir])
         jwt_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0IiwiaWF0IjoxNjE2MjM5MDIyfQ.test"
         self.run_cli_command(["apikey", "add", jwt_token, "--name", "test_key"])
 
@@ -432,7 +432,7 @@ class N8nDeployE2ETester:
         app_dir, _ = self.setup_test_environment()
 
         # Initialize
-        self.run_cli_command(["db", "init", "--app-dir", app_dir])
+        self.run_cli_command(["db", "init", "--data-dir", app_dir])
         jwt_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0IiwiaWF0IjoxNjE2MjM5MDIyfQ.test"
 
         # Add key
@@ -455,7 +455,7 @@ class N8nDeployE2ETester:
         app_dir, _ = self.setup_test_environment()
 
         # Setup
-        self.run_cli_command(["db", "init", "--app-dir", app_dir])
+        self.run_cli_command(["db", "init", "--data-dir", app_dir])
         jwt_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0IiwiaWF0IjoxNjE2MjM5MDIyfQ.test"
         self.run_cli_command(["apikey", "add", jwt_token, "--name", "test_connection_key"])
 
@@ -474,7 +474,7 @@ class N8nDeployE2ETester:
         app_dir, flow_dir = self.setup_test_environment()
 
         # Initialize database
-        self.run_cli_command(["db", "init", "--app-dir", app_dir])
+        self.run_cli_command(["db", "init", "--data-dir", app_dir])
 
         # Create sample workflow file
         workflow_path = self.create_sample_workflow_file(flow_dir, "test_workflow")
@@ -486,16 +486,18 @@ class N8nDeployE2ETester:
                 "test_workflow",
                 "test_workflow",
                 "test_workflow.json",
-                "--app-dir",
+                "--data-dir",
                 app_dir,
-                "--flow-dir",
+                "--flows-dir",
                 flow_dir,
             ]
         )
         assert exit_code == 0, f"Workflow add failed: {stderr}"
 
         # List workflows
-        exit_code, output, stderr = self.run_cli_command(["list", "--app-dir", app_dir, "--flow-dir", flow_dir, "--no-emoji"])
+        exit_code, output, stderr = self.run_cli_command(
+            ["list", "--data-dir", app_dir, "--flows-dir", flow_dir, "--no-emoji"]
+        )
         assert exit_code == 0, f"Workflow list failed: {stderr}"
         assert "test_workflow" in output, "Added workflow not in list"
 
@@ -504,7 +506,7 @@ class N8nDeployE2ETester:
         app_dir, flow_dir = self.setup_test_environment()
 
         # Setup
-        self.run_cli_command(["db", "init", "--app-dir", app_dir])
+        self.run_cli_command(["db", "init", "--data-dir", app_dir])
         self.create_sample_workflow_file(flow_dir, "search_test", "main")
         self.create_sample_workflow_file(flow_dir, "search_automation", "automation")
 
@@ -515,9 +517,9 @@ class N8nDeployE2ETester:
                 "search_test",
                 "search_test",
                 "search_test.json",
-                "--app-dir",
+                "--data-dir",
                 app_dir,
-                "--flow-dir",
+                "--flows-dir",
                 flow_dir,
             ]
         )
@@ -527,21 +529,21 @@ class N8nDeployE2ETester:
                 "search_automation",
                 "search_automation",
                 "search_automation.json",
-                "--app-dir",
+                "--data-dir",
                 app_dir,
-                "--flow-dir",
+                "--flows-dir",
                 flow_dir,
             ]
         )
 
         # Test search
-        exit_code, output, stderr = self.run_cli_command(["search", "search", "--app-dir", app_dir, "--flow-dir", flow_dir])
+        exit_code, output, stderr = self.run_cli_command(["search", "search", "--data-dir", app_dir, "--flows-dir", flow_dir])
         assert exit_code == 0, f"Workflow search failed: {stderr}"
         assert "search_test" in output or "search_automation" in output, "Search results missing"
 
         # Test stats
         exit_code, output, stderr = self.run_cli_command(
-            ["stats", "search_test", "--app-dir", app_dir, "--flow-dir", flow_dir]
+            ["stats", "search_test", "--data-dir", app_dir, "--flows-dir", flow_dir]
         )
         assert exit_code == 0, f"Workflow stats failed: {stderr}"
         assert "Total" in output and "2" in output, "Stats missing workflow count"
@@ -551,7 +553,7 @@ class N8nDeployE2ETester:
         app_dir, flow_dir = self.setup_test_environment()
 
         # Setup
-        self.run_cli_command(["db", "init", "--app-dir", app_dir])
+        self.run_cli_command(["db", "init", "--data-dir", app_dir])
         self.create_sample_workflow_file(flow_dir, "sync_test")
         self.run_cli_command(
             [
@@ -559,14 +561,14 @@ class N8nDeployE2ETester:
                 "sync_test",
                 "sync_test",
                 "sync_test.json",
-                "--app-dir",
+                "--data-dir",
                 app_dir,
-                "--flow-dir",
+                "--flows-dir",
                 flow_dir,
             ]
         )
 
-        exit_code, output, stderr = self.run_cli_command(["sync", "sync_test", "--app-dir", app_dir, "--flow-dir", flow_dir])
+        exit_code, output, stderr = self.run_cli_command(["sync", "sync_test", "--data-dir", app_dir, "--flows-dir", flow_dir])
         assert exit_code == 0, f"Workflow sync failed: {stderr}"
         assert "sync_test" in output or "Synchronized" in output, "Sync results missing"
 
@@ -575,7 +577,7 @@ class N8nDeployE2ETester:
         app_dir, flow_dir = self.setup_test_environment()
 
         # Setup
-        self.run_cli_command(["db", "init", "--app-dir", app_dir])
+        self.run_cli_command(["db", "init", "--data-dir", app_dir])
         self.create_sample_workflow_file(flow_dir, "remove_test")
         self.run_cli_command(
             [
@@ -583,21 +585,23 @@ class N8nDeployE2ETester:
                 "remove_test",
                 "remove_test",
                 "remove_test.json",
-                "--app-dir",
+                "--data-dir",
                 app_dir,
-                "--flow-dir",
+                "--flows-dir",
                 flow_dir,
             ]
         )
 
         # Remove workflow
         exit_code, output, stderr = self.run_cli_command(
-            ["remove", "remove_test", "--app-dir", app_dir, "--flow-dir", flow_dir]
+            ["remove", "remove_test", "--data-dir", app_dir, "--flows-dir", flow_dir]
         )
         assert exit_code == 0, f"Workflow remove failed: {stderr}"
 
         # Verify removal
-        exit_code, output, stderr = self.run_cli_command(["list", "--app-dir", app_dir, "--flow-dir", flow_dir, "--no-emoji"])
+        exit_code, output, stderr = self.run_cli_command(
+            ["list", "--data-dir", app_dir, "--flows-dir", flow_dir, "--no-emoji"]
+        )
         assert "remove_test" not in output, "Removed workflow still in list"
 
     # === Backup Operation Tests ===
@@ -609,7 +613,7 @@ class N8nDeployE2ETester:
         self.temp_dirs.append(backup_dir)
 
         # Setup
-        self.run_cli_command(["db", "init", "--app-dir", app_dir])
+        self.run_cli_command(["db", "init", "--data-dir", app_dir])
         self.create_sample_workflow_file(flow_dir, "backup_test")
         self.run_cli_command(
             [
@@ -617,9 +621,9 @@ class N8nDeployE2ETester:
                 "backup_test",
                 "backup_test",
                 "backup_test.json",
-                "--app-dir",
+                "--data-dir",
                 app_dir,
-                "--flow-dir",
+                "--flows-dir",
                 flow_dir,
             ]
         )
@@ -630,9 +634,9 @@ class N8nDeployE2ETester:
                 "backup-workflows",
                 "--backup-dir",
                 backup_dir,
-                "--app-dir",
+                "--data-dir",
                 app_dir,
-                "--flow-dir",
+                "--flows-dir",
                 flow_dir,
             ]
         )
@@ -649,7 +653,7 @@ class N8nDeployE2ETester:
         self.temp_dirs.append(backup_dir)
 
         # Setup and create backup
-        self.run_cli_command(["db", "init", "--app-dir", app_dir])
+        self.run_cli_command(["db", "init", "--data-dir", app_dir])
         self.create_sample_workflow_file(flow_dir, "list_backup_test")
         self.run_cli_command(
             [
@@ -657,9 +661,9 @@ class N8nDeployE2ETester:
                 "list_backup_test",
                 "list_backup_test",
                 "list_backup_test.json",
-                "--app-dir",
+                "--data-dir",
                 app_dir,
-                "--flow-dir",
+                "--flows-dir",
                 flow_dir,
             ]
         )
@@ -668,15 +672,15 @@ class N8nDeployE2ETester:
                 "backup-workflows",
                 "--backup-dir",
                 backup_dir,
-                "--app-dir",
+                "--data-dir",
                 app_dir,
-                "--flow-dir",
+                "--flows-dir",
                 flow_dir,
             ]
         )
 
         # List backups
-        exit_code, output, stderr = self.run_cli_command(["list-backups", "--backup-dir", backup_dir, "--app-dir", app_dir])
+        exit_code, output, stderr = self.run_cli_command(["list-backups", "--backup-dir", backup_dir, "--data-dir", app_dir])
         assert exit_code == 0, f"List backups failed: {stderr}"
         assert ".tar.gz" in output, "Backup files not listed"
 
@@ -687,7 +691,7 @@ class N8nDeployE2ETester:
         self.temp_dirs.append(backup_dir)
 
         # Setup and create backup
-        self.run_cli_command(["db", "init", "--app-dir", app_dir])
+        self.run_cli_command(["db", "init", "--data-dir", app_dir])
         self.create_sample_workflow_file(flow_dir, "verify_test")
         self.run_cli_command(
             [
@@ -695,9 +699,9 @@ class N8nDeployE2ETester:
                 "verify_test",
                 "verify_test",
                 "verify_test.json",
-                "--app-dir",
+                "--data-dir",
                 app_dir,
-                "--flow-dir",
+                "--flows-dir",
                 flow_dir,
             ]
         )
@@ -706,9 +710,9 @@ class N8nDeployE2ETester:
                 "backup-workflows",
                 "--backup-dir",
                 backup_dir,
-                "--app-dir",
+                "--data-dir",
                 app_dir,
-                "--flow-dir",
+                "--flows-dir",
                 flow_dir,
             ]
         )
@@ -718,7 +722,7 @@ class N8nDeployE2ETester:
         assert len(backup_files) > 0, "No backup file to verify"
 
         # Verify backup
-        exit_code, output, stderr = self.run_cli_command(["verify-backup", str(backup_files[0]), "--app-dir", app_dir])
+        exit_code, output, stderr = self.run_cli_command(["verify-backup", str(backup_files[0]), "--data-dir", app_dir])
         assert exit_code == 0, f"Backup verification failed: {stderr}"
         assert "verified" in output.lower() or "valid" in output.lower(), "Missing verification confirmation"
 
@@ -728,10 +732,10 @@ class N8nDeployE2ETester:
         """Test server listing without connection"""
         app_dir, _ = self.setup_test_environment()
 
-        self.run_cli_command(["db", "init", "--app-dir", app_dir])
+        self.run_cli_command(["db", "init", "--data-dir", app_dir])
 
         exit_code, output, stderr = self.run_cli_command(
-            ["list-server", "--app-dir", app_dir, "--server-url", "http://nonexistent-server:5678"]
+            ["list-server", "--data-dir", app_dir, "--server-url", "http://nonexistent-server:5678"]
         )
         # Should fail gracefully
         assert (
@@ -743,7 +747,7 @@ class N8nDeployE2ETester:
         app_dir, flow_dir = self.setup_test_environment()
 
         # Setup
-        self.run_cli_command(["db", "init", "--app-dir", app_dir])
+        self.run_cli_command(["db", "init", "--data-dir", app_dir])
         jwt_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0IiwiaWF0IjoxNjE2MjM5MDIyfQ.test"
         self.run_cli_command(["apikey", "add", jwt_token, "--name", "server_test_key"])
 
@@ -752,9 +756,9 @@ class N8nDeployE2ETester:
             [
                 "pull",
                 "test_workflow",
-                "--app-dir",
+                "--data-dir",
                 app_dir,
-                "--flow-dir",
+                "--flows-dir",
                 flow_dir,
                 "--server-url",
                 self.test_server_url,
@@ -771,9 +775,9 @@ class N8nDeployE2ETester:
                 "push_test",
                 "push_test",
                 "push_test.json",
-                "--app-dir",
+                "--data-dir",
                 app_dir,
-                "--flow-dir",
+                "--flows-dir",
                 flow_dir,
             ]
         )
@@ -782,9 +786,9 @@ class N8nDeployE2ETester:
             [
                 "push",
                 "push_test",
-                "--app-dir",
+                "--data-dir",
                 app_dir,
-                "--flow-dir",
+                "--flows-dir",
                 flow_dir,
                 "--server-url",
                 self.test_server_url,
@@ -800,7 +804,7 @@ class N8nDeployE2ETester:
         app_dir, flow_dir = self.setup_test_environment()
 
         # Setup
-        self.run_cli_command(["db", "init", "--app-dir", app_dir])
+        self.run_cli_command(["db", "init", "--data-dir", app_dir])
         self.create_sample_workflow_file(flow_dir, "emoji_test")
         self.run_cli_command(
             [
@@ -808,20 +812,20 @@ class N8nDeployE2ETester:
                 "emoji_test",
                 "emoji_test",
                 "emoji_test.json",
-                "--app-dir",
+                "--data-dir",
                 app_dir,
-                "--flow-dir",
+                "--flows-dir",
                 flow_dir,
             ]
         )
 
         # Test with emoji (default)
-        exit_code, output_emoji, stderr = self.run_cli_command(["list", "--app-dir", app_dir, "--flow-dir", flow_dir])
+        exit_code, output_emoji, stderr = self.run_cli_command(["list", "--data-dir", app_dir, "--flows-dir", flow_dir])
         assert exit_code == 0, f"List with emoji failed: {stderr}"
 
         # Test without emoji
         exit_code, output_no_emoji, stderr = self.run_cli_command(
-            ["list", "--app-dir", app_dir, "--flow-dir", flow_dir, "--no-emoji"]
+            ["list", "--data-dir", app_dir, "--flows-dir", flow_dir, "--no-emoji"]
         )
         assert exit_code == 0, f"List without emoji failed: {stderr}"
 
@@ -833,7 +837,7 @@ class N8nDeployE2ETester:
         app_dir, flow_dir = self.setup_test_environment()
 
         # Setup
-        self.run_cli_command(["db", "init", "--app-dir", app_dir])
+        self.run_cli_command(["db", "init", "--data-dir", app_dir])
         self.create_sample_workflow_file(flow_dir, "json_test")
         self.run_cli_command(
             [
@@ -841,16 +845,16 @@ class N8nDeployE2ETester:
                 "json_test",
                 "json_test",
                 "json_test.json",
-                "--app-dir",
+                "--data-dir",
                 app_dir,
-                "--flow-dir",
+                "--flows-dir",
                 flow_dir,
             ]
         )
 
         # Test JSON output for list
         exit_code, output, stderr = self.run_cli_command(
-            ["list", "--app-dir", app_dir, "--flow-dir", flow_dir, "--format", "json"]
+            ["list", "--data-dir", app_dir, "--flows-dir", flow_dir, "--format", "json"]
         )
         assert exit_code == 0, f"JSON list failed: {stderr}"
         assert self.validate_json_output(output), "Invalid JSON output format"
@@ -865,15 +869,15 @@ class N8nDeployE2ETester:
     def test_invalid_directory_paths(self) -> None:
         """Test handling of invalid directory paths"""
         # Test invalid app directory
-        exit_code, output, stderr = self.run_cli_command(["db", "status", "--app-dir", "/dev/null/invalid_path"])
+        exit_code, output, stderr = self.run_cli_command(["db", "status", "--data-dir", "/dev/null/invalid_path"])
         assert exit_code != 0, "Should fail with invalid app directory"
 
         # Test invalid flow directory
         app_dir, _ = self.setup_test_environment()
-        self.run_cli_command(["db", "init", "--app-dir", app_dir])
+        self.run_cli_command(["db", "init", "--data-dir", app_dir])
 
         exit_code, output, stderr = self.run_cli_command(
-            ["list", "--app-dir", app_dir, "--flow-dir", "/dev/null/invalid_path"]
+            ["list", "--data-dir", app_dir, "--flows-dir", "/dev/null/invalid_path"]
         )
         # May succeed with empty list or fail gracefully
         assert exit_code == 0 or "error" in stderr.lower(), "Should handle invalid flow directory"
@@ -882,7 +886,7 @@ class N8nDeployE2ETester:
         """Test handling of missing workflow files"""
         app_dir, flow_dir = self.setup_test_environment()
 
-        self.run_cli_command(["db", "init", "--app-dir", app_dir])
+        self.run_cli_command(["db", "init", "--data-dir", app_dir])
 
         exit_code, output, stderr = self.run_cli_command(
             [
@@ -890,9 +894,9 @@ class N8nDeployE2ETester:
                 "nonexistent_workflow",
                 "nonexistent_workflow",
                 "nonexistent_workflow.json",
-                "--app-dir",
+                "--data-dir",
                 app_dir,
-                "--flow-dir",
+                "--flows-dir",
                 flow_dir,
             ]
         )
@@ -903,7 +907,7 @@ class N8nDeployE2ETester:
         """Test invalid API key operations"""
         app_dir, _ = self.setup_test_environment()
 
-        self.run_cli_command(["db", "init", "--app-dir", app_dir])
+        self.run_cli_command(["db", "init", "--data-dir", app_dir])
 
         # Test getting nonexistent key
         exit_code, output, stderr = self.run_cli_command(["apikey", "get", "nonexistent_key"])
@@ -917,7 +921,7 @@ class N8nDeployE2ETester:
         """Test handling of malformed workflow JSON"""
         app_dir, flow_dir = self.setup_test_environment()
 
-        self.run_cli_command(["db", "init", "--app-dir", app_dir])
+        self.run_cli_command(["db", "init", "--data-dir", app_dir])
 
         # Create malformed JSON file
         malformed_path = Path(flow_dir) / "malformed.json"
@@ -930,9 +934,9 @@ class N8nDeployE2ETester:
                 "malformed",
                 "malformed",
                 "malformed.json",
-                "--app-dir",
+                "--data-dir",
                 app_dir,
-                "--flow-dir",
+                "--flows-dir",
                 flow_dir,
             ]
         )
@@ -947,7 +951,7 @@ class N8nDeployE2ETester:
         env_flow_dir = tempfile.mkdtemp(prefix="n8n_env_flow_")
         self.temp_dirs.append(env_flow_dir)
 
-        self.run_cli_command(["db", "init", "--app-dir", app_dir])
+        self.run_cli_command(["db", "init", "--data-dir", app_dir])
 
         # Create workflows in both directories
         self.create_sample_workflow_file(flow_dir, "cli_dir_workflow")
@@ -960,10 +964,10 @@ class N8nDeployE2ETester:
                 "env_dir_workflow",
                 "env_dir_workflow",
                 "env_dir_workflow.json",
-                "--app-dir",
+                "--data-dir",
                 app_dir,
             ],
-            env={"N8N_DEPLOY_FLOW_DIR": env_flow_dir},
+            env={"N8N_DEPLOY_FLOWS": env_flow_dir},
         )
         self.run_cli_command(
             [
@@ -971,23 +975,23 @@ class N8nDeployE2ETester:
                 "cli_dir_workflow",
                 "cli_dir_workflow",
                 "cli_dir_workflow.json",
-                "--app-dir",
+                "--data-dir",
                 app_dir,
-                "--flow-dir",
+                "--flows-dir",
                 flow_dir,
             ]
         )
 
         # Test with environment variable
         exit_code, output, stderr = self.run_cli_command(
-            ["sync", "env_dir_workflow", "--app-dir", app_dir], env={"N8N_DEPLOY_FLOW_DIR": env_flow_dir}
+            ["sync", "env_dir_workflow", "--data-dir", app_dir], env={"N8N_DEPLOY_FLOWS": env_flow_dir}
         )
         assert exit_code == 0, f"Sync with env var failed: {stderr}"
 
         # Test CLI override of environment variable
         exit_code, output, stderr = self.run_cli_command(
-            ["sync", "cli_dir_workflow", "--app-dir", app_dir, "--flow-dir", flow_dir],
-            env={"N8N_DEPLOY_FLOW_DIR": env_flow_dir},
+            ["sync", "cli_dir_workflow", "--data-dir", app_dir, "--flows-dir", flow_dir],
+            env={"N8N_DEPLOY_FLOWS": env_flow_dir},
         )
         assert exit_code == 0, f"Sync with CLI override failed: {stderr}"
 
@@ -995,11 +999,11 @@ class N8nDeployE2ETester:
         """Test server URL configuration methods"""
         app_dir, _ = self.setup_test_environment()
 
-        self.run_cli_command(["db", "init", "--app-dir", app_dir])
+        self.run_cli_command(["db", "init", "--data-dir", app_dir])
 
         # Test with environment variable
         exit_code, output, stderr = self.run_cli_command(
-            ["list-server", "--app-dir", app_dir], env={"N8N_DEPLOY_SERVER_URL": self.test_server_url}
+            ["list-server", "--data-dir", app_dir], env={"N8N_DEPLOY_SERVER_URL": self.test_server_url}
         )
         # Will fail to connect but should show server URL
         assert (
@@ -1009,7 +1013,7 @@ class N8nDeployE2ETester:
         # Test CLI override
         test_cli_url = "http://cli-override:5678"
         exit_code, output, stderr = self.run_cli_command(
-            ["list-server", "--app-dir", app_dir, "--server-url", test_cli_url],
+            ["list-server", "--data-dir", app_dir, "--server-url", test_cli_url],
             env={"N8N_DEPLOY_SERVER_URL": self.test_server_url},
         )
         # CLI option should take precedence
