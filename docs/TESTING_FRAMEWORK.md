@@ -312,7 +312,7 @@ Instead of writing specific test cases, you define **properties** that should al
 **Traditional Test:**
 ```python
 def test_env_with_tmp():
-    result = run_cli(["env", "--app-dir", "/tmp"])
+    result = run_cli(["env", "--data-dir", "/tmp"])
     assert result.returncode == 0
 ```
 
@@ -320,7 +320,7 @@ def test_env_with_tmp():
 ```python
 @given(path=st.text(min_size=1, max_size=100))
 def test_env_with_any_path(path):
-    result = run_cli(["env", "--app-dir", path])
+    result = run_cli(["env", "--data-dir", path])
     assert result.returncode in [0, 1, 2]  # Never crash
 ```
 
@@ -518,11 +518,11 @@ def test_env_json_format():
     assert valid_json(result.stdout)
 
 def test_env_json_with_path():
-    result = run_cli(["env", "--app-dir", "/tmp", "--format", "json"])
+    result = run_cli(["env", "--data-dir", "/tmp", "--format", "json"])
     assert valid_json(result.stdout)
 
 def test_env_json_with_unicode_path():
-    result = run_cli(["env", "--app-dir", "/tmp/测试", "--format", "json"])
+    result = run_cli(["env", "--data-dir", "/tmp/测试", "--format", "json"])
     assert valid_json(result.stdout)
 ```
 
@@ -532,7 +532,7 @@ def test_env_json_with_unicode_path():
 @given(app_dir=paths, flow_dir=paths, format_choice=formats)
 def test_env_json_always_valid(app_dir, flow_dir, format_choice):
     """Property: env --format json always produces valid JSON"""
-    result = run_cli(["env", "--app-dir", app_dir, "--flow-dir", flow_dir, "--format", format_choice])
+    result = run_cli(["env", "--data-dir", app_dir, "--flows-dir", flow_dir, "--format", format_choice])
     if format_choice == "json" and result.returncode == 0:
         assert valid_json(result.stdout)
 ```
