@@ -27,7 +27,7 @@ class TestE2EServer(E2ETestBase):
         self.setup_database_with_api_key()
 
         # Try server command without URL
-        returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir, "wf", "server"])
+        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "wf", "server"])
 
         # Should handle missing server configuration gracefully
         assert returncode in [0, 1]
@@ -46,14 +46,14 @@ class TestE2EServer(E2ETestBase):
 
         for url in test_urls:
             cli_returncode, cli_stdout, cli_stderr = self.run_cli_command(
-                ["--app-dir", self.temp_dir, "--server-url", url, "wf", "server"]
+                ["--data-dir", self.temp_dir, "--server-url", url, "wf", "server"]
             )
 
             # Should accept the URL (may fail due to server not reachable)
             assert cli_returncode in [0, 1], f"Unexpected return code: {cli_returncode}\nSTDERR: {cli_stderr}"
             env = {"N8N_DEPLOY_SERVER_URL": url}
             env_returncode, env_stdout, env_stderr = self.run_cli_command(
-                ["--app-dir", self.temp_dir, "wf", "server"], env=env
+                ["--data-dir", self.temp_dir, "wf", "server"], env=env
             )
 
             assert env_returncode in [0, 1]
@@ -71,7 +71,7 @@ class TestE2EServer(E2ETestBase):
         ]
 
         for cmd in commands:
-            returncode, stdout, stderr = self.run_cli_command(["--app-dir", self.temp_dir] + cmd)
+            returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir] + cmd)
             combined_output = (stdout + stderr).lower()
             for pattern in hardcoded_patterns:
                 assert pattern not in combined_output, f"Hardcoded URL '{pattern}' found in output of command {cmd}"
@@ -82,7 +82,7 @@ class TestE2EServer(E2ETestBase):
             pytest.skip("Could not set up API key")
         returncode, stdout, stderr = self.run_cli_command(
             [
-                "--app-dir",
+                "--data-dir",
                 self.temp_dir,
                 "--server-url",
                 "http://localhost:5678",
@@ -109,7 +109,7 @@ class TestE2EServer(E2ETestBase):
         # Try to pull a workflow (may fail if server not available)
         returncode, stdout, stderr = self.run_cli_command(
             [
-                "--app-dir",
+                "--data-dir",
                 self.temp_dir,
                 "--server-url",
                 "http://localhost:5678",
@@ -121,7 +121,7 @@ class TestE2EServer(E2ETestBase):
 
         # Should handle pull operation
         assert returncode in [0, 1]
-        stats_returncode, stats_stdout, _ = self.run_cli_command(["--app-dir", self.temp_dir, "wf", "stats"])
+        stats_returncode, stats_stdout, _ = self.run_cli_command(["--data-dir", self.temp_dir, "wf", "stats"])
         assert stats_returncode == 0
 
     @pytest.mark.integration
@@ -147,9 +147,9 @@ class TestE2EServer(E2ETestBase):
         workflow_file.write_text(json.dumps(workflow_data, indent=2))
         add_returncode, _, _ = self.run_cli_command(
             [
-                "--app-dir",
+                "--data-dir",
                 self.temp_dir,
-                "--flow-dir",
+                "--flows-dir",
                 self.temp_flow_dir,
                 "wf",
                 "add",
@@ -162,7 +162,7 @@ class TestE2EServer(E2ETestBase):
             # Try to push workflow
             push_returncode, push_stdout, push_stderr = self.run_cli_command(
                 [
-                    "--app-dir",
+                    "--data-dir",
                     self.temp_dir,
                     "--server-url",
                     "http://localhost:5678",
@@ -174,7 +174,7 @@ class TestE2EServer(E2ETestBase):
 
             # Should handle push operation
             assert push_returncode in [0, 1]
-            stats_returncode, stats_stdout, _ = self.run_cli_command(["--app-dir", self.temp_dir, "wf", "stats"])
+            stats_returncode, stats_stdout, _ = self.run_cli_command(["--data-dir", self.temp_dir, "wf", "stats"])
             assert stats_returncode == 0
 
     def test_server_integration_error_handling(self) -> None:
@@ -188,7 +188,7 @@ class TestE2EServer(E2ETestBase):
 
         for url in unreachable_urls:
             returncode, stdout, stderr = self.run_cli_command(
-                ["--app-dir", self.temp_dir, "--server-url", url, "wf", "server"]
+                ["--data-dir", self.temp_dir, "--server-url", url, "wf", "server"]
             )
 
             # Should handle gracefully (may return 0 with error message or 1 for failure)
@@ -207,15 +207,15 @@ class TestE2EServer(E2ETestBase):
         invalid_key = "invalid-api-key-12345"
 
         # Replace stored API key with invalid one
-        self.run_cli_command(["--app-dir", self.temp_dir, "apikey", "delete", "test_server", "--confirm"])
+        self.run_cli_command(["--data-dir", self.temp_dir, "apikey", "delete", "test_server", "--confirm"])
 
         self.run_cli_command(
-            ["apikey", "add", "-", "--name", "test_server", "--app-dir", self.temp_dir],
+            ["apikey", "add", "-", "--name", "test_server", "--data-dir", self.temp_dir],
             stdin_input=invalid_key,
         )
         returncode, stdout, stderr = self.run_cli_command(
             [
-                "--app-dir",
+                "--data-dir",
                 self.temp_dir,
                 "--server-url",
                 "http://localhost:5678",
@@ -238,7 +238,7 @@ class TestE2EServer(E2ETestBase):
 
         for cmd in server_commands:
             returncode, stdout, stderr = self.run_cli_command(
-                ["--app-dir", self.temp_dir, "--server-url", "http://localhost:5678"] + cmd
+                ["--data-dir", self.temp_dir, "--server-url", "http://localhost:5678"] + cmd
             )
 
             # Should handle response parsing gracefully
@@ -256,7 +256,7 @@ class TestE2EServer(E2ETestBase):
         timeout_url = "http://8.8.8.8:5678"  # Google DNS, wrong port
 
         returncode, stdout, stderr = self.run_cli_command(
-            ["--app-dir", self.temp_dir, "--server-url", timeout_url, "wf", "server"]
+            ["--data-dir", self.temp_dir, "--server-url", timeout_url, "wf", "server"]
         )
 
         # Should timeout gracefully (exit code 1 for connection failure)
@@ -275,7 +275,7 @@ class TestE2EServer(E2ETestBase):
 
         for url in https_urls:
             returncode, stdout, stderr = self.run_cli_command(
-                ["--app-dir", self.temp_dir, "--server-url", url, "wf", "server"]
+                ["--data-dir", self.temp_dir, "--server-url", url, "wf", "server"]
             )
 
             # Should handle HTTPS
@@ -297,7 +297,7 @@ class TestE2EServer(E2ETestBase):
         def make_server_request(request_id: int) -> None:
             returncode, stdout, stderr = self.run_cli_command(
                 [
-                    "--app-dir",
+                    "--data-dir",
                     self.temp_dir,
                     "--server-url",
                     "http://localhost:5678",
@@ -329,7 +329,7 @@ class TestE2EServer(E2ETestBase):
         # Perform server operation
         server_returncode, _, _ = self.run_cli_command(
             [
-                "--app-dir",
+                "--data-dir",
                 self.temp_dir,
                 "--server-url",
                 "http://localhost:5678",
@@ -339,7 +339,7 @@ class TestE2EServer(E2ETestBase):
         )
 
         # Perform local operation immediately after
-        local_returncode, local_stdout, _ = self.run_cli_command(["--app-dir", self.temp_dir, "wf", "list"])
+        local_returncode, local_stdout, _ = self.run_cli_command(["--data-dir", self.temp_dir, "wf", "list"])
 
         # Local operation should work regardless of server operation result
         assert local_returncode == 0
@@ -357,7 +357,7 @@ class TestE2EServer(E2ETestBase):
 
         for url in url_formats:
             returncode, stdout, stderr = self.run_cli_command(
-                ["--app-dir", self.temp_dir, "--server-url", url, "wf", "server"]
+                ["--data-dir", self.temp_dir, "--server-url", url, "wf", "server"]
             )
 
             # Should construct proper API endpoints
@@ -381,9 +381,9 @@ class TestE2EServer(E2ETestBase):
         workflow_file.write_text(json.dumps(workflow_data, indent=2))
         add_returncode, _, _ = self.run_cli_command(
             [
-                "--app-dir",
+                "--data-dir",
                 self.temp_dir,
-                "--flow-dir",
+                "--flows-dir",
                 self.temp_flow_dir,
                 "wf",
                 "add",
@@ -395,7 +395,7 @@ class TestE2EServer(E2ETestBase):
         if add_returncode == 0:
             push_returncode, push_stdout, push_stderr = self.run_cli_command(
                 [
-                    "--app-dir",
+                    "--data-dir",
                     self.temp_dir,
                     "--server-url",
                     "http://localhost:5678",
@@ -433,9 +433,9 @@ class TestE2EServer(E2ETestBase):
 
         add_returncode, _, _ = self.run_cli_command(
             [
-                "--app-dir",
+                "--data-dir",
                 self.temp_dir,
-                "--flow-dir",
+                "--flows-dir",
                 self.temp_flow_dir,
                 "wf",
                 "add",
@@ -447,7 +447,7 @@ class TestE2EServer(E2ETestBase):
         if add_returncode == 0:
             push_returncode, _, _ = self.run_cli_command(
                 [
-                    "--app-dir",
+                    "--data-dir",
                     self.temp_dir,
                     "--server-url",
                     "http://localhost:5678",
@@ -474,7 +474,7 @@ class TestE2EServer(E2ETestBase):
 
         for cmd in commands:
             # Run with --server-url to avoid missing URL errors
-            full_cmd = ["--app-dir", self.temp_dir, "--server-url", "https://localhost:5678"] + cmd
+            full_cmd = ["--data-dir", self.temp_dir, "--server-url", "https://localhost:5678"] + cmd
             returncode, stdout, stderr = self.run_cli_command(full_cmd)
 
             # Should not error on unknown option (returns 0 or 1, not 2)

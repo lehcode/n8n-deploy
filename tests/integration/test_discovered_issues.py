@@ -205,13 +205,13 @@ class TestDiscoveredDisplayIssues:
     @pytest.mark.skip(reason="TODO: Implement test for environment variable display")
     def test_list_command_shows_environment_info(self, test_config: AppConfig) -> None:
         """
-        Test feature: Add N8N_DEPLOY_APP_DIR and N8N_DEPLOY_FLOW_DIR to list command
+        Test feature: Add N8N_DEPLOY_DATA and N8N_DEPLOY_FLOWS to list command
 
         Feature: Show environment variable configuration in list command
         Implementation: Display both actual paths and env var values
 
         TODO: Implement test that:
-        1. Sets environment variables N8N_DEPLOY_APP_DIR and N8N_DEPLOY_FLOW_DIR
+        1. Sets environment variables N8N_DEPLOY_DATA and N8N_DEPLOY_FLOWS
         2. Runs list command
         3. Verifies output includes directory paths
         4. Confirms environment variable values displayed
