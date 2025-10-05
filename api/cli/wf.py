@@ -25,6 +25,7 @@ from .app import (
     HELP_FORMAT,
     HELP_NO_EMOJI,
     HELP_SERVER_URL,
+    CustomCommand,
     CustomGroup,
 )
 from .output import (
@@ -47,7 +48,7 @@ def wf() -> None:
 
 
 # Basic workflow operations
-@wf.command()
+@wf.command(cls=CustomCommand)
 @click.argument("name")
 @click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
 @click.option("--flows-dir", type=click.Path(), help=HELP_FLOW_DIR)
@@ -108,7 +109,7 @@ def add(
         cli_error(f"Failed to add workflow: {e}", no_emoji)
 
 
-@wf.command("list")
+@wf.command("list", cls=CustomCommand)
 @click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
 @click.option("--flows-dir", type=click.Path(), help=HELP_FLOW_DIR)
 @click.option(
@@ -155,7 +156,7 @@ def list(
         raise click.Abort()
 
 
-@wf.command()
+@wf.command(cls=CustomCommand)
 @click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
 @click.option("--flows-dir", type=click.Path(), help=HELP_FLOW_DIR)
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
@@ -220,7 +221,7 @@ def remove(
         raise click.Abort()
 
 
-@wf.command()
+@wf.command(cls=CustomCommand)
 @click.argument("query")
 @click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
 @click.option("--flows-dir", type=click.Path(), help=HELP_FLOW_DIR)
@@ -267,7 +268,7 @@ def search(
         raise click.Abort()
 
 
-@wf.command()
+@wf.command(cls=CustomCommand)
 @click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
 @click.option("--flows-dir", type=click.Path(), help=HELP_FLOW_DIR)
 @click.option(
@@ -338,7 +339,7 @@ def stats(
 
 
 # Server operations
-@wf.command()
+@wf.command(cls=CustomCommand)
 @click.option("--remote", help="n8n server (name or URL) - uses linked API key if name provided")
 @click.option("--skip-ssl-verify", is_flag=True, help="Skip SSL certificate verification for self-signed certificates")
 @click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
@@ -394,7 +395,7 @@ def pull(
         raise click.Abort()
 
 
-@wf.command()
+@wf.command(cls=CustomCommand)
 @click.option("--remote", help="n8n server (name or URL) - uses linked API key if name provided")
 @click.option("--skip-ssl-verify", is_flag=True, help="Skip SSL certificate verification for self-signed certificates")
 @click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
@@ -450,7 +451,7 @@ def push(
         raise click.Abort()
 
 
-@wf.command("server")
+@wf.command("server", cls=CustomCommand)
 @click.option("--remote", help=HELP_SERVER_URL)
 @click.option("--skip-ssl-verify", is_flag=True, help="Skip SSL certificate verification for self-signed certificates")
 @click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
@@ -530,7 +531,7 @@ def get_backup_dir(backup_dir_param: Optional[str]) -> Path:
     return Path.cwd()
 
 
-@wf.command("createbackup")
+@wf.command("createbackup", cls=CustomCommand)
 @click.option("--backup-dir", type=click.Path(), help="Backup directory (overrides N8N_BACKUP_DIR, default: cwd)")
 @click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
 @click.option("--flows-dir", type=click.Path(), help=HELP_FLOW_DIR)
@@ -582,7 +583,7 @@ def backup(
         raise click.Abort()
 
 
-@wf.command()
+@wf.command(cls=CustomCommand)
 @click.argument("backup_file")
 @click.option("--backup-dir", type=click.Path(), help="Backup directory (overrides N8N_BACKUP_DIR, default: cwd)")
 @click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
@@ -637,7 +638,7 @@ def restore(
         raise click.Abort()
 
 
-@wf.command("backups")
+@wf.command("backups", cls=CustomCommand)
 @click.option("--backup-dir", type=click.Path(), help="Backup directory (overrides N8N_BACKUP_DIR, default: cwd)")
 @click.option(
     "--format",
@@ -692,7 +693,7 @@ def list_backups(
         raise click.Abort()
 
 
-@wf.command("verify")
+@wf.command("verify", cls=CustomCommand)
 @click.argument("backup_file")
 @click.option("--backup-dir", type=click.Path(), help="Backup directory (overrides N8N_BACKUP_DIR, default: cwd)")
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)

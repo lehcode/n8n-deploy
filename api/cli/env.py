@@ -12,6 +12,8 @@ import click
 from rich.console import Console
 from rich.table import Table
 
+from .app import CustomCommand
+
 console = Console()
 
 # Check if dotenv is available and development mode is enabled
@@ -25,7 +27,7 @@ if os.getenv("ENVIRONMENT", "").lower() == "development":
         pass
 
 
-@click.command()
+@click.command(cls=CustomCommand)
 @click.option("--data-dir", type=click.Path(), help="Application directory path")
 @click.option("--flows-dir", type=click.Path(), help="Flow directory path")
 @click.option("--remote", type=str, help="n8n server URL")

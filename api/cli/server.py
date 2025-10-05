@@ -16,7 +16,7 @@ from ..api_keys import KeyApi
 from ..config import AppConfig, get_config
 from ..db.core import DBApi
 from ..db.servers import ServerCrud
-from .app import CustomGroup
+from .app import CustomGroup, CustomCommand
 from .output import format_server_table
 
 console = Console()
@@ -28,7 +28,7 @@ def server_group() -> None:
     pass
 
 
-@server_group.command(name="create")
+@server_group.command(name="create", cls=CustomCommand)
 @click.argument("name")
 @click.argument("url")
 @click.option("--description", "-d", help="Server description")
@@ -69,7 +69,7 @@ def create_server(
         raise click.Abort()
 
 
-@server_group.command(name="list")
+@server_group.command(name="list", cls=CustomCommand)
 @click.option("--active", is_flag=True, help="Show only active servers")
 @click.option("--format", "fmt", type=click.Choice(["table", "json"]), default="table", help="Output format")
 @click.option("--data-dir", help="Application directory (overrides N8N_DEPLOY_DATA)")
@@ -172,7 +172,7 @@ def _delete_linked_api_keys(linked_keys: List[Dict[str, Any]], config: "AppConfi
             console.print(f"🗑️  Deleted API key: {key['name']}")
 
 
-@server_group.command(name="remove")
+@server_group.command(name="remove", cls=CustomCommand)
 @click.argument("server_name")
 @click.option("--confirm", is_flag=True, help="Skip confirmation prompt")
 @click.option(
@@ -248,7 +248,7 @@ def remove_server(
         raise click.Abort()
 
 
-@server_group.command(name="keys")
+@server_group.command(name="keys", cls=CustomCommand)
 @click.argument("server_name")
 @click.option("--format", "fmt", type=click.Choice(["table", "json"]), default="table", help="Output format")
 @click.option("--data-dir", help="Application directory (overrides N8N_DEPLOY_DATA)")
