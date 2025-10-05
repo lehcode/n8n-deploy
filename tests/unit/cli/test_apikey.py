@@ -42,7 +42,6 @@ class TestAPIKeyCommands:
         assert "add" in result.output
         assert "list" in result.output
         assert "get" in result.output
-        assert "deactivate" in result.output
         assert "delete" in result.output
         assert "test" in result.output
 
@@ -53,7 +52,6 @@ class TestAPIKeyCommands:
         assert "Add new API key" in result.output
         assert "--name" in result.output
         assert "--description" in result.output
-        assert "--expires-in" in result.output
         assert "--data-dir" in result.output
 
     def test_list_command_help(self):

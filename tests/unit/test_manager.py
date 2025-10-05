@@ -139,12 +139,18 @@ class TestN8nApiIntegration:
 
     def test_get_n8n_credentials_with_stored_api_key(self, test_manager: WorkflowApi) -> None:
         """Test getting credentials from stored API key"""
-        # Mock API key manager to return a key
-        with patch.object(test_manager.key_api, "get_api_key", return_value="test_api_key_12345"):
+        # Mock API key manager to return a key and set server URL via environment
+        # N8N_API_URL is used by config.n8n_api_url property
+        with (
+            patch.dict("os.environ", {"N8N_API_URL": "http://localhost:5678"}),
+            patch.object(test_manager.key_api, "list_api_keys", return_value=[{"name": "test_key"}]),
+            patch.object(test_manager.key_api, "get_api_key", return_value="test_api_key_12345"),
+        ):
             credentials = test_manager.n8n_api._get_n8n_credentials()
 
             assert credentials is not None
             assert credentials["api_key"] == "test_api_key_12345"
+            assert credentials["server_url"] == "http://localhost:5678"
             assert credentials["headers"]["X-N8N-API-KEY"] == "test_api_key_12345"
             assert credentials["headers"]["Content-Type"] == "application/json"
 
@@ -154,13 +160,14 @@ class TestN8nApiIntegration:
         with (
             patch.object(test_manager.key_api, "get_api_key", return_value=None),
             patch.object(test_manager.key_api, "list_api_keys", return_value=[]),
-            patch.dict("os.environ", {"N8N_DEPLOY_SERVER_KEY": "env_api_key_54321"}),
+            patch.dict("os.environ", {"N8N_API_URL": "http://localhost:5678", "N8N_DEPLOY_SERVER_KEY": "env_api_key_54321"}),
         ):
 
             credentials = test_manager.n8n_api._get_n8n_credentials()
 
             assert credentials is not None
             assert credentials["api_key"] == "env_api_key_54321"
+            assert credentials["server_url"] == "http://localhost:5678"
             assert credentials["headers"]["X-N8N-API-KEY"] == "env_api_key_54321"
 
     def test_get_n8n_credentials_no_key_available(self, test_manager: WorkflowApi) -> None:
