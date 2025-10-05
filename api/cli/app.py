@@ -18,7 +18,7 @@ PROG_NAME = "n8n-deploy|./n8n-deploy"
 # Common CLI option help texts
 HELP_APP_DIR = "Application directory for database and backups"
 HELP_FLOW_DIR = "Plain directory where workflow JSON files are located"
-HELP_SERVER_URL = "n8n server URL (overrides N8N_DEPLOY_SERVER_URL)"
+HELP_SERVER_URL = "n8n server URL (overrides N8N_SERVER_URL)"
 HELP_NO_EMOJI = "Disable emoji output for automation/scripting"
 HELP_FORMAT = "Output format"
 
@@ -123,7 +123,7 @@ def cli() -> None:
 
     \b
     🌐 Server Configuration:
-      n8n Server URL: --server-url CLI option > N8N_DEPLOY_SERVER_URL env
+      n8n Server URL: --remote CLI option > N8N_SERVER_URL env
       API Keys: Stored in database, managed via 'apikey' commands
     """
     pass
@@ -135,12 +135,14 @@ def register_commands() -> None:
     from .apikey import apikey
     from .db import db
     from .env import env
+    from .server import server_group
     from .wf import wf
 
     # Register command groups
     cli.add_command(wf)
     cli.add_command(db)
     cli.add_command(apikey)
+    cli.add_command(server_group)
     cli.add_command(env)
 
 

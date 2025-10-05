@@ -388,3 +388,44 @@ def output_json_or_table(
             table_func(data, no_emoji, query)
         else:
             table_func(data, no_emoji)
+
+
+def format_server_table(servers: List[Dict[str, Any]], no_emoji: bool = False) -> None:
+    """
+    Format and display servers in a table
+
+    Args:
+        servers: List of server dicts
+        no_emoji: If True, disable emoji in output
+    """
+    table = Table(title="n8n Servers" if not no_emoji else None)
+    table.add_column("Name", style="cyan", no_wrap=True)
+    table.add_column("URL", style="magenta")
+    table.add_column("Description", style="white")
+    table.add_column("Status", justify="center")
+    table.add_column("Last Used", style="yellow")
+    table.add_column("Created", style="green")
+
+    for server in servers:
+        status = server.get("is_active", True)
+        if no_emoji:
+            status_str = "Active" if status else "Inactive"
+        else:
+            status_str = "[green]✓[/green]" if status else "[red]✗[/red]"
+
+        last_used = server.get("last_used")
+        if last_used:
+            last_used_str = str(last_used)[:16] if isinstance(last_used, str) else str(last_used)[:16]
+        else:
+            last_used_str = "Never"
+
+        table.add_row(
+            server["name"],
+            server["url"],
+            server.get("description") or "",
+            status_str,
+            last_used_str,
+            str(server.get("created_at", ""))[:16],
+        )
+
+    console.print(table)
