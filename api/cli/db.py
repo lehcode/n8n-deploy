@@ -137,7 +137,7 @@ def init(data_dir: Optional[str], format: str, no_emoji: bool, import_db: bool) 
 
             # Check if database is actually initialized
             db_api_check = DBApi(config=config)
-            schema_version = db_api_check.schema_manager.get_schema_version()
+            schema_version = db_api_check.schema_api.get_schema_version()
 
             if schema_version > 0:
                 # Database is initialized, use it
@@ -200,7 +200,7 @@ def init(data_dir: Optional[str], format: str, no_emoji: bool, import_db: bool) 
             if choice == 1:
                 # Check if database is actually initialized
                 db_api = DBApi(config=config)
-                schema_version = db_api.schema_manager.get_schema_version()
+                schema_version = db_api.schema_api.get_schema_version()
 
                 if schema_version > 0:
                     # Database is initialized, use it
@@ -231,7 +231,7 @@ def init(data_dir: Optional[str], format: str, no_emoji: bool, import_db: bool) 
 
     # Initialize database
     db_api = DBApi(config=config)
-    db_api.schema_manager.initialize_database()
+    db_api.schema_api.initialize_database()
 
     # Check flow directory configuration
     import os
