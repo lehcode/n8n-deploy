@@ -532,7 +532,7 @@ def test_env_json_with_unicode_path():
 @given(app_dir=paths, flow_dir=paths, format_choice=formats)
 def test_env_json_always_valid(app_dir, flow_dir, format_choice):
     """Property: env --format json always produces valid JSON"""
-    result = run_cli(["env", "--data-dir", app_dir, "--flows-dir", flow_dir, "--format", format_choice])
+    result = run_cli(["env", "--data-dir", app_dir, "--flow-dir", flow_dir, "--format", format_choice])
     if format_choice == "json" and result.returncode == 0:
         assert valid_json(result.stdout)
 ```
