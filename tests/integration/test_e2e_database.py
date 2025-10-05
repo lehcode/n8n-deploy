@@ -300,7 +300,7 @@ class TestE2EDatabase(E2ETestBase):
 
         # Try operations that might cause errors or succeed
         error_prone_operations = [
-            ["wf", "search", "nonexistent"],  # Search for non-existent workflow (returns 0 with no results)
+            ["wf", "search", "nonexistent"],  # Search for non-existent wf (returns 0 with no results)
             ["db", "backup"],  # Should work
             ["wf", "list"],  # Should work
         ]
@@ -431,7 +431,7 @@ class TestE2EDatabase(E2ETestBase):
         assert backup_path.exists()
 
     def test_cli_backup_workflows_operation(self) -> None:
-        """Test CLI workflow backup creation"""
+        """Test CLI wf backup creation"""
         # Initialize database first
         self.run_cli_command(["--data-dir", self.temp_dir, "db", "init"])
 
@@ -439,16 +439,16 @@ class TestE2EDatabase(E2ETestBase):
         backup_dir = Path(self.temp_dir) / "test_backups"
         backup_dir.mkdir(exist_ok=True)
 
-        # Test workflow backup command
+        # Test wf backup command
         returncode, stdout, stderr = self.run_cli_command(
             ["--data-dir", self.temp_dir, "wf", "createbackup", "--backup-dir", str(backup_dir)]
         )
 
-        # Backup may fail due to missing workflow files, but should handle gracefully
+        # Backup may fail due to missing wf files, but should handle gracefully
         assert returncode in [0, 1], f"Backup command crashed\nSTDERR: {stderr}\nSTDOUT: {stdout}"
 
     def test_cli_list_backups_operation(self) -> None:
-        """Test CLI listing workflow backups"""
+        """Test CLI listing wf backups"""
         # Initialize database first
         self.run_cli_command(["--data-dir", self.temp_dir, "db", "init"])
 
@@ -466,11 +466,11 @@ class TestE2EDatabase(E2ETestBase):
     # (Consolidated from test_workflow_backup_integration.py)
 
     def test_database_workflow_integration_comprehensive(self) -> None:
-        """Test comprehensive database integration with workflow operations"""
+        """Test comprehensive database integration with wf operations"""
         # Initialize database
         self.run_cli_command(["--data-dir", self.temp_dir, "db", "init"])
 
-        # Create test workflow files
+        # Create test wf files
         workflow_data1 = {
             "name": "Integration Test Workflow 1",
             "nodes": [{"id": "node1", "type": "test"}],
@@ -518,7 +518,7 @@ class TestE2EDatabase(E2ETestBase):
 
         # Verify workflows were added successfully
         if add_result1[0] == 0 and add_result2[0] == 0:
-            # Test workflow listing
+            # Test wf listing
             list_result = self.run_cli_command(["--data-dir", self.temp_dir, "show"])
             assert list_result[0] == 0
 
@@ -536,9 +536,9 @@ class TestE2EDatabase(E2ETestBase):
                         with tarfile.open(backup_files[0], "r:gz") as tar:
                             members = tar.getnames()
                             assert len(members) > 0
-                            # Should contain database and workflow files
+                            # Should contain database and wf files
                             json_files = [m for m in members if m.endswith(".json")]
-                            assert len(json_files) >= 2  # At least 2 workflow files
+                            assert len(json_files) >= 2  # At least 2 wf files
                     except Exception as e:
                         pytest.fail(f"Backup file integrity check failed: {e}")
 
@@ -547,7 +547,7 @@ class TestE2EDatabase(E2ETestBase):
         # Initialize database
         self.run_cli_command(["--data-dir", self.temp_dir, "db", "init"])
 
-        # Create workflow file
+        # Create wf file
         workflow_data = {
             "name": "Consistency Test Workflow",
             "nodes": [],
@@ -558,7 +558,7 @@ class TestE2EDatabase(E2ETestBase):
         workflow_file = Path(self.temp_flow_dir) / "consistency_test.json"
         workflow_file.write_text(json.dumps(workflow_data, indent=2))
 
-        # Add workflow
+        # Add wf
         env = {"N8N_DEPLOY_FLOWS": self.temp_flow_dir}
         add_result = self.run_cli_command(
             [
@@ -573,7 +573,7 @@ class TestE2EDatabase(E2ETestBase):
         )
 
         if add_result[0] == 0:
-            # Verify workflow in database via list command
+            # Verify wf in database via list command
             list_result = self.run_cli_command(["--data-dir", self.temp_dir, "show"])
             assert list_result[0] == 0
 
@@ -607,32 +607,32 @@ class TestE2EDatabase(E2ETestBase):
         assert db.db_path == expected_path
         assert db.db_path.exists()
 
-        # Test workflow CRUD operations
+        # Test wf CRUD operations
         workflow_data = {
             "id": "test_unit_workflow_001",
             "name": "Unit Test Workflow",
-            "description": "Test workflow for unit testing",
+            "description": "Test wf for unit testing",
             "file_path": "unit_test.json",
             "tags": ["test", "unit"],
         }
 
-        workflow = Workflow(**workflow_data)
+        wf = Workflow(**workflow_data)
 
-        # Test create workflow
-        result = db.add_workflow(workflow)
-        assert result == workflow.id
+        # Test create wf
+        result = db.add_workflow(wf)
+        assert result == wf.id
 
-        # Test get workflow
-        retrieved = db.get_workflow(workflow.id)
+        # Test get wf
+        retrieved = db.get_workflow(wf.id)
         assert retrieved is not None
-        assert retrieved.id == workflow.id
-        assert retrieved.name == workflow.name
+        assert retrieved.id == wf.id
+        assert retrieved.name == wf.name
 
         # Test list workflows
         workflows = db.list_workflows()
         assert len(workflows) >= 1
         workflow_ids = [wf.id for wf in workflows]
-        assert workflow.id in workflow_ids
+        assert wf.id in workflow_ids
 
         # Test connection management
         with db.get_connection() as conn:
@@ -644,19 +644,19 @@ class TestE2EDatabase(E2ETestBase):
             result = cursor.fetchone()
             assert result[0] == 1
 
-        # Test delete workflow
-        delete_result = db.delete_workflow(workflow.id)
+        # Test delete wf
+        delete_result = db.delete_workflow(wf.id)
         assert delete_result is True
 
         # Verify deletion
-        deleted_workflow = db.get_workflow(workflow.id)
+        deleted_workflow = db.get_workflow(wf.id)
         assert deleted_workflow is None
 
         # Test operations on empty database
         empty_workflows = db.list_workflows()
         assert len(empty_workflows) == 0
 
-        # Test non-existent workflow operations
+        # Test non-existent wf operations
         nonexistent = db.get_workflow("nonexistent_id")
         assert nonexistent is None
 
@@ -678,11 +678,11 @@ class TestE2EDatabase(E2ETestBase):
         # Initialize the database schema
         db.schema_api.initialize_database()
 
-        # Create first workflow
+        # Create first wf
         workflow_data = {
             "id": "duplicate_test_001",
             "name": "Duplicate Test Workflow",
-            "description": "Test workflow for duplicate testing",
+            "description": "Test wf for duplicate testing",
             "file_path": "duplicate_test.json",
             "tags": ["test"],
         }
@@ -697,7 +697,7 @@ class TestE2EDatabase(E2ETestBase):
         # Second creation with same ID should fail
         try:
             db.add_workflow(workflow2)
-            assert False, "Expected IntegrityError for duplicate workflow ID"
+            assert False, "Expected IntegrityError for duplicate wf ID"
         except sqlite3.IntegrityError:
             # Expected behavior
             pass

@@ -16,19 +16,19 @@ class TestAssertions:
     """Standardized assertion patterns for n8n_deploy_ tests"""
 
     @staticmethod
-    def assert_workflow_valid(workflow: Workflow) -> None:
-        """Assert that a workflow object is valid"""
-        assert_that(workflow).is_not_none()
-        assert_that(workflow.id).is_not_empty()
-        assert_that(workflow.name).is_not_empty()
-        assert_that(workflow.file_path).is_not_empty()
-        assert_that(workflow.tags).is_instance_of(list)
-        assert_that(workflow.created_at).is_instance_of(datetime)
-        assert_that(workflow.updated_at).is_instance_of(datetime)
+    def assert_workflow_valid(wf: Workflow) -> None:
+        """Assert that a wf object is valid"""
+        assert_that(wf).is_not_none()
+        assert_that(wf.id).is_not_empty()
+        assert_that(wf.name).is_not_empty()
+        assert_that(wf.file_path).is_not_empty()
+        assert_that(wf.tags).is_instance_of(list)
+        assert_that(wf.created_at).is_instance_of(datetime)
+        assert_that(wf.updated_at).is_instance_of(datetime)
 
     @staticmethod
     def assert_workflow_equals(actual: Workflow, expected: Dict[str, Any]) -> None:
-        """Assert that a workflow matches expected values"""
+        """Assert that a wf matches expected values"""
         if "id" in expected:
             assert_that(actual.id).is_equal_to(expected["id"])
         if "name" in expected:
@@ -71,13 +71,13 @@ class TestDataFactory:
         file_path: str = "workflows/test.json",
         **kwargs: Any,
     ) -> Workflow:
-        """Create a test workflow with sensible defaults"""
+        """Create a test wf with sensible defaults"""
         defaults = {
             "id": id,
             "name": name,
             "file_path": file_path,
             "tags": ["test"],
-            "description": "Test workflow for unit testing",
+            "description": "Test wf for unit testing",
         }
         defaults.update(kwargs)
         return Workflow(**defaults)
@@ -88,7 +88,7 @@ class TestDataFactory:
         version: str = "1.0.0",
         **kwargs: Any,
     ) -> WorkflowVersion:
-        """Create a test workflow version with sensible defaults"""
+        """Create a test wf version with sensible defaults"""
         defaults = {
             "workflow_id": workflow_id,
             "version": version,
@@ -139,25 +139,25 @@ class UtilityPatterns:
 # Pytest fixtures for common test objects
 @pytest.fixture
 def sample_workflow() -> Workflow:
-    """Fixture providing a standard test workflow"""
+    """Fixture providing a standard test wf"""
     return TestDataFactory.add_workflow()
 
 
 @pytest.fixture
 def sample_workflow_version() -> WorkflowVersion:
-    """Fixture providing a standard test workflow version"""
+    """Fixture providing a standard test wf version"""
     return TestDataFactory.create_workflow_version()
 
 
 # @pytest.fixture
 # def sample_workflow_dependency():
-#     """Fixture providing a standard test workflow dependency"""
+#     """Fixture providing a standard test wf dependency"""
 #     return TestDataFactory.create_workflow_dependency()
 
 
 @pytest.fixture
 def sample_workflow_configuration() -> WorkflowConfiguration:
-    """Fixture providing a standard test workflow configuration"""
+    """Fixture providing a standard test wf configuration"""
     return TestDataFactory.create_workflow_configuration()
 
 
