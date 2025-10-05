@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Data models for workflow management
+Data models for wf management
 """
 
 from datetime import datetime
@@ -17,12 +17,12 @@ class WorkflowStatus(str, Enum):
 
 
 class Workflow(BaseModel):
-    """Core workflow model"""
+    """Core wf model"""
 
-    id: str = Field(..., description="Unique workflow identifier")
-    name: str = Field(..., description="Human-readable workflow name")
-    file: Optional[str] = Field(None, description="Filename of the workflow")
-    file_folder: Optional[str] = Field(None, description="Directory where workflow JSON file is located")
+    id: str = Field(..., description="Unique wf identifier")
+    name: str = Field(..., description="Human-readable wf name")
+    file: Optional[str] = Field(None, description="Filename of the wf")
+    file_folder: Optional[str] = Field(None, description="Directory where wf JSON file is located")
     status: WorkflowStatus = Field(default=WorkflowStatus.ACTIVE, description="Workflow status")
     created_at: datetime = Field(default_factory=datetime.utcnow, description="Creation timestamp")
     updated_at: datetime = Field(default_factory=datetime.utcnow, description="Last update timestamp")

@@ -32,7 +32,7 @@ class WorkflowBackup:
         """Backup all workflows that can be validated (convenience method for loops)
 
         Returns:
-            Summary dict with backup results for each workflow
+            Summary dict with backup results for each wf
         """
         from .crud import WorkflowCRUD
 
@@ -47,27 +47,27 @@ class WorkflowBackup:
             "backup_dir": backup_dir,
         }
 
-        for workflow in backupable_workflows:
+        for wf in backupable_workflows:
             try:
-                backup_result = self.create_workflow_backup(workflow["id"], backup_dir)
+                backup_result = self.create_workflow_backup(wf["id"], backup_dir)
                 results["successful_backups"].append(
                     {
-                        "workflow_id": workflow["id"],
-                        "workflow_name": workflow["name"],
+                        "workflow_id": wf["id"],
+                        "workflow_name": wf["name"],
                         "backup_id": backup_result["backup_id"],
                         "filename": backup_result["filename"],
                     }
                 )
-                print(f"✅ Backed up: {workflow['name']} -> {backup_result['filename']}")
+                print(f"✅ Backed up: {wf['name']} -> {backup_result['filename']}")
             except Exception as e:
                 results["failed_backups"].append(
                     {
-                        "workflow_id": workflow["id"],
-                        "workflow_name": workflow["name"],
+                        "workflow_id": wf["id"],
+                        "workflow_name": wf["name"],
                         "error": str(e),
                     }
                 )
-                print(f"❌ Failed to backup {workflow['name']}: {e}")
+                print(f"❌ Failed to backup {wf['name']}: {e}")
 
         success_count = len(results["successful_backups"])
         total_count = results["total_workflows"]
@@ -76,22 +76,22 @@ class WorkflowBackup:
         return results
 
     def create_workflow_backup(self, workflow_id: str, backup_dir: Optional[Path] = None) -> Dict[str, Any]:
-        """Create a tar.gz backup of a single specified workflow if it exists and can be validated"""
+        """Create a tar.gz backup of a single specified wf if it exists and can be validated"""
         if backup_dir is None:
             if not self.config:
                 raise RuntimeError("Configuration is required for backup operations")
             backup_dir = self.config.backups_path
 
-        workflow = self.db.get_workflow(workflow_id)
-        if not workflow:
+        wf = self.db.get_workflow(workflow_id)
+        if not wf:
             raise ValueError(f"Workflow '{workflow_id}' not found in database")
 
         # Construct file path: {file_folder}/{workflow_id}.json
-        if workflow.file_folder:
-            workflow_file = Path(workflow.file_folder) / f"{workflow.id}.json"
+        if wf.file_folder:
+            workflow_file = Path(wf.file_folder) / f"{wf.id}.json"
         else:
             # Fallback to base_path if no file_folder stored
-            workflow_file = self.base_path / f"{workflow.id}.json"
+            workflow_file = self.base_path / f"{wf.id}.json"
         if not workflow_file.exists():
             raise FileNotFoundError(f"Workflow file not found: {workflow_file}")
 
@@ -112,7 +112,7 @@ class WorkflowBackup:
         temp_dir.mkdir(exist_ok=True)
 
         try:
-            dest_file = temp_dir / f"{workflow.id}.json"
+            dest_file = temp_dir / f"{wf.id}.json"
             shutil.copy2(workflow_file, dest_file)
 
             with open(dest_file, "rb") as f:
@@ -120,7 +120,7 @@ class WorkflowBackup:
 
             workflow_data = {
                 "original_path": str(workflow_file),
-                "name": workflow.name,
+                "name": wf.name,
                 "sha256": file_hash,
             }
 
@@ -130,7 +130,7 @@ class WorkflowBackup:
                 "filename": backup_filename,
                 "workflow_id": workflow_id,
                 "workflow_count": 1,
-                "workflow": workflow_data,
+                "wf": workflow_data,
                 "api_validated": api_validation_passed,
                 "n8n_deploy_version": "2.0.0",
             }
@@ -149,7 +149,7 @@ class WorkflowBackup:
             self.db.create_backup_record(metadata)
 
             print(f"🎭 Workflow backup created: {backup_path}")
-            print(f"   📦 1 workflow archived: {workflow.name} ({workflow_id})")
+            print(f"   📦 1 wf archived: {wf.name} ({workflow_id})")
             print(f"   🔍 Checksum: {backup_hash[:16]}...")
 
             return metadata
@@ -190,14 +190,14 @@ class WorkflowBackup:
                 print("❌ No workflows found in backup")
                 return False
 
-            print(f"🔄 Restoring {workflow_count} workflow(s) from backup...")
+            print(f"🔄 Restoring {workflow_count} wf(s) from backup...")
 
-            # Handle single workflow backup
-            if "workflow" in metadata:
+            # Handle single wf backup
+            if "wf" in metadata:
                 return self._restore_single_workflow(temp_dir, metadata, force)
             else:
                 # Handle multiple workflows backup (if we ever implement that)
-                print("❌ Multiple workflow restore not yet implemented")
+                print("❌ Multiple wf restore not yet implemented")
                 return False
 
         except Exception as e:
@@ -208,11 +208,11 @@ class WorkflowBackup:
                 shutil.rmtree(temp_dir)
 
     def _restore_single_workflow(self, temp_dir: Path, metadata: Dict[str, Any], force: bool) -> bool:
-        """Restore a single workflow from backup"""
-        workflow_data = metadata["workflow"]
+        """Restore a single wf from backup"""
+        workflow_data = metadata["wf"]
         workflow_id = metadata["workflow_id"]
 
-        # Check if workflow already exists
+        # Check if wf already exists
         existing_workflow = self.db.get_workflow(workflow_id)
         workflow_file_path = self.base_path / workflow_data["original_path"]
 
@@ -224,7 +224,7 @@ class WorkflowBackup:
             print(f"⚠️  Workflow file {workflow_file_path} already exists. Use --force to overwrite.")
             return False
 
-        # Restore workflow file
+        # Restore wf file
         backup_workflow_file = temp_dir / f"{workflow_id}.json"
         if not backup_workflow_file.exists():
             print(f"❌ Workflow file {workflow_id}.json not found in backup")
@@ -245,7 +245,7 @@ class WorkflowBackup:
         shutil.copy2(backup_workflow_file, workflow_file_path)
 
         # Update database
-        print(f"✅ Restored workflow: {workflow_data['name']} -> {workflow_file_path}")
+        print(f"✅ Restored wf: {workflow_data['name']} -> {workflow_file_path}")
         return True
 
     def verify_backup_integrity(self, backup_file: Path) -> bool:
@@ -300,5 +300,5 @@ class WorkflowBackup:
             return False
 
     def list_backups(self) -> List[Dict[str, Any]]:
-        """List all available workflow backups"""
+        """List all available wf backups"""
         return self.db.list_backups()

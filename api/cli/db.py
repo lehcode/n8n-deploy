@@ -100,7 +100,7 @@ def check_database_exists(db_path: Path, format: Optional[str] = None, no_emoji:
 def db() -> None:
     """🎭 Database management commands
 
-    Manage the SQLite database that stores workflow metadata.
+    Manage the SQLite database that stores wf metadata.
     Use 'n8n-deploy db COMMAND --help' for specific command options.
     """
     pass
@@ -122,7 +122,7 @@ def init(data_dir: Optional[str], format: str, no_emoji: bool, import_db: bool) 
     # JSON format implies no emoji
     if format == "json":
         no_emoji = True
-    # Database init only needs base folder, not workflow directories
+    # Database init only needs base folder, not wf directories
     from ..config import AppConfig
 
     base_path = Path(data_dir) if data_dir else Path.cwd()
@@ -260,12 +260,12 @@ def init(data_dir: Optional[str], format: str, no_emoji: bool, import_db: bool) 
                 console.print()
                 console.print("NOTE: Workflow directory not configured.")
                 console.print("Set N8N_DEPLOY_FLOWS environment variable or use --flows-dir option")
-                console.print("for workflow operations (add, push, pull, etc.)")
+                console.print("for wf operations (add, push, pull, etc.)")
             else:
                 console.print()
                 console.print("⚠️ NOTE: Workflow directory not configured.")
                 console.print("Set N8N_DEPLOY_FLOWS environment variable or use --flows-dir option")
-                console.print("for workflow operations (add, push, pull, etc.)")
+                console.print("for wf operations (add, push, pull, etc.)")
 
 
 @db.command(cls=CustomCommand)

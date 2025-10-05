@@ -17,13 +17,13 @@ print_section "Test Category 4: Workflow Operations"
 
     # Check database exists (must be initialized with 'db init' first)
     if ! check_database_exists "$app_dir" "Workflow"; then
-        ((SKIPPED_TESTS+=10))  # Skip all workflow tests
+        ((SKIPPED_TESTS+=10))  # Skip all wf tests
         ((TOTAL_TESTS+=10))
         return
     fi
 
-    # Add workflow
-    run_test "Add workflow" "$CLI_COMMAND wf add workflows/${SAMPLE_WF_ID}.json '$SAMPLE_WF_NAME' --data-dir $app_dir --flows-dir $flow_dir" 0 "Add workflow to database"
+    # Add wf
+    run_test "Add wf" "$CLI_COMMAND wf add workflows/${SAMPLE_WF_ID}.json '$SAMPLE_WF_NAME' --data-dir $app_dir --flows-dir $flow_dir" 0 "Add wf to database"
 
     # List workflows
     run_test "List workflows table" "$CLI_COMMAND wf list --data-dir $app_dir --flows-dir $flow_dir --no-emoji" 0 "List workflows in table format"
@@ -33,23 +33,23 @@ print_section "Test Category 4: Workflow Operations"
     # List backupable workflows only
     run_test "List backupable only" "$CLI_COMMAND wf list --only --data-dir $app_dir --flows-dir $flow_dir --no-emoji" 0 "List only backupable workflows"
 
-    # Test add workflow with JSON format output
-    run_test "Add workflow JSON output" "$CLI_COMMAND wf add workflows/${SAMPLE_WF_ID}.json 'Second Test Workflow' --data-dir $app_dir --flows-dir $flow_dir --format json" 0 "Add workflow with JSON output"
+    # Test add wf with JSON format output
+    run_test "Add wf JSON output" "$CLI_COMMAND wf add workflows/${SAMPLE_WF_ID}.json 'Second Test Workflow' --data-dir $app_dir --flows-dir $flow_dir --format json" 0 "Add wf with JSON output"
 
     # Search workflows
     run_test "Search workflows by name" "$CLI_COMMAND wf search 'test' --data-dir $app_dir --flows-dir $flow_dir --no-emoji" 0 "Search workflows by name"
     validate_output "Search results" "$CLI_COMMAND wf search 'test' --data-dir $app_dir --flows-dir $flow_dir --no-emoji" "$SAMPLE_WF_NAME"
-    run_test "Search workflows by ID" "$CLI_COMMAND wf search '$SAMPLE_WF_ID' --data-dir $app_dir --flows-dir $flow_dir --no-emoji" 0 "Search workflows by workflow ID"
+    run_test "Search workflows by ID" "$CLI_COMMAND wf search '$SAMPLE_WF_ID' --data-dir $app_dir --flows-dir $flow_dir --no-emoji" 0 "Search workflows by wf ID"
     run_test "Search workflows JSON" "$CLI_COMMAND wf search 'test' --data-dir $app_dir --flows-dir $flow_dir --format json" 0 "Search workflows with JSON output"
 
-    # Get workflow stats
-    run_test "Workflow stats table" "$CLI_COMMAND wf stats $SAMPLE_WF_ID --data-dir $app_dir --flows-dir $flow_dir" 0 "Get workflow statistics"
-    run_test "Workflow stats JSON" "$CLI_COMMAND wf stats $SAMPLE_WF_ID --data-dir $app_dir --flows-dir $flow_dir --format json" 0 "Get workflow statistics in JSON"
+    # Get wf stats
+    run_test "Workflow stats table" "$CLI_COMMAND wf stats $SAMPLE_WF_ID --data-dir $app_dir --flows-dir $flow_dir" 0 "Get wf statistics"
+    run_test "Workflow stats JSON" "$CLI_COMMAND wf stats $SAMPLE_WF_ID --data-dir $app_dir --flows-dir $flow_dir --format json" 0 "Get wf statistics in JSON"
 
-    # Test non-existent workflow
-    run_test "Non-existent workflow" "$CLI_COMMAND wf stats 'non-existent-id' --data-dir $app_dir --flows-dir $flow_dir" 1 "Test non-existent workflow handling"
+    # Test non-existent wf
+    run_test "Non-existent wf" "$CLI_COMMAND wf stats 'non-existent-id' --data-dir $app_dir --flows-dir $flow_dir" 1 "Test non-existent wf handling"
 
-    # Test workflow without file
+    # Test wf without file
     rm "$workflow_file"
     run_test "Workflow without file" "$CLI_COMMAND wf list --data-dir $app_dir --flows-dir $flow_dir --no-emoji" 0 "List workflows when file missing"
 

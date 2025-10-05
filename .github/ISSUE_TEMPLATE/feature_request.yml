@@ -28,7 +28,7 @@ body:
       description: What problem would this feature solve?
       placeholder: |
         Describe the problem you're trying to solve or the use case this feature would enable.
-        Example: "As a workflow manager, I need to..."
+        Example: "As a wf manager, I need to..."
     validations:
       required: true
 
@@ -70,10 +70,10 @@ body:
     id: priority
     attributes:
       label: Priority for You
-      description: How important is this feature for your workflow?
+      description: How important is this feature for your wf?
       options:
         - Nice to have - Would be convenient but not essential
-        - Important - Would significantly improve my workflow
+        - Important - Would significantly improve my wf
         - Critical - Blocking my ability to use n8n-deploy effectively
     validations:
       required: true

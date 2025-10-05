@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Unit tests for n8n_deploy_ workflow manager
+Unit tests for n8n_deploy_ wf manager
 """
 
 from pathlib import Path
@@ -8,11 +8,11 @@ from typing import Any, Dict, List
 from unittest.mock import Mock, patch
 
 import pytest
+from api.workflow import WorkflowApi
 from assertpy import assert_that
 
 from api.config import AppConfig
 from api.models import Workflow
-from api.workflow import WorkflowApi
 
 
 # === Manager Initialization Tests ===
@@ -68,7 +68,7 @@ class TestWorkflowApiInitialization:
 
 # === Workflow Operations Tests ===
 class TestWorkflowOperations:
-    """Test core workflow operations"""
+    """Test core wf operations"""
 
     def test_list_workflows_empty(self, test_manager: WorkflowApi) -> None:
         """Test listing workflows from empty database"""
@@ -86,8 +86,8 @@ class TestWorkflowOperations:
             conn.commit()
 
         for wf_data in test_workflows_list:
-            workflow = Workflow(**wf_data)
-            test_manager.db.add_workflow(workflow)
+            wf = Workflow(**wf_data)
+            test_manager.db.add_workflow(wf)
 
         workflows = test_manager.list_workflows()
         assert_that(len(workflows)).is_equal_to(len(test_workflows_list))
@@ -97,19 +97,19 @@ class TestWorkflowOperations:
         assert set(workflow_ids) == set(expected_ids)
 
     def test_get_workflow_info_existing(self, test_manager: WorkflowApi, mock_workflow_data: Dict[str, Any]) -> None:
-        """Test getting workflow info for existing workflow"""
-        workflow = Workflow(**mock_workflow_data)
-        test_manager.db.add_workflow(workflow)
+        """Test getting wf info for existing wf"""
+        wf = Workflow(**mock_workflow_data)
+        test_manager.db.add_workflow(wf)
 
-        info = test_manager.get_workflow_info(workflow.id)
+        info = test_manager.get_workflow_info(wf.id)
 
         assert info is not None
-        assert info["id"] == workflow.id
-        assert info["name"] == workflow.name
+        assert info["id"] == wf.id
+        assert info["name"] == wf.name
 
     def test_get_workflow_info_nonexistent(self, test_manager: WorkflowApi) -> None:
-        """Test getting workflow info for non-existent workflow"""
-        with pytest.raises(ValueError, match="Unknown workflow ID"):
+        """Test getting wf info for non-existent wf"""
+        with pytest.raises(ValueError, match="Unknown wf ID"):
             test_manager.get_workflow_info("nonexistent_workflow")
 
 
@@ -119,17 +119,17 @@ class TestBackupOperations:
 
     @pytest.mark.skip(reason="Backup functionality requires file paths which have been removed")
     def test_create_workflow_backup_success(self, test_manager: WorkflowApi, mock_workflow_data: Dict[str, Any]) -> None:
-        """Test creating backup of a single workflow successfully"""
+        """Test creating backup of a single wf successfully"""
         pass
 
     def test_create_workflow_backup_nonexistent_workflow(self, test_manager: WorkflowApi) -> None:
-        """Test backup fails for non-existent workflow"""
+        """Test backup fails for non-existent wf"""
         with pytest.raises(ValueError, match="Workflow 'nonexistent' not found in database"):
             test_manager.create_workflow_backup("nonexistent")
 
     @pytest.mark.skip(reason="Backup functionality requires file paths which have been removed")
     def test_create_workflow_backup_missing_file(self, test_manager: WorkflowApi, mock_workflow_data: Dict[str, Any]) -> None:
-        """Test backup fails when workflow file is missing"""
+        """Test backup fails when wf file is missing"""
         pass
 
 
@@ -181,7 +181,7 @@ class TestN8nApiIntegration:
             credentials = test_manager.n8n_api._get_n8n_credentials()
             assert credentials is None
 
-    @patch("api.workflow.n8n_api.requests.get")
+    @patch("api.wf.n8n_api.requests.get")
     def test_make_n8n_request_with_timeout(self, mock_get: Mock, test_manager: WorkflowApi) -> None:
         """Test that requests include proper timeout"""
         # Mock successful response
@@ -201,7 +201,7 @@ class TestN8nApiIntegration:
             call_kwargs = mock_get.call_args[1]
             assert call_kwargs["timeout"] == 10
 
-    @patch("api.workflow.n8n_api.requests.get")
+    @patch("api.wf.n8n_api.requests.get")
     def test_make_n8n_request_handles_timeout_exception(self, mock_get: Mock, test_manager: WorkflowApi) -> None:
         """Test request timeout handling"""
         import requests

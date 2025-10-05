@@ -59,23 +59,23 @@ workflow_names = st.text(
     alphabet=st.characters(whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters=" -_()[]"),
 )
 
-# Strategy: Malicious workflow names (injection attempts)
+# Strategy: Malicious wf names (injection attempts)
 malicious_names = st.sampled_from(
     [
         "'; DROP TABLE workflows--",
         "$(rm -rf /)",
         "`whoami`",
         "../../../etc/passwd",
-        "workflow\x00null",
+        "wf\x00null",
         "<script>alert('xss')</script>",
-        "workflow'; DELETE FROM workflows WHERE '1'='1",
-        "workflow\n\nmalicious_command",
-        "workflow && echo hacked",
-        "workflow || cat /etc/passwd",
+        "wf'; DELETE FROM workflows WHERE '1'='1",
+        "wf\n\nmalicious_command",
+        "wf && echo hacked",
+        "wf || cat /etc/passwd",
     ]
 )
 
-# Strategy: Tags for workflow filtering
+# Strategy: Tags for wf filtering
 workflow_tags = st.text(
     min_size=1,
     max_size=30,
@@ -439,7 +439,7 @@ class TestInputSanitization:
     @given(malicious_input=malicious_names)
     @settings(max_examples=20)
     def test_malicious_workflow_names_blocked(self, malicious_input):
-        """Property: SQL injection attempts in workflow names fail safely"""
+        """Property: SQL injection attempts in wf names fail safely"""
         # Skip inputs with null bytes (Python subprocess limitation)
         assume("\x00" not in malicious_input)
 

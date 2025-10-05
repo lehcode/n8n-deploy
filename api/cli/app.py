@@ -17,7 +17,7 @@ PROG_NAME = "n8n-deploy|./n8n-deploy"
 
 # Common CLI option help texts
 HELP_APP_DIR = "Application directory for database and backups"
-HELP_FLOW_DIR = "Plain directory where workflow JSON files are located"
+HELP_FLOW_DIR = "Plain directory where wf JSON files are located"
 HELP_SERVER_URL = "n8n server URL (overrides N8N_SERVER_URL)"
 HELP_NO_EMOJI = "Disable emoji output for automation/scripting"
 HELP_FORMAT = "Output format"
@@ -140,7 +140,7 @@ def cli() -> None:
       Default file: n8n-deploy.db
 
     Flow Directory (--flows-dir):
-      Contains workflow JSON files
+      Contains wf JSON files
       Priority: --flows-dir CLI option > N8N_DEPLOY_FLOWS env > current directory
       Default: current directory
 

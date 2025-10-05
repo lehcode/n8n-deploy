@@ -12,7 +12,7 @@ from api.models import DatabaseStats, Workflow, WorkflowStatus
 
 
 class DBApi(BaseDB):
-    """Core database manager for workflow CRUD operations"""
+    """Core database manager for wf CRUD operations"""
 
     def __init__(self, config: Optional[AppConfig] = None, db_path: Optional[Union[str, Path]] = None):
         """Initialize with database path and schema manager"""
@@ -26,8 +26,8 @@ class DBApi(BaseDB):
 
         self.schema_api = SchemaApi(db_path=self.db_path)
 
-    def add_workflow(self, workflow: Workflow) -> str:
-        """Add a new workflow to the database"""
+    def add_workflow(self, wf: Workflow) -> str:
+        """Add a new wf to the database"""
         with self.get_connection() as conn:
             conn.execute(
                 """
@@ -35,19 +35,19 @@ class DBApi(BaseDB):
                 VALUES (?, ?, ?, ?, ?, ?)
             """,
                 (
-                    workflow.id,
-                    workflow.name,
-                    workflow.file_folder,
-                    workflow.status,
-                    workflow.created_at,
-                    workflow.updated_at,
+                    wf.id,
+                    wf.name,
+                    wf.file_folder,
+                    wf.status,
+                    wf.created_at,
+                    wf.updated_at,
                 ),
             )
             conn.commit()
-            return workflow.id
+            return wf.id
 
     def get_workflow(self, workflow_id: str) -> Optional[Workflow]:
-        """Get a workflow by its ID"""
+        """Get a wf by its ID"""
         with self.get_connection() as conn:
             cursor = conn.execute("SELECT * FROM workflows WHERE id = ?", (workflow_id,))
             row = cursor.fetchone()
@@ -86,7 +86,7 @@ class DBApi(BaseDB):
 
             workflows = []
             for row in cursor.fetchall():
-                workflow = Workflow(
+                wf = Workflow(
                     id=row["id"],
                     name=row["name"],
                     file=row["file"] if "file" in row.keys() else None,
@@ -99,12 +99,12 @@ class DBApi(BaseDB):
                     push_count=row["push_count"] or 0,
                     pull_count=row["pull_count"] or 0,
                 )
-                workflows.append(workflow)
+                workflows.append(wf)
 
             return workflows
 
-    def update_workflow(self, workflow: Workflow) -> bool:
-        """Update an existing workflow"""
+    def update_workflow(self, wf: Workflow) -> bool:
+        """Update an existing wf"""
         with self.get_connection() as conn:
             cursor = conn.execute(
                 """
@@ -115,21 +115,21 @@ class DBApi(BaseDB):
                 WHERE id = ?
             """,
                 (
-                    workflow.name,
-                    workflow.status,
-                    workflow.updated_at,
-                    workflow.last_synced,
-                    workflow.n8n_version_id,
-                    workflow.push_count,
-                    workflow.pull_count,
-                    workflow.id,
+                    wf.name,
+                    wf.status,
+                    wf.updated_at,
+                    wf.last_synced,
+                    wf.n8n_version_id,
+                    wf.push_count,
+                    wf.pull_count,
+                    wf.id,
                 ),
             )
             conn.commit()
             return bool(cursor.rowcount > 0)
 
     def delete_workflow(self, workflow_id: str) -> bool:
-        """Delete a workflow by ID"""
+        """Delete a wf by ID"""
         with self.get_connection() as conn:
             cursor = conn.execute(
                 """
@@ -153,7 +153,7 @@ class DBApi(BaseDB):
             )
             workflows = []
             for row in cursor.fetchall():
-                workflow = Workflow(
+                wf = Workflow(
                     id=row["id"],
                     name=row["name"],
                     file=row["file"] if "file" in row.keys() else None,
@@ -166,7 +166,7 @@ class DBApi(BaseDB):
                     push_count=row["push_count"] or 0,
                     pull_count=row["pull_count"] or 0,
                 )
-                workflows.append(workflow)
+                workflows.append(wf)
             return workflows
 
     # Statistics and Management
@@ -226,7 +226,7 @@ class DBApi(BaseDB):
 
     # Push/Pull count tracking
     def increment_push_count(self, workflow_id: str) -> bool:
-        """Increment push count for a workflow and update last_used"""
+        """Increment push count for a wf and update last_used"""
         with self.get_connection() as conn:
             cursor = conn.execute(
                 """
@@ -242,7 +242,7 @@ class DBApi(BaseDB):
             return bool(cursor.rowcount > 0)
 
     def increment_pull_count(self, workflow_id: str) -> bool:
-        """Increment pull count for a workflow and update last_used"""
+        """Increment pull count for a wf and update last_used"""
         with self.get_connection() as conn:
             cursor = conn.execute(
                 """

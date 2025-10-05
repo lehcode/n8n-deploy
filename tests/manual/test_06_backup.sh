@@ -22,8 +22,8 @@ print_section "Test Category 5: Backup Operations"
         return
     fi
 
-    # Create workflow backup
-    run_test "Create workflow backup" "$CLI_COMMAND wf createbackup --backup-dir $backup_dir --data-dir $app_dir --flows-dir $flow_dir --no-emoji" 0 "Create tar.gz backup of workflows"
+    # Create wf backup
+    run_test "Create wf backup" "$CLI_COMMAND wf createbackup --backup-dir $backup_dir --data-dir $app_dir --flows-dir $flow_dir --no-emoji" 0 "Create tar.gz backup of workflows"
 
     # List backups
     run_test "List backups table" "$CLI_COMMAND wf backups --backup-dir $backup_dir --data-dir $app_dir --flows-dir $flow_dir" 0 "List backup files"

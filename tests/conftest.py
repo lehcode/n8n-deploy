@@ -14,13 +14,13 @@ from typing import Any, Dict, Generator, List
 from unittest.mock import Mock, patch
 
 import pytest
+from api.workflow import WorkflowApi
 from click.testing import CliRunner
 
 from api.api_keys import KeyApi
 from api.config import AppConfig
 from api.db import DBApi
 from api.models import Workflow
-from api.workflow import WorkflowApi
 from tests.helpers import (
     create_test_api_key_data,
     create_test_workflow_data,
@@ -72,7 +72,7 @@ def test_db(test_config: AppConfig) -> DBApi:
 
 @pytest.fixture
 def test_manager(test_config: AppConfig) -> WorkflowApi:
-    """Create a test workflow manager instance"""
+    """Create a test wf manager instance"""
     manager = WorkflowApi(config=test_config)
     manager.db.schema_api.initialize_database()
     return manager
@@ -94,11 +94,11 @@ def cli_runner() -> CliRunner:
 
 @pytest.fixture
 def mock_workflow_data() -> Dict[str, Any]:
-    """Mock workflow data for testing"""
+    """Mock wf data for testing"""
     return create_test_workflow_data(
         workflow_id="test_workflow_123",
         name="Test Workflow",
-        description="A test workflow",
+        description="A test wf",
         file_path="workflows/test_workflow.json",
         tags=["test", "automation"],
     )
@@ -106,13 +106,13 @@ def mock_workflow_data() -> Dict[str, Any]:
 
 @pytest.fixture
 def sample_workflow_json() -> Dict[str, Any]:
-    """Sample n8n workflow JSON structure"""
+    """Sample n8n wf JSON structure"""
     return create_test_workflow_json(workflow_id="test_workflow_123", name="Test Workflow", versionId="abc123")
 
 
 @pytest.fixture
 def mock_n8n_response() -> Dict[str, Any]:
-    """Mock n8n API response for workflow operations"""
+    """Mock n8n API response for wf operations"""
     return {
         "data": {
             "id": "test_workflow_123",
@@ -127,7 +127,7 @@ def mock_n8n_response() -> Dict[str, Any]:
 
 @pytest.fixture
 def test_workflow_file(test_config: AppConfig) -> Path:
-    """Create a test workflow file"""
+    """Create a test wf file"""
     return create_workflow_file(
         test_config,
         "test_workflow_123",
@@ -139,8 +139,8 @@ def test_workflow_file(test_config: AppConfig) -> Path:
 @pytest.fixture
 def populated_test_db(test_db: DBApi, mock_workflow_data: Dict[str, Any]) -> DBApi:
     """Database populated with test workflows"""
-    workflow = Workflow(**mock_workflow_data)
-    test_db.add_workflow(workflow)
+    wf = Workflow(**mock_workflow_data)
+    test_db.add_workflow(wf)
     return test_db
 
 

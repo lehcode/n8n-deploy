@@ -139,15 +139,15 @@ class TestEndToEndServerIntegration:
         """
         Test that pull operation increments pull_count in database
 
-        Scenario: Successfully pull workflow from n8n server
+        Scenario: Successfully pull wf from n8n server
         Expected: Database pull_count increments, last_synced updates
 
         TODO: Implement test with mocked n8n API:
         1. Mock successful n8n API response
-        2. Pull existing workflow
+        2. Pull existing wf
         3. Verify pull_count incremented by 1
         4. Verify last_synced timestamp updated
-        5. Verify workflow data synchronized
+        5. Verify wf data synchronized
         """
         pass
 
@@ -156,13 +156,13 @@ class TestEndToEndServerIntegration:
         """
         Test that push operation increments push_count in database
 
-        Scenario: Successfully push workflow to n8n server
+        Scenario: Successfully push wf to n8n server
         Expected: Database push_count increments, last_synced updates
 
         TODO: Implement test with mocked n8n API:
-        1. Create local workflow file
+        1. Create local wf file
         2. Mock successful n8n API response
-        3. Push workflow to server
+        3. Push wf to server
         4. Verify push_count incremented by 1
         5. Verify last_synced timestamp updated
         """
@@ -189,10 +189,10 @@ class TestEndToEndServerIntegration:
 class TestEndToEndBackupOperations:
     """Test backup and restore operations"""
 
-    @pytest.mark.skip(reason="TODO: Implement comprehensive backup workflow test")
+    @pytest.mark.skip(reason="TODO: Implement comprehensive backup wf test")
     def test_backup_workflows_complete_cycle(self, test_config: AppConfig) -> None:
         """
-        Test complete backup workflow creation and verification
+        Test complete backup wf creation and verification
 
         Scenario: Create workflows, backup them, verify backup integrity
         Expected: Backup contains all workflows, metadata, and passes verification
@@ -213,12 +213,12 @@ class TestEndToEndBackupOperations:
         Test that backups shows backup metadata correctly
 
         Scenario: Multiple backups exist with different timestamps and sizes
-        Expected: List shows backups sorted by date with size and workflow count
+        Expected: List shows backups sorted by date with size and wf count
 
         TODO: Implement test that:
         1. Creates multiple backup files
         2. Runs backups command
-        3. Verifies output includes timestamps, sizes, workflow counts
+        3. Verifies output includes timestamps, sizes, wf counts
         4. Tests both table and JSON output formats
         """
         pass
@@ -280,9 +280,9 @@ class TestEndToEndErrorHandling:
 
 @pytest.mark.integration
 class TestEndToEndWorkflowOperations:
-    """Test workflow operations from end-to-end perspective"""
+    """Test wf operations from end-to-end perspective"""
 
-    @pytest.mark.skip(reason="TODO: Implement test for workflow file consistency checking")
+    @pytest.mark.skip(reason="TODO: Implement test for wf file consistency checking")
     def test_workflow_file_existence_accuracy(self, test_config: AppConfig) -> None:
         """
         Test that 'File Exists' column in list command shows accurate status
@@ -292,17 +292,17 @@ class TestEndToEndWorkflowOperations:
 
         TODO: Implement test that:
         1. Creates workflows in database with various file_path values
-        2. Creates some actual workflow files, leaves others missing
+        2. Creates some actual wf files, leaves others missing
         3. Runs list command
         4. Verifies 'File Exists' column shows correct status for each
         5. Tests that path resolution works correctly
         """
         pass
 
-    @pytest.mark.skip(reason="TODO: Implement test for workflow search functionality")
+    @pytest.mark.skip(reason="TODO: Implement test for wf search functionality")
     def test_search_workflows_comprehensive_matching(self, test_config: AppConfig) -> None:
         """
-        Test workflow search matches names, IDs, and descriptions
+        Test wf search matches names, IDs, and descriptions
 
         Scenario: Search for workflows using various criteria
         Expected: Search finds matches in name, ID, description fields
@@ -310,22 +310,22 @@ class TestEndToEndWorkflowOperations:
         TODO: Implement test that:
         1. Creates workflows with varied names and descriptions
         2. Tests search by partial name match
-        3. Tests search by workflow ID
+        3. Tests search by wf ID
         4. Tests search by description content
         5. Verifies case-insensitive matching
         """
         pass
 
-    @pytest.mark.skip(reason="TODO: Implement test for workflow stats display")
+    @pytest.mark.skip(reason="TODO: Implement test for wf stats display")
     def test_workflow_stats_comprehensive_display(self, test_config: AppConfig) -> None:
         """
-        Test that workflow stats show all relevant information
+        Test that wf stats show all relevant information
 
-        Scenario: Get stats for workflow with various metadata
+        Scenario: Get stats for wf with various metadata
         Expected: Stats include push/pull counts, sync status, file info
 
         TODO: Implement test that:
-        1. Creates workflow with push/pull history
+        1. Creates wf with push/pull history
         2. Runs stats command
         3. Verifies display includes counters, timestamps
         4. Tests both table and JSON output formats
@@ -382,7 +382,7 @@ class TestEndToEndCLIConsistency:
         1. Uses --data-dir with various commands
         2. Verifies all commands use specified directory
         3. Confirms database operations are isolated per app-dir
-        4. Tests workflow file resolution relative to configuration
+        4. Tests wf file resolution relative to configuration
         """
         pass
 

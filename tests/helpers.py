@@ -23,7 +23,7 @@ def create_test_workflow(
     file_path: str = "workflows/test.json",
     **kwargs: Any,
 ) -> Workflow:
-    """Create a test workflow with sensible defaults."""
+    """Create a test wf with sensible defaults."""
     return Workflow(
         id=workflow_id,
         name=name,
@@ -37,7 +37,7 @@ def create_test_workflow(
 def create_test_workflow_data(
     workflow_id: str = "test_workflow", name: str = "Test Workflow", **kwargs: Any
 ) -> Dict[str, Any]:
-    """Create test workflow data as dictionary."""
+    """Create test wf data as dictionary."""
     return {
         "id": workflow_id,
         "name": name,
@@ -56,8 +56,8 @@ def create_test_workflow_json(
     name: str = "Test Workflow",
     **kwargs: Any,
 ) -> Dict[str, Any]:
-    """Create test n8n workflow JSON structure."""
-    # Simple test workflow with one start node
+    """Create test n8n wf JSON structure."""
+    # Simple test wf with one start node
     nodes = [
         {
             "parameters": {},
@@ -106,7 +106,7 @@ def create_workflow_file(
     name: str = "Test Workflow",
     file_path: Optional[str] = None,
 ) -> Path:
-    """Create a test workflow JSON file."""
+    """Create a test wf JSON file."""
     if file_path is None:
         file_path = f"workflows/{workflow_id}.json"
 
@@ -189,7 +189,7 @@ def time_range(start: datetime, end: datetime) -> bool:
 
 
 def workflow_ids_from_list(workflows: List[Dict[str, Any]]) -> List[str]:
-    """Extract IDs from list of workflow dictionaries."""
+    """Extract IDs from list of wf dictionaries."""
     return [wf["id"] for wf in workflows]
 
 

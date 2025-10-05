@@ -2,7 +2,7 @@
 """
 End-to-End Manual Workflow Testing
 
-Real CLI execution tests for workflow management operations,
+Real CLI execution tests for wf management operations,
 including add, list, search, stats, and file operations.
 """
 
@@ -15,20 +15,20 @@ from typing import Any, Optional
 from unittest.mock import patch
 
 import pytest
+from api.workflow import WorkflowApi
 
 from api.config import AppConfig
 from api.models import Workflow
-from api.workflow import WorkflowApi
 
 from .e2e_base import E2ETestBase
 
 
 # === End-to-End Workflow Tests ===
 class TestE2EWorkflows(E2ETestBase):
-    """Manual end-to-end testing for workflow operations"""
+    """Manual end-to-end testing for wf operations"""
 
     def create_test_workflow(self, name: str, workflow_data: Optional[dict] = None) -> Path:
-        """Create a test workflow file."""
+        """Create a test wf file."""
         if workflow_data is None:
             workflow_data = {
                 "name": name,
@@ -102,7 +102,7 @@ class TestE2EWorkflows(E2ETestBase):
         assert returncode == 0
 
     def test_workflow_search_functionality(self) -> None:
-        """Test workflow search with various patterns"""
+        """Test wf search with various patterns"""
         self.setup_database()
         search_workflows = [
             "email_notification",
@@ -126,8 +126,8 @@ class TestE2EWorkflows(E2ETestBase):
             )
         search_patterns = [
             "notification",  # Should match 2 workflows
-            "data",  # Should match 1 workflow
-            "user",  # Should match 1 workflow
+            "data",  # Should match 1 wf
+            "user",  # Should match 1 wf
             "nonexistent",  # Should match 0 workflows
         ]
 
@@ -174,7 +174,7 @@ class TestE2EWorkflows(E2ETestBase):
             assert returncode == 0
 
     def test_workflow_stats_display(self) -> None:
-        """Test workflow stats display functionality"""
+        """Test wf stats display functionality"""
         self.setup_database()
         self.create_test_workflow("stats_test")
         self.run_cli_command(
@@ -194,7 +194,7 @@ class TestE2EWorkflows(E2ETestBase):
         # Should show statistics without errors
 
     def test_workflow_stats_comprehensive_display(self) -> None:
-        """Test comprehensive workflow stats with multiple workflows"""
+        """Test comprehensive wf stats with multiple workflows"""
         self.setup_database()
         stats_workflows: List[Tuple[str, Dict[str, Any]]] = [
             ("active_workflow", {"active": True}),
@@ -236,7 +236,7 @@ class TestE2EWorkflows(E2ETestBase):
         assert returncode == 0
 
     def test_workflow_file_existence_accuracy(self) -> None:
-        """Test accuracy of workflow file existence checks"""
+        """Test accuracy of wf file existence checks"""
         self.setup_database()
         workflow_file = self.create_test_workflow("existence_test")
         add_returncode, _, _ = self.run_cli_command(
@@ -264,10 +264,10 @@ class TestE2EWorkflows(E2ETestBase):
             assert list_after_delete_returncode == 0
 
     def test_workflow_add_nonexistent_file(self) -> None:
-        """Test adding nonexistent workflow file"""
+        """Test adding nonexistent wf file"""
         self.setup_database()
 
-        # wf add now pulls from server, so this tests server pull of nonexistent workflow
+        # wf add now pulls from server, so this tests server pull of nonexistent wf
         returncode, stdout, stderr = self.run_cli_command(
             [
                 "--data-dir",
@@ -278,7 +278,7 @@ class TestE2EWorkflows(E2ETestBase):
             ]
         )
 
-        # Should fail gracefully - either no server URL or workflow not found on server
+        # Should fail gracefully - either no server URL or wf not found on server
         assert returncode == 1
         assert (
             "server" in stderr.lower()
@@ -288,17 +288,17 @@ class TestE2EWorkflows(E2ETestBase):
         )
 
     def test_workflow_add_invalid_json(self) -> None:
-        """Test that wf add validates workflow name format"""
+        """Test that wf add validates wf name format"""
         self.setup_database()
 
-        # Test with invalid workflow name characters
+        # Test with invalid wf name characters
         returncode, stdout, stderr = self.run_cli_command(
             [
                 "--data-dir",
                 self.temp_dir,
                 "wf",
                 "add",
-                "Invalid/Name",  # Forward slash is invalid in workflow names
+                "Invalid/Name",  # Forward slash is invalid in wf names
             ]
         )
 
@@ -306,7 +306,7 @@ class TestE2EWorkflows(E2ETestBase):
         assert returncode == 1
 
     def test_workflow_operations_emoji_consistency(self) -> None:
-        """Test workflow operations with emoji and no-emoji modes"""
+        """Test wf operations with emoji and no-emoji modes"""
         self.setup_database()
         self.create_test_workflow("emoji_test")
 
@@ -339,7 +339,7 @@ class TestE2EWorkflows(E2ETestBase):
                 assert emoji not in no_emoji_stdout
 
     def test_workflow_path_resolution(self) -> None:
-        """Test workflow search command handles different flow directory paths"""
+        """Test wf search command handles different flow directory paths"""
         self.setup_database()
         subdir = Path(self.temp_flow_dir) / "subdir"
         subdir.mkdir()
@@ -353,7 +353,7 @@ class TestE2EWorkflows(E2ETestBase):
         assert returncode == 0
 
     def test_workflow_large_file_handling(self) -> None:
-        """Test that workflow commands handle operations efficiently"""
+        """Test that wf commands handle operations efficiently"""
         self.setup_database()
 
         # Test that list command handles database operations efficiently
@@ -370,7 +370,7 @@ class TestE2EWorkflows(E2ETestBase):
         assert returncode == 0
 
     def test_workflow_concurrent_operations(self) -> None:
-        """Test concurrent workflow operations"""
+        """Test concurrent wf operations"""
         import threading
 
         self.setup_database()
@@ -402,7 +402,7 @@ class TestE2EWorkflows(E2ETestBase):
             assert returncode == 0, f"Thread {thread_id} failed with returncode {returncode}"
 
     def test_workflow_unicode_names(self) -> None:
-        """Test that wf add command handles Unicode workflow names"""
+        """Test that wf add command handles Unicode wf names"""
         self.setup_database()
         unicode_names = ["测试工作流", "тест_поток", "workflow_émojis", "流程_テスト"]
 
@@ -429,7 +429,7 @@ class TestE2EWorkflows(E2ETestBase):
                 pytest.skip(f"System doesn't support Unicode name: {name}")
 
     def test_workflow_type_classification(self) -> None:
-        """Test workflow search handles different workflow name patterns"""
+        """Test wf search handles different wf name patterns"""
         self.setup_database()
         workflow_names = [
             "api_workflow",
@@ -453,7 +453,7 @@ class TestE2EWorkflows(E2ETestBase):
             assert returncode == 0
 
     def test_workflow_backup_integration(self) -> None:
-        """Test workflow operations integrate with backup system"""
+        """Test wf operations integrate with backup system"""
         self.setup_database()
         self.create_test_workflow("backup_integration_test")
         self.run_cli_command(
@@ -476,7 +476,7 @@ class TestE2EWorkflows(E2ETestBase):
                 assert len(backup_files) > 0
 
     def test_workflow_environment_variable_integration(self) -> None:
-        """Test workflow operations respect environment variables"""
+        """Test wf operations respect environment variables"""
         self.setup_database()
         env = {"N8N_DEPLOY_FLOWS": self.temp_flow_dir}
 
@@ -595,7 +595,7 @@ class TestE2EWorkflows(E2ETestBase):
             ]
         )
 
-        # May succeed or fail depending on workflow existence
+        # May succeed or fail depending on wf existence
         assert returncode in [0, 1]
 
     def test_wf_search_json_format(self) -> None:
@@ -636,7 +636,7 @@ class TestE2EWorkflows(E2ETestBase):
         assert "total_workflows" in data
 
     def test_wf_stats_specific_workflow_json(self) -> None:
-        """Test wf stats <workflow-id> --format json output"""
+        """Test wf stats <wf-id> --format json output"""
         self.setup_database()
         self.create_test_workflow("stats_specific_test")
         add_result = self.run_cli_command(
@@ -665,7 +665,7 @@ class TestE2EWorkflows(E2ETestBase):
                 ]
             )
 
-            # May succeed or fail based on workflow ID
+            # May succeed or fail based on wf ID
             assert returncode in [0, 1]
 
     def test_wf_list_server_json_format(self) -> None:
@@ -813,7 +813,7 @@ class TestWorkflowBackupIntegration:
 
     @pytest.fixture
     def manager_with_real_workflows(self, test_config: AppConfig) -> WorkflowApi:
-        """Create manager with real workflow files and database entries"""
+        """Create manager with real wf files and database entries"""
         manager = WorkflowApi(config=test_config)
         manager.db.schema_api.initialize_database()
         with manager.db.get_connection() as conn:
@@ -829,7 +829,7 @@ class TestWorkflowBackupIntegration:
                 "name": "Integration Subflow",
             },
         ]
-        # File paths should match workflow IDs: {workflow_id}.json
+        # File paths should match wf IDs: {workflow_id}.json
         file_paths = [
             "test_workflows/integration_main_workflow.json",
             "test_workflows/integration_subflow.json",
@@ -876,20 +876,20 @@ class TestWorkflowBackupIntegration:
                 json.dump(workflow_json, f, indent=2)
             # Set the file_folder to the actual directory where the file is located
             wf_data_with_folder = {**wf_data, "file_folder": str(test_workflows_dir)}
-            workflow = Workflow(**wf_data_with_folder)
-            workflow_id = manager.db.add_workflow(workflow)
-            assert workflow_id == wf_data["id"], f"Failed to create workflow {wf_data['id']}"
+            wf = Workflow(**wf_data_with_folder)
+            workflow_id = manager.db.add_workflow(wf)
+            assert workflow_id == wf_data["id"], f"Failed to create wf {wf_data['id']}"
         created_workflows = manager.list_workflows()
         assert len(created_workflows) == 2, f"Expected 2 workflows, created {len(created_workflows)}"
 
         return manager
 
     def test_backup_with_real_files_and_database(self, manager_with_real_workflows: WorkflowApi) -> None:
-        """Test backup creation with real workflow files and database integration"""
+        """Test backup creation with real wf files and database integration"""
         manager = manager_with_real_workflows
         workflows = manager.list_workflows()
 
-        # Debug: Print workflow details if assertion fails
+        # Debug: Print wf details if assertion fails
         if len(workflows) != 2:
             print(f"Expected 2 workflows, found {len(workflows)}")
             for wf in workflows:
@@ -899,7 +899,7 @@ class TestWorkflowBackupIntegration:
                 db_workflows = cursor.fetchall()
                 print(f"Database workflows: {[dict(row) for row in db_workflows]}")
 
-        assert len(workflows) >= 1, f"Expected at least 1 workflow, found {len(workflows)}"
+        assert len(workflows) >= 1, f"Expected at least 1 wf, found {len(workflows)}"
 
         for wf in workflows:
             assert "id" in wf
@@ -918,10 +918,10 @@ class TestWorkflowBackupIntegration:
                 members = tar.getnames()
                 workflow_files = [m for m in members if m.endswith(".json") and not m.endswith("metadata.json")]
                 metadata_files = [m for m in members if m.endswith("metadata.json")]
-                assert len(workflow_files) == 1  # Should have one workflow file
+                assert len(workflow_files) == 1  # Should have one wf file
                 assert len(metadata_files) == 1  # Should have one metadata file
 
-                # Extract and verify workflow content
+                # Extract and verify wf content
                 workflow_member = tar.getmember(workflow_files[0])
                 extracted_file = tar.extractfile(workflow_member)
                 workflow_content = json.loads(extracted_file.read().decode("utf-8"))
@@ -946,15 +946,15 @@ class TestWorkflowBackupIntegration:
             with tarfile.open(backup_path, "r:gz") as tar:
                 workflow_files = [m for m in tar.getnames() if m.endswith(".json") and not m.endswith("metadata.json")]
                 metadata_files = [m for m in tar.getnames() if m.endswith("metadata.json")]
-                assert len(workflow_files) == 1  # Should have one workflow file
+                assert len(workflow_files) == 1  # Should have one wf file
                 assert len(metadata_files) == 1  # Should have one metadata file
 
     def test_backup_with_missing_file_integration(self, manager_with_real_workflows: WorkflowApi) -> None:
-        """Test backup behavior when workflow exists in database but file is missing"""
+        """Test backup behavior when wf exists in database but file is missing"""
         manager = manager_with_real_workflows
         workflows = manager.list_workflows()
         test_workflow = workflows[0]
-        # Get the actual workflow file from database
+        # Get the actual wf file from database
         workflow_obj = manager.db.get_workflow(test_workflow["id"])
         assert workflow_obj is not None
         workflow_file = Path(workflow_obj.file_folder) / f"{test_workflow['id']}.json"
@@ -971,11 +971,11 @@ class TestWorkflowBackupIntegration:
         # backup_all_workflows should skip the missing file
         result = manager.backup_all_workflows()
         assert result["total_workflows"] == 2  # All workflows are counted
-        assert len(result["successful_backups"]) == 1  # Only one workflow has a file
-        assert len(result["failed_backups"]) == 1  # One workflow failed due to missing file
+        assert len(result["successful_backups"]) == 1  # Only one wf has a file
+        assert len(result["failed_backups"]) == 1  # One wf failed due to missing file
 
     def test_backup_integrity_with_real_data(self, manager_with_real_workflows: WorkflowApi) -> None:
-        """Test backup integrity verification with real workflow data"""
+        """Test backup integrity verification with real wf data"""
         manager = manager_with_real_workflows
 
         workflows = manager.list_workflows()
@@ -1023,11 +1023,11 @@ class TestWorkflowBackupIntegration:
             assert result["count"] == 2
 
     def test_list_workflows_filtering_integration(self, manager_with_real_workflows: WorkflowApi) -> None:
-        """Test workflow listing with filtering in real integration scenario"""
+        """Test wf listing with filtering in real integration scenario"""
         manager = manager_with_real_workflows
         workflows = manager.list_workflows()
         test_workflow = workflows[0]
-        # Get the actual workflow file from database
+        # Get the actual wf file from database
         workflow_obj = manager.db.get_workflow(test_workflow["id"])
         assert workflow_obj is not None
         workflow_file = Path(workflow_obj.file_folder) / f"{test_workflow['id']}.json"
@@ -1037,7 +1037,7 @@ class TestWorkflowBackupIntegration:
         # Note: only_backupable parameter is currently ignored, all workflows are returned
         backupable_workflows = manager.list_workflows(only_backupable=True)
         assert len(backupable_workflows) == 2
-        # Find the workflow that still has a file
+        # Find the wf that still has a file
         for wf in backupable_workflows:
             wf_obj = manager.db.get_workflow(wf["id"])
             assert wf_obj is not None
@@ -1051,11 +1051,11 @@ class TestWorkflowBackupIntegration:
 # === Workflow Manager Integration Tests ===
 @pytest.mark.integration
 class TestWorkflowManagerIntegration:
-    """Test overall workflow manager integration scenarios"""
+    """Test overall wf manager integration scenarios"""
 
     @pytest.fixture
     def integrated_manager(self, test_config: AppConfig) -> WorkflowApi:
-        """Create a fully integrated workflow manager"""
+        """Create a fully integrated wf manager"""
         manager = WorkflowApi(config=test_config)
         manager.db.schema_api.initialize_database()
         with manager.db.get_connection() as conn:
@@ -1067,7 +1067,7 @@ class TestWorkflowManagerIntegration:
         return manager
 
     def test_api_key_and_workflow_integration(self, integrated_manager: WorkflowApi) -> None:
-        """Test integration between API key management and workflow operations"""
+        """Test integration between API key management and wf operations"""
         manager = integrated_manager
         api_key_id = manager.key_api.add_api_key(
             name="integration_test_key",
@@ -1082,23 +1082,23 @@ class TestWorkflowManagerIntegration:
         # Create the file in test_workflows subdirectory
         test_workflows_dir = manager.config.workflows_path / "test_workflows"
         test_workflows_dir.mkdir(parents=True, exist_ok=True)
-        # Filename must match workflow ID for backup to work
+        # Filename must match wf ID for backup to work
         filename = "api_integration_workflow.json"
         file_path = test_workflows_dir / filename
 
         with open(file_path, "w") as f:
             json.dump({"id": "api_integration_workflow", "name": "API Integration Workflow"}, f)
 
-        workflow = Workflow(
+        wf = Workflow(
             id="api_integration_workflow",
             name="API Integration Workflow",
             file=filename,
             file_folder=str(test_workflows_dir),  # Use absolute path for backup to work
         )
 
-        manager.db.add_workflow(workflow)
+        manager.db.add_workflow(wf)
 
-        # Both workflow and API key should be manageable
+        # Both wf and API key should be manageable
         workflows = manager.list_workflows()
         api_keys = manager.key_api.list_api_keys()
 
@@ -1106,7 +1106,7 @@ class TestWorkflowManagerIntegration:
         assert len(api_keys) == 1
 
         # Backup should work with both data types present
-        backup_result = manager.create_workflow_backup(workflow.id)
+        backup_result = manager.create_workflow_backup(wf.id)
         assert backup_result is not None
 
         # Clean up API key
@@ -1132,21 +1132,21 @@ class TestWorkflowManagerIntegration:
     def test_error_recovery_integration(self, integrated_manager: WorkflowApi) -> None:
         """Test error recovery in integrated scenarios"""
         manager = integrated_manager
-        workflow = Workflow(
+        wf = Workflow(
             id="error_recovery_test",
             name="Error Recovery Test",
         )
 
-        manager.db.add_workflow(workflow)
+        manager.db.add_workflow(wf)
         with patch("builtins.open", side_effect=PermissionError("Permission denied")):
             # Manager should handle file operation errors gracefully
             workflows = manager.list_workflows()
             assert len(workflows) == 1
-            assert "id" in workflows[0]  # Should have basic workflow info
+            assert "id" in workflows[0]  # Should have basic wf info
 
             # Backup should fail gracefully
             with pytest.raises(FileNotFoundError):
-                manager.create_workflow_backup(workflow.id)
+                manager.create_workflow_backup(wf.id)
 
         # Manager should recover after error
         workflows = manager.list_workflows()
