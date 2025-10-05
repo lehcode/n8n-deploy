@@ -111,7 +111,7 @@ def add_apikey(
         import os
         from ..db.servers import ServerCrud
 
-        # API key operations only need base folder, not workflow directories
+        # API key operations only need base folder, not wf directories
         base_path = Path(data_dir) if data_dir else Path.cwd()
         config = AppConfig(base_folder=base_path)
         db_api = DBApi(config=config)
@@ -220,7 +220,7 @@ def list_apikeys(show_keys: bool, format: str, data_dir: Optional[str], no_emoji
     Use --format json for machine-readable output.
     """
     try:
-        # API key operations only need base folder, not workflow directories
+        # API key operations only need base folder, not wf directories
         base_path = Path(data_dir) if data_dir else Path.cwd()
         config = AppConfig(base_folder=base_path)
         db_api = DBApi(config=config)
@@ -286,7 +286,7 @@ def list_apikeys(show_keys: bool, format: str, data_dir: Optional[str], no_emoji
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
 def get_apikey(key_name_or_id: str, show_key: bool, format: str, data_dir: Optional[str], no_emoji: bool) -> None:
     """🔍 Get API key details"""
-    # API key operations only need base folder, not workflow directories
+    # API key operations only need base folder, not wf directories
     try:
         base_path = Path(data_dir) if data_dir else Path.cwd()
         config = AppConfig(base_folder=base_path)
@@ -337,7 +337,7 @@ def get_apikey(key_name_or_id: str, show_key: bool, format: str, data_dir: Optio
 def deactivate_apikey(key_name: str, data_dir: Optional[str], no_emoji: bool) -> None:
     """🚫 Deactivate API key (soft delete)"""
     try:
-        # API key operations only need base folder, not workflow directories
+        # API key operations only need base folder, not wf directories
         base_path = Path(data_dir) if data_dir else Path.cwd()
         config = AppConfig(base_folder=base_path)
         db_api = DBApi(config=config)
@@ -360,7 +360,7 @@ def deactivate_apikey(key_name: str, data_dir: Optional[str], no_emoji: bool) ->
 def delete_apikey(key_name: str, confirm: bool, data_dir: Optional[str]) -> None:
     """🗑️ Permanently delete an API key"""
     try:
-        # API key operations only need base folder, not workflow directories
+        # API key operations only need base folder, not wf directories
         base_path = Path(data_dir) if data_dir else Path.cwd()
         config = AppConfig(base_folder=base_path)
         db_api = DBApi(config=config)
@@ -378,7 +378,7 @@ def delete_apikey(key_name: str, confirm: bool, data_dir: Optional[str]) -> None
 def test_apikey(key_name: str, data_dir: Optional[str]) -> None:
     """🧪 Test API key validity"""
     try:
-        # API key operations only need base folder, not workflow directories
+        # API key operations only need base folder, not wf directories
         base_path = Path(data_dir) if data_dir else Path.cwd()
         config = AppConfig(base_folder=base_path)
         db_api = DBApi(config=config)

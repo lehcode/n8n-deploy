@@ -20,7 +20,7 @@ print_section "Test Category 9: Error Handling"
     run_test "Invalid subcommand" "$CLI_COMMAND db invalid-subcommand" 2 "Test invalid subcommand handling"
 
     # Test missing required arguments
-    run_test "Missing workflow ID" "$CLI_COMMAND wf add" 2 "Test missing required arguments"
+    run_test "Missing wf ID" "$CLI_COMMAND wf add" 2 "Test missing required arguments"
     run_test "Missing API key name" "$CLI_COMMAND apikey add testkey" 2 "Test missing API key name"
 
     # Test invalid directory paths
@@ -36,11 +36,11 @@ print_section "Test Category 9: Error Handling"
     create_sample_workflow "$flow_dir/workflows"
     "$CLI_COMMAND" wf add "workflows/${SAMPLE_WF_ID}.json" "$SAMPLE_WF_NAME" --data-dir "$app_dir" --flows-dir "$flow_dir" --no-emoji > /dev/null 2>&1
 
-    # Test remove workflow with confirmation (should succeed with 'n' response)
-    run_test "Remove without confirmation" "echo 'n' | $CLI_COMMAND wf remove $SAMPLE_WF_ID --data-dir $app_dir --flows-dir $flow_dir" 0 "Test remove workflow without confirmation (cancels)"
+    # Test remove wf with confirmation (should succeed with 'n' response)
+    run_test "Remove without confirmation" "echo 'n' | $CLI_COMMAND wf remove $SAMPLE_WF_ID --data-dir $app_dir --flows-dir $flow_dir" 0 "Test remove wf without confirmation (cancels)"
 
-    # Test remove workflow with --yes flag (should succeed)
-    run_test "Remove with --yes flag" "$CLI_COMMAND wf remove $SAMPLE_WF_ID --yes --data-dir $app_dir --flows-dir $flow_dir" 0 "Test remove workflow with --yes flag"
+    # Test remove wf with --yes flag (should succeed)
+    run_test "Remove with --yes flag" "$CLI_COMMAND wf remove $SAMPLE_WF_ID --yes --data-dir $app_dir --flows-dir $flow_dir" 0 "Test remove wf with --yes flag"
 
     # Test backup to invalid directory (succeeds with 0 workflows)
     run_test "Backup to invalid dir" "$CLI_COMMAND wf createbackup --backup-dir $invalid_dir --data-dir $app_dir --flows-dir $flow_dir" 0 "Test backup to invalid directory (succeeds with 0 workflows)"

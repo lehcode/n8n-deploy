@@ -14,7 +14,7 @@ authors = [
 maintainers = [
     { name = "Lehcode", email = "53556648+lehcode@users.noreply.github.com" },
 ]
-keywords = ["n8n", "workflow", "automation", "cli", "sqlite", "deployment"]
+keywords = ["n8n", "wf", "automation", "cli", "sqlite", "deployment"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",

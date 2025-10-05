@@ -1,4 +1,4 @@
-"""Unit tests for api/workflow/backup.py module
+"""Unit tests for api/wf/backup.py module
 
 Tests for WorkflowBackup methods with 0% coverage.
 """

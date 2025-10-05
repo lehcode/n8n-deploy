@@ -119,7 +119,7 @@ class SchemaApi(BaseDB):
             """
             )
 
-            # Create versions table for workflow versioning
+            # Create versions table for wf versioning
             conn.execute(
                 """
                 CREATE TABLE IF NOT EXISTS versions (
@@ -136,14 +136,14 @@ class SchemaApi(BaseDB):
             """
             )
 
-            # Create dependencies table for workflow dependencies
+            # Create dependencies table for wf dependencies
             conn.execute(
                 """
                 CREATE TABLE IF NOT EXISTS dependencies (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     workflow_id TEXT NOT NULL,
                     depends_on TEXT NOT NULL,
-                    dependency_type TEXT DEFAULT 'workflow',
+                    dependency_type TEXT DEFAULT 'wf',
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (workflow_id) REFERENCES workflows (id) ON DELETE CASCADE,
                     FOREIGN KEY (depends_on) REFERENCES workflows (id) ON DELETE CASCADE

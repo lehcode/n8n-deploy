@@ -153,7 +153,7 @@ setup_test_env() {
     # Create test directories
     mkdir -p "$TEST_BASE_DIR"/{app,flow,backup}
 
-    # Create sample workflow file (using workflow ID as filename)
+    # Create sample wf file (using wf ID as filename)
     create_sample_workflow "$TEST_BASE_DIR/flow/workflows"
 
     log_success "Test environment created at $TEST_BASE_DIR"
@@ -290,7 +290,7 @@ TEST_SECTIONS (run specific sections only):
     env                     Environment Configuration tests
     db                      Database Operations tests
     apikey                  API Key Management tests
-    workflow                Workflow Operations tests
+    wf                Workflow Operations tests
     backup                  Backup Operations tests
     server                  Server Integration tests
     format                  Output Format tests
@@ -304,7 +304,7 @@ EXAMPLES:
     $0                      # Run all tests
     $0 -v                   # Run all tests with verbose output
     $0 -p help db           # Run help and database tests with pauses
-    $0 --quick workflow     # Run workflow tests in quick mode
+    $0 --quick wf     # Run wf tests in quick mode
     $0 --clean              # Clean up test environment only
 
 EOF

@@ -103,7 +103,7 @@ class TestE2ECLI(E2ETestBase):
         # Command should succeed and show either workflows or "No workflows found"
         assert (
             "No workflows found" in stdout or "test_" in stdout
-        ), f"Expected workflow list or 'No workflows found'. STDOUT: {stdout[:500]}..."
+        ), f"Expected wf list or 'No workflows found'. STDOUT: {stdout[:500]}..."
 
     def test_base_folder_consistency(self) -> None:
         """Test base folder configuration across different commands"""

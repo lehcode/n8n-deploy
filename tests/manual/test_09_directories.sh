@@ -27,7 +27,7 @@ print_section "Test Category 8: Directory Options"
 
     # Test flow-dir option
     create_sample_workflow "$flow_dir2/workflows"
-    run_test "Add workflow different dirs" "$CLI_COMMAND wf add workflows/${SAMPLE_WF_ID}.json '$SAMPLE_WF_NAME' --data-dir $app_dir2 --flows-dir $flow_dir2" 0 "Add workflow with different directories"
+    run_test "Add wf different dirs" "$CLI_COMMAND wf add workflows/${SAMPLE_WF_ID}.json '$SAMPLE_WF_NAME' --data-dir $app_dir2 --flows-dir $flow_dir2" 0 "Add wf with different directories"
 
     # Test environment variable (simulate)
     export N8N_DEPLOY_FLOW_DIR="$flow_dir2"

@@ -66,11 +66,11 @@ class TestResult:
 
 
 class WorkflowGenerator:
-    """Generate realistic n8n workflow data for testing"""
+    """Generate realistic n8n wf data for testing"""
 
     @staticmethod
     def create_basic_workflow(name: str, workflow_type: str = "main") -> Dict[str, Any]:
-        """Create a basic n8n workflow structure"""
+        """Create a basic n8n wf structure"""
         return {
             "id": f"workflow_{hashlib.md5(name.encode()).hexdigest()[:8]}",
             "name": name,
@@ -86,7 +86,7 @@ class WorkflowGenerator:
                 },
                 {
                     "parameters": {
-                        "functionCode": f"// {name} processing\nreturn items.map(item => ({{\n  ...item,\n  processed: true,\n  workflow: '{name}'\n}}));"
+                        "functionCode": f"// {name} processing\nreturn items.map(item => ({{\n  ...item,\n  processed: true,\n  wf: '{name}'\n}}));"
                     },
                     "id": "function_node",
                     "name": "Process",
@@ -115,11 +115,11 @@ class WorkflowGenerator:
 
     @staticmethod
     def create_complex_workflow(name: str) -> Dict[str, Any]:
-        """Create a more complex workflow for testing"""
-        workflow = WorkflowGenerator.create_basic_workflow(name, "complex")
+        """Create a more complex wf for testing"""
+        wf = WorkflowGenerator.create_basic_workflow(name, "complex")
 
         # Add more nodes
-        workflow["nodes"].extend(
+        wf["nodes"].extend(
             [
                 {
                     "parameters": {
@@ -151,10 +151,10 @@ class WorkflowGenerator:
         )
 
         # Add more connections
-        workflow["connections"]["Process"] = {"main": [[{"node": "Check Status", "type": "main", "index": 0}]]}
-        workflow["connections"]["Check Status"] = {"main": [[{"node": "Success", "type": "main", "index": 0}], []]}
+        wf["connections"]["Process"] = {"main": [[{"node": "Check Status", "type": "main", "index": 0}]]}
+        wf["connections"]["Check Status"] = {"main": [[{"node": "Success", "type": "main", "index": 0}], []]}
 
-        return workflow
+        return wf
 
 
 class N8nDeployE2ETester:
@@ -245,7 +245,7 @@ class N8nDeployE2ETester:
             return 1, str(e)
 
     def create_sample_workflow_file(self, directory: str, name: str, workflow_type: str = "main") -> str:
-        """Create a sample workflow JSON file"""
+        """Create a sample wf JSON file"""
         workflow_data = WorkflowGenerator.create_basic_workflow(name, workflow_type)
         workflow_path = Path(directory) / f"{name}.json"
 
@@ -292,7 +292,7 @@ class N8nDeployE2ETester:
         assert exit_code == 0, f"Help command failed: {stderr}"
         assert "n8n-deploy" in output, "Help output missing program name"
         assert "COMMAND" in output, "Help output missing command structure"
-        assert "workflow deployment tool" in output.lower(), "Help missing description"
+        assert "wf deployment tool" in output.lower(), "Help missing description"
 
     def test_version_command(self) -> None:
         """Test version command"""
@@ -476,10 +476,10 @@ class N8nDeployE2ETester:
         # Initialize database
         self.run_cli_command(["db", "init", "--data-dir", app_dir])
 
-        # Create sample workflow file
+        # Create sample wf file
         workflow_path = self.create_sample_workflow_file(flow_dir, "test_workflow")
 
-        # Add workflow
+        # Add wf
         exit_code, output, stderr = self.run_cli_command(
             [
                 "add",
@@ -499,10 +499,10 @@ class N8nDeployE2ETester:
             ["list", "--data-dir", app_dir, "--flows-dir", flow_dir, "--no-emoji"]
         )
         assert exit_code == 0, f"Workflow list failed: {stderr}"
-        assert "test_workflow" in output, "Added workflow not in list"
+        assert "test_workflow" in output, "Added wf not in list"
 
     def test_workflow_search_and_stats(self) -> None:
-        """Test workflow search and statistics"""
+        """Test wf search and statistics"""
         app_dir, flow_dir = self.setup_test_environment()
 
         # Setup
@@ -546,10 +546,10 @@ class N8nDeployE2ETester:
             ["stats", "search_test", "--data-dir", app_dir, "--flows-dir", flow_dir]
         )
         assert exit_code == 0, f"Workflow stats failed: {stderr}"
-        assert "Total" in output and "2" in output, "Stats missing workflow count"
+        assert "Total" in output and "2" in output, "Stats missing wf count"
 
     def test_workflow_sync_operation(self) -> None:
-        """Test workflow synchronization"""
+        """Test wf synchronization"""
         app_dir, flow_dir = self.setup_test_environment()
 
         # Setup
@@ -573,7 +573,7 @@ class N8nDeployE2ETester:
         assert "sync_test" in output or "Synchronized" in output, "Sync results missing"
 
     def test_workflow_remove(self) -> None:
-        """Test workflow removal"""
+        """Test wf removal"""
         app_dir, flow_dir = self.setup_test_environment()
 
         # Setup
@@ -592,7 +592,7 @@ class N8nDeployE2ETester:
             ]
         )
 
-        # Remove workflow
+        # Remove wf
         exit_code, output, stderr = self.run_cli_command(
             ["remove", "remove_test", "--data-dir", app_dir, "--flows-dir", flow_dir]
         )
@@ -602,12 +602,12 @@ class N8nDeployE2ETester:
         exit_code, output, stderr = self.run_cli_command(
             ["list", "--data-dir", app_dir, "--flows-dir", flow_dir, "--no-emoji"]
         )
-        assert "remove_test" not in output, "Removed workflow still in list"
+        assert "remove_test" not in output, "Removed wf still in list"
 
     # === Backup Operation Tests ===
 
     def test_backup_workflows(self) -> None:
-        """Test workflow backup creation"""
+        """Test wf backup creation"""
         app_dir, flow_dir = self.setup_test_environment()
         backup_dir = tempfile.mkdtemp(prefix="n8n_backup_")
         self.temp_dirs.append(backup_dir)
@@ -829,7 +829,7 @@ class N8nDeployE2ETester:
         )
         assert exit_code == 0, f"List without emoji failed: {stderr}"
 
-        # Both should contain the workflow name
+        # Both should contain the wf name
         assert "emoji_test" in output_emoji and "emoji_test" in output_no_emoji, "Workflow missing from outputs"
 
     def test_json_format_output(self) -> None:
@@ -883,7 +883,7 @@ class N8nDeployE2ETester:
         assert exit_code == 0 or "error" in stderr.lower(), "Should handle invalid flow directory"
 
     def test_missing_workflow_file(self) -> None:
-        """Test handling of missing workflow files"""
+        """Test handling of missing wf files"""
         app_dir, flow_dir = self.setup_test_environment()
 
         self.run_cli_command(["db", "init", "--data-dir", app_dir])
@@ -900,7 +900,7 @@ class N8nDeployE2ETester:
                 flow_dir,
             ]
         )
-        assert exit_code != 0, "Should fail when adding nonexistent workflow"
+        assert exit_code != 0, "Should fail when adding nonexistent wf"
         assert "not found" in stderr.lower() or "error" in stderr.lower(), "Missing error message"
 
     def test_invalid_api_key_operations(self) -> None:
@@ -918,7 +918,7 @@ class N8nDeployE2ETester:
         assert exit_code != 0, "Should fail when deleting nonexistent key"
 
     def test_malformed_workflow_json(self) -> None:
-        """Test handling of malformed workflow JSON"""
+        """Test handling of malformed wf JSON"""
         app_dir, flow_dir = self.setup_test_environment()
 
         self.run_cli_command(["db", "init", "--data-dir", app_dir])

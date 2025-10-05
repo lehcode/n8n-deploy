@@ -446,7 +446,7 @@ Examples:
   python run_tests.py --e2e                    # Run E2E manual tests only
   python run_tests.py --integration --class TestE2EDatabase  # Run specific test class
   python run_tests.py --integration --class TestE2EEnv       # Run env tests only
-  python run_tests.py --integration --class TestE2EWorkflows # Run workflow tests only
+  python run_tests.py --integration --class TestE2EWorkflows # Run wf tests only
   python run_tests.py --integration --class TestE2EAPIKeys   # Run API key tests only
   python run_tests.py --integration --class TestE2EServer    # Run server tests only
   python run_tests.py --hypothesis             # Run property-based tests with Hypothesis

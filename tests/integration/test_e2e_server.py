@@ -102,11 +102,11 @@ class TestE2EServer(E2ETestBase):
 
     @pytest.mark.integration
     def test_pull_workflow_increments_counter(self) -> None:
-        """Test pull workflow operation increments counter"""
+        """Test pull wf operation increments counter"""
         if not self.setup_database_with_api_key():
             pytest.skip("Could not set up API key")
 
-        # Try to pull a workflow (may fail if server not available)
+        # Try to pull a wf (may fail if server not available)
         returncode, stdout, stderr = self.run_cli_command(
             [
                 "--data-dir",
@@ -126,7 +126,7 @@ class TestE2EServer(E2ETestBase):
 
     @pytest.mark.integration
     def test_push_workflow_increments_counter(self) -> None:
-        """Test push workflow operation increments counter"""
+        """Test push wf operation increments counter"""
         if not self.setup_database_with_api_key():
             pytest.skip("Could not set up API key")
         workflow_data = {
@@ -159,7 +159,7 @@ class TestE2EServer(E2ETestBase):
         )
 
         if add_returncode == 0:
-            # Try to push workflow
+            # Try to push wf
             push_returncode, push_stdout, push_stderr = self.run_cli_command(
                 [
                     "--data-dir",
@@ -358,7 +358,7 @@ class TestE2EServer(E2ETestBase):
             assert returncode in [0, 1]
 
     def test_server_workflow_metadata_handling(self) -> None:
-        """Test server workflow metadata handling"""
+        """Test server wf metadata handling"""
         if not self.setup_database_with_api_key():
             pytest.skip("Could not set up API key")
         workflow_data = {
@@ -416,7 +416,7 @@ class TestE2EServer(E2ETestBase):
                     "position": [i * 100, i * 50],
                     "parameters": {"data": "x" * 1000},  # 1KB per node
                 }
-                for i in range(50)  # 50KB+ workflow
+                for i in range(50)  # 50KB+ wf
             ],
             "connections": {},
             "active": False,

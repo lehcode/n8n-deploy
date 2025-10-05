@@ -2,7 +2,7 @@
 """
 Unit tests for enhanced search functionality in database core operations.
 
-Tests the dual search capability that searches both user-friendly names and n8n workflow IDs.
+Tests the dual search capability that searches both user-friendly names and n8n wf IDs.
 """
 
 from datetime import datetime
@@ -43,13 +43,13 @@ class TestDatabaseSearch:
         ]
 
         # Insert all workflows into database
-        for workflow in workflows:
-            temp_db.add_workflow(workflow)
+        for wf in workflows:
+            temp_db.add_workflow(wf)
 
         return workflows
 
     def test_search_by_exact_n8n_workflow_id(self, temp_db: DBApi, sample_workflows: List[Workflow]):
-        """Test searching by exact n8n workflow ID"""
+        """Test searching by exact n8n wf ID"""
         # Test exact ID match
         results = temp_db.search_workflows("deAVBp391wvomsWY")
 
@@ -58,7 +58,7 @@ class TestDatabaseSearch:
         assert results[0].name == "signup-flow"
 
     def test_search_by_partial_n8n_workflow_id(self, temp_db: DBApi, sample_workflows: List[Workflow]):
-        """Test searching by partial n8n workflow ID"""
+        """Test searching by partial n8n wf ID"""
         # Test partial ID match - should find workflows with IDs starting with "deAV"
         results = temp_db.search_workflows("deAV")
 
@@ -68,7 +68,7 @@ class TestDatabaseSearch:
         assert "deAVKx892pqotuXZ" in workflow_ids
 
     def test_search_by_exact_workflow_name(self, temp_db: DBApi, sample_workflows: List[Workflow]):
-        """Test searching by exact workflow name"""
+        """Test searching by exact wf name"""
         # Test exact name match
         results = temp_db.search_workflows("signup-flow")
 
@@ -77,7 +77,7 @@ class TestDatabaseSearch:
         assert results[0].id == "deAVBp391wvomsWY"
 
     def test_search_by_partial_workflow_name(self, temp_db: DBApi, sample_workflows: List[Workflow]):
-        """Test searching by partial workflow name"""
+        """Test searching by partial wf name"""
         # Test partial name match - should find workflows with names containing "flow"
         results = temp_db.search_workflows("flow")
 
@@ -147,7 +147,7 @@ class TestDatabaseSearch:
 
     def test_search_special_characters(self, temp_db: DBApi, sample_workflows: List[Workflow]):
         """Test search with special characters"""
-        # Search for hyphen (common in workflow names)
+        # Search for hyphen (common in wf names)
         results = temp_db.search_workflows("-")
 
         # Should find workflows with hyphens in names
@@ -156,7 +156,7 @@ class TestDatabaseSearch:
 
     def test_search_underscore_patterns(self, temp_db: DBApi, sample_workflows: List[Workflow]):
         """Test search with underscore patterns"""
-        # Search for underscore (common in workflow IDs)
+        # Search for underscore (common in wf IDs)
         results = temp_db.search_workflows("_")
 
         # Should find workflows with underscores in IDs or names
@@ -182,7 +182,7 @@ class TestDatabaseSearch:
         assert results[0].name == "data-processing-pipeline"
 
     def test_search_workflow_status_independence(self, temp_db: DBApi, sample_workflows: List[Workflow]):
-        """Test that search works across all workflow statuses"""
+        """Test that search works across all wf statuses"""
         # Search should find workflows regardless of status
         results = temp_db.search_workflows("system")
 
@@ -207,24 +207,24 @@ class TestDatabaseSearch:
             results = temp_db.search_workflows(injection)
             # Results should be empty or contain legitimate matches only
             assert isinstance(results, list)
-            for workflow in results:
-                assert isinstance(workflow, Workflow)
+            for wf in results:
+                assert isinstance(wf, Workflow)
 
     def test_search_unicode_characters(self, temp_db: DBApi, sample_workflows: List[Workflow]):
         """Test search with unicode characters"""
-        # Create a workflow with unicode characters
-        unicode_workflow = Workflow(id="unicode_test_123", name="测试-workflow-with-émojis-🚀", status=WorkflowStatus.ACTIVE)
+        # Create a wf with unicode characters
+        unicode_workflow = Workflow(id="unicode_test_123", name="测试-wf-with-émojis-🚀", status=WorkflowStatus.ACTIVE)
         temp_db.add_workflow(unicode_workflow)
 
         # Search for unicode content
         results = temp_db.search_workflows("测试")
         assert len(results) == 1
-        assert results[0].name == "测试-workflow-with-émojis-🚀"
+        assert results[0].name == "测试-wf-with-émojis-🚀"
 
         # Search for emoji
         results = temp_db.search_workflows("🚀")
         assert len(results) == 1
-        assert results[0].name == "测试-workflow-with-émojis-🚀"
+        assert results[0].name == "测试-wf-with-émojis-🚀"
 
     def test_search_very_long_query(self, temp_db: DBApi, sample_workflows: List[Workflow]):
         """Test search with very long query strings"""
@@ -241,11 +241,9 @@ class TestDatabaseSearch:
         # Create many workflows for performance testing
         workflows = []
         for i in range(100):
-            workflow = Workflow(
-                id=f"perf_test_{i:03d}_{i*2:03d}", name=f"performance-test-workflow-{i}", status=WorkflowStatus.ACTIVE
-            )
-            workflows.append(workflow)
-            temp_db.add_workflow(workflow)
+            wf = Workflow(id=f"perf_test_{i:03d}_{i*2:03d}", name=f"performance-test-wf-{i}", status=WorkflowStatus.ACTIVE)
+            workflows.append(wf)
+            temp_db.add_workflow(wf)
 
         # Search that should match many results
         results = temp_db.search_workflows("perf")

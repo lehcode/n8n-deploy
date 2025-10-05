@@ -1,24 +1,24 @@
 #!/usr/bin/env python3
 """
-CLI module for n8n-deploy workflow management
+CLI module for n8n-deploy wf management
 
 This module provides modular CLI commands organized by functional areas:
 - main: Base CLI application with version/help handling
-- workflow: Workflow operations (add, remove, list, sync, search, stats)
+- wf: Workflow operations (add, remove, list, sync, search, stats)
 - db: Database management (init, status, backup, compact)
 - backup: Backup/restore operations for workflows
 - apikey: API key lifecycle management
 """
 
 from .app import (
-    get_cli_app,
-    cli,
-    PROG_NAME,
     HELP_APP_DIR,
     HELP_FLOW_DIR,
-    HELP_SERVER_URL,
-    HELP_NO_EMOJI,
     HELP_FORMAT,
+    HELP_NO_EMOJI,
+    HELP_SERVER_URL,
+    PROG_NAME,
+    cli,
+    get_cli_app,
 )
 
 

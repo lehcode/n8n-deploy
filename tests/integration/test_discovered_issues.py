@@ -21,7 +21,7 @@ os.environ["N8N_DEPLOY_TESTING"] = "1"
 class TestDiscoveredNoneTypeErrors:
     """Test fixes for NoneType errors discovered during testing"""
 
-    @pytest.mark.skip(reason="TODO: Implement test for workflow meta null handling")
+    @pytest.mark.skip(reason="TODO: Implement test for wf meta null handling")
     def test_workflow_sync_meta_none_error_fix(self, test_config: AppConfig) -> None:
         """
         Test fix for: 'NoneType' object has no attribute 'get'
@@ -40,12 +40,12 @@ class TestDiscoveredNoneTypeErrors:
         # TODO: Mock n8n API call and test sync_to_database
         pass
 
-    @pytest.mark.skip(reason="TODO: Implement test for missing workflow fields handling")
+    @pytest.mark.skip(reason="TODO: Implement test for missing wf fields handling")
     def test_workflow_sync_missing_fields_handling(self, test_config: AppConfig) -> None:
         """
-        Test that workflow data handling (pull operations) handles missing or null fields gracefully
+        Test that wf data handling (pull operations) handles missing or null fields gracefully
 
-        Scenario: n8n API returns workflow with various missing optional fields
+        Scenario: n8n API returns wf with various missing optional fields
         Expected: Pull operation succeeds with appropriate defaults for missing fields
 
         TODO: Implement test with workflows missing:
@@ -68,17 +68,18 @@ class TestDiscoveredDatabaseSchemaIssues:
         Issue: Workflow model had push_count/pull_count but database schema didn't
         Fix: Added push_count and pull_count columns to workflows table
         """
+        from datetime import datetime
+
         from api.db.core import DBApi
         from api.db.schema import SchemaApi
         from api.models import Workflow
-        from datetime import datetime
 
         db = DBApi(config=test_config)
         schema = SchemaApi(config=test_config)
         schema.initialize_database()
 
-        # Create workflow with counter fields
-        workflow = Workflow(
+        # Create wf with counter fields
+        wf = Workflow(
             id="test_counters",
             name="Test Workflow",
             file_path="test.json",
@@ -88,8 +89,8 @@ class TestDiscoveredDatabaseSchemaIssues:
             pull_count=0,
         )
 
-        # Add workflow - should not raise column error
-        db.add_workflow(workflow)
+        # Add wf - should not raise column error
+        db.add_workflow(wf)
 
         # Retrieve and verify counters exist and are 0
         retrieved = db.get_workflow("test_counters")
@@ -104,17 +105,18 @@ class TestDiscoveredDatabaseSchemaIssues:
         Scenario: Successful push/pull operations should increment respective counters
         Expected: Database counters increment and persist across operations
         """
+        from datetime import datetime
+
         from api.db.core import DBApi
         from api.db.schema import SchemaApi
         from api.models import Workflow
-        from datetime import datetime
 
         db = DBApi(config=test_config)
         schema = SchemaApi(config=test_config)
         schema.initialize_database()
 
-        # Create workflow with initial counters at 0
-        workflow = Workflow(
+        # Create wf with initial counters at 0
+        wf = Workflow(
             id="test_increment",
             name="Test Workflow",
             file_path="test.json",
@@ -123,7 +125,7 @@ class TestDiscoveredDatabaseSchemaIssues:
             push_count=0,
             pull_count=0,
         )
-        db.add_workflow(workflow)
+        db.add_workflow(wf)
 
         # Increment push count
         result = db.increment_push_count("test_increment")
@@ -252,17 +254,18 @@ class TestDiscoveredDisplayIssues:
         Fix: Display "Never" in human-readable format
         """
         import subprocess
+        from datetime import datetime
+
         from api.db.core import DBApi
         from api.db.schema import SchemaApi
         from api.models import Workflow
-        from datetime import datetime
 
         db = DBApi(config=test_config)
         schema = SchemaApi(config=test_config)
         schema.initialize_database()
 
-        # Create workflow with null last_used
-        workflow = Workflow(
+        # Create wf with null last_used
+        wf = Workflow(
             id="test_never",
             name="Test Never Display",
             file_path="test.json",
@@ -270,7 +273,7 @@ class TestDiscoveredDisplayIssues:
             updated_at=datetime.now(),
             last_used=None,  # Explicitly null
         )
-        db.add_workflow(workflow)
+        db.add_workflow(wf)
 
         # Run list command - check for "Never" display
         # Use environment variable to set database path
@@ -369,9 +372,9 @@ class TestDiscoveredConfigurationIssues:
 # Utility functions for discovered issue tests
 def create_problematic_workflow_data() -> Dict[str, Any]:
     """
-    Create workflow data that reproduces discovered issues
+    Create wf data that reproduces discovered issues
 
-    Returns workflow data with null meta field and other problematic values
+    Returns wf data with null meta field and other problematic values
     that were encountered during end-to-end testing session
     """
     return {
