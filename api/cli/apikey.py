@@ -40,15 +40,15 @@ def apikey() -> None:
 @apikey.command("add")
 @click.argument("key", required=False)
 @click.option("--name", required=True, help="API key name (UTF-8 supported, no path separators)")
+@click.option("--server", help="Server name to link this API key to (uses N8N_SERVER_URL if not specified)")
 @click.option("--description", help="Description of the API key")
-@click.option("--expires-in", type=int, help="Number of days until expiration")
 @click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
 def add_apikey(
     key: Optional[str],
     name: str,
+    server: Optional[str],
     description: Optional[str],
-    expires_in: Optional[int],
     data_dir: Optional[str],
     no_emoji: bool,
 ) -> None:
@@ -57,10 +57,15 @@ def add_apikey(
     Store an API key with a name for later use with n8n server operations.
     The API key should be a valid n8n JWT token.
 
+    If --server is specified, the API key will be automatically linked to that server.
+    If --server is not specified but N8N_SERVER_URL is set, a server will be created
+    from that URL and the key will be linked to it.
+
     \b
     Examples:
-      n8n-deploy apikey add eyJhbGci... --name my_server --description "Production n8n"
-      echo "eyJhbGci..." | n8n-deploy apikey add - --name my_server
+      n8n-deploy apikey add eyJhbGci... --name my_key --server production
+      echo "eyJhbGci..." | n8n-deploy apikey add - --name my_key --server staging
+      N8N_SERVER_URL=http://n8n.local n8n-deploy apikey add - --name my_key
     """
     # Read key from stdin if no key argument provided or if key argument is "-"
     if key is None or key == "-":
@@ -103,6 +108,9 @@ def add_apikey(
             cli_error(f"Invalid characters in JWT token part {i + 1}", no_emoji)
 
     try:
+        import os
+        from ..db.servers import ServerApi
+
         # API key operations only need base folder, not workflow directories
         base_path = Path(data_dir) if data_dir else Path.cwd()
         config = AppConfig(base_folder=base_path)
@@ -112,19 +120,81 @@ def add_apikey(
             name=name,
             api_key=key,
             description=description,
-            expires_days=expires_in,
         )
 
         if no_emoji:
             console.print(f"API key '{name}' added successfully")
             console.print(f"ID: {key_id}")
-            if expires_in:
-                console.print(f"Expires in: {expires_in} days")
         else:
             console.print(f"✅ API key '{name}' added successfully")
             console.print(f"   ID: {key_id}")
-            if expires_in:
-                console.print(f"   Expires in: {expires_in} days")
+
+        # Link to server if --server specified or N8N_SERVER_URL is set
+        server_name = server
+        server_url = os.getenv("N8N_SERVER_URL")
+
+        if server_name or server_url:
+            server_api = ServerApi(config=config)
+
+            # If --server specified, link to that server
+            if server_name:
+                try:
+                    server_api.link_api_key(server_name, name)
+                    if no_emoji:
+                        console.print(f"API key '{name}' linked to server '{server_name}'")
+                    else:
+                        console.print(f"🔗 API key '{name}' linked to server '{server_name}'")
+                except ValueError as e:
+                    if no_emoji:
+                        console.print(f"Warning: {e}")
+                        console.print(f"Server '{server_name}' not found. Create it with:")
+                        console.print(f"  n8n-deploy server create {server_name} <url>")
+                    else:
+                        console.print(f"⚠️  {e}")
+                        console.print(f"   Server '{server_name}' not found. Create it with:")
+                        console.print(f"   n8n-deploy server create {server_name} <url>")
+
+            # If N8N_SERVER_URL is set but --server not specified, create/use server from URL
+            elif server_url:
+                # Check if server with this URL already exists
+                existing_server = server_api.get_server_by_url(server_url)
+                if existing_server:
+                    existing_server_name = str(existing_server["name"])
+                    try:
+                        server_api.link_api_key(existing_server_name, name)
+                        if no_emoji:
+                            console.print(
+                                f"API key '{name}' linked to existing server '{existing_server_name}' ({server_url})"
+                            )
+                        else:
+                            console.print(
+                                f"🔗 API key '{name}' linked to existing server '{existing_server_name}' ({server_url})"
+                            )
+                    except ValueError as e:
+                        if no_emoji:
+                            console.print(f"Warning: Failed to link to server: {e}")
+                        else:
+                            console.print(f"⚠️  Failed to link to server: {e}")
+                else:
+                    # Create new server from URL
+                    auto_server_name = f"server_{key_id}"
+                    try:
+                        server_id = server_api.add_server(
+                            url=server_url, name=auto_server_name, description=f"Auto-created from N8N_SERVER_URL"
+                        )
+                        server_api.link_api_key(auto_server_name, name)
+                        if no_emoji:
+                            console.print(f"Server '{auto_server_name}' created from N8N_SERVER_URL ({server_url})")
+                            console.print(f"API key '{name}' linked to server '{auto_server_name}'")
+                        else:
+                            console.print(f"✨ Server '{auto_server_name}' created from N8N_SERVER_URL ({server_url})")
+                            console.print(f"🔗 API key '{name}' linked to server '{auto_server_name}'")
+                    except Exception as e:
+                        if no_emoji:
+                            console.print(f"Warning: Failed to create/link server: {e}")
+                        else:
+                            console.print(f"⚠️  Failed to create/link server: {e}")
+
     except Exception as e:
         if no_emoji:
             console.print(f"Error: Failed to add API key: {e}")
@@ -174,7 +244,6 @@ def list_apikeys(show_keys: bool, format: str, data_dir: Optional[str], no_emoji
             table.add_column("Name", style="cyan")
             table.add_column("ID", style="dim")
             table.add_column("Created", style="blue")
-            table.add_column("Last Used", style="yellow")
             table.add_column("Status", style="magenta")
             table.add_column("Description", style="dim")
             if show_keys:
@@ -185,26 +254,13 @@ def list_apikeys(show_keys: bool, format: str, data_dir: Optional[str], no_emoji
                 if isinstance(created, str):
                     created = created[:16]  # Truncate datetime
 
-                last_used = key["last_used"]
-                if last_used:
-                    last_used = str(last_used)[:16] if isinstance(last_used, str) else str(last_used)[:16]
-                else:
-                    last_used = "Never"
-
-                # Use text-only status for consistency
-                status_icons = {
-                    "active": "Active",
-                    "inactive": "Inactive",
-                    "expired": "Expired",
-                    "expiring_soon": "Expiring Soon",
-                }
-                status = status_icons.get(key["status"], key["status"])
+                # Determine status based on is_active
+                status = "Active" if key.get("is_active", True) else "Inactive"
 
                 row_data = [
                     key["name"],
                     str(key["id"]),
                     str(created),
-                    last_used,
                     status,
                     key["description"] or "",
                 ]
@@ -277,7 +333,8 @@ def get_apikey(key_name_or_id: str, show_key: bool, format: str, data_dir: Optio
 @apikey.command("deactivate")
 @click.argument("key_name")
 @click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
-def deactivate_apikey(key_name: str, data_dir: Optional[str]) -> None:
+@click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
+def deactivate_apikey(key_name: str, data_dir: Optional[str], no_emoji: bool) -> None:
     """🚫 Deactivate API key (soft delete)"""
     try:
         # API key operations only need base folder, not workflow directories
@@ -289,7 +346,11 @@ def deactivate_apikey(key_name: str, data_dir: Optional[str]) -> None:
         if not success:
             raise click.ClickException("Failed to deactivate API key")
     except Exception as e:
-        raise click.ClickException(f"Failed to deactivate API key: {e}")
+        if no_emoji:
+            console.print(f"Error: Failed to deactivate API key: {e}")
+        else:
+            console.print(f"❌ Error: Failed to deactivate API key: {e}")
+        raise click.Abort()
 
 
 @apikey.command("delete")
