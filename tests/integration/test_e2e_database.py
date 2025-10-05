@@ -600,7 +600,7 @@ class TestE2EDatabase(E2ETestBase):
         db = DBApi(config=config)
 
         # Initialize the database schema
-        db.schema_manager.initialize_database()
+        db.schema_api.initialize_database()
 
         # Test database path resolution
         expected_path = config.database_path
@@ -676,7 +676,7 @@ class TestE2EDatabase(E2ETestBase):
         db = DBApi(config=config)
 
         # Initialize the database schema
-        db.schema_manager.initialize_database()
+        db.schema_api.initialize_database()
 
         # Create first workflow
         workflow_data = {

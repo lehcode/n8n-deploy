@@ -66,7 +66,7 @@ def in_memory_db() -> Generator[sqlite3.Connection, None, None]:
 def test_db(test_config: AppConfig) -> DBApi:
     """Create a test database instance"""
     db = DBApi(config=test_config)
-    db.schema_manager.initialize_database()
+    db.schema_api.initialize_database()
     return db
 
 
@@ -74,7 +74,7 @@ def test_db(test_config: AppConfig) -> DBApi:
 def test_manager(test_config: AppConfig) -> WorkflowApi:
     """Create a test workflow manager instance"""
     manager = WorkflowApi(config=test_config)
-    manager.db.schema_manager.initialize_database()
+    manager.db.schema_api.initialize_database()
     return manager
 
 
@@ -82,7 +82,7 @@ def test_manager(test_config: AppConfig) -> WorkflowApi:
 def test_api_key_manager(test_config: AppConfig) -> KeyApi:
     """Create a test API key manager instance"""
     db = DBApi(config=test_config)
-    db.schema_manager.initialize_database()
+    db.schema_api.initialize_database()
     return KeyApi(db=db, config=test_config)
 
 
