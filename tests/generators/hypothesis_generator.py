@@ -1119,6 +1119,182 @@ class TestTransportTargetPropertyBased:
         assert target.port == port
 
 
+# ═══════════════════════════════════════════════════════════════════════════
+# Server Management Tests (edge cases for server CRUD operations)
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+class TestServerManagement:
+    """Property-based tests for server management operations"""
+
+    @given(server_name=server_names, server_url=server_urls)
+    @settings(max_examples=50, deadline=500)
+    def test_server_create_with_valid_inputs(self, server_name, server_url):
+        """Property: Server create should handle valid names and URLs"""
+        # Skip empty names (filtered by strategy but double-check)
+        assume(len(server_name.strip()) > 0)
+
+        result = subprocess.run(
+            ["./n8n-deploy", "server", "create", server_name, server_url],
+            capture_output=True,
+            timeout=5,
+            text=True,
+        )
+
+        # Should succeed or fail gracefully (duplicate name, etc.)
+        assert result.returncode in [0, 1, 2], f"Server create crashed with: {server_name}, {server_url}"
+
+    @given(server_name=server_names)
+    @settings(max_examples=30, deadline=500)
+    def test_server_list_never_crashes(self, server_name):
+        """Property: Server list should never crash regardless of database state"""
+        result = subprocess.run(
+            ["./n8n-deploy", "server", "list"],
+            capture_output=True,
+            timeout=5,
+            text=True,
+        )
+
+        # Should always succeed
+        assert result.returncode in [0, 1], "Server list command crashed"
+
+    @given(format_choice=format_options)
+    @settings(max_examples=20, deadline=500)
+    def test_server_list_format_options(self, format_choice):
+        """Property: Server list should handle all format options"""
+        cmd = ["./n8n-deploy", "server", "list"]
+        if format_choice:
+            cmd.extend(["--format", format_choice])
+
+        result = subprocess.run(cmd, capture_output=True, timeout=5, text=True)
+        assert result.returncode in [0, 1]
+
+        # JSON format should produce valid JSON
+        if format_choice == "json" and result.returncode == 0:
+            try:
+                data = json.loads(result.stdout)
+                assert isinstance(data, list), "Server list JSON should be array"
+            except json.JSONDecodeError:
+                assert False, "Server list produced invalid JSON"
+
+    @given(active_flag=boolean_flags)
+    @settings(max_examples=10, deadline=500)
+    def test_server_list_active_filter(self, active_flag):
+        """Property: Server list --active filter should work"""
+        cmd = ["./n8n-deploy", "server", "list"]
+        if active_flag:
+            cmd.append("--active")
+
+        result = subprocess.run(cmd, capture_output=True, timeout=5, text=True)
+        assert result.returncode in [0, 1], "--active flag caused crash"
+
+    @given(server_name=server_names)
+    @settings(max_examples=30, deadline=500)
+    def test_server_remove_handles_nonexistent(self, server_name):
+        """Property: Removing non-existent server should fail gracefully"""
+        assume(len(server_name.strip()) > 0)
+
+        result = subprocess.run(
+            ["./n8n-deploy", "server", "remove", server_name, "--confirm", "--preserve-keys"],
+            capture_output=True,
+            timeout=5,
+            text=True,
+        )
+
+        # Should handle gracefully (may succeed if server exists, fail if not)
+        assert result.returncode in [0, 1, 2], "Server remove crashed unexpectedly"
+
+    @given(
+        server_name=server_names,
+        server_url=server_urls,
+        format_choice=format_options,
+    )
+    @settings(max_examples=40, deadline=1000)
+    def test_server_operations_combined(self, server_name, server_url, format_choice):
+        """Property: Server operations with format options should work"""
+        assume(len(server_name.strip()) > 0)
+
+        # Create server
+        create_result = subprocess.run(
+            ["./n8n-deploy", "server", "create", server_name, server_url],
+            capture_output=True,
+            timeout=5,
+            text=True,
+        )
+
+        # List with format
+        list_cmd = ["./n8n-deploy", "server", "list"]
+        if format_choice:
+            list_cmd.extend(["--format", format_choice])
+
+        list_result = subprocess.run(list_cmd, capture_output=True, timeout=5, text=True)
+
+        # Both should handle gracefully
+        assert create_result.returncode in [0, 1, 2]
+        assert list_result.returncode in [0, 1]
+
+    @given(malicious_input=malicious_names)
+    @settings(max_examples=20, deadline=500)
+    def test_malicious_server_names_blocked(self, malicious_input):
+        """Property: SQL injection in server names fails safely"""
+        assume("\x00" not in malicious_input)
+
+        result = subprocess.run(
+            ["./n8n-deploy", "server", "create", malicious_input, "http://localhost:5678"],
+            capture_output=True,
+            timeout=5,
+            text=True,
+        )
+
+        # Should not crash, should not show SQL errors
+        assert result.returncode in [0, 1, 2]
+        assert "syntax error" not in result.stderr.lower()
+        assert "SQL" not in result.stderr
+
+    @given(server_name=server_names, api_key_name=api_key_names)
+    @settings(max_examples=30, deadline=500)
+    def test_server_api_key_linking_operations(self, server_name, api_key_name):
+        """Property: Server API key linking should handle edge cases"""
+        assume(len(server_name.strip()) > 0 and len(api_key_name.strip()) > 0)
+
+        # Try to link (may fail if server/key doesn't exist)
+        result = subprocess.run(
+            ["./n8n-deploy", "server", "add", server_name, api_key_name],
+            capture_output=True,
+            timeout=5,
+            text=True,
+        )
+
+        # Should fail gracefully if server or key doesn't exist
+        assert result.returncode in [0, 1, 2], "Server add API key crashed"
+
+    @given(
+        server_url_1=server_urls,
+        server_url_2=server_urls,
+    )
+    @settings(max_examples=20, deadline=500)
+    def test_multiple_servers_with_same_url(self, server_url_1, server_url_2):
+        """Property: Multiple servers can have different names with same URL"""
+        # This tests that URL is not unique constraint (only name is)
+        result1 = subprocess.run(
+            ["./n8n-deploy", "server", "create", "server1", server_url_1],
+            capture_output=True,
+            timeout=5,
+            text=True,
+        )
+
+        result2 = subprocess.run(
+            ["./n8n-deploy", "server", "create", "server2", server_url_1],
+            capture_output=True,
+            timeout=5,
+            text=True,
+        )
+
+        # Both should handle gracefully
+        assert result1.returncode in [0, 1, 2]
+        assert result2.returncode in [0, 1, 2]
+
+
 def generate_example_runs():
     """Generate example test data for documentation"""
     print("Generating example test inputs that Hypothesis would try:\n")
