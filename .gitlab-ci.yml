@@ -41,7 +41,7 @@ cache:
   before_script:
     # Configure APT proxy for faster package installation
     - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy || true
-    - apt-get -q update && apt-get install -q -y git
+    - apt-get -q update && apt-get -qy install git
     - python -m pip install --quiet --upgrade pip
     - pip install --quiet uv
     - uv venv --python python3 .venv
@@ -169,7 +169,7 @@ build:python-matrix:
   before_script:
     # Configure APT proxy for faster package installation
     - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy || true
-    - apt-get -q update && apt-get -q install -y git
+    - apt-get -q update && apt-get -qy install git
     - python -m pip install --quiet --upgrade pip
     - pip install --quiet uv
   script:
