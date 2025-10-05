@@ -23,7 +23,7 @@ from rich.table import Table
 
 from ..config import get_config
 from ..db import DBApi
-from .app import HELP_APP_DIR, HELP_FLOW_DIR, HELP_NO_EMOJI, CustomGroup
+from .app import HELP_APP_DIR, HELP_FLOW_DIR, HELP_NO_EMOJI, CustomGroup, CustomCommand
 
 console = Console()
 
@@ -106,7 +106,7 @@ def db() -> None:
     pass
 
 
-@db.command()
+@db.command(cls=CustomCommand)
 @click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
 @click.option("--format", type=click.Choice(["table", "json"]), default="table", help="Output format")
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
@@ -268,7 +268,7 @@ def init(data_dir: Optional[str], format: str, no_emoji: bool, import_db: bool) 
                 console.print("for workflow operations (add, push, pull, etc.)")
 
 
-@db.command()
+@db.command(cls=CustomCommand)
 @click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
 @click.option("--format", type=click.Choice(["json"]), help="JSON output, implies no emoji")
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
@@ -354,7 +354,7 @@ def status(data_dir: Optional[str], format: Optional[str], no_emoji: bool) -> No
         console.print(table)
 
 
-@db.command()
+@db.command(cls=CustomCommand)
 @click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
 def compact(data_dir: Optional[str], no_emoji: bool) -> None:
@@ -381,7 +381,7 @@ def compact(data_dir: Optional[str], no_emoji: bool) -> None:
         console.print("✅ Database optimization complete")
 
 
-@db.command()
+@db.command(cls=CustomCommand)
 @click.argument("backup_path", required=False)
 @click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
 def backup(

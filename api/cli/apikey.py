@@ -20,7 +20,7 @@ from rich.table import Table
 from ..api_keys import KeyApi
 from ..config import AppConfig
 from ..db import DBApi
-from .app import HELP_APP_DIR, HELP_NO_EMOJI, CustomGroup
+from .app import HELP_APP_DIR, HELP_NO_EMOJI, CustomGroup, CustomCommand
 from .output import cli_error
 
 console = Console()
@@ -37,7 +37,7 @@ def apikey() -> None:
     pass
 
 
-@apikey.command("add")
+@apikey.command("add", cls=CustomCommand)
 @click.argument("key", required=False)
 @click.option("--name", required=True, help="API key name (UTF-8 supported, no path separators)")
 @click.option("--server", help="Server name to link this API key to (uses N8N_SERVER_URL if not specified)")
@@ -203,7 +203,7 @@ def add_apikey(
         raise click.Abort()
 
 
-@apikey.command("list")
+@apikey.command("list", cls=CustomCommand)
 @click.option("--show-keys", is_flag=True, help="Show actual API keys (use with caution)")
 @click.option(
     "--format",
@@ -273,7 +273,7 @@ def list_apikeys(show_keys: bool, format: str, data_dir: Optional[str], no_emoji
         raise click.ClickException(f"Failed to list API keys: {e}")
 
 
-@apikey.command("get")
+@apikey.command("get", cls=CustomCommand)
 @click.argument("key_name_or_id")
 @click.option("--show-key", is_flag=True, help="Show the actual API key (use with caution)")
 @click.option(
@@ -330,7 +330,7 @@ def get_apikey(key_name_or_id: str, show_key: bool, format: str, data_dir: Optio
             raise click.Abort()
 
 
-@apikey.command("deactivate")
+@apikey.command("deactivate", cls=CustomCommand)
 @click.argument("key_name")
 @click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
@@ -353,7 +353,7 @@ def deactivate_apikey(key_name: str, data_dir: Optional[str], no_emoji: bool) ->
         raise click.Abort()
 
 
-@apikey.command("delete")
+@apikey.command("delete", cls=CustomCommand)
 @click.argument("key_name")
 @click.option("--confirm", is_flag=True, help="Confirm permanent deletion")
 @click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
@@ -372,7 +372,7 @@ def delete_apikey(key_name: str, confirm: bool, data_dir: Optional[str]) -> None
         raise click.ClickException(f"Failed to delete API key: {e}")
 
 
-@apikey.command("test")
+@apikey.command("test", cls=CustomCommand)
 @click.argument("key_name")
 @click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
 def test_apikey(key_name: str, data_dir: Optional[str]) -> None:
