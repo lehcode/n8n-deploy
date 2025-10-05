@@ -64,7 +64,7 @@ def add(
     name: str,
     data_dir: Optional[str],
     flows_dir: Optional[str],
-    server_url: Optional[str],
+    remote: Optional[str],
     skip_ssl_verify: bool,
     format: str,
     no_emoji: bool,
@@ -87,7 +87,7 @@ def add(
         )
 
     try:
-        config = get_config(base_folder=data_dir, flow_folder=flows_dir, n8n_url=server_url)
+        config = get_config(base_folder=data_dir, flow_folder=flows_dir, n8n_url=remote)
     except ValueError as e:
         cli_error(str(e), no_emoji)
 
@@ -463,7 +463,7 @@ def push(
 )
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
 def list_server(
-    server_url: Optional[str],
+    remote: Optional[str],
     skip_ssl_verify: bool,
     data_dir: Optional[str],
     flows_dir: Optional[str],
@@ -478,20 +478,8 @@ def list_server(
         raise click.Abort()
 
     try:
-        manager = WorkflowApi(config=config, skip_ssl_verify=skip_ssl_verify)
-        # Override server URL if provided
-        if server_url:
-            original_url = os.environ.get("N8N_SERVER_URL")
-            os.environ["N8N_SERVER_URL"] = server_url
-
+        manager = WorkflowApi(config=config, skip_ssl_verify=skip_ssl_verify, remote=remote)
         workflows = manager.list_n8n_workflows()
-
-        # Restore original environment
-        if server_url:
-            if original_url:
-                os.environ["N8N_SERVER_URL"] = original_url
-            else:
-                os.environ.pop("N8N_SERVER_URL", None)
 
         if format == "json":
             console.print(JSON.from_data(workflows))
