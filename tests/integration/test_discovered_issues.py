@@ -152,7 +152,7 @@ class TestDiscoveredHardcodedValueIssues:
         """
         Test that server commands require explicit URL configuration
 
-        Scenario: No N8N_DEPLOY_SERVER_URL or --server-url provided
+        Scenario: No N8N_SERVER_URL or --remote provided
         Expected: Clear error message directing user to configure server URL
 
         TODO: Implement test that:
@@ -246,12 +246,12 @@ class TestDiscoveredConfigurationIssues:
         """
         Test server URL configuration priority: CLI flag > environment variable
 
-        Scenario: Both --server-url and N8N_DEPLOY_SERVER_URL are configured
+        Scenario: Both --remote and N8N_SERVER_URL are configured
         Expected: CLI flag takes precedence over environment variable
 
         TODO: Implement test that:
-        1. Sets N8N_DEPLOY_SERVER_URL environment variable
-        2. Uses --server-url CLI flag with different URL
+        1. Sets N8N_SERVER_URL environment variable
+        2. Uses --remote CLI flag with different URL
         3. Mocks server request to capture which URL is used
         4. Verifies CLI flag URL is used, not environment URL
         """

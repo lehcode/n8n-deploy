@@ -154,7 +154,7 @@ class TestPropertyBased:
     @settings(max_examples=20)
     def test_env_accepts_valid_server_urls(self, server_url):
         """Property: env command should accept valid server URLs"""
-        result = subprocess.run(["./n8n-deploy", "env", "--server-url", server_url], capture_output=True, timeout=5, text=True)
+        result = subprocess.run(["./n8n-deploy", "env", "--remote", server_url], capture_output=True, timeout=5, text=True)
         assert result.returncode == 0, f"Should accept valid URL: {server_url}"
 
     @given(workflow_name=workflow_names)
@@ -237,7 +237,7 @@ class TestPropertyBased:
     def test_combined_options_never_crash(self, server_url, app_dir):
         """Property: Combining multiple options should never crash"""
         result = subprocess.run(
-            ["./n8n-deploy", "env", "--data-dir", app_dir, "--server-url", server_url, "--format", "json"],
+            ["./n8n-deploy", "env", "--data-dir", app_dir, "--remote", server_url, "--format", "json"],
             capture_output=True,
             timeout=5,
             text=True,
@@ -583,7 +583,7 @@ class TestOptionCombinations:
             app_dir,
             "--flows-dir",
             flow_dir,
-            "--server-url",
+            "--remote",
             server_url,
         ]
         if format_choice:

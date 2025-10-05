@@ -462,7 +462,7 @@ class N8nDeployE2ETester:
         # Test connection (will fail without real server, but should handle gracefully)
         exit_code, output, stderr = self.run_cli_command(
             ["apikey", "test", "test_connection_key"],
-            env={"N8N_DEPLOY_SERVER_URL": self.test_server_url},
+            env={"N8N_SERVER_URL": self.test_server_url},
         )
         # Don't assert exit code as connection will fail, just ensure it doesn't crash
         assert "test_connection_key" in output or "connection" in output.lower(), "Missing test output"
@@ -735,7 +735,7 @@ class N8nDeployE2ETester:
         self.run_cli_command(["db", "init", "--data-dir", app_dir])
 
         exit_code, output, stderr = self.run_cli_command(
-            ["list-server", "--data-dir", app_dir, "--server-url", "http://nonexistent-server:5678"]
+            ["list-server", "--data-dir", app_dir, "--remote", "http://nonexistent-server:5678"]
         )
         # Should fail gracefully
         assert (
@@ -760,7 +760,7 @@ class N8nDeployE2ETester:
                 app_dir,
                 "--flows-dir",
                 flow_dir,
-                "--server-url",
+                "--remote",
                 self.test_server_url,
             ]
         )
@@ -790,7 +790,7 @@ class N8nDeployE2ETester:
                 app_dir,
                 "--flows-dir",
                 flow_dir,
-                "--server-url",
+                "--remote",
                 self.test_server_url,
             ]
         )
@@ -1003,7 +1003,7 @@ class N8nDeployE2ETester:
 
         # Test with environment variable
         exit_code, output, stderr = self.run_cli_command(
-            ["list-server", "--data-dir", app_dir], env={"N8N_DEPLOY_SERVER_URL": self.test_server_url}
+            ["list-server", "--data-dir", app_dir], env={"N8N_SERVER_URL": self.test_server_url}
         )
         # Will fail to connect but should show server URL
         assert (
@@ -1013,8 +1013,8 @@ class N8nDeployE2ETester:
         # Test CLI override
         test_cli_url = "http://cli-override:5678"
         exit_code, output, stderr = self.run_cli_command(
-            ["list-server", "--data-dir", app_dir, "--server-url", test_cli_url],
-            env={"N8N_DEPLOY_SERVER_URL": self.test_server_url},
+            ["list-server", "--data-dir", app_dir, "--remote", test_cli_url],
+            env={"N8N_SERVER_URL": self.test_server_url},
         )
         # CLI option should take precedence
         assert test_cli_url in output or "connection" in output.lower(), "CLI server URL override not working"
