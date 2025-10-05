@@ -47,7 +47,7 @@ class TestE2EServer(E2ETestBase):
 
             # Should accept the URL (may fail due to server not reachable)
             assert cli_returncode in [0, 1], f"Unexpected return code: {cli_returncode}\nSTDERR: {cli_stderr}"
-            env = {"N8N_DEPLOY_SERVER_URL": url}
+            env = {"N8N_SERVER_URL": url}
             env_returncode, env_stdout, env_stderr = self.run_cli_command(
                 ["--data-dir", self.temp_dir, "wf", "server"], env=env
             )
