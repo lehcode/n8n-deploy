@@ -13,6 +13,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from ..api_keys import KeyApi
 from ..config import AppConfig
 from ..db import DBApi
+from ..db.servers import ServerCrud
 from ..models import Workflow
 from .http_client import N8nHttpClient
 from .server_resolver import ServerResolver
@@ -42,7 +43,6 @@ class N8nAPI:
             tuple: (server_url, api_key) or (None, None) if resolution fails
         """
         import os
-        from ..db.servers import ServerApi
 
         if not self.remote:
             # No remote specified - use config or environment
@@ -57,7 +57,7 @@ class N8nAPI:
             return (server_url, env_api_key)
 
         # Remote specified - check if it's a server name or URL
-        server_api = ServerApi(config=self.config)
+        server_api = ServerCrud(config=self.config)
 
         # Try as server name first
         server = server_api.get_server_by_name(self.remote)
