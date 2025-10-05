@@ -64,6 +64,29 @@ class CustomCommand(click.Command):
         formatter.write(f"Usage: {usage_line}\n\n")
 
 
+class CustomCommand(click.Command):
+    """Custom Click Command that shows consistent usage format"""
+
+    def format_usage(self, ctx: click.Context, formatter: click.HelpFormatter) -> None:
+        """Override format_usage to show consistent usage across all commands"""
+        # Build the command path
+        pieces: List[str] = []
+        current_ctx: Optional[click.Context] = ctx
+        while current_ctx is not None:
+            if current_ctx.info_name:
+                pieces.insert(0, current_ctx.info_name)
+            current_ctx = current_ctx.parent
+
+        # Build usage line showing the full command path
+        command_path = " ".join(pieces[1:]) if len(pieces) > 1 else ""
+        if command_path:
+            usage_line = f"n8n-deploy|./n8n-deploy {command_path} [OPTIONS]..."
+        else:
+            usage_line = "n8n-deploy|./n8n-deploy COMMAND [OPTIONS]..."
+
+        formatter.write(f"Usage: {usage_line}\n\n")
+
+
 class CustomGroup(click.Group):
     """Custom Click Group that formats usage as 'COMMAND [OPTIONS]...' instead of '[OPTIONS] COMMAND [ARGS]...'"""
 
