@@ -263,7 +263,7 @@ class TestE2EAPIKeys(E2ETestBase):
                     "server",
                     "--data-dir",
                     self.temp_dir,
-                    "--server-url",
+                    "--remote",
                     "http://localhost:5678",
                 ]
             )

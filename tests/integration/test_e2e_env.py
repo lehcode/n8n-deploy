@@ -52,7 +52,7 @@ class TestE2EEnv(E2ETestBase):
         assert "priority_order" in data
         assert "N8N_DEPLOY_DATA" in data["variables"]
         assert "N8N_DEPLOY_FLOWS" in data["variables"]
-        assert "N8N_DEPLOY_SERVER_URL" in data["variables"]
+        assert "N8N_SERVER_URL" in data["variables"]
 
     def test_env_with_app_dir_option(self) -> None:
         """Test env command with --data-dir CLI option"""
@@ -81,17 +81,17 @@ class TestE2EEnv(E2ETestBase):
         assert data["variables"]["N8N_DEPLOY_FLOWS"]["source"] == "CLI"
 
     def test_env_with_server_url_option(self) -> None:
-        """Test env command with --server-url CLI option"""
+        """Test env command with --remote CLI option"""
         test_server_url = "http://test-server.example.com:5678"
 
-        returncode, stdout, stderr = self.run_cli_command(["env", "--server-url", test_server_url, "--format", "json"])
+        returncode, stdout, stderr = self.run_cli_command(["env", "--remote", test_server_url, "--format", "json"])
 
-        self.assert_command_details(returncode, stdout, stderr, 0, "env with --server-url option")
+        self.assert_command_details(returncode, stdout, stderr, 0, "env with --remote option")
 
         # Verify CLI option takes precedence
         data = json.loads(stdout)
-        assert data["variables"]["N8N_DEPLOY_SERVER_URL"]["value"] == test_server_url
-        assert data["variables"]["N8N_DEPLOY_SERVER_URL"]["source"] == "CLI"
+        assert data["variables"]["N8N_SERVER_URL"]["value"] == test_server_url
+        assert data["variables"]["N8N_SERVER_URL"]["source"] == "CLI"
 
     def test_env_with_all_options(self) -> None:
         """Test env command with all CLI options"""
@@ -106,7 +106,7 @@ class TestE2EEnv(E2ETestBase):
                 test_app_dir,
                 "--flows-dir",
                 test_flow_dir,
-                "--server-url",
+                "--remote",
                 test_server_url,
                 "--format",
                 "json",
@@ -121,15 +121,15 @@ class TestE2EEnv(E2ETestBase):
         assert data["variables"]["N8N_DEPLOY_DATA"]["source"] == "CLI"
         assert data["variables"]["N8N_DEPLOY_FLOWS"]["value"] == test_flow_dir
         assert data["variables"]["N8N_DEPLOY_FLOWS"]["source"] == "CLI"
-        assert data["variables"]["N8N_DEPLOY_SERVER_URL"]["value"] == test_server_url
-        assert data["variables"]["N8N_DEPLOY_SERVER_URL"]["source"] == "CLI"
+        assert data["variables"]["N8N_SERVER_URL"]["value"] == test_server_url
+        assert data["variables"]["N8N_SERVER_URL"]["source"] == "CLI"
 
     def test_env_with_environment_variables(self) -> None:
         """Test env command respects environment variables"""
         env = {
             "N8N_DEPLOY_DATA": str(Path(self.temp_dir) / "env_app"),
             "N8N_DEPLOY_FLOWS": str(Path(self.temp_dir) / "env_flow"),
-            "N8N_DEPLOY_SERVER_URL": "http://env-server.example.com:5678",
+            "N8N_SERVER_URL": "http://env-server.example.com:5678",
         }
 
         returncode, stdout, stderr = self.run_cli_command(["env", "--format", "json"], env=env)

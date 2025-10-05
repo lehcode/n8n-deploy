@@ -677,7 +677,7 @@ class TestE2EWorkflows(E2ETestBase):
                 self.temp_dir,
                 "wf",
                 "server",
-                "--server-url",
+                "--remote",
                 "http://test-server:5678",
                 "--format",
                 "json",

@@ -46,12 +46,12 @@ class TestE2EServer(E2ETestBase):
 
         for url in test_urls:
             cli_returncode, cli_stdout, cli_stderr = self.run_cli_command(
-                ["--data-dir", self.temp_dir, "--server-url", url, "wf", "server"]
+                ["--data-dir", self.temp_dir, "--remote", url, "wf", "server"]
             )
 
             # Should accept the URL (may fail due to server not reachable)
             assert cli_returncode in [0, 1], f"Unexpected return code: {cli_returncode}\nSTDERR: {cli_stderr}"
-            env = {"N8N_DEPLOY_SERVER_URL": url}
+            env = {"N8N_SERVER_URL": url}
             env_returncode, env_stdout, env_stderr = self.run_cli_command(
                 ["--data-dir", self.temp_dir, "wf", "server"], env=env
             )
@@ -84,7 +84,7 @@ class TestE2EServer(E2ETestBase):
             [
                 "--data-dir",
                 self.temp_dir,
-                "--server-url",
+                "--remote",
                 "http://localhost:5678",
                 "wf",
                 "server",
@@ -111,7 +111,7 @@ class TestE2EServer(E2ETestBase):
             [
                 "--data-dir",
                 self.temp_dir,
-                "--server-url",
+                "--remote",
                 "http://localhost:5678",
                 "wf",
                 "pull",
@@ -164,7 +164,7 @@ class TestE2EServer(E2ETestBase):
                 [
                     "--data-dir",
                     self.temp_dir,
-                    "--server-url",
+                    "--remote",
                     "http://localhost:5678",
                     "wf",
                     "push",
@@ -187,9 +187,7 @@ class TestE2EServer(E2ETestBase):
         ]
 
         for url in unreachable_urls:
-            returncode, stdout, stderr = self.run_cli_command(
-                ["--data-dir", self.temp_dir, "--server-url", url, "wf", "server"]
-            )
+            returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "--remote", url, "wf", "server"])
 
             # Should handle gracefully (may return 0 with error message or 1 for failure)
             assert returncode in [0, 1], f"Unexpected return code: {returncode}\nSTDOUT: {stdout}\nSTDERR: {stderr}"
@@ -217,7 +215,7 @@ class TestE2EServer(E2ETestBase):
             [
                 "--data-dir",
                 self.temp_dir,
-                "--server-url",
+                "--remote",
                 "http://localhost:5678",
                 "wf",
                 "server",
@@ -238,7 +236,7 @@ class TestE2EServer(E2ETestBase):
 
         for cmd in server_commands:
             returncode, stdout, stderr = self.run_cli_command(
-                ["--data-dir", self.temp_dir, "--server-url", "http://localhost:5678"] + cmd
+                ["--data-dir", self.temp_dir, "--remote", "http://localhost:5678"] + cmd
             )
 
             # Should handle response parsing gracefully
@@ -256,7 +254,7 @@ class TestE2EServer(E2ETestBase):
         timeout_url = "http://8.8.8.8:5678"  # Google DNS, wrong port
 
         returncode, stdout, stderr = self.run_cli_command(
-            ["--data-dir", self.temp_dir, "--server-url", timeout_url, "wf", "server"]
+            ["--data-dir", self.temp_dir, "--remote", timeout_url, "wf", "server"]
         )
 
         # Should timeout gracefully (exit code 1 for connection failure)
@@ -274,9 +272,7 @@ class TestE2EServer(E2ETestBase):
         https_urls = ["https://localhost:5678", "https://192.168.255.255:5678"]  # Non-routable IP
 
         for url in https_urls:
-            returncode, stdout, stderr = self.run_cli_command(
-                ["--data-dir", self.temp_dir, "--server-url", url, "wf", "server"]
-            )
+            returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "--remote", url, "wf", "server"])
 
             # Should handle HTTPS
             assert returncode in [0, 1]
@@ -299,7 +295,7 @@ class TestE2EServer(E2ETestBase):
                 [
                     "--data-dir",
                     self.temp_dir,
-                    "--server-url",
+                    "--remote",
                     "http://localhost:5678",
                     "wf",
                     "server",
@@ -331,7 +327,7 @@ class TestE2EServer(E2ETestBase):
             [
                 "--data-dir",
                 self.temp_dir,
-                "--server-url",
+                "--remote",
                 "http://localhost:5678",
                 "wf",
                 "server",
@@ -356,9 +352,7 @@ class TestE2EServer(E2ETestBase):
         ]
 
         for url in url_formats:
-            returncode, stdout, stderr = self.run_cli_command(
-                ["--data-dir", self.temp_dir, "--server-url", url, "wf", "server"]
-            )
+            returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "--remote", url, "wf", "server"])
 
             # Should construct proper API endpoints
             assert returncode in [0, 1]
@@ -397,7 +391,7 @@ class TestE2EServer(E2ETestBase):
                 [
                     "--data-dir",
                     self.temp_dir,
-                    "--server-url",
+                    "--remote",
                     "http://localhost:5678",
                     "wf",
                     "push",
@@ -449,7 +443,7 @@ class TestE2EServer(E2ETestBase):
                 [
                     "--data-dir",
                     self.temp_dir,
-                    "--server-url",
+                    "--remote",
                     "http://localhost:5678",
                     "wf",
                     "push",
@@ -473,8 +467,8 @@ class TestE2EServer(E2ETestBase):
         ]
 
         for cmd in commands:
-            # Run with --server-url to avoid missing URL errors
-            full_cmd = ["--data-dir", self.temp_dir, "--server-url", "https://localhost:5678"] + cmd
+            # Run with --remote to avoid missing URL errors
+            full_cmd = ["--data-dir", self.temp_dir, "--remote", "https://localhost:5678"] + cmd
             returncode, stdout, stderr = self.run_cli_command(full_cmd)
 
             # Should not error on unknown option (returns 0 or 1, not 2)

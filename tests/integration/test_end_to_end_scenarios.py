@@ -109,7 +109,7 @@ class TestEndToEndServerIntegration:
         """
         Test server commands fail gracefully when no server URL is configured
 
-        Scenario: User runs server commands without N8N_DEPLOY_SERVER_URL or --server-url
+        Scenario: User runs server commands without N8N_SERVER_URL or --remote
         Expected: Clear error message directing user to configure server URL
 
         TODO: Implement test for commands:
@@ -124,12 +124,12 @@ class TestEndToEndServerIntegration:
         """
         Test server URL configuration priority (CLI flag > environment variable)
 
-        Scenario: Both --server-url and N8N_DEPLOY_SERVER_URL are set
+        Scenario: Both --remote and N8N_SERVER_URL are set
         Expected: CLI flag takes precedence over environment variable
 
         TODO: Implement test that:
-        - Sets N8N_DEPLOY_SERVER_URL=http://env-server.com
-        - Uses --server-url http://cli-server.com
+        - Sets N8N_SERVER_URL=http://env-server.com
+        - Uses --remote http://cli-server.com
         - Verifies connection attempt goes to cli-server.com
         """
         pass

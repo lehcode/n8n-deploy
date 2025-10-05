@@ -40,8 +40,8 @@ print_section "Test Category 1.5: Environment Configuration"
 
     # Test with server URL
     local test_server="http://test.example.com:5678"
-    run_test "Env with server" "$CLI_COMMAND env --server-url $test_server" 0 "Display env with server URL"
-    validate_output "Env shows server" "$CLI_COMMAND env --server-url $test_server" "$test_server"
+    run_test "Env with server" "$CLI_COMMAND env --remote $test_server" 0 "Display env with server URL"
+    validate_output "Env shows server" "$CLI_COMMAND env --remote $test_server" "$test_server"
 
     # Test environment variable detection
     export N8N_DEPLOY_DATA="$app_dir"

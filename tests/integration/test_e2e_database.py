@@ -802,7 +802,7 @@ class TestE2EDatabaseInit:
 
         # Extract global options from the beginning
         while i < len(args):
-            if args[i] in ["--data-dir", "--flows-dir", "--server-url"] and i + 1 < len(args):
+            if args[i] in ["--data-dir", "--flows-dir", "--remote"] and i + 1 < len(args):
                 global_options.extend([args[i], args[i + 1]])
                 i += 2
             elif args[i] in ["--no-emoji"]:
