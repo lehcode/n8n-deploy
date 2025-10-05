@@ -20,8 +20,6 @@ class ApiKey:
     name: str
     plain_key: str  # API key
     created_at: datetime
-    last_used: Optional[datetime] = None
-    expires_at: Optional[datetime] = None
     is_active: bool = True
     description: Optional[str] = None
 
@@ -38,27 +36,21 @@ class KeyApi:
         name: str,
         api_key: str,
         description: Optional[str] = None,
-        expires_days: Optional[int] = None,
+        expires_days: Optional[int] = None,  # Kept for backwards compatibility, but ignored
     ) -> int:
         """Add a new API key to storage"""
-        expires_at = None
-        if expires_days:
-            expires_at = datetime.now() + timedelta(days=expires_days)
-
         with self.db.get_connection() as conn:
             cursor = conn.execute(
                 """
-                INSERT INTO api_keys (name, api_key,
-                                    created_at, expires_at, is_active, description)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO api_keys (name, api_key, description, is_active, created_at)
+                VALUES (?, ?, ?, ?, ?)
             """,
                 (
                     name,
                     api_key,
-                    datetime.now(),
-                    expires_at,
-                    True,
                     description,
+                    True,
+                    datetime.now(),
                 ),
             )
             conn.commit()
@@ -71,11 +63,10 @@ class KeyApi:
 
     def get_api_key(self, key_name: str, update_last_used: bool = True) -> Optional[str]:
         """Retrieve API key by name"""
-
         with self.db.get_connection() as conn:
             cursor = conn.execute(
                 """
-                SELECT id, api_key, expires_at, is_active
+                SELECT id, api_key
                 FROM api_keys
                 WHERE name = ? AND is_active = 1
                 ORDER BY created_at DESC LIMIT 1
@@ -87,40 +78,17 @@ class KeyApi:
             if not row:
                 return None
 
-            key_id, plain_key, expires_at, is_active = row
-
-            if expires_at:
-                expires_dt = datetime.fromisoformat(expires_at) if isinstance(expires_at, str) else expires_at
-                if datetime.now() > expires_dt:
-                    print(f"⚠️  API key has expired: {expires_at}")
-                    return None
-
-            if update_last_used:
-                conn.execute(
-                    """
-                    UPDATE api_keys SET last_used = ? WHERE id = ?
-                """,
-                    (datetime.now(), key_id),
-                )
-                conn.commit()
+            key_id, plain_key = row
 
             # Return key
             return str(plain_key) if plain_key is not None else None
 
     def list_api_keys(self) -> List[Dict[str, Any]]:
         """List all stored API keys metadata"""
-
         with self.db.get_connection() as conn:
             cursor = conn.execute(
                 """
-                SELECT id, name, created_at, last_used, expires_at,
-                       is_active, description,
-                       CASE
-                           WHEN is_active = 0 THEN 'inactive'
-                           WHEN expires_at IS NOT NULL AND expires_at < datetime('now') THEN 'expired'
-                           WHEN expires_at IS NOT NULL AND expires_at < datetime('now', '+7 days') THEN 'expiring_soon'
-                           ELSE 'active'
-                       END as status
+                SELECT id, name, created_at, description, is_active
                 FROM api_keys
                 ORDER BY created_at DESC
             """
@@ -132,33 +100,15 @@ class KeyApi:
                     "id": row[0],
                     "name": row[1],
                     "created_at": row[2],
-                    "last_used": row[3],
-                    "expires_at": row[4],
-                    "is_active": bool(row[5]),
-                    "description": row[6],
-                    "status": row[7],
+                    "description": row[3],
+                    "is_active": bool(row[4]),
                 }
                 keys.append(key_data)
 
             return keys
 
-    def _get_key_status(self, expires_at: Optional[str], is_active: bool) -> str:
-        """Get human-readable status of API key"""
-        if not is_active:
-            return "inactive"
-
-        if expires_at:
-            expires_dt = datetime.fromisoformat(expires_at) if isinstance(expires_at, str) else expires_at
-            if datetime.now() > expires_dt:
-                return "expired"
-            elif datetime.now() + timedelta(days=7) > expires_dt:
-                return "expiring_soon"
-
-        return "active"
-
     def deactivate_api_key(self, key_name: str) -> bool:
         """Deactivate an API key (soft delete)"""
-
         with self.db.get_connection() as conn:
             cursor = conn.execute(
                 """

@@ -46,7 +46,7 @@ class AppConfig:
     def n8n_api_url(self) -> str:
         if self.n8n_url:
             return self.n8n_url.rstrip("/")
-        return os.environ.get("N8N_API_URL", "http://localhost:5678").rstrip("/")
+        return os.environ.get("N8N_API_URL", "").rstrip("/")
 
     def ensure_directories(self) -> None:
         """Create necessary directories if they don't exist"""
@@ -91,8 +91,8 @@ def get_config(
     3. Current working directory (default)
 
     n8n URL priority:
-    1. Explicit --server-url parameter (highest priority)
-    2. N8N_DEPLOY_SERVER_URL environment variable
+    1. Explicit --remote parameter (highest priority)
+    2. N8N_SERVER_URL environment variable
     3. (none - must be specified)
     """
     # Load .env file if available, then check ENVIRONMENT variable
@@ -127,8 +127,8 @@ def get_config(
         api_url = n8n_url.rstrip("/")
         if not api_url.startswith("http"):
             api_url = f"http://{api_url}"
-    elif "N8N_DEPLOY_SERVER_URL" in os.environ:
-        api_url = os.environ["N8N_DEPLOY_SERVER_URL"].rstrip("/")
+    elif "N8N_SERVER_URL" in os.environ:
+        api_url = os.environ["N8N_SERVER_URL"].rstrip("/")
         if not api_url.startswith("http"):
             api_url = f"http://{api_url}"
     else:
