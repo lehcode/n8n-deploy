@@ -414,28 +414,41 @@ class TestE2EAPIKeys(E2ETestBase):
             list_returncode, list_stdout, list_stderr = self.run_cli_command(["apikey", "list", "--data-dir", self.temp_dir])
             assert list_returncode == 0
 
-    def test_apikey_add_with_expires_in(self) -> None:
-        """Test apikey add --expires-in sets expiration"""
+    def test_apikey_add_with_server(self) -> None:
+        """Test apikey add --server links to server"""
         self.setup_database()
         test_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dGVzdA.c2lnbmF0dXJl"
 
+        # Create a server first
+        self.run_cli_command(
+            [
+                "server",
+                "create",
+                "test_server",
+                "http://localhost:5678",
+                "--data-dir",
+                self.temp_dir,
+            ]
+        )
+
+        # Add API key with server link
         returncode, stdout, stderr = self.run_cli_command(
             [
                 "apikey",
                 "add",
                 test_key,
                 "--name",
-                "expiring_test",
-                "--expires-in",
-                "30",
+                "server_test",
+                "--server",
+                "test_server",
                 "--data-dir",
                 self.temp_dir,
             ]
         )
 
-        assert returncode in [0, 1]
-        if returncode == 0:
-            assert "30 days" in stdout.lower() or "expires" in stdout.lower()
+        assert returncode == 0
+        assert "server_test" in stdout.lower()
+        assert "test_server" in stdout.lower() or "linked" in stdout.lower()
 
     def test_apikey_list_show_keys(self) -> None:
         """Test apikey list --show-keys displays actual keys"""
