@@ -56,7 +56,7 @@ class N8nDeployInstaller(object):
             print("\nOptions:")
             print("  1. Unset these variables before running n8n-deploy")
             print("  2. Ensure they point to the correct directories")
-            print("  3. Use CLI options (--data-dir, --flows-dir, --server-url) to override")
+            print("  3. Use CLI options (--data-dir, --flows-dir, --remote) to override")
 
             response = input("\nContinue installation anyway? [y/N]: ").strip().lower()
             if response not in ["y", "yes"]:
