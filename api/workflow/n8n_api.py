@@ -7,7 +7,7 @@ Handles: pull, push, server operations
 
 import json
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import requests
 
@@ -20,72 +20,98 @@ from ..models import Workflow
 class N8nAPI:
     """n8n server API integration"""
 
-    def __init__(self, db: "DBApi", config: AppConfig, api_manager: KeyApi, skip_ssl_verify: bool = False):
+    def __init__(
+        self, db: "DBApi", config: AppConfig, api_manager: KeyApi, skip_ssl_verify: bool = False, remote: Optional[str] = None
+    ):
         self.db = db
         self.config = config
         self.api_manager = api_manager
         self.skip_ssl_verify = skip_ssl_verify
+        self.remote = remote
         self.base_path = config.workflows_path
+        self._server_url: Optional[str] = None
+        self._server_api_key: Optional[str] = None
+
+    def _resolve_remote(self) -> Tuple[Optional[str], Optional[str]]:
+        """
+        Resolve remote to server URL and API key
+
+        Returns:
+            tuple: (server_url, api_key) or (None, None) if resolution fails
+        """
+        import os
+        from ..db.servers import ServerApi
+
+        if not self.remote:
+            # No remote specified - use config or environment
+            server_url = self.config.n8n_api_url if self.config else os.getenv("N8N_SERVER_URL", "")
+            # Try to get first available API key
+            keys = self.api_manager.list_api_keys()
+            if keys:
+                api_key = self.api_manager.get_api_key(keys[0]["name"], update_last_used=True)
+                return (server_url, api_key)
+            # Fallback to environment variable
+            env_api_key = os.getenv("N8N_DEPLOY_SERVER_KEY")
+            return (server_url, env_api_key)
+
+        # Remote specified - check if it's a server name or URL
+        server_api = ServerApi(config=self.config)
+
+        # Try as server name first
+        server = server_api.get_server_by_name(self.remote)
+        if server:
+            # Get API key for this server
+            api_key = server_api.get_api_key_for_server(self.remote)
+            if not api_key:
+                print(f"⚠️  No API key linked to server '{self.remote}'")
+                print(f"   Use: n8n-deploy server link {self.remote} <key_name>")
+                return (None, None)
+            return (server["url"], api_key)
+
+        # Try as URL (check if it looks like a URL)
+        if self.remote.startswith("http://") or self.remote.startswith("https://"):
+            server = server_api.get_server_by_url(self.remote)
+            if server:
+                api_key = server_api.get_api_key_for_server(server["name"])
+                return (self.remote, api_key)
+            # URL not in database - try first available API key or environment
+            keys = self.api_manager.list_api_keys()
+            if keys:
+                api_key = self.api_manager.get_api_key(keys[0]["name"], update_last_used=True)
+                return (self.remote, api_key)
+            env_api_key = os.getenv("N8N_DEPLOY_SERVER_KEY")
+            return (self.remote, env_api_key)
+
+        print(f"❌ Server '{self.remote}' not found")
+        print(f"   Add it with: n8n-deploy server add {self.remote} <url>")
+        return (None, None)
 
     def _get_n8n_credentials(self) -> Optional[Dict[str, Any]]:
-        """Get n8n API credentials from stored API keys"""
+        """Get n8n API credentials using remote-based resolution"""
         try:
-            api_key = self.api_manager.get_api_key("n8n", update_last_used=True)
-            if api_key:
-                return {
-                    "api_key": api_key,
-                    "headers": {
-                        "X-N8N-API-KEY": api_key,
-                        "Content-Type": "application/json",
-                    },
-                }
+            # Use cached values if available
+            if self._server_url and self._server_api_key:
+                server_url: str = self._server_url
+                api_key: str = self._server_api_key
             else:
-                # Try to use first active key as fallback
-                keys = self.api_manager.list_api_keys()
-                if not keys:
-                    # Fallback to N8N_DEPLOY_SERVER_KEY environment variable
-                    import os
-
-                    env_api_key = os.getenv("N8N_DEPLOY_SERVER_KEY")
-                    if env_api_key:
-                        return {
-                            "api_key": env_api_key,
-                            "headers": {
-                                "X-N8N-API-KEY": env_api_key,
-                                "Content-Type": "application/json",
-                            },
-                        }
-                    print("⚠️  No n8n API key found. Add one with: n8n-deploy apikey add n8n_main")
+                resolved_url, resolved_key = self._resolve_remote()
+                if not resolved_url or not resolved_key:
+                    print("⚠️  No API key available for the specified server")
                     return None
+                # Cache the values
+                self._server_url = resolved_url
+                self._server_api_key = resolved_key
+                server_url = resolved_url
+                api_key = resolved_key
 
-                # Use first active key
-                for key_info in keys:
-                    if key_info.get("is_active"):
-                        api_key = self.api_manager.get_api_key(key_info["name"], update_last_used=True)
-                        if api_key:
-                            return {
-                                "api_key": api_key,
-                                "headers": {
-                                    "X-N8N-API-KEY": api_key,
-                                    "Content-Type": "application/json",
-                                },
-                            }
-
-                # Fallback to N8N_DEPLOY_SERVER_KEY environment variable
-                import os
-
-                env_api_key = os.getenv("N8N_DEPLOY_SERVER_KEY")
-                if env_api_key:
-                    return {
-                        "api_key": env_api_key,
-                        "headers": {
-                            "X-N8N-API-KEY": env_api_key,
-                            "Content-Type": "application/json",
-                        },
-                    }
-
-                print("⚠️  No active API keys found")
-                return None
+            return {
+                "api_key": api_key,
+                "server_url": server_url,
+                "headers": {
+                    "X-N8N-API-KEY": api_key,
+                    "Content-Type": "application/json",
+                },
+            }
         except Exception as e:
             print(f"❌ Failed to retrieve API key: {e}")
             return None
@@ -96,7 +122,8 @@ class N8nAPI:
         if not credentials:
             return None
 
-        base_url = self.config.n8n_api_url if self.config else "http://localhost:5678"
+        # Use server_url from credentials (resolved from remote)
+        base_url = credentials.get("server_url", "")
         url = f"{base_url}/{endpoint.lstrip('/')}"
 
         try:
