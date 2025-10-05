@@ -6,7 +6,7 @@ Provides commands for managing n8n servers and their API key associations.
 """
 
 import json
-from typing import Dict, Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 import click
 from rich.console import Console
@@ -16,7 +16,7 @@ from ..api_keys import KeyApi
 from ..config import AppConfig, get_config
 from ..db.core import DBApi
 from ..db.servers import ServerCrud
-from .app import CustomGroup, CustomCommand
+from .app import CustomCommand, CustomGroup
 from .output import format_server_table
 
 console = Console()
@@ -146,7 +146,7 @@ def _handle_api_key_decision(
     console.print("  [1] Preserve (keep API keys, just unlink them)")
     console.print("  [2] Delete (remove API keys that are ONLY linked to this server)")
 
-    choice = click.prompt("Enter choice", type=int, default=1)
+    choice = click.prompt("Enter choice", type=Optional[str], default=1)
     return "preserve" if choice == 1 else "delete"
 
 
