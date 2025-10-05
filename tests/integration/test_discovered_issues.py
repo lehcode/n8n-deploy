@@ -61,39 +61,98 @@ class TestDiscoveredNoneTypeErrors:
 class TestDiscoveredDatabaseSchemaIssues:
     """Test fixes for database schema issues discovered during testing"""
 
-    @pytest.mark.skip(reason="TODO: Implement test for push_count pull_count columns")
     def test_workflow_creation_includes_counter_fields(self, test_config: AppConfig) -> None:
         """
         Test fix for: no such column: push_count
 
         Issue: Workflow model had push_count/pull_count but database schema didn't
         Fix: Added push_count and pull_count columns to workflows table
-
-        TODO: Implement test that:
-        1. Creates new workflow through manager
-        2. Verifies push_count and pull_count columns exist
-        3. Confirms default values are 0
-        4. Tests counter increment functions work
         """
-        pass
+        from api.db.core import DBApi
+        from api.db.schema import SchemaApi
+        from api.models import Workflow
+        from datetime import datetime
 
-    @pytest.mark.skip(reason="TODO: Implement test for counter increment operations")
+        db = DBApi(config=test_config)
+        schema = SchemaApi(config=test_config)
+        schema.initialize_database()
+
+        # Create workflow with counter fields
+        workflow = Workflow(
+            id="test_counters",
+            name="Test Workflow",
+            file_path="test.json",
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
+            push_count=0,
+            pull_count=0,
+        )
+
+        # Add workflow - should not raise column error
+        db.add_workflow(workflow)
+
+        # Retrieve and verify counters exist and are 0
+        retrieved = db.get_workflow("test_counters")
+        assert retrieved is not None
+        assert retrieved.push_count == 0
+        assert retrieved.pull_count == 0
+
     def test_push_pull_counter_increments(self, test_config: AppConfig) -> None:
         """
         Test that push/pull operations correctly increment database counters
 
         Scenario: Successful push/pull operations should increment respective counters
         Expected: Database counters increment and persist across operations
-
-        TODO: Implement test that:
-        1. Creates workflow with initial counters at 0
-        2. Simulates successful push operation
-        3. Verifies push_count incremented to 1
-        4. Simulates successful pull operation
-        5. Verifies pull_count incremented to 1
-        6. Confirms counters persist in database
         """
-        pass
+        from api.db.core import DBApi
+        from api.db.schema import SchemaApi
+        from api.models import Workflow
+        from datetime import datetime
+
+        db = DBApi(config=test_config)
+        schema = SchemaApi(config=test_config)
+        schema.initialize_database()
+
+        # Create workflow with initial counters at 0
+        workflow = Workflow(
+            id="test_increment",
+            name="Test Workflow",
+            file_path="test.json",
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
+            push_count=0,
+            pull_count=0,
+        )
+        db.add_workflow(workflow)
+
+        # Increment push count
+        result = db.increment_push_count("test_increment")
+        assert result is True
+
+        # Verify push_count incremented
+        updated = db.get_workflow("test_increment")
+        assert updated is not None
+        assert updated.push_count == 1
+        assert updated.pull_count == 0
+
+        # Increment pull count
+        result = db.increment_pull_count("test_increment")
+        assert result is True
+
+        # Verify pull_count incremented
+        updated = db.get_workflow("test_increment")
+        assert updated is not None
+        assert updated.push_count == 1
+        assert updated.pull_count == 1
+
+        # Increment again to test multiple increments
+        db.increment_push_count("test_increment")
+        db.increment_pull_count("test_increment")
+
+        final = db.get_workflow("test_increment")
+        assert final is not None
+        assert final.push_count == 2
+        assert final.pull_count == 2
 
 
 @pytest.mark.integration
@@ -185,22 +244,54 @@ class TestDiscoveredHardcodedValueIssues:
 class TestDiscoveredDisplayIssues:
     """Test fixes for display and formatting issues discovered during testing"""
 
-    @pytest.mark.skip(reason="TODO: Implement test for Never vs None display")
-    def test_stats_displays_never_for_null_timestamps(self, test_config: AppConfig) -> None:
+    def test_list_displays_never_for_null_timestamps(self, test_config: AppConfig) -> None:
         """
         Test fix for: In last Synced replace None with Never
 
-        Issue: Stats command showed "None" for null last_synced timestamps
-        Fix: Display "Never" in human-readable format, keep null in JSON
-
-        TODO: Implement test that:
-        1. Creates workflow with null last_synced
-        2. Runs stats command in table format
-        3. Verifies output shows "Last Synced: Never"
-        4. Runs stats command in JSON format
-        5. Verifies JSON shows "last_synced": null
+        Issue: List command showed "None" for null last_used/last_synced timestamps
+        Fix: Display "Never" in human-readable format
         """
-        pass
+        import subprocess
+        from api.db.core import DBApi
+        from api.db.schema import SchemaApi
+        from api.models import Workflow
+        from datetime import datetime
+
+        db = DBApi(config=test_config)
+        schema = SchemaApi(config=test_config)
+        schema.initialize_database()
+
+        # Create workflow with null last_used
+        workflow = Workflow(
+            id="test_never",
+            name="Test Never Display",
+            file_path="test.json",
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
+            last_used=None,  # Explicitly null
+        )
+        db.add_workflow(workflow)
+
+        # Run list command - check for "Never" display
+        # Use environment variable to set database path
+        import os
+
+        env = os.environ.copy()
+        env["N8N_DEPLOY_DATA"] = str(test_config.base_folder)
+
+        result = subprocess.run(
+            ["./n8n-deploy", "wf", "list"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            env=env,
+        )
+
+        assert result.returncode == 0
+        output = result.stdout + result.stderr
+
+        # Should show "Never" for null last_used (not "None")
+        assert "Never" in output
 
     @pytest.mark.skip(reason="TODO: Implement test for environment variable display")
     def test_list_command_shows_environment_info(self, test_config: AppConfig) -> None:

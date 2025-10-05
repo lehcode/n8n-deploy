@@ -24,7 +24,7 @@ class DBApi(BaseDB):
         else:
             super().__init__(config=get_config())
 
-        self.schema_manager = SchemaApi(db_path=self.db_path)
+        self.schema_api = SchemaApi(db_path=self.db_path)
 
     def add_workflow(self, workflow: Workflow) -> str:
         """Add a new workflow to the database"""
@@ -192,7 +192,7 @@ class DBApi(BaseDB):
             database_size = self.db_path.stat().st_size if self.db_path.exists() else 0
 
             # Get schema version
-            schema_version = self.schema_manager.get_schema_version()
+            schema_version = self.schema_api.get_schema_version()
 
             return DatabaseStats(
                 database_path=str(self.db_path),
