@@ -226,31 +226,33 @@ class DBApi(BaseDB):
 
     # Push/Pull count tracking
     def increment_push_count(self, workflow_id: str) -> bool:
-        """Increment push count for a workflow"""
+        """Increment push count for a workflow and update last_used"""
         with self.get_connection() as conn:
             cursor = conn.execute(
                 """
                 UPDATE workflows SET
                     push_count = push_count + 1,
-                    last_synced = ?
+                    last_synced = ?,
+                    last_used = ?
                 WHERE id = ?
             """,
-                (datetime.now(), workflow_id),
+                (datetime.now(), datetime.now(), workflow_id),
             )
             conn.commit()
             return bool(cursor.rowcount > 0)
 
     def increment_pull_count(self, workflow_id: str) -> bool:
-        """Increment pull count for a workflow"""
+        """Increment pull count for a workflow and update last_used"""
         with self.get_connection() as conn:
             cursor = conn.execute(
                 """
                 UPDATE workflows SET
                     pull_count = pull_count + 1,
-                    last_synced = ?
+                    last_synced = ?,
+                    last_used = ?
                 WHERE id = ?
             """,
-                (datetime.now(), workflow_id),
+                (datetime.now(), datetime.now(), workflow_id),
             )
             conn.commit()
             return bool(cursor.rowcount > 0)
