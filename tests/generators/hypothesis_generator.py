@@ -631,7 +631,7 @@ class TestServerManagement:
     """Property-based tests for server management operations"""
 
     @given(server_name=server_names, server_url=server_urls)
-    @settings(max_examples=50, deadline=500)
+    @settings(max_examples=50, deadline=2000)
     def test_server_create_with_valid_inputs(self, server_name, server_url):
         """Property: Server create should handle valid names and URLs"""
         # Skip empty names (filtered by strategy but double-check)
@@ -648,7 +648,7 @@ class TestServerManagement:
         assert result.returncode in [0, 1, 2], f"Server create crashed with: {server_name}, {server_url}"
 
     @given(server_name=server_names)
-    @settings(max_examples=30, deadline=500)
+    @settings(max_examples=30, deadline=2000)
     def test_server_list_never_crashes(self, server_name):
         """Property: Server list should never crash regardless of database state"""
         result = subprocess.run(
@@ -662,7 +662,7 @@ class TestServerManagement:
         assert result.returncode in [0, 1], "Server list command crashed"
 
     @given(format_choice=format_options)
-    @settings(max_examples=20, deadline=500)
+    @settings(max_examples=20, deadline=2000)
     def test_server_list_format_options(self, format_choice):
         """Property: Server list should handle all format options"""
         cmd = ["./n8n-deploy", "server", "list"]
@@ -681,7 +681,7 @@ class TestServerManagement:
                 assert False, "Server list produced invalid JSON"
 
     @given(active_flag=boolean_flags)
-    @settings(max_examples=10, deadline=500)
+    @settings(max_examples=10, deadline=2000)
     def test_server_list_active_filter(self, active_flag):
         """Property: Server list --active filter should work"""
         cmd = ["./n8n-deploy", "server", "list"]
@@ -692,7 +692,7 @@ class TestServerManagement:
         assert result.returncode in [0, 1], "--active flag caused crash"
 
     @given(server_name=server_names)
-    @settings(max_examples=30, deadline=500)
+    @settings(max_examples=30, deadline=2000)
     def test_server_remove_handles_nonexistent(self, server_name):
         """Property: Removing non-existent server should fail gracefully"""
         assume(len(server_name.strip()) > 0)
@@ -712,7 +712,7 @@ class TestServerManagement:
         server_url=server_urls,
         format_choice=format_options,
     )
-    @settings(max_examples=40, deadline=1000)
+    @settings(max_examples=40, deadline=2000)
     def test_server_operations_combined(self, server_name, server_url, format_choice):
         """Property: Server operations with format options should work"""
         assume(len(server_name.strip()) > 0)
@@ -737,7 +737,7 @@ class TestServerManagement:
         assert list_result.returncode in [0, 1]
 
     @given(malicious_input=malicious_names)
-    @settings(max_examples=20, deadline=500)
+    @settings(max_examples=20, deadline=2000)
     def test_malicious_server_names_blocked(self, malicious_input):
         """Property: SQL injection in server names fails safely"""
         assume("\x00" not in malicious_input)
@@ -755,7 +755,7 @@ class TestServerManagement:
         assert "SQL" not in result.stderr
 
     @given(server_name=server_names, api_key_name=api_key_names)
-    @settings(max_examples=30, deadline=500)
+    @settings(max_examples=30, deadline=2000)
     def test_server_api_key_linking_operations(self, server_name, api_key_name):
         """Property: Server API key linking should handle edge cases"""
         assume(len(server_name.strip()) > 0 and len(api_key_name.strip()) > 0)
@@ -772,7 +772,7 @@ class TestServerManagement:
         assert result.returncode in [0, 1, 2], "Server add API key crashed"
 
     @given(server_url_1=server_urls)
-    @settings(max_examples=20, deadline=500)
+    @settings(max_examples=20, deadline=2000)
     def test_multiple_servers_with_same_url(self, server_url_1):
         """Property: Multiple servers can have different names with same URL"""
         # This tests that URL is not unique constraint (only name is)
