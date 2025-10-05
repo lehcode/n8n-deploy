@@ -1268,12 +1268,9 @@ class TestServerManagement:
         # Should fail gracefully if server or key doesn't exist
         assert result.returncode in [0, 1, 2], "Server add API key crashed"
 
-    @given(
-        server_url_1=server_urls,
-        server_url_2=server_urls,
-    )
+    @given(server_url_1=server_urls)
     @settings(max_examples=20, deadline=500)
-    def test_multiple_servers_with_same_url(self, server_url_1, server_url_2):
+    def test_multiple_servers_with_same_url(self, server_url_1):
         """Property: Multiple servers can have different names with same URL"""
         # This tests that URL is not unique constraint (only name is)
         result1 = subprocess.run(

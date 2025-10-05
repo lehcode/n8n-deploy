@@ -50,7 +50,7 @@ class N8nAPI:
             # Try to get first available API key
             keys = self.api_manager.list_api_keys()
             if keys:
-                api_key = self.api_manager.get_api_key(keys[0]["name"], update_last_used=True)
+                api_key = self.api_manager.get_api_key(keys[0]["name"])
                 return (server_url, api_key)
             # Fallback to environment variable
             env_api_key = os.getenv("N8N_DEPLOY_SERVER_KEY")
@@ -79,7 +79,7 @@ class N8nAPI:
             # URL not in database - try first available API key or environment
             keys = self.api_manager.list_api_keys()
             if keys:
-                api_key = self.api_manager.get_api_key(keys[0]["name"], update_last_used=True)
+                api_key = self.api_manager.get_api_key(keys[0]["name"])
                 return (self.remote, api_key)
             env_api_key = os.getenv("N8N_DEPLOY_SERVER_KEY")
             return (self.remote, env_api_key)
