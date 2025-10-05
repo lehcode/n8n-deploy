@@ -51,7 +51,7 @@ def wf() -> None:
 @click.argument("name")
 @click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
 @click.option("--flows-dir", type=click.Path(), help=HELP_FLOW_DIR)
-@click.option("--server-url", help=HELP_SERVER_URL)
+@click.option("--remote", help=HELP_SERVER_URL)
 @click.option("--skip-ssl-verify", is_flag=True, help="Skip SSL certificate verification for self-signed certificates")
 @click.option(
     "--format",
@@ -97,9 +97,7 @@ def add(
         # Pull workflow from server
         # Check if API key and server URL are configured
         if not config.n8n_url:
-            cli_error(
-                "Server URL not configured. Use --server-url or set N8N_DEPLOY_SERVER_URL environment variable", no_emoji
-            )
+            cli_error("Server URL not configured. Use --remote or set N8N_SERVER_URL environment variable", no_emoji)
 
         # Try to pull workflow from server
         success = manager.pull_workflow(name)
@@ -341,7 +339,7 @@ def stats(
 
 # Server operations
 @wf.command()
-@click.option("--server-url", help=HELP_SERVER_URL)
+@click.option("--remote", help="n8n server (name or URL) - uses linked API key if name provided")
 @click.option("--skip-ssl-verify", is_flag=True, help="Skip SSL certificate verification for self-signed certificates")
 @click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
 @click.option("--flows-dir", type=click.Path(), help=HELP_FLOW_DIR)
@@ -349,7 +347,7 @@ def stats(
 @click.argument("workflow_id", metavar="workflow-id")
 def pull(
     workflow_id: str,
-    server_url: Optional[str],
+    remote: Optional[str],
     skip_ssl_verify: bool,
     data_dir: Optional[str],
     flows_dir: Optional[str],
@@ -359,6 +357,9 @@ def pull(
 
     Downloads a workflow using its n8n workflow ID (e.g., 'deAVBp391wvomsWY').
     This is the actual ID from the n8n server, not the user-friendly name.
+
+    Use --remote to specify server by name (e.g., 'production') or URL.
+    If server name is used, the linked API key will be used automatically.
     """
     try:
         config = get_config(base_folder=data_dir, flow_folder=flows_dir)
@@ -367,21 +368,8 @@ def pull(
         raise click.Abort()
 
     try:
-        manager = WorkflowApi(config=config, skip_ssl_verify=skip_ssl_verify)
-        # Override server URL if provided
-        if server_url:
-            # Set temporary environment variable for this operation
-            original_url = os.environ.get("N8N_DEPLOY_SERVER_URL")
-            os.environ["N8N_DEPLOY_SERVER_URL"] = server_url
-
+        manager = WorkflowApi(config=config, skip_ssl_verify=skip_ssl_verify, remote=remote)
         success = manager.pull_workflow(workflow_id)
-
-        # Restore original environment
-        if server_url:
-            if original_url:
-                os.environ["N8N_DEPLOY_SERVER_URL"] = original_url
-            else:
-                os.environ.pop("N8N_DEPLOY_SERVER_URL", None)
 
         if success:
             success_msg = f"Pulled workflow '{workflow_id}' from server"
@@ -407,7 +395,7 @@ def pull(
 
 
 @wf.command()
-@click.option("--server-url", help=HELP_SERVER_URL)
+@click.option("--remote", help="n8n server (name or URL) - uses linked API key if name provided")
 @click.option("--skip-ssl-verify", is_flag=True, help="Skip SSL certificate verification for self-signed certificates")
 @click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
 @click.option("--flows-dir", type=click.Path(), help=HELP_FLOW_DIR)
@@ -415,7 +403,7 @@ def pull(
 @click.argument("workflow_id", metavar="workflow-id")
 def push(
     workflow_id: str,
-    server_url: Optional[str],
+    remote: Optional[str],
     skip_ssl_verify: bool,
     data_dir: Optional[str],
     flows_dir: Optional[str],
@@ -425,6 +413,9 @@ def push(
 
     Uploads a workflow using its n8n workflow ID (e.g., 'deAVBp391wvomsWY').
     This is the actual ID stored in the workflow JSON file.
+
+    Use --remote to specify server by name (e.g., 'production') or URL.
+    If server name is used, the linked API key will be used automatically.
     """
     try:
         config = get_config(base_folder=data_dir, flow_folder=flows_dir)
@@ -433,20 +424,8 @@ def push(
         raise click.Abort()
 
     try:
-        manager = WorkflowApi(config=config, skip_ssl_verify=skip_ssl_verify)
-        # Override server URL if provided
-        if server_url:
-            original_url = os.environ.get("N8N_DEPLOY_SERVER_URL")
-            os.environ["N8N_DEPLOY_SERVER_URL"] = server_url
-
+        manager = WorkflowApi(config=config, skip_ssl_verify=skip_ssl_verify, remote=remote)
         success = manager.push_workflow(workflow_id)
-
-        # Restore original environment
-        if server_url:
-            if original_url:
-                os.environ["N8N_DEPLOY_SERVER_URL"] = original_url
-            else:
-                os.environ.pop("N8N_DEPLOY_SERVER_URL", None)
 
         if success:
             success_msg = f"Pushed workflow '{workflow_id}' to server"
@@ -472,7 +451,7 @@ def push(
 
 
 @wf.command("server")
-@click.option("--server-url", help=HELP_SERVER_URL)
+@click.option("--remote", help=HELP_SERVER_URL)
 @click.option("--skip-ssl-verify", is_flag=True, help="Skip SSL certificate verification for self-signed certificates")
 @click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
 @click.option("--flows-dir", type=click.Path(), help=HELP_FLOW_DIR)
@@ -502,17 +481,17 @@ def list_server(
         manager = WorkflowApi(config=config, skip_ssl_verify=skip_ssl_verify)
         # Override server URL if provided
         if server_url:
-            original_url = os.environ.get("N8N_DEPLOY_SERVER_URL")
-            os.environ["N8N_DEPLOY_SERVER_URL"] = server_url
+            original_url = os.environ.get("N8N_SERVER_URL")
+            os.environ["N8N_SERVER_URL"] = server_url
 
         workflows = manager.list_n8n_workflows()
 
         # Restore original environment
         if server_url:
             if original_url:
-                os.environ["N8N_DEPLOY_SERVER_URL"] = original_url
+                os.environ["N8N_SERVER_URL"] = original_url
             else:
-                os.environ.pop("N8N_DEPLOY_SERVER_URL", None)
+                os.environ.pop("N8N_SERVER_URL", None)
 
         if format == "json":
             console.print(JSON.from_data(workflows))
