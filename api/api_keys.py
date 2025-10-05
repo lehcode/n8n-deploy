@@ -5,7 +5,7 @@ Storage and management of API keys for n8n and external services
 """
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from .config import AppConfig
@@ -36,7 +36,6 @@ class KeyApi:
         name: str,
         api_key: str,
         description: Optional[str] = None,
-        expires_days: Optional[int] = None,  # Kept for backwards compatibility, but ignored
     ) -> int:
         """Add a new API key to storage"""
         with self.db.get_connection() as conn:
@@ -61,7 +60,7 @@ class KeyApi:
 
         return key_id
 
-    def get_api_key(self, key_name: str, update_last_used: bool = True) -> Optional[str]:
+    def get_api_key(self, key_name: str) -> Optional[str]:
         """Retrieve API key by name"""
         with self.db.get_connection() as conn:
             cursor = conn.execute(
@@ -152,7 +151,7 @@ class KeyApi:
     def test_api_key(self, key_name: str) -> bool:
         """Test if an API key is valid and accessible"""
 
-        api_key = self.get_api_key(key_name, update_last_used=False)
+        api_key = self.get_api_key(key_name)
         if not api_key:
             print(f"❌ API key not found: {key_name}")
             return False

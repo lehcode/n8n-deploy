@@ -6,7 +6,6 @@ Generates comprehensive test cases by introspecting Click commands.
 Handles command groups, subcommands, positional arguments, and all parameter types.
 """
 
-import inspect
 import sys
 from pathlib import Path
 from typing import Any, Dict, List, Tuple

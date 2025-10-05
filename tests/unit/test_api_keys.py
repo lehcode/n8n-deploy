@@ -88,17 +88,16 @@ class TestAddApiKey:
     """Test API key addition functionality"""
 
     @pytest.mark.parametrize(
-        "scenario,name,api_key,description,expires_days",
+        "scenario,name,api_key,description",
         [
             (
                 "with_description",
                 "test_key",
                 "test_api_key_12345",
                 "Test API key",
-                None,
             ),
-            ("with_expiration", "test_key", "test_api_key_12345", None, 30),
-            ("basic_key", "test_n8n_key", "test_key_for_n8n", None, None),
+            ("without_description", "test_key", "test_api_key_12345", None),
+            ("basic_key", "test_n8n_key", "test_key_for_n8n", None),
         ],
     )
     def test_add_api_key_variations(
@@ -108,14 +107,11 @@ class TestAddApiKey:
         name,
         api_key,
         description,
-        expires_days,
     ):
         """Test adding API key with different optional parameters"""
         kwargs = {"name": name, "api_key": api_key}
         if description:
             kwargs["description"] = description
-        if expires_days:
-            kwargs["expires_days"] = expires_days
 
         key_id = test_api_key_manager.add_api_key(**kwargs)
         assert_that(key_id).is_not_none()

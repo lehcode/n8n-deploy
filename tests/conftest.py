@@ -183,7 +183,6 @@ def test_api_key_data() -> Dict[str, Any]:
         name="test_key",
         api_key="test_api_key_12345",
         description="Test API key",
-        expires_days=30,
     )
 
 
