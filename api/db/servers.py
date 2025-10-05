@@ -5,10 +5,9 @@ Server management operations for n8n-deploy
 Handles CRUD operations for n8n servers and their API key associations.
 """
 
-import sqlite3
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Union
 
 from ..config import AppConfig
 from .base import BaseDB
