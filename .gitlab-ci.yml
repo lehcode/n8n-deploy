@@ -68,6 +68,8 @@ quality:black:
   tags:
     - python
   <<: *python_setup
+  needs:
+    - quality:mypy
   script:
     - source .venv/bin/activate
     - black --check api/
@@ -80,6 +82,9 @@ quality:coverage:
   tags:
     - python
   <<: *python_setup
+  needs:
+    - quality:mypy
+    - quality:black
   script:
     - source .venv/bin/activate
     - export N8N_DEPLOY_TESTING=1
@@ -103,6 +108,9 @@ test:unit:
   tags:
     - python
   <<: *python_setup
+  needs:
+    - quality:mypy
+    - quality:black
   script:
     - source .venv/bin/activate
     - python run_tests.py --unit --no-deps-check --quiet
@@ -161,6 +169,8 @@ build:python-matrix:
   image: python:${PYTHON_VERSION}-slim
   tags:
     - python
+  needs:
+    - build:validation
   dependencies:
     - build:validation
   parallel:
@@ -195,6 +205,11 @@ build:validation:
   tags:
     - python
   <<: *python_setup
+  needs:
+    - quality:coverage
+    - test:unit
+    - test:integration
+    - test:hypothesis
   dependencies:
     - quality:coverage
     - test:unit
@@ -221,6 +236,9 @@ build:production:
   tags:
     - python
   <<: *python_setup
+  needs:
+    - build:validation
+    - build:python-matrix
   dependencies:
     - build:validation
     - build:python-matrix
