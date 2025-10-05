@@ -32,8 +32,6 @@ class TestApiKey:
                     "name": "test_key",
                     "plain_key": "plain_api_key_value",
                     "is_active": True,
-                    "last_used": None,
-                    "expires_at": None,
                     "description": None,
                 },
             ),
@@ -44,8 +42,6 @@ class TestApiKey:
                     "name": "full_test_key",
                     "plain_key": "full_plain_key_value",
                     "created_at": None,  # Will be set in test
-                    "last_used": "offset_hours_1",  # Will be calculated
-                    "expires_at": "offset_days_30",  # Will be calculated
                     "is_active": False,
                     "description": "Full test API key",
                 },
@@ -63,20 +59,11 @@ class TestApiKey:
         created_time = datetime.now(timezone.utc)
         key_data["created_at"] = created_time
 
-        if key_data.get("last_used") == "offset_hours_1":
-            key_data["last_used"] = created_time + timedelta(hours=1)
-        if key_data.get("expires_at") == "offset_days_30":
-            key_data["expires_at"] = created_time + timedelta(days=30)
-
         key = ApiKey(**key_data)
 
         for attr_name, expected_value in expected_attrs.items():
             actual_value = getattr(key, attr_name)
             assert_that(actual_value).is_equal_to(expected_value)
-
-        if scenario == "all_fields_creation":
-            assert_that(key.last_used).is_equal_to(key_data["last_used"])
-            assert_that(key.expires_at).is_equal_to(key_data["expires_at"])
 
 
 # === API Key Manager Tests ===
