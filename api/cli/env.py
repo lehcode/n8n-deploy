@@ -38,7 +38,7 @@ if os.getenv("ENVIRONMENT", "").lower() == "development":
 def env(
     data_dir: Optional[str],
     flows_dir: Optional[str],
-    server_url: Optional[str],
+    remote: Optional[str],
     format: Optional[str],
 ) -> None:
     """🌍 Show environment configuration and variable precedence
@@ -71,8 +71,8 @@ def env(
     config_items.append(("N8N_DEPLOY_FLOWS", flows_dir_value, flows_dir_source))
 
     # Server URL
-    server_url_value = server_url or os.getenv("N8N_SERVER_URL") or "not set"
-    server_url_source = "CLI" if server_url else ("N8N_SERVER_URL" if os.getenv("N8N_SERVER_URL") else "not set")
+    server_url_value = remote or os.getenv("N8N_SERVER_URL") or "not set"
+    server_url_source = "CLI" if remote else ("N8N_SERVER_URL" if os.getenv("N8N_SERVER_URL") else "not set")
     config_items.append(("N8N_SERVER_URL", server_url_value, server_url_source))
 
     # API Key (don't show the value, just the source)
