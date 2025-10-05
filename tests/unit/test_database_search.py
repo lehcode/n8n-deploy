@@ -5,14 +5,15 @@ Unit tests for enhanced search functionality in database core operations.
 Tests the dual search capability that searches both user-friendly names and n8n workflow IDs.
 """
 
-import pytest
 from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
 
+import pytest
+
+from api.config import AppConfig
 from api.db.core import DBApi
 from api.models import Workflow, WorkflowStatus
-from api.config import AppConfig
 
 
 class TestDatabaseSearch:
@@ -24,7 +25,7 @@ class TestDatabaseSearch:
         db_path = tmp_path / "test_search.db"
         config = AppConfig(base_folder=tmp_path, flow_folder=tmp_path)
         db = DBApi(config=config, db_path=db_path)
-        db.schema_manager.initialize_database()
+        db.schema_api.initialize_database()
         return db
 
     @pytest.fixture

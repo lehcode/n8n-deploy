@@ -815,7 +815,7 @@ class TestWorkflowBackupIntegration:
     def manager_with_real_workflows(self, test_config: AppConfig) -> WorkflowApi:
         """Create manager with real workflow files and database entries"""
         manager = WorkflowApi(config=test_config)
-        manager.db.schema_manager.initialize_database()
+        manager.db.schema_api.initialize_database()
         with manager.db.get_connection() as conn:
             conn.execute("DELETE FROM workflows")
             conn.commit()
@@ -1057,7 +1057,7 @@ class TestWorkflowManagerIntegration:
     def integrated_manager(self, test_config: AppConfig) -> WorkflowApi:
         """Create a fully integrated workflow manager"""
         manager = WorkflowApi(config=test_config)
-        manager.db.schema_manager.initialize_database()
+        manager.db.schema_api.initialize_database()
         with manager.db.get_connection() as conn:
             conn.execute("DELETE FROM workflows")
             conn.execute("DELETE FROM api_keys")
