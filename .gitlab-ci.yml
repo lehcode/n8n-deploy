@@ -382,6 +382,9 @@ test:unit:
     # Run on feature branches for developer feedback
     - when: on_success
   <<: *python_setup
+  needs:
+    - quality:mypy
+    - quality:black
   script:
     - export N8N_DEPLOY_TESTING=1
     - ./run_tests.py --unit --no-deps-check -q
