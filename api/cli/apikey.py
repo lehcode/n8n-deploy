@@ -109,7 +109,7 @@ def add_apikey(
 
     try:
         import os
-        from ..db.servers import ServerApi
+        from ..db.servers import ServerCrud
 
         # API key operations only need base folder, not workflow directories
         base_path = Path(data_dir) if data_dir else Path.cwd()
@@ -134,7 +134,7 @@ def add_apikey(
         server_url = os.getenv("N8N_SERVER_URL")
 
         if server_name or server_url:
-            server_api = ServerApi(config=config)
+            server_api = ServerCrud(config=config)
 
             # If --server specified, link to that server
             if server_name:

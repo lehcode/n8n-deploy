@@ -14,7 +14,7 @@ from ..config import AppConfig
 from .base import BaseDB
 
 
-class ServerApi(BaseDB):
+class ServerCrud(BaseDB):
     """Manages server CRUD operations and API key associations"""
 
     def __init__(
@@ -22,7 +22,7 @@ class ServerApi(BaseDB):
         config: Optional[AppConfig] = None,
         db_path: Optional[Union[str, Path]] = None,
     ):
-        """Initialize server API with database connection"""
+        """Initialize server CRUD with database connection"""
         super().__init__(config=config, db_path=db_path)
 
     def add_server(
