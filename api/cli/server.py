@@ -146,7 +146,7 @@ def _handle_api_key_decision(
     console.print("  [1] Preserve (keep API keys, just unlink them)")
     console.print("  [2] Delete (remove API keys that are ONLY linked to this server)")
 
-    choice = click.prompt("Enter choice", type=Optional[str], default=1)
+    choice: int = click.prompt("Enter choice", type=int, default=1)
     return "preserve" if choice == 1 else "delete"
 
 
