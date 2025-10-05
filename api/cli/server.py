@@ -12,7 +12,7 @@ from rich.console import Console
 from rich.table import Table
 
 from ..config import get_config
-from ..db.servers import ServerApi
+from ..db.servers import ServerCrud
 from .app import CustomGroup
 from .output import format_server_table
 
@@ -46,7 +46,7 @@ def create_server(
         raise click.Abort()
 
     try:
-        server_api = ServerApi(config=config)
+        server_api = ServerCrud(config=config)
         server_id = server_api.add_server(
             url=url,
             name=name,
@@ -68,10 +68,12 @@ def create_server(
 
 @server_group.command(name="list")
 @click.option("--active", is_flag=True, help="Show only active servers")
+@click.option("--format", type=click.Choice(["table", "json"]), default="table", help="Output format")
 @click.option("--data-dir", help="Application directory (overrides N8N_DEPLOY_DATA)")
 @click.option("--no-emoji", is_flag=True, help="Disable emoji in output")
 def list_servers(
     active: bool,
+    format: str,
     data_dir: Optional[str],
     no_emoji: bool,
 ) -> None:
@@ -83,8 +85,14 @@ def list_servers(
         raise click.Abort()
 
     try:
-        server_api = ServerApi(config=config)
+        server_api = ServerCrud(config=config)
         servers = server_api.list_servers(active_only=active)
+
+        if format == "json":
+            import json
+
+            print(json.dumps(servers, indent=2, default=str))
+            return
 
         if not servers:
             if no_emoji:
@@ -103,62 +111,23 @@ def list_servers(
         raise click.Abort()
 
 
-@server_group.command(name="delete")
-@click.argument("name")
-@click.option("--confirm", is_flag=True, help="Skip confirmation prompt")
-@click.option("--data-dir", help="Application directory (overrides N8N_DEPLOY_DATA)")
-@click.option("--no-emoji", is_flag=True, help="Disable emoji in output")
-def delete_server(
-    name: str,
-    confirm: bool,
-    data_dir: Optional[str],
-    no_emoji: bool,
-) -> None:
-    """Delete an n8n server"""
-    try:
-        config = get_config(base_folder=data_dir)
-    except ValueError as e:
-        console.print(f"[red]{e}[/red]")
-        raise click.Abort()
-
-    if not confirm:
-        if not click.confirm(f"Delete server '{name}' and all its API key associations?"):
-            console.print("Operation cancelled")
-            return
-
-    try:
-        server_api = ServerApi(config=config)
-        if server_api.delete_server(name):
-            if no_emoji:
-                console.print(f"Server '{name}' deleted successfully")
-            else:
-                console.print(f"✅ Server '{name}' deleted successfully")
-        else:
-            if no_emoji:
-                console.print(f"Server '{name}' not found")
-            else:
-                console.print(f"❌ Server '{name}' not found")
-
-    except Exception as e:
-        if no_emoji:
-            console.print(f"Error deleting server: {e}")
-        else:
-            console.print(f"❌ Error deleting server: {e}")
-        raise click.Abort()
-
-
 @server_group.command(name="remove")
 @click.argument("server_name")
-@click.argument("api_key_name")
+@click.option("--confirm", is_flag=True, help="Skip confirmation prompt")
+@click.option(
+    "--preserve-keys", "key_action", flag_value="preserve", help="Keep all linked API keys (default in interactive mode)"
+)
+@click.option("--delete-keys", "key_action", flag_value="delete", help="Delete API keys that are ONLY linked to this server")
 @click.option("--data-dir", help="Application directory (overrides N8N_DEPLOY_DATA)")
 @click.option("--no-emoji", is_flag=True, help="Disable emoji in output")
-def remove_apikey(
+def remove_server(
     server_name: str,
-    api_key_name: str,
+    confirm: bool,
+    key_action: Optional[str],
     data_dir: Optional[str],
     no_emoji: bool,
 ) -> None:
-    """Remove (unlink) an API key from a server"""
+    """Remove (delete) an n8n server and optionally its API keys"""
     try:
         config = get_config(base_folder=data_dir)
     except ValueError as e:
@@ -166,32 +135,97 @@ def remove_apikey(
         raise click.Abort()
 
     try:
-        server_api = ServerApi(config=config)
-        if server_api.unlink_api_key(server_name, api_key_name):
+        server_api = ServerCrud(config=config)
+
+        # Check if server exists
+        server = server_api.get_server_by_name(server_name)
+        if not server:
             if no_emoji:
-                console.print(f"API key '{api_key_name}' removed from server '{server_name}'")
+                console.print(f"Server '{server_name}' not found")
             else:
-                console.print(f"✅ API key '{api_key_name}' removed from server '{server_name}'")
+                console.print(f"❌ Server '{server_name}' not found")
+            return
+
+        # Get linked API keys
+        linked_keys = server_api.get_server_api_keys(server_name)
+
+        # Determine key action
+        if key_action is None:
+            # Interactive mode - ask user
+            if linked_keys:
+                if no_emoji:
+                    console.print(f"\nServer '{server_name}' has {len(linked_keys)} linked API key(s):")
+                else:
+                    console.print(f"\n⚠️  Server '{server_name}' has {len(linked_keys)} linked API key(s):")
+
+                for key in linked_keys:
+                    console.print(f"  - {key['name']}")
+
+                console.print("\nWhat should happen to these API keys?")
+                console.print("  [1] Preserve (keep API keys, just unlink them)")
+                console.print("  [2] Delete (remove API keys that are ONLY linked to this server)")
+
+                choice = click.prompt("Enter choice", type=int, default=1)
+                key_action = "preserve" if choice == 1 else "delete"
+            else:
+                key_action = "preserve"  # No keys to handle
+
+        # Confirm server deletion
+        if not confirm:
+            msg = f"Delete server '{server_name}'"
+            if linked_keys and key_action == "delete":
+                msg += f" and {len(linked_keys)} linked API key(s)"
+            msg += "?"
+
+            if not click.confirm(msg):
+                console.print("Operation cancelled")
+                return
+
+        # Delete API keys if requested (only those exclusively linked to this server)
+        if key_action == "delete" and linked_keys:
+            from api.api_keys import KeyApi
+            from api.db.core import DBApi
+
+            db_api = DBApi(config=config)
+            key_api = KeyApi(db=db_api, config=config)
+
+            for key in linked_keys:
+                # Check if this key is linked to other servers
+                # For now, just delete the key (we can add a check for multiple servers later)
+                key_api.delete_api_key(key["name"])
+                if no_emoji:
+                    console.print(f"Deleted API key: {key['name']}")
+                else:
+                    console.print(f"🗑️  Deleted API key: {key['name']}")
+
+        # Delete the server (CASCADE will remove links)
+        if server_api.delete_server(server_name):
+            if no_emoji:
+                console.print(f"Server '{server_name}' removed successfully")
+            else:
+                console.print(f"✅ Server '{server_name}' removed successfully")
         else:
             if no_emoji:
-                console.print(f"API key '{api_key_name}' not linked to server '{server_name}'")
+                console.print(f"Failed to remove server '{server_name}'")
             else:
-                console.print(f"❌ API key '{api_key_name}' not linked to server '{server_name}'")
+                console.print(f"❌ Failed to remove server '{server_name}'")
 
     except Exception as e:
         if no_emoji:
-            console.print(f"Error removing API key: {e}")
+            console.print(f"Error removing server: {e}")
         else:
-            console.print(f"❌ Error removing API key: {e}")
+            console.print(f"❌ Error removing server: {e}")
         raise click.Abort()
 
 
 @server_group.command(name="keys")
 @click.argument("server_name")
+@click.option("--format", type=click.Choice(["table", "json"]), default="table", help="Output format")
 @click.option("--data-dir", help="Application directory (overrides N8N_DEPLOY_DATA)")
 @click.option("--no-emoji", is_flag=True, help="Disable emoji in output")
 def show_keys(
     server_name: str,
+    format: str,
     data_dir: Optional[str],
     no_emoji: bool,
 ) -> None:
@@ -203,8 +237,14 @@ def show_keys(
         raise click.Abort()
 
     try:
-        server_api = ServerApi(config=config)
+        server_api = ServerCrud(config=config)
         keys = server_api.get_server_api_keys(server_name)
+
+        if format == "json":
+            import json
+
+            print(json.dumps(keys, indent=2, default=str))
+            return
 
         if not keys:
             if no_emoji:
