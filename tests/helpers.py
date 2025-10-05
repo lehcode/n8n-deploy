@@ -96,7 +96,6 @@ def create_test_api_key_data(
         "name": name,
         "api_key": api_key,
         "description": "Test API key",
-        "expires_days": None,
         **kwargs,
     }
 
