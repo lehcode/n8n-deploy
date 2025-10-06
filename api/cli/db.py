@@ -23,7 +23,7 @@ from rich.table import Table
 
 from ..config import get_config
 from ..db import DBApi
-from .app import HELP_APP_DIR, HELP_FLOW_DIR, HELP_NO_EMOJI, CustomCommand, CustomGroup
+from .app import HELP_APP_DIR, HELP_FLOW_DIR, HELP_JSON, HELP_NO_EMOJI, CustomCommand, CustomGroup
 
 console = Console()
 
@@ -67,19 +67,19 @@ def is_interactive_mode() -> bool:
     return sys.stdin.isatty()
 
 
-def check_database_exists(db_path: Path, format: Optional[str] = None, no_emoji: bool = False) -> None:
+def check_database_exists(db_path: Path, output_json: bool = False, no_emoji: bool = False) -> None:
     """Check if database exists and abort with appropriate error message if not.
 
     Args:
         db_path: Path to the database file
-        format: Output format ('json' for JSON error output)
+        output_json: Whether to output error in JSON format
         no_emoji: Whether to suppress emoji in error messages
 
     Raises:
         click.Abort: If database does not exist
     """
     if not db_path.exists():
-        if format == "json":
+        if output_json:
             error_data = {
                 "success": False,
                 "error": "database_not_found",
@@ -270,22 +270,22 @@ def init(data_dir: Optional[str], format: str, no_emoji: bool, import_db: bool) 
 
 @db.command(cls=CustomCommand)
 @click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
-@click.option("--format", type=click.Choice(["json"]), help="JSON output, implies no emoji")
+@click.option("--json", "output_json", is_flag=True, help=HELP_JSON)
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
-def status(data_dir: Optional[str], format: Optional[str], no_emoji: bool) -> None:
+def status(data_dir: Optional[str], output_json: bool, no_emoji: bool) -> None:
     """📊 Show database status and statistics
 
-    Use '--format json' for machine-readable output.
+    Use '--json' for machine-readable output.
     """
-    # JSON format implies no emoji
-    if format == "json":
+    # JSON output implies no emoji
+    if output_json:
         no_emoji = True
 
     config = get_config(base_folder=data_dir)
     db_path = config.database_path
 
     # Check if database exists
-    check_database_exists(db_path, format=format, no_emoji=no_emoji)
+    check_database_exists(db_path, output_json=output_json, no_emoji=no_emoji)
 
     db = DBApi(config=config)
 
@@ -295,7 +295,7 @@ def status(data_dir: Optional[str], format: Optional[str], no_emoji: bool) -> No
     except Exception as e:
         # Database file exists but tables are missing or corrupted
         if "no such table" in str(e):
-            if format == "json":
+            if output_json:
                 error_data = {
                     "success": False,
                     "error": "database_not_initialized",
@@ -318,7 +318,7 @@ def status(data_dir: Optional[str], format: Optional[str], no_emoji: bool) -> No
                     console.print(f"[red]❌ {error_msg}[/red]")
         else:
             # Other database errors
-            if format == "json":
+            if output_json:
                 error_data = {"success": False, "error": "database_error", "message": str(e)}
                 console.print(json.dumps(error_data, indent=2))
             else:
@@ -338,7 +338,7 @@ def status(data_dir: Optional[str], format: Optional[str], no_emoji: bool) -> No
         "api_key_count": stats.tables.get("api_keys", 0),
     }
 
-    if format == "json":
+    if output_json:
         console.print(json.dumps(status_data, indent=2))
     else:
         table = Table(title="Database Status")
