@@ -62,7 +62,7 @@ class TestE2EDatabase(E2ETestBase):
     def test_database_status_without_database_json_format(self) -> None:
         """Test db status with JSON format handles missing database gracefully"""
         # Do NOT initialize database - test missing database case with JSON format
-        returncode, stdout, stderr = self.run_cli_command(["db", "status", "--data-dir", self.temp_dir, "--format", "json"])
+        returncode, stdout, stderr = self.run_cli_command(["db", "status", "--data-dir", self.temp_dir, "--json"])
 
         # Should fail gracefully with JSON error response
         assert returncode == 1
@@ -358,7 +358,7 @@ class TestE2EDatabase(E2ETestBase):
         self.run_cli_command(["--data-dir", self.temp_dir, "db", "init"])
 
         # Test status with JSON format
-        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "db", "status", "--format", "json"])
+        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "db", "status", "--json"])
 
         assert returncode == 0
         # Should be valid JSON output
@@ -408,7 +408,7 @@ class TestE2EDatabase(E2ETestBase):
         assert "Workflows" in stdout
 
         # Test JSON format status
-        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "db", "status", "--format", "json"])
+        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "db", "status", "--json"])
         assert returncode == 0
         status_data = json.loads(stdout)
         assert "database_path" in status_data
@@ -717,7 +717,7 @@ class TestE2EDatabase(E2ETestBase):
 
     def test_db_init_with_json_format(self) -> None:
         """Test db init --format json output"""
-        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "db", "init", "--format", "json"])
+        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "db", "init", "--json"])
 
         assert returncode == 0
         # Should be valid JSON

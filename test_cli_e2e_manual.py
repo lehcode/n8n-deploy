@@ -403,7 +403,7 @@ class N8nDeployE2ETester:
         assert self.validate_table_output(output), "Invalid table format"
 
         # Test JSON format
-        exit_code, output, stderr = self.run_cli_command(["apikey", "list", "--format", "json"])
+        exit_code, output, stderr = self.run_cli_command(["apikey", "list", "--json"])
         assert exit_code == 0, f"API key list JSON failed: {stderr}"
         assert self.validate_json_output(output), "Invalid JSON format"
 
@@ -849,9 +849,7 @@ class N8nDeployE2ETester:
         )
 
         # Test JSON output for list
-        exit_code, output, stderr = self.run_cli_command(
-            ["list", "--data-dir", app_dir, "--flow-dir", flow_dir, "--format", "json"]
-        )
+        exit_code, output, stderr = self.run_cli_command(["list", "--data-dir", app_dir, "--flow-dir", flow_dir, "--json"])
         assert exit_code == 0, f"JSON list failed: {stderr}"
         assert self.validate_json_output(output), "Invalid JSON output format"
 

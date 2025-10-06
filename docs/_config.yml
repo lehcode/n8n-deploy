@@ -1,0 +1,31 @@
+title: n8n-deploy Documentation
+description: Comprehensive guide for n8n workflow management CLI
+theme: just-the-docs
+color_scheme: light
+
+# Enable search functionality
+search_enabled: true
+
+# Navigation
+aux_links:
+  "GitHub Repository":
+    - "https://github.com/lehcode/n8n-deploy"
+
+# Footer content
+footer_content: "Copyright © 2024 n8n-deploy Contributors. Distributed under the MIT License."
+
+# Enables back to top button
+back_to_top: true
+back_to_top_text: "Back to top"
+
+# Callouts configuration
+callouts:
+  warning:
+    title: Warning
+    color: red
+  info:
+    title: Information
+    color: blue
+  tip:
+    title: Tip
+    color: green
