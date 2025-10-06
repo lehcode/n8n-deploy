@@ -10,4 +10,8 @@ group :jekyll_plugins do
   gem "jekyll-feed"
   gem "jekyll-seo-tag"
   gem "jekyll-sitemap"
+  gem "jekyll-redirect-from"  # URL redirects
+  gem "jekyll-mentions"       # @mentions support
+  gem "jekyll-optional-front-matter"  # Front matter optional
+  gem "jekyll-titles-from-headings"   # Auto titles from h1
 end

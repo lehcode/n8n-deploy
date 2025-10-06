@@ -8,17 +8,32 @@ author:
   url: "https://github.com/lehcode/n8n-deploy/graphs/contributors"
 lang: "en-US"
 
-# SEO
+# SEO and plugins
 plugins:
   - jekyll-seo-tag
   - jekyll-sitemap
   - jekyll-feed
+  - jekyll-redirect-from
+  - jekyll-mentions
+  - jekyll-optional-front-matter
+  - jekyll-titles-from-headings
 
 # Social
 twitter:
   username: lehcode
-  card: summary
+  card: summary_large_image
 github_username: lehcode
+
+# Open Graph
+og_image: /assets/images/social-preview.png
+
+# Webmaster Verifications (add your codes when ready)
+webmaster_verifications:
+  google: ""
+  bing: ""
+
+# Permalink structure
+permalink: pretty
 
 # Theme
 theme: just-the-docs
