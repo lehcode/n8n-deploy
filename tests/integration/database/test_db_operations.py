@@ -53,10 +53,13 @@ class Testdboperations(DatabaseTestHelpers):
         """Test operations on empty database"""
         # Initialize empty database
         self.run_cli_command(["--data-dir", self.temp_dir, "db", "init"])
-        empty_db_operations = [["wf", "list"], ["db", "status"]]
+        empty_db_operations = [
+            ["wf", "list"],  # wf list doesn't need --data-dir
+            ["--data-dir", self.temp_dir, "db", "status"],
+        ]
 
         for op in empty_db_operations:
-            returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir] + op)
+            returncode, stdout, stderr = self.run_cli_command(op)
             assert returncode == 0, f"Empty database operation failed: {op}\nSTDERR: {stderr}\nSTDOUT: {stdout}"
 
     def test_database_size_tracking(self) -> None:

@@ -554,13 +554,9 @@ class TestHelpConsistency:
                 "remove",
                 "search",
                 "stats",
-                "createbackup",
-                "backups",
-                "restore",
                 "pull",
                 "push",
                 "server",
-                "verify",
             ]
         ),
     )

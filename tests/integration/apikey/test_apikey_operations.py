@@ -316,7 +316,8 @@ class TestApikeyOperations(ApikeyTestHelpers):
         )
 
         if add_returncode == 0:
-            self.run_cli_command(["wf", "list", "--data-dir", self.temp_dir, "--flow-dir", self.temp_flow_dir])
+            # Note: wf list uses --flow-dir only, not --data-dir
+            self.run_cli_command(["wf", "list", "--flow-dir", self.temp_flow_dir])
             self.run_cli_command(["stats", "--data-dir", self.temp_dir, "--flow-dir", self.temp_flow_dir])
             get_returncode, get_stdout, get_stderr = self.run_cli_command(
                 ["apikey", "get", "persistence_test", "--data-dir", self.temp_dir]

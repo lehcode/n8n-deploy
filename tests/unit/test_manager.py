@@ -113,26 +113,6 @@ class TestWorkflowOperations:
             test_manager.get_workflow_info("nonexistent_workflow")
 
 
-# === Backup Operations Tests ===
-class TestBackupOperations:
-    """Test backup and restore operations"""
-
-    @pytest.mark.skip(reason="Backup functionality requires file paths which have been removed")
-    def test_create_workflow_backup_success(self, test_manager: WorkflowApi, mock_workflow_data: Dict[str, Any]) -> None:
-        """Test creating backup of a single wf successfully"""
-        pass
-
-    def test_create_workflow_backup_nonexistent_workflow(self, test_manager: WorkflowApi) -> None:
-        """Test backup fails for non-existent wf"""
-        with pytest.raises(ValueError, match="Workflow 'nonexistent' not found in database"):
-            test_manager.create_workflow_backup("nonexistent")
-
-    @pytest.mark.skip(reason="Backup functionality requires file paths which have been removed")
-    def test_create_workflow_backup_missing_file(self, test_manager: WorkflowApi, mock_workflow_data: Dict[str, Any]) -> None:
-        """Test backup fails when wf file is missing"""
-        pass
-
-
 # === n8n Server Integration Tests ===
 class TestN8nApiIntegration:
     """Test n8n server API integration functionality"""

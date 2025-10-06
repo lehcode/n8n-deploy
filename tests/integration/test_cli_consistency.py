@@ -40,10 +40,6 @@ def get_all_commands() -> List[List[str]]:
         ["wf", "pull"],
         ["wf", "push"],
         ["wf", "server"],
-        ["wf", "backups"],
-        ["wf", "createbackup"],
-        ["wf", "restore"],
-        ["wf", "verify"],
         # Database commands
         ["db"],
         ["db", "init"],
@@ -132,8 +128,9 @@ class TestCLIHelpConsistency:
         """
         commands = get_all_commands()
 
-        # Should test at least 30 commands (main + subcommands)
-        assert len(commands) >= 30, f"Only testing {len(commands)} commands, expected at least 30"
+        # Should test at least 28 commands (main + subcommands)
+        # Note: Was 30+ before workflow backup removal (createbackup, restore, backups, verify)
+        assert len(commands) >= 28, f"Only testing {len(commands)} commands, expected at least 28"
 
         # Should include main groups
         command_groups = [cmd[0] for cmd in commands if len(cmd) > 0]

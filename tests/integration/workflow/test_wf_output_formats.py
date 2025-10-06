@@ -34,15 +34,12 @@ class Testwfoutputformats(WorkflowTestHelpers):
         self.create_test_workflow("emoji_test")
 
         # Test 'wf list' with default emoji output
-        emoji_returncode, emoji_stdout, _ = self.run_cli_command(
-            ["--data-dir", self.temp_dir, "--flow-dir", self.temp_flow_dir, "wf", "list"]
-        )
+        # Note: wf list uses --flow-dir only, not --data-dir
+        emoji_returncode, emoji_stdout, _ = self.run_cli_command(["--flow-dir", self.temp_flow_dir, "wf", "list"])
 
         # Test 'wf list' with --no-emoji flag
         no_emoji_returncode, no_emoji_stdout, _ = self.run_cli_command(
             [
-                "--data-dir",
-                self.temp_dir,
                 "--flow-dir",
                 self.temp_flow_dir,
                 "--no-emoji",

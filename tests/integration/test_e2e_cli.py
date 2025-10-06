@@ -107,10 +107,9 @@ class TestE2ECLI(E2ETestBase):
 
     def test_base_folder_consistency(self) -> None:
         """Test base folder configuration across different commands"""
-        # Only test commands that accept --data-dir and don't require other arguments
+        # Only test database commands that accept --data-dir
+        # Workflow commands use --flow-dir instead
         commands_to_test = [
-            ["wf", "list"],
-            ["wf", "stats"],
             ["db", "status"],
             ["db", "backup"],
             ["db", "compact"],
@@ -149,9 +148,9 @@ class TestE2ECLI(E2ETestBase):
         env = {"N8N_DEPLOY_FLOWS": "/tmp/env-dir"}
         returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "db", "init"])
 
-        # Use CLI option for different directory
+        # Use CLI option for different directory (wf list only needs --flow-dir)
         returncode, stdout, stderr = self.run_cli_command(
-            ["--data-dir", self.temp_dir, "--flow-dir", self.temp_flow_dir, "wf", "list"],
+            ["--flow-dir", self.temp_flow_dir, "wf", "list"],
             env=env,
         )
 
@@ -350,19 +349,21 @@ class TestE2ECLI(E2ETestBase):
         # Initialize database first
         returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "db", "init"])
 
-        commands = [
-            ["db", "status"],
-            ["wf", "list"],
-            ["apikey", "list"],
-            ["db", "status"],  # Repeat to ensure state is maintained
+        # Test different command types
+        # Note: wf list uses --flow-dir, not --data-dir (workflow files vs database)
+        test_cases = [
+            (["--data-dir", self.temp_dir, "db", "status"], "db status with data-dir"),
+            (["--flow-dir", self.temp_flow_dir, "wf", "list"], "wf list with flow-dir"),
+            (["--data-dir", self.temp_dir, "apikey", "list"], "apikey list with data-dir"),
+            (["--data-dir", self.temp_dir, "db", "status"], "db status repeat"),
         ]
 
-        for cmd in commands:
-            returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir] + cmd)
+        for cmd, description in test_cases:
+            returncode, stdout, stderr = self.run_cli_command(cmd)
             self.assert_command_details(
                 returncode,
                 stdout,
                 stderr,
                 0,
-                f"Command sequence test for: {cmd}, App dir: {self.temp_dir}",
+                f"Command sequence test for: {description}",
             )

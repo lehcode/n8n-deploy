@@ -113,10 +113,9 @@ class Testwfbasicoperations(WorkflowTestHelpers):
         """Test wf add with --format json output"""
         self.setup_database()
 
+        # Note: wf add doesn't have --data-dir option
         returncode, stdout, stderr = self.run_cli_command(
             [
-                "--data-dir",
-                self.temp_dir,
                 "wf",
                 "add",
                 "JSONAddTest",
