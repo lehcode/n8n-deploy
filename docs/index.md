@@ -54,7 +54,7 @@ Welcome to n8n-deploy, a powerful Python CLI tool for managing n8n workflows wit
 
 ## 🤝 Contributing
 
-Interested in contributing? Check out our [Contributing Guide](CONTRIBUTING.md).
+Interested in contributing? Check out our [Contributing Guide](developers/contributing.md).
 
 ## 📝 License
 
