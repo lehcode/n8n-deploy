@@ -68,7 +68,7 @@ def create_server(
 @click.option("--active", is_flag=True, help="Show only active servers")
 @click.option("--json", "output_json", is_flag=True, help=HELP_JSON)
 @click.option("--table", "output_table", is_flag=True, help=HELP_TABLE)
-@click.option("--data-dir", help="Application directory (overrides N8N_DEPLOY_DATA)")
+@click.option("--data-dir", help="Application directory (overrides N8N_DEPLOY_DATA_DIR)")
 @click.option("--no-emoji", is_flag=True, help="Disable emoji in output")
 def list_servers(
     active: bool,
@@ -188,7 +188,7 @@ def _delete_linked_api_keys(linked_keys: List[Dict[str, Any]], config: "AppConfi
     flag_value="delete",
     help="Delete API keys that are ONLY linked to this server",
 )
-@click.option("--data-dir", help="Application directory (overrides N8N_DEPLOY_DATA)")
+@click.option("--data-dir", help="Application directory (overrides N8N_DEPLOY_DATA_DIR)")
 @click.option("--no-emoji", is_flag=True, help="Disable emoji in output")
 def remove_server(
     server_name: str,
@@ -253,7 +253,7 @@ def remove_server(
 @click.argument("server_name")
 @click.option("--json", "output_json", is_flag=True, help=HELP_JSON)
 @click.option("--table", "output_table", is_flag=True, help=HELP_TABLE)
-@click.option("--data-dir", help="Application directory (overrides N8N_DEPLOY_DATA)")
+@click.option("--data-dir", help="Application directory (overrides N8N_DEPLOY_DATA_DIR)")
 @click.option("--no-emoji", is_flag=True, help="Disable emoji in output")
 def show_keys(
     server_name: str,

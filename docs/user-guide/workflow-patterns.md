@@ -24,7 +24,7 @@ mkdir ~/my-n8n-workflows
 cd ~/my-n8n-workflows
 
 # Set environment
-export N8N_DEPLOY_FLOW_DIR="$(pwd)"
+export N8N_DEPLOY_FLOWS_DIR="$(pwd)"
 export N8N_DEPLOY_APP_DIR="$(pwd)/.n8n-deploy"
 
 # Initialize database
@@ -81,19 +81,19 @@ mkdir -p ~/workflows/{dev,staging,prod}
 
 # Configure environments
 cat > ~/.env.dev << EOF
-N8N_DEPLOY_FLOW_DIR=~/workflows/dev
+N8N_DEPLOY_FLOWS_DIR=~/workflows/dev
 N8N_DEPLOY_APP_DIR=~/workflows/dev/.n8n-deploy
 N8N_SERVER_URL=https://dev.n8n.example.com
 EOF
 
 cat > ~/.env.staging << EOF
-N8N_DEPLOY_FLOW_DIR=~/workflows/staging
+N8N_DEPLOY_FLOWS_DIR=~/workflows/staging
 N8N_DEPLOY_APP_DIR=~/workflows/staging/.n8n-deploy
 N8N_SERVER_URL=https://staging.n8n.example.com
 EOF
 
 cat > ~/.env.prod << EOF
-N8N_DEPLOY_FLOW_DIR=~/workflows/prod
+N8N_DEPLOY_FLOWS_DIR=~/workflows/prod
 N8N_DEPLOY_APP_DIR=~/workflows/prod/.n8n-deploy
 N8N_SERVER_URL=https://n8n.example.com
 EOF

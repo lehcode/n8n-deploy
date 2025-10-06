@@ -961,7 +961,7 @@ class N8nDeployE2ETester:
                 "--data-dir",
                 app_dir,
             ],
-            env={"N8N_DEPLOY_FLOWS": env_flow_dir},
+            env={"N8N_DEPLOY_FLOWS_DIR": env_flow_dir},
         )
         self.run_cli_command(
             [
@@ -978,14 +978,14 @@ class N8nDeployE2ETester:
 
         # Test with environment variable
         exit_code, output, stderr = self.run_cli_command(
-            ["sync", "env_dir_workflow", "--data-dir", app_dir], env={"N8N_DEPLOY_FLOWS": env_flow_dir}
+            ["sync", "env_dir_workflow", "--data-dir", app_dir], env={"N8N_DEPLOY_FLOWS_DIR": env_flow_dir}
         )
         assert exit_code == 0, f"Sync with env var failed: {stderr}"
 
         # Test CLI override of environment variable
         exit_code, output, stderr = self.run_cli_command(
             ["sync", "cli_dir_workflow", "--data-dir", app_dir, "--flow-dir", flow_dir],
-            env={"N8N_DEPLOY_FLOWS": env_flow_dir},
+            env={"N8N_DEPLOY_FLOWS_DIR": env_flow_dir},
         )
         assert exit_code == 0, f"Sync with CLI override failed: {stderr}"
 

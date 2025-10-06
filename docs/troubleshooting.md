@@ -81,7 +81,7 @@ n8n-deploy env --json
 
 # Check environment variables
 echo $N8N_SERVER_URL
-echo $N8N_DEPLOY_FLOW_DIR
+echo $N8N_DEPLOY_FLOWS_DIR
 ```
 
 ## 🔍 Debugging Techniques

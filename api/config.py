@@ -83,12 +83,12 @@ def get_config(
 
     Base folder priority:
     1. Explicit --data-dir parameter (highest priority)
-    2. N8N_DEPLOY_DATA environment variable
+    2. N8N_DEPLOY_DATA_DIR environment variable
     3. Current working directory (default)
 
     Flow folder priority:
     1. Explicit --flow-dir parameter (highest priority)
-    2. N8N_DEPLOY_FLOWS environment variable
+    2. N8N_DEPLOY_FLOWS_DIR environment variable
     3. Current working directory (default)
 
     n8n URL priority:
@@ -106,8 +106,8 @@ def get_config(
 
     if base_folder is not None:
         base_path = Path(base_folder).resolve()
-    elif "N8N_DEPLOY_DATA" in os.environ:
-        base_path = Path(os.environ["N8N_DEPLOY_DATA"]).resolve()
+    elif "N8N_DEPLOY_DATA_DIR" in os.environ:
+        base_path = Path(os.environ["N8N_DEPLOY_DATA_DIR"]).resolve()
         # Default to cwd if path doesn't exist or isn't a directory
         if not base_path.exists() or not base_path.is_dir():
             base_path = Path.cwd()
@@ -116,8 +116,8 @@ def get_config(
 
     if flow_folder is not None:
         flow_path = Path(flow_folder).resolve()
-    elif "N8N_DEPLOY_FLOWS" in os.environ:
-        flow_path = Path(os.environ["N8N_DEPLOY_FLOWS"]).resolve()
+    elif "N8N_DEPLOY_FLOWS_DIR" in os.environ:
+        flow_path = Path(os.environ["N8N_DEPLOY_FLOWS_DIR"]).resolve()
         # Default to cwd if path doesn't exist or isn't a directory
         if not flow_path.exists() or not flow_path.is_dir():
             flow_path = Path.cwd()

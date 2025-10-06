@@ -26,7 +26,7 @@ Second-highest priority configuration method.
 export N8N_SERVER_URL=http://n8n.example.com:5678
 
 # Set workflow directory
-export N8N_DEPLOY_FLOW_DIR=/path/to/workflows
+export N8N_DEPLOY_FLOWS_DIR=/path/to/workflows
 ```
 
 ### 3. .env Files (Development Mode)
@@ -39,7 +39,7 @@ cp .env.example .env
 # Edit .env file
 ENVIRONMENT=development
 N8N_SERVER_URL=http://n8n.example.com:5678
-N8N_DEPLOY_FLOW_DIR=/path/to/workflows
+N8N_DEPLOY_FLOWS_DIR=/path/to/workflows
 ```
 
 ## 📋 Available Configuration Options
@@ -54,7 +54,7 @@ N8N_DEPLOY_FLOW_DIR=/path/to/workflows
   - Application data directory (database, backups)
   - Default: Depends on system configuration
 
-- `--flow-dir` / `N8N_DEPLOY_FLOW_DIR`
+- `--flow-dir` / `N8N_DEPLOY_FLOWS_DIR`
   - Directory containing workflow JSON files
   - Default: Current working directory
 

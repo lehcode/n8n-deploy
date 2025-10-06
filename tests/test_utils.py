@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Type
 import pytest
 from assertpy import assert_that
 
-from api.models import Workflow, WorkflowConfiguration, WorkflowVersion
+from api.models import Workflow, WorkflowConfiguration
 
 
 class TestAssertions:
@@ -82,22 +82,6 @@ class TestDataFactory:
         defaults.update(kwargs)
         return Workflow(**defaults)
 
-    @staticmethod
-    def create_workflow_version(
-        workflow_id: str = "test_workflow_001",
-        version: str = "1.0.0",
-        **kwargs: Any,
-    ) -> WorkflowVersion:
-        """Create a test wf version with sensible defaults"""
-        defaults = {
-            "workflow_id": workflow_id,
-            "version": version,
-            "changes_summary": "Initial version",
-            "created_by": "test_user",
-        }
-        defaults.update(kwargs)
-        return WorkflowVersion(**defaults)
-
 
 class UtilityPatterns:
     """Common test patterns and decorators"""
@@ -141,12 +125,6 @@ class UtilityPatterns:
 def sample_workflow() -> Workflow:
     """Fixture providing a standard test wf"""
     return TestDataFactory.add_workflow()
-
-
-@pytest.fixture
-def sample_workflow_version() -> WorkflowVersion:
-    """Fixture providing a standard test wf version"""
-    return TestDataFactory.create_workflow_version()
 
 
 # @pytest.fixture

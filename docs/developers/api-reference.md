@@ -153,7 +153,7 @@ class APIKey(TypedDict):
 
 ```python
 # Supported environment variables
-N8N_DEPLOY_FLOW_DIR: str       # Workflow directory
+N8N_DEPLOY_FLOWS_DIR: str       # Workflow directory
 N8N_DEPLOY_APP_DIR: str        # Application data directory
 N8N_SERVER_URL: str            # n8n server URL
 N8N_DEPLOY_TESTING: str        # Testing mode flag

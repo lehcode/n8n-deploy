@@ -60,14 +60,14 @@ def env(
     config_items = []
 
     # App Directory
-    data_dir_value = data_dir or os.getenv("N8N_DEPLOY_DATA") or str(Path.cwd())
-    data_dir_source = "CLI" if data_dir else ("N8N_DEPLOY_DATA" if os.getenv("N8N_DEPLOY_DATA") else "default (cwd)")
-    config_items.append(("N8N_DEPLOY_DATA", data_dir_value, data_dir_source))
+    data_dir_value = data_dir or os.getenv("N8N_DEPLOY_DATA_DIR") or str(Path.cwd())
+    data_dir_source = "CLI" if data_dir else ("N8N_DEPLOY_DATA_DIR" if os.getenv("N8N_DEPLOY_DATA_DIR") else "default (cwd)")
+    config_items.append(("N8N_DEPLOY_DATA_DIR", data_dir_value, data_dir_source))
 
     # Flow Directory
-    flow_dir_value = flow_dir or os.getenv("N8N_DEPLOY_FLOWS") or str(Path.cwd())
-    flow_dir_source = "CLI" if flow_dir else ("N8N_DEPLOY_FLOWS" if os.getenv("N8N_DEPLOY_FLOWS") else "default (cwd)")
-    config_items.append(("N8N_DEPLOY_FLOWS", flow_dir_value, flow_dir_source))
+    flow_dir_value = flow_dir or os.getenv("N8N_DEPLOY_FLOWS_DIR") or str(Path.cwd())
+    flow_dir_source = "CLI" if flow_dir else ("N8N_DEPLOY_FLOWS_DIR" if os.getenv("N8N_DEPLOY_FLOWS_DIR") else "default (cwd)")
+    config_items.append(("N8N_DEPLOY_FLOWS_DIR", flow_dir_value, flow_dir_source))
 
     # Server URL
     server_url_value = remote or os.getenv("N8N_SERVER_URL") or "not set"
@@ -98,14 +98,14 @@ def env(
         if HAS_DOTENV:
             priority_order = [
                 "CLI options (--data-dir, --flow-dir, --remote)",
-                "Environment variables (N8N_DEPLOY_DATA, N8N_DEPLOY_FLOWS, etc.)",
+                "Environment variables (N8N_DEPLOY_DATA_DIR, N8N_DEPLOY_FLOWS_DIR, etc.)",
                 ".env files (current directory > user home)",
                 "Defaults (current working directory)",
             ]
         else:
             priority_order = [
                 "CLI options (--data-dir, --flow-dir, --remote)",
-                "Environment variables (N8N_DEPLOY_DATA, N8N_DEPLOY_FLOWS, etc.)",
+                "Environment variables (N8N_DEPLOY_DATA_DIR, N8N_DEPLOY_FLOWS_DIR, etc.)",
                 "Defaults (current working directory)",
             ]
 
@@ -154,7 +154,7 @@ def env(
         # Priority order
         console.print("\n📌 [bold cyan]Priority Order[/bold cyan]")
         console.print("  1️⃣  CLI options (--data-dir, --flow-dir, --remote)")
-        console.print("  2️⃣  Environment variables (N8N_DEPLOY_DATA, N8N_DEPLOY_FLOWS, etc.)")
+        console.print("  2️⃣  Environment variables (N8N_DEPLOY_DATA_DIR, N8N_DEPLOY_FLOWS_DIR, etc.)")
         if HAS_DOTENV:
             console.print("  3️⃣  .env files (current directory > user home)")
             console.print("  4️⃣  Defaults (current working directory)")
@@ -173,7 +173,7 @@ def env(
             console.print(f"{var:25} = {display_value:40} (source: {source})")
         console.print("\n=== Priority Order ===")
         console.print("1. CLI options (--data-dir, --flow-dir, --remote)")
-        console.print("2. Environment variables (N8N_DEPLOY_DATA, N8N_DEPLOY_FLOWS, etc.)")
+        console.print("2. Environment variables (N8N_DEPLOY_DATA_DIR, N8N_DEPLOY_FLOWS_DIR, etc.)")
         if HAS_DOTENV:
             console.print("3. .env files (current directory > user home)")
             console.print("4. Defaults (current working directory)")
