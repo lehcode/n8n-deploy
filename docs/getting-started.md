@@ -2,7 +2,7 @@
 layout: default
 title: Getting Started
 nav_order: 2
-description: "Quick start guide for n8n-deploy CLI installation and setup"
+description: "First steps with n8n-deploy CLI tool"
 ---
 
 Welcome to n8n-deploy! This guide will help you get up and running quickly with our workflow management CLI.

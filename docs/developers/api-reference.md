@@ -1,9 +1,9 @@
 ---
 layout: default
-title: API Reference
+title: Api-Reference
 parent: Developer Guide
-nav_order: 4
-description: "Comprehensive API documentation for n8n-deploy"
+nav_order: 1
+description: "Details about Api-Reference in n8n-deploy"
 ---
 
 # API Reference

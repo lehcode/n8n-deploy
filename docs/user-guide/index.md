@@ -1,3 +1,10 @@
+---
+layout: default
+title: User Guide
+nav_order: 3
+description: "Comprehensive guide for using n8n-deploy CLI tool"
+---
+
 # n8n-deploy User Guide
 
 > "A computer program does what you tell it to do, not what you want it to do."

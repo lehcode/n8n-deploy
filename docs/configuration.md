@@ -1,8 +1,8 @@
 ---
 layout: default
 title: Configuration
-nav_order: 3
-description: "Environment variables, CLI flags, and configuration options for n8n-deploy"
+nav_order: 4
+description: "Configuration options for n8n-deploy"
 ---
 
 ## Configuration Guide

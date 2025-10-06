@@ -1,8 +1,8 @@
 ---
 layout: default
 title: Troubleshooting
-nav_order: 6
-description: "Common issues, solutions, and debugging techniques for n8n-deploy"
+nav_order: 7
+description: "Common issues and solutions for n8n-deploy"
 ---
 
 This guide helps you resolve common issues when using n8n-deploy.

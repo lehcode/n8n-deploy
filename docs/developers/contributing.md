@@ -1,9 +1,9 @@
 ---
 layout: default
-title: Contributing Guidelines
+title: Contributing
 parent: Developer Guide
-nav_order: 2
-description: "How to contribute to n8n-deploy"
+nav_order: 1
+description: "Details about Contributing in n8n-deploy"
 ---
 
 # Contributing to n8n-deploy

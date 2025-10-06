@@ -1,9 +1,9 @@
 ---
 layout: default
-title: Testing Framework
+title: Testing
 parent: Developer Guide
-nav_order: 3
-description: "Comprehensive testing strategies for n8n-deploy"
+nav_order: 1
+description: "Details about Testing in n8n-deploy"
 ---
 
 # Testing Framework

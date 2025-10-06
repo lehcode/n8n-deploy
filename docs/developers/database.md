@@ -1,9 +1,9 @@
 ---
 layout: default
-title: Database Schema
+title: Database
 parent: Developer Guide
-nav_order: 5
-description: "SQLite database schema and management for n8n-deploy"
+nav_order: 1
+description: "Details about Database in n8n-deploy"
 ---
 
 # Database Schema

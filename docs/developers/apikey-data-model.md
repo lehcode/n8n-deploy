@@ -1,3 +1,11 @@
+---
+layout: default
+title: API Key Data Model
+parent: Developer Guide
+nav_order: 7
+description: "API Key Data Model for n8n-deploy API key management"
+---
+
 # Data Model
 
 ```mermaid
