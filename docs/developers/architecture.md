@@ -1,9 +1,9 @@
 ---
 layout: default
-title: System Architecture
+title: Architecture
 parent: Developer Guide
 nav_order: 1
-description: "Architectural overview of n8n-deploy"
+description: "Details about Architecture in n8n-deploy"
 ---
 
 # System Architecture

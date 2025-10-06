@@ -1,3 +1,10 @@
+---
+layout: default
+title: Installation
+nav_order: 3
+description: "Comprehensive guide for installing and setting up n8n-deploy"
+---
+
 # Installation & Setup for n8n-deploy
 
 > "Automation is about augmenting human capabilities, not replacing them." — Adapted from Arthur Bloch's Murphy's Laws on Complexity

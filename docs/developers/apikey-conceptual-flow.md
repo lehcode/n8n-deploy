@@ -1,3 +1,11 @@
+---
+layout: default
+title: API Key Conceptual Flow
+parent: Developer Guide
+nav_order: 6
+description: "API Key Conceptual Flow for n8n-deploy API key management"
+---
+
 # API Key Management Flow
 
 ```mermaid

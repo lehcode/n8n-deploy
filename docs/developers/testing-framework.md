@@ -1,3 +1,11 @@
+---
+layout: default
+title: Testing Framework
+parent: Developer Guide
+nav_order: 5
+description: "Comprehensive testing framework guide for n8n-deploy"
+---
+
 # Testing Framework Guide
 
 Comprehensive guide to testing n8n-deploy using multiple testing approaches.
