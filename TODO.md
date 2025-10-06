@@ -51,7 +51,7 @@ This file tracks planned features and improvements for the n8n-deploy project.
 ### Unit Test Coverage Improvements
 Current coverage: 39% overall (51 unit tests)
 
-**CLI Testing**
+#### CLI Testing
 - Command execution with various parameter combinations
 - More error handling and validation scenarios
 - Help and version display functionality
@@ -62,7 +62,7 @@ Current coverage: 39% overall (51 unit tests)
 - Output formatting consistency (emoji vs no-emoji modes)
 - Global flag processing and precedence
 
-**Database Layer Testing**
+#### Database Layer Testing
 - Schema initialization and migration testing
 - Concurrent access and transaction safety
 - Connection retry logic and timeout handling
@@ -72,7 +72,7 @@ Current coverage: 39% overall (51 unit tests)
 - Schema version compatibility testing
 - Error recovery and rollback mechanisms
 
-**WorkflowManager Testing**
+#### WorkflowManager Testing
 - Workflow CRUD operations edge cases
 - File validation and JSON parsing errors
 - n8n server integration timeout scenarios
@@ -82,7 +82,7 @@ Current coverage: 39% overall (51 unit tests)
 - Large workflow handling and memory usage
 - Concurrent workflow operations
 
-**API Key Management Testing**
+#### API Key Management Testing
 - Key expiration handling and cleanup
 - Usage tracking and analytics
 - Key validation and format checking
@@ -115,7 +115,21 @@ Current coverage: 39% overall (51 unit tests)
 ## 🔮 Future Enhancements
 
 ### Workflow Management
-- Advanced workflow search
+
+#### Graph Push - Dependency-Aware Deployment
+- **Push workflows with their dependencies in correct order**
+  - Analyze workflow dependency graph stored in `dependencies` table
+  - Determine correct push order based on dependency relationships
+  - Push dependent workflows first, then dependent workflows
+  - Single command to deploy entire workflow graph to n8n server
+  - Validation: Ensure all dependencies exist before pushing
+  - Rollback capability if any workflow in graph fails to push
+  - Visual dependency tree display before push confirmation
+  - Support for circular dependency detection and warnings
+  - Example: `n8n-deploy wf graph-push "Main Workflow"` pushes Main Workflow + all its dependencies
+
+#### Other Workflow Features
+- Advanced workflow search with filters and tags
 - Bulk operations for multiple workflows
 - Workflow templates and boilerplate generation
 

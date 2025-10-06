@@ -1,7 +1,7 @@
 ---
 layout: default
 title: FAQ
-nav_order: 9
+nav_order: 10
 description: "Frequently asked questions about n8n-deploy"
 ---
 

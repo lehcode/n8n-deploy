@@ -60,9 +60,11 @@ erDiagram
         DATETIME updated_at
     }
     dependencies {
+        INTEGER id PK
         TEXT workflow_id FK
-        TEXT dependency_id
-        TEXT type
+        TEXT depends_on
+        TEXT dependency_type
+        DATETIME created_at
     }
     versions {
         INTEGER schema_version PK
@@ -120,12 +122,16 @@ erDiagram
   - `value`: Configuration value
   - `updated_at`: Last update timestamp
 
-### 4. `dependencies` Table
-- **Purpose**: Track workflow dependencies
+### 6. `dependencies` Table
+- **Purpose**: Store workflow dependency relationships for graph-push functionality
 - **Key Fields**:
-  - `workflow_id`: Parent workflow ID
-  - `dependency_id`: Dependent workflow ID
-  - `type`: Dependency type
+  - `id`: Auto-increment primary key
+  - `workflow_id`: The workflow that has a dependency (foreign key to workflows.id)
+  - `depends_on`: The workflow that is depended upon (ID of required workflow)
+  - `dependency_type`: Type of dependency (default: 'wf' for workflow)
+  - `created_at`: Timestamp when dependency was recorded
+
+**Usage**: Enables future graph-push feature where workflows are deployed in correct dependency order. For example, if "Workflow A" depends on "Workflow B", a row would have `workflow_id='A'` and `depends_on='B'`, ensuring B is pushed before A.
 
 ### 5. `versions` Table
 - **Purpose**: Track database schema versions

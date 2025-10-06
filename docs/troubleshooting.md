@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Troubleshooting
-nav_order: 8
+nav_order: 9
 description: "Common issues and solutions for n8n-deploy"
 ---
 
