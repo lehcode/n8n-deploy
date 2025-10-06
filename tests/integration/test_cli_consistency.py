@@ -128,7 +128,7 @@ class TestCLIHelpConsistency:
         """
         commands = get_all_commands()
 
-        # Should test at least 28 commands (main + subcommands)
+        # Should test at least 27 commands (main + subcommands)
         # Note: Was 30+ before workflow backup removal (createbackup, restore, backups, verify)
         # Was 27 after apikey get removal (security enhancement)
         # Was 28 after apikey activate addition
