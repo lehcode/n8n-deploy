@@ -21,15 +21,12 @@ class ApikeyTestHelpers(E2ETestBase):
         self,
         name: str,
         api_key: str = "",
-        data_dir: Optional[str] = None,
         stdin_input: Optional[str] = None,
         output_json: bool = False,
     ) -> Tuple[int, str, str]:
         """Execute 'apikey add' command with common parameters"""
         args = ["apikey", "add", name]
 
-        if data_dir:
-            args.extend(["--data-dir", data_dir])
         if output_json:
             args.append("--json")
 
@@ -39,14 +36,11 @@ class ApikeyTestHelpers(E2ETestBase):
 
     def run_apikey_list(
         self,
-        data_dir: Optional[str] = None,
         output_json: bool = False,
     ) -> Tuple[int, str, str]:
         """Execute 'apikey list' command with common parameters"""
         args = ["apikey", "list"]
 
-        if data_dir:
-            args.extend(["--data-dir", data_dir])
         if output_json:
             args.append("--json")
 
@@ -55,14 +49,11 @@ class ApikeyTestHelpers(E2ETestBase):
     def run_apikey_delete(
         self,
         name: str,
-        data_dir: Optional[str] = None,
         confirm: bool = True,
     ) -> Tuple[int, str, str]:
         """Execute 'apikey delete' command with common parameters"""
         args = ["apikey", "delete", name]
 
-        if data_dir:
-            args.extend(["--data-dir", data_dir])
         if confirm:
             args.append("--confirm")
 
@@ -71,13 +62,9 @@ class ApikeyTestHelpers(E2ETestBase):
     def run_apikey_deactivate(
         self,
         name: str,
-        data_dir: Optional[str] = None,
     ) -> Tuple[int, str, str]:
         """Execute 'apikey deactivate' command with common parameters"""
         args = ["apikey", "deactivate", name]
-
-        if data_dir:
-            args.extend(["--data-dir", data_dir])
 
         return self.run_cli_command(args)
 
@@ -98,4 +85,4 @@ class ApikeyTestHelpers(E2ETestBase):
 
     def create_test_api_key(self, name: str = "test_key", api_key: str = "test-api-key-12345") -> Tuple[int, str, str]:
         """Helper to create a test API key"""
-        return self.run_apikey_add(name, api_key, data_dir=self.temp_dir)
+        return self.run_apikey_add(name, api_key)

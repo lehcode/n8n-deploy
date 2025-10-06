@@ -218,7 +218,7 @@ def list_apikeys(unmask: bool, output_json: bool, output_table: bool, no_emoji: 
         config = get_config()
         db_api = DBApi(config=config)
         key_api = KeyApi(db=db_api, config=config)
-        keys = key_api.list_api_keys()
+        keys = key_api.list_api_keys(unmask=unmask)
 
         if output_json:
             console.print(JSON(json.dumps(keys, indent=2, default=str)))

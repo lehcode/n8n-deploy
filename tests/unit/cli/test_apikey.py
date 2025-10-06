@@ -51,7 +51,7 @@ class TestAPIKeyCommands:
         assert "Add new API key" in result.output
         assert "--name" in result.output
         assert "--description" in result.output
-        assert "--data-dir" in result.output
+        assert "--server" in result.output
 
     def test_list_command_help(self):
         """Test list command help"""
@@ -65,7 +65,7 @@ class TestAPIKeyCommands:
         result = self.runner.invoke(apikey, ["deactivate", "--help"])
         assert result.exit_code == 0
         assert "Deactivate API key" in result.output
-        assert "--data-dir" in result.output
+        assert "KEY_NAME" in result.output
 
     def test_delete_command_help(self):
         """Test delete command help"""
@@ -73,14 +73,13 @@ class TestAPIKeyCommands:
         assert result.exit_code == 0
         assert "Permanently delete an API key" in result.output
         assert "--confirm" in result.output
-        assert "--data-dir" in result.output
 
     def test_test_command_help(self):
         """Test test command help"""
         result = self.runner.invoke(apikey, ["test", "--help"])
         assert result.exit_code == 0
         assert "Test API key validity" in result.output
-        assert "--data-dir" in result.output
+        assert "KEY_NAME" in result.output
 
     @patch("api.cli.apikey.KeyApi")
     @patch("api.config.AppConfig")
