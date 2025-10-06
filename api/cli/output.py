@@ -6,11 +6,10 @@ Centralizes emoji handling and output formatting to eliminate duplicate code
 across CLI commands. Provides consistent user experience with emoji/no-emoji modes.
 """
 
-from typing import Any, Callable, Dict, List
+from typing import Any, Dict, List
 
 import click
 from rich.console import Console
-from rich.json import JSON
 from rich.table import Table
 
 console = Console()

@@ -7,8 +7,6 @@ Provides a consistent 'wf' command group for all wf operations including:
 - Server operations: pull, push, server
 """
 
-import os
-from pathlib import Path
 from typing import Optional
 
 import click
@@ -30,8 +28,6 @@ from .app import (
 )
 from .output import (
     cli_error,
-    print_error,
-    print_success,
     print_workflow_search_table,
     print_workflow_table,
 )

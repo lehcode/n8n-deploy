@@ -23,7 +23,7 @@ from rich.table import Table
 
 from ..config import get_config
 from ..db import DBApi
-from .app import HELP_APP_DIR, HELP_FLOW_DIR, HELP_JSON, HELP_NO_EMOJI, CustomCommand, CustomGroup
+from .app import HELP_APP_DIR, HELP_JSON, HELP_NO_EMOJI, CustomCommand, CustomGroup
 
 console = Console()
 
@@ -147,7 +147,7 @@ def init(data_dir: Optional[str], filename: str, output_json: bool, no_emoji: bo
 
             if schema_version > 0:
                 # Database is initialized, use it
-                flow_dir = os.environ.get("N8N_DEPLOY_FLOWS")
+                flow_dir = os.environ.get("N8N_DEPLOY_FLOWS_DIR")
 
                 if output_json:
                     result = {
@@ -242,7 +242,7 @@ def init(data_dir: Optional[str], filename: str, output_json: bool, no_emoji: bo
     # Check flow directory configuration
     import os
 
-    flow_dir = os.environ.get("N8N_DEPLOY_FLOWS")
+    flow_dir = os.environ.get("N8N_DEPLOY_FLOWS_DIR")
 
     # Output based on output format
     if output_json:
@@ -265,12 +265,12 @@ def init(data_dir: Optional[str], filename: str, output_json: bool, no_emoji: bo
             if no_emoji:
                 console.print()
                 console.print("NOTE: Workflow directory not configured.")
-                console.print("Set N8N_DEPLOY_FLOWS environment variable or use --flow-dir option")
+                console.print("Set N8N_DEPLOY_FLOWS_DIR environment variable or use --flow-dir option")
                 console.print("for wf operations (add, push, pull, etc.)")
             else:
                 console.print()
                 console.print("⚠️ NOTE: Workflow directory not configured.")
-                console.print("Set N8N_DEPLOY_FLOWS environment variable or use --flow-dir option")
+                console.print("Set N8N_DEPLOY_FLOWS_DIR environment variable or use --flow-dir option")
                 console.print("for wf operations (add, push, pull, etc.)")
 
 
