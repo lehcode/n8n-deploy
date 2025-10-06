@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Database Management
-nav_order: 4
+nav_order: 8
 description: "SQLite database management for n8n workflow metadata"
 ---
 
@@ -9,22 +9,22 @@ description: "SQLite database management for n8n workflow metadata"
 
 > "A backup of uncertain quality is equivalent to no backup at all." — Ancient DevOps Wisdom
 
-n8n-deploy uses SQLite as its metadata store, providing a reliable, efficient, and portable solution for tracking workflows, API keys, and server configurations.
+n8n-deploy uses SQLite as its metadata store, providing a reliable, efficient, and portable solution for managing workflows, API keys, and server configurations.
 
 ## 🎯 Database Overview
 
 The n8n-deploy database serves as the single source of truth for:
-- **Workflow Metadata**: Track workflow files, sync status, and version information
-- **API Keys**: Store and manage n8n server authentication credentials
-- **Server Configurations**: Maintain multiple n8n server connections
-- **Backup History**: Record database backup operations with SHA256 verification
+- **Workflow Metadata**: Workflow files, sync status, and version information
+- **API Keys**: n8n server authentication credentials
+- **Server Configurations**: Multiple n8n server connections
+- **Backup History**: Database backup operations with SHA256 verification
 
 ### Database Architecture
 
+#### 1. Workflow Management
+
 ```mermaid
 erDiagram
-    SERVERS ||--o{ SERVER_API_KEYS : "uses"
-    API_KEYS ||--o{ SERVER_API_KEYS : "links to"
     WORKFLOWS {
         TEXT id PK "n8n workflow ID"
         TEXT name "UTF-8 supported"
@@ -36,6 +36,30 @@ erDiagram
         TIMESTAMP last_synced
         INTEGER n8n_version_id FK
     }
+    DEPENDENCIES {
+        INTEGER id PK "Auto-increment"
+        TEXT workflow_id FK "Workflow that depends"
+        TEXT depends_on "Workflow depended upon"
+        TEXT dependency_type "Default: wf"
+        TIMESTAMP created_at
+    }
+    WORKFLOWS ||--o{ DEPENDENCIES : "has dependencies"
+```
+
+#### 2. Server & API Key Management
+
+```mermaid
+erDiagram
+    SERVERS ||--o{ SERVER_API_KEYS : "uses"
+    API_KEYS ||--o{ SERVER_API_KEYS : "linked to"
+    SERVERS {
+        INTEGER id PK "Auto-increment"
+        TEXT url "http://host:port"
+        TEXT name UK "UTF-8, emojis OK"
+        INTEGER is_active "1=active, 0=inactive"
+        TIMESTAMP created_at
+        TIMESTAMP last_used
+    }
     API_KEYS {
         INTEGER id PK "Auto-increment"
         TEXT name UK "Unique identifier"
@@ -45,22 +69,20 @@ erDiagram
         TIMESTAMP last_used_at
         INTEGER is_active "1=active, 0=inactive"
     }
-    SERVERS {
-        INTEGER id PK "Auto-increment"
-        TEXT url "http://host:port"
-        TEXT name UK "UTF-8, emojis OK"
-        INTEGER is_active "1=active, 0=inactive"
-        TIMESTAMP created_at
-        TIMESTAMP last_used
-    }
     SERVER_API_KEYS {
         INTEGER server_id FK "CASCADE DELETE"
         INTEGER api_key_id FK "CASCADE DELETE"
         TIMESTAMP created_at
     }
+```
+
+#### 3. Configuration & Schema Tracking
+
+```mermaid
+erDiagram
     CONFIGURATIONS {
         TEXT key PK
-        TEXT value "SHA256 checksums"
+        TEXT value "Backup metadata, SHA256"
         TIMESTAMP updated_at
     }
     SCHEMA_INFO {
@@ -103,7 +125,7 @@ n8n-deploy db init --json --no-emoji
 
 ### Check Database Status
 
-View comprehensive database statistics:
+View database statistics:
 
 ```bash
 # Rich emoji output
@@ -122,23 +144,6 @@ n8n-deploy db status --json
 - Record counts (workflows, API keys, servers)
 - Last backup timestamp
 - Database integrity status
-
-**Example output:**
-```
-📊 Database Status
-
-Database Path: /home/user/.n8n-deploy/n8n-deploy.db
-Size: 128 KB
-Schema Version: 2.0
-
-📈 Statistics:
-  Workflows: 15
-  API Keys: 3
-  Servers: 2
-  Backups: 5
-
-✅ Database is healthy
-```
 
 ### Backup Database
 
@@ -162,17 +167,17 @@ n8n-deploy --data-dir /opt/n8n-deploy db backup
 - **No downtime**: Backup while using the database
 
 {: .warning }
-> **Important**: Backups only include the database file (metadata). Workflow JSON files are separate and should be managed with git version control.
+> **Important**: Backups only include the database file (metadata). Workflow JSON files should be managed with git version control.
 
 ### Compact Database
 
-Optimize database storage by reclaiming unused space:
+Optimize database storage:
 
 ```bash
 # Compact database
 n8n-deploy db compact
 
-# Compact with script-friendly output
+# Script-friendly output
 n8n-deploy db compact --no-emoji
 ```
 
@@ -182,223 +187,33 @@ n8n-deploy db compact --no-emoji
 - Monthly maintenance routine
 - Before creating backups
 
-**What compacting does:**
-- Runs SQLite `VACUUM` command
-- Rebuilds database file
-- Reclaims deleted space
-- Defragments data pages
-- Rebuilds indexes
-
-{: .tip }
-> **Best Practice**: Compact before creating backups to reduce backup file size.
-
 ---
 
 ## 🏗️ Database Schema
 
-The database architecture diagram above shows all tables and their relationships. Key points:
+**1. Workflow Management** - Core workflow management with dependency relationships
+- **workflows** - Workflow metadata with UTF-8 names, file paths, status, and sync management
+- **dependencies** - Records which workflows depend on other workflows. Each row stores `workflow_id` (the workflow that has a dependency) and `depends_on` (the workflow it depends upon). Used for future graph-push functionality to deploy workflows in correct order.
 
-**Core Tables:**
-- **workflows** - Workflow metadata (id, name, file_path, status, tags, timestamps)
-- **api_keys** - Authentication keys with lifecycle tracking
-- **servers** - n8n server configurations with UTF-8 name support
-- **server_api_keys** - Many-to-many junction table linking servers to API keys
-- **configurations** - Backup metadata with SHA256 checksums
-- **schema_info** - Database version tracking for migrations
+**2. Server & API Key Management** - Multi-server authentication system
+- **servers** - n8n server configurations (UTF-8 names, emojis supported)
+- **api_keys** - Plain text JWT tokens with lifecycle management
+- **server_api_keys** - Many-to-many junction table with CASCADE delete
+
+**3. Configuration & Schema** - System metadata and versioning
+- **configurations** - Backup metadata with SHA256 integrity checksums
+- **schema_info** - Database version management for migration processes
 
 {: .warning }
-> **Security Note**: API keys are stored in plain text. Secure the database file with appropriate filesystem permissions (chmod 600).
+> **Security**: API keys stored in plain text. Protect database with `chmod 600` permissions.
 
 ---
 
-## 🔧 Real-World DevOps Scenarios
-
-### Scenario 1: Multi-Environment Setup
-
-Manage separate databases for development, staging, and production:
-
-```bash
-# Development environment
-export N8N_DEPLOY_DATA_DIR=~/dev/n8n-deploy
-n8n-deploy db init
-n8n-deploy apikey add dev_key
-
-# Staging environment
-export N8N_DEPLOY_DATA_DIR=~/staging/n8n-deploy
-n8n-deploy db init
-n8n-deploy apikey add staging_key
-
-# Production environment
-export N8N_DEPLOY_DATA_DIR=/opt/n8n-deploy/production
-n8n-deploy db init
-n8n-deploy apikey add prod_key
-```
-
-### Scenario 2: Automated Backup Strategy
-
-Daily backup script for CI/CD integration:
-
-```bash
-#!/bin/bash
-# daily-backup.sh
-
-BACKUP_DIR="/backups/n8n-deploy"
-TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-BACKUP_FILE="${BACKUP_DIR}/n8n-deploy_${TIMESTAMP}.db"
-
-# Create backup
-n8n-deploy db backup "${BACKUP_FILE}" --no-emoji
-
-# Verify backup
-if [ -f "${BACKUP_FILE}" ]; then
-    echo "✓ Backup created: ${BACKUP_FILE}"
-
-    # Compact database monthly (on 1st of month)
-    if [ $(date +%d) -eq 01 ]; then
-        n8n-deploy db compact --no-emoji
-        echo "✓ Database compacted"
-    fi
-
-    # Keep only last 30 days of backups
-    find "${BACKUP_DIR}" -name "n8n-deploy_*.db" -mtime +30 -delete
-else
-    echo "✗ Backup failed"
-    exit 1
-fi
-```
-
-### Scenario 3: Database Migration
-
-Move database to new server:
-
-```bash
-# On old server
-n8n-deploy db backup /tmp/n8n-deploy-migration.db
-scp /tmp/n8n-deploy-migration.db newserver:/opt/n8n-deploy/
-
-# On new server
-export N8N_DEPLOY_DATA_DIR=/opt/n8n-deploy
-mv /opt/n8n-deploy/n8n-deploy-migration.db /opt/n8n-deploy/n8n-deploy.db
-n8n-deploy db status
-```
-
-### Scenario 4: Health Check Monitoring
-
-Automated database health checks:
-
-```bash
-#!/bin/bash
-# health-check.sh
-
-# Check database status (JSON output)
-STATUS=$(n8n-deploy db status --json --no-emoji)
-
-# Parse JSON (requires jq)
-WORKFLOWS=$(echo "$STATUS" | jq -r '.workflows')
-SIZE=$(echo "$STATUS" | jq -r '.size_kb')
-
-if [ "$WORKFLOWS" -gt 0 ] && [ "$SIZE" -lt 10000 ]; then
-    echo "✓ Database healthy: ${WORKFLOWS} workflows, ${SIZE}KB"
-    exit 0
-else
-    echo "✗ Database issue detected"
-    exit 1
-fi
-```
-
----
-
-## 🛠️ Performance Optimization
-
-### Database Size Management
-
-| Workflows | Expected Size | Action Threshold |
-|-----------|---------------|------------------|
-| 1-50 | < 1 MB | Normal operation |
-| 51-200 | 1-5 MB | Monitor growth |
-| 201-500 | 5-20 MB | Monthly compact |
-| 500+ | 20+ MB | Weekly compact |
-
-### Optimization Strategies
-
-#### 1. Regular Compaction
-
-```bash
-# Add to monthly cron job
-0 2 1 * * /usr/local/bin/n8n-deploy db compact --no-emoji
-```
-
-#### 2. Backup Rotation
-
-```bash
-# Keep only recent backups
-find /backups -name "*.db" -mtime +30 -delete
-```
-
-#### 3. Index Maintenance
-
-- Indexes are automatically maintained by SQLite
-- Compacting rebuilds indexes for optimal performance
-- No manual index management required
-
-#### 4. File System Considerations
-
-- Use SSD storage for database directory
-- Ensure sufficient disk space (2x database size minimum)
-- Enable filesystem compression if available (ext4, btrfs)
-
----
-
-## 🔒 Security Best Practices
-
-### File Permissions
-
-```bash
-# Secure database file
-chmod 600 ~/.n8n-deploy/n8n-deploy.db
-
-# Secure data directory
-chmod 700 ~/.n8n-deploy
-```
-
-### Backup Security
-
-```bash
-# Encrypt backups for long-term storage
-n8n-deploy db backup /tmp/backup.db
-gpg --encrypt --recipient admin@example.com /tmp/backup.db
-rm /tmp/backup.db
-
-# Decrypt when needed
-gpg --decrypt backup.db.gpg > restored.db
-```
-
-### Access Control
-
-For multi-user environments:
-```bash
-# Create dedicated user
-sudo useradd -r -s /bin/false n8n-deploy
-
-# Set ownership
-sudo chown -R n8n-deploy:n8n-deploy /opt/n8n-deploy
-
-# Limit access
-sudo chmod 750 /opt/n8n-deploy
-```
-
----
-
-## 🆘 Troubleshooting
+## 🆘 Common Issues
 
 ### Database Locked
 
 **Error**: `database is locked`
-
-**Causes**:
-- Another n8n-deploy process is running
-- Backup operation in progress
-- File system lock not released
 
 **Solutions**:
 ```bash
@@ -407,51 +222,19 @@ ps aux | grep n8n-deploy
 
 # Wait for operations to complete
 sleep 5 && n8n-deploy db status
-
-# Force unlock (use with caution)
-fuser /path/to/n8n-deploy.db
 ```
 
 ### Corrupted Database
 
 **Error**: `database disk image is malformed`
 
-**Recovery steps**:
+**Recovery**:
 ```bash
-# 1. Restore from latest backup
+# Restore from backup
 cp /backups/latest.db ~/.n8n-deploy/n8n-deploy.db
 
-# 2. Verify integrity
+# Verify integrity
 n8n-deploy db status
-
-# 3. If no backup available, attempt repair
-sqlite3 corrupted.db "PRAGMA integrity_check;"
-sqlite3 corrupted.db ".dump" | sqlite3 repaired.db
-```
-
-### Performance Issues
-
-**Symptoms**: Slow operations, high CPU usage
-
-**Diagnosis**:
-```bash
-# Check database size
-n8n-deploy db status | grep Size
-
-# Analyze query performance
-sqlite3 n8n-deploy.db "PRAGMA stats;"
-```
-
-**Solutions**:
-```bash
-# Compact database
-n8n-deploy db compact
-
-# Check filesystem
-df -h /path/to/database
-
-# Monitor I/O
-iotop -o | grep n8n-deploy
 ```
 
 ### Missing Database
@@ -474,21 +257,9 @@ n8n-deploy db init --import /backups/latest.db
 - [Getting Started](getting-started/) - Initial setup guide
 - [API Key Management](apikeys/) - Manage authentication
 - [Server Management](servers/) - Configure n8n servers
+- [DevOps Integration](user-guide/devops-integration/) - CI/CD workflows and automation
 - [Configuration](configuration/) - Environment variables and settings
 - [Troubleshooting](troubleshooting/) - Common issues and solutions
-
----
-
-## 💡 Pro Tips
-
-1. **Automate Backups**: Schedule daily backups via cron or systemd timers
-2. **Monitor Size**: Set up alerts for database growth beyond expected thresholds
-3. **Test Restores**: Regularly verify backup integrity by testing restoration
-4. **Version Control**: Keep database schema migrations in git
-5. **Document Changes**: Use CHANGELOG.md to track schema evolution
-6. **Separate Environments**: Never mix development and production databases
-7. **Compact Regularly**: Monthly compaction prevents performance degradation
-8. **Secure Storage**: Encrypt backups stored off-site or in cloud storage
 
 ---
 
