@@ -1,7 +1,7 @@
 ---
 layout: default
 title: User Guide
-nav_order: 10
+nav_order: 3
 description: "Comprehensive guide for using n8n-deploy CLI tool"
 ---
 
