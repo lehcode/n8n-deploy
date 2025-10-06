@@ -185,60 +185,9 @@ class TestEndToEndServerIntegration:
         pass
 
 
-@pytest.mark.integration
-class TestEndToEndBackupOperations:
-    """Test backup and restore operations"""
-
-    @pytest.mark.skip(reason="TODO: Implement comprehensive backup wf test")
-    def test_backup_workflows_complete_cycle(self, test_config: AppConfig) -> None:
-        """
-        Test complete backup wf creation and verification
-
-        Scenario: Create workflows, backup them, verify backup integrity
-        Expected: Backup contains all workflows, metadata, and passes verification
-
-        TODO: Implement test that:
-        1. Creates multiple test workflows with actual files
-        2. Runs backup-workflows command
-        3. Verifies backup file created with correct naming pattern
-        4. Runs verify command
-        5. Confirms backup contains expected workflows
-        6. Validates backup metadata and checksums
-        """
-        pass
-
-    @pytest.mark.skip(reason="TODO: Implement test for backup listing and metadata")
-    def test_list_backups_shows_metadata(self, test_config: AppConfig) -> None:
-        """
-        Test that backups shows backup metadata correctly
-
-        Scenario: Multiple backups exist with different timestamps and sizes
-        Expected: List shows backups sorted by date with size and wf count
-
-        TODO: Implement test that:
-        1. Creates multiple backup files
-        2. Runs backups command
-        3. Verifies output includes timestamps, sizes, wf counts
-        4. Tests both table and JSON output formats
-        """
-        pass
-
-    @pytest.mark.skip(reason="TODO: Implement test for backup restoration")
-    def test_restore_backup_functionality(self, test_config: AppConfig) -> None:
-        """
-        Test backup restoration process
-
-        Scenario: Restore workflows from backup file
-        Expected: Database populated with workflows from backup
-
-        TODO: Implement test that:
-        1. Creates backup with known workflows
-        2. Clears database
-        3. Restores from backup
-        4. Verifies all workflows restored correctly
-        5. Confirms file paths and metadata preserved
-        """
-        pass
+# Note: Workflow backup/restore functionality has been removed.
+# Workflow files should be managed with version control (git).
+# Database backups are still available via 'db backup' command.
 
 
 @pytest.mark.integration

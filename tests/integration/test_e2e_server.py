@@ -335,7 +335,8 @@ class TestE2EServer(E2ETestBase):
         )
 
         # Perform local operation immediately after
-        local_returncode, local_stdout, _ = self.run_cli_command(["--data-dir", self.temp_dir, "wf", "list"])
+        # Note: wf list uses --flow-dir, not --data-dir
+        local_returncode, local_stdout, _ = self.run_cli_command(["--flow-dir", self.temp_flow_dir, "wf", "list"])
 
         # Local operation should work regardless of server operation result
         assert local_returncode == 0
@@ -459,19 +460,19 @@ class TestE2EServer(E2ETestBase):
         self.setup_database_with_api_key()
 
         # Commands that should support --skip-ssl-verify
-        commands = [
-            ["wf", "add", "TestWorkflow", "--skip-ssl-verify"],
-            ["wf", "pull", "test123", "--skip-ssl-verify"],
-            ["wf", "push", "test123", "--skip-ssl-verify"],
-            ["wf", "server", "--skip-ssl-verify"],
+        # Test commands that support --skip-ssl-verify
+        # Note: wf add uses --link-remote, others use --remote
+        test_cases = [
+            (["wf", "add", "TestWorkflow", "--link-remote", "https://localhost:5678", "--skip-ssl-verify"], "wf add"),
+            (["wf", "pull", "test123", "--remote", "https://localhost:5678", "--skip-ssl-verify"], "wf pull"),
+            (["wf", "push", "test123", "--remote", "https://localhost:5678", "--skip-ssl-verify"], "wf push"),
+            (["wf", "server", "--remote", "https://localhost:5678", "--skip-ssl-verify"], "wf server"),
         ]
 
-        for cmd in commands:
-            # Run with --remote to avoid missing URL errors
-            full_cmd = ["--data-dir", self.temp_dir, "--remote", "https://localhost:5678"] + cmd
-            returncode, stdout, stderr = self.run_cli_command(full_cmd)
+        for cmd, description in test_cases:
+            returncode, stdout, stderr = self.run_cli_command(cmd)
 
             # Should not error on unknown option (returns 0 or 1, not 2)
-            assert returncode in [0, 1], f"Command {cmd} rejected --skip-ssl-verify option: {stderr}"
+            assert returncode in [0, 1], f"Command {description} rejected --skip-ssl-verify option: {stderr}"
             # Should not show "No such option" error
-            assert "no such option" not in stderr.lower(), f"Command {cmd} does not support --skip-ssl-verify"
+            assert "no such option" not in stderr.lower(), f"Command {description} does not support --skip-ssl-verify"

@@ -9,7 +9,6 @@ from ..api_keys import KeyApi
 from ..config import AppConfig
 from ..db import DBApi
 from ..models import Workflow
-from .backup import WorkflowBackup
 from .crud import WorkflowCRUD
 from .n8n_api import N8nAPI
 
@@ -41,7 +40,6 @@ class WorkflowApi:
         # Initialize modular components
         self.crud = WorkflowCRUD(self.db, self.config)
         self.n8n_api = N8nAPI(self.db, self.config, self.key_api, skip_ssl_verify, remote)
-        self.backup = WorkflowBackup(self.db, self.config, self.key_api)
 
     # Delegate to CRUD operations
     def add_workflow(self, workflow_id: str, name: str) -> None:
@@ -88,24 +86,3 @@ class WorkflowApi:
     def get_n8n_workflows(self) -> Optional[List[Dict[str, Any]]]:
         """Get workflows from n8n server"""
         return self.n8n_api.get_n8n_workflows()
-
-    # Delegate to backup operations
-    def backup_all_workflows(self, backup_dir: Optional[Path] = None) -> Dict[str, Any]:
-        """Backup all workflows"""
-        return self.backup.backup_all_workflows(backup_dir)
-
-    def create_workflow_backup(self, workflow_id: str, backup_dir: Optional[Path] = None) -> Dict[str, Any]:
-        """Create backup for specific wf"""
-        return self.backup.create_workflow_backup(workflow_id, backup_dir)
-
-    def restore_workflows_backup(self, backup_file: Path, force: bool = False) -> bool:
-        """Restore workflows from backup"""
-        return self.backup.restore_workflows_backup(backup_file, force)
-
-    def verify_backup_integrity(self, backup_file: Path) -> bool:
-        """Verify backup integrity"""
-        return self.backup.verify_backup_integrity(backup_file)
-
-    def list_backups(self) -> List[Dict[str, Any]]:
-        """List all backups"""
-        return self.backup.list_backups()

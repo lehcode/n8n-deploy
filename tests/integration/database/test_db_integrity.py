@@ -31,13 +31,13 @@ class Testdbintegrity(DatabaseTestHelpers):
 
         # Perform various operations
         operations = [
-            ["db", "status"],
-            ["wf", "list"],
-            ["db", "status"],  # Repeat to check consistency
+            ["--data-dir", self.temp_dir, "db", "status"],
+            ["wf", "list"],  # wf list doesn't need --data-dir
+            ["--data-dir", self.temp_dir, "db", "status"],  # Repeat to check consistency
         ]
 
         for op in operations:
-            returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir] + op)
+            returncode, stdout, stderr = self.run_cli_command(op)
             assert returncode == 0, f"Database integrity failed after: {op}\nSTDERR: {stderr}\nSTDOUT: {stdout}"
         db_path = Path(self.temp_dir) / "n8n-deploy.db"
         assert db_path.exists()
@@ -111,13 +111,13 @@ class Testdbintegrity(DatabaseTestHelpers):
 
         # Try operations that might cause errors or succeed
         error_prone_operations = [
-            ["wf", "search", "nonexistent"],  # Search for non-existent wf (returns 0 with no results)
-            ["db", "backup"],  # Should work
-            ["wf", "list"],  # Should work
+            ["wf", "search", "nonexistent"],  # Search for non-existent workflow (returns 0 with no results)
+            ["--data-dir", self.temp_dir, "db", "backup"],  # Should work
+            ["wf", "list"],  # Should work (doesn't need --data-dir)
         ]
 
         for op in error_prone_operations:
-            returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir] + op)
+            returncode, stdout, stderr = self.run_cli_command(op)
             # Should not crash with unexpected error codes
             assert returncode in [0, 1], f"Operation crashed with unexpected code: {op}\nSTDERR: {stderr}"
 
