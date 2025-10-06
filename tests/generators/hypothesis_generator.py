@@ -1164,7 +1164,7 @@ class TestServerManagement:
         """Property: Server list should handle all format options"""
         cmd = ["./n8n-deploy", "server", "list"]
         if format_choice:
-            cmd.extend(["--format", format_choice])
+            cmd.extend(["--json"] if format_choice == "json" else ["--table"])
 
         result = subprocess.run(cmd, capture_output=True, timeout=5, text=True)
         assert result.returncode in [0, 1]
@@ -1225,7 +1225,7 @@ class TestServerManagement:
         # List with format
         list_cmd = ["./n8n-deploy", "server", "list"]
         if format_choice:
-            list_cmd.extend(["--format", format_choice])
+            list_cmd.extend(["--json"] if format_choice == "json" else ["--table"])
 
         list_result = subprocess.run(list_cmd, capture_output=True, timeout=5, text=True)
 

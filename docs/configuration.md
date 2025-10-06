@@ -87,7 +87,7 @@ Configuration options are evaluated in this order:
 n8n-deploy env
 
 # Show configuration in JSON format
-n8n-deploy env --format json
+n8n-deploy env --json
 ```
 
 ## 🆘 Troubleshooting
