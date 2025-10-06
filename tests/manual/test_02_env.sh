@@ -34,9 +34,9 @@ print_section "Test Category 1.5: Environment Configuration"
     validate_output "Env JSON priority" "$CLI_COMMAND env --format json --data-dir $app_dir" '"priority_order"'
 
     # Test with multiple directory options
-    run_test "Env with dirs" "$CLI_COMMAND env --data-dir $app_dir --flows-dir $flow_dir" 0 "Display env with both app and flow dirs"
-    validate_output "Env shows app-dir" "$CLI_COMMAND env --data-dir $app_dir --flows-dir $flow_dir" "$app_dir"
-    validate_output "Env shows flow-dir" "$CLI_COMMAND env --data-dir $app_dir --flows-dir $flow_dir" "$flow_dir"
+    run_test "Env with dirs" "$CLI_COMMAND env --data-dir $app_dir --flow-dir $flow_dir" 0 "Display env with both app and flow dirs"
+    validate_output "Env shows app-dir" "$CLI_COMMAND env --data-dir $app_dir --flow-dir $flow_dir" "$app_dir"
+    validate_output "Env shows flow-dir" "$CLI_COMMAND env --data-dir $app_dir --flow-dir $flow_dir" "$flow_dir"
 
     # Test with server URL
     local test_server="http://test.example.com:5678"

@@ -22,12 +22,12 @@ print_section "Test Category 7: Output Formats"
     fi
 
     # Test emoji vs no-emoji output
-    validate_output "Emoji output" "$CLI_COMMAND wf list --data-dir $app_dir --flows-dir $flow_dir" "📋"
-    validate_output "No emoji output" "$CLI_COMMAND wf list --data-dir $app_dir --flows-dir $flow_dir --no-emoji" "Workflows"
+    validate_output "Emoji output" "$CLI_COMMAND wf list --data-dir $app_dir --flow-dir $flow_dir" "📋"
+    validate_output "No emoji output" "$CLI_COMMAND wf list --data-dir $app_dir --flow-dir $flow_dir --no-emoji" "Workflows"
 
     # Test table vs JSON formats
-    validate_output "Table format" "$CLI_COMMAND wf list --data-dir $app_dir --flows-dir $flow_dir --format table" "Name"
-    validate_output "JSON format" "$CLI_COMMAND wf list --data-dir $app_dir --flows-dir $flow_dir --format json" "\\["
+    validate_output "Table format" "$CLI_COMMAND wf list --data-dir $app_dir --flow-dir $flow_dir --format table" "Name"
+    validate_output "JSON format" "$CLI_COMMAND wf list --data-dir $app_dir --flow-dir $flow_dir --format json" "\\["
 
     # Test database status formats
     validate_output "DB status table" "$CLI_COMMAND db status --data-dir $app_dir --format table" "Database Path"
