@@ -31,17 +31,15 @@ def server() -> None:
 @server.command(name="create", cls=CustomCommand)
 @click.argument("name")
 @click.argument("url")
-@click.option("--data-dir", help="Application directory (overrides N8N_DEPLOY_DATA)")
 @click.option("--no-emoji", is_flag=True, help="Disable emoji in output")
 def create_server(
     name: str,
     url: str,
-    data_dir: Optional[str],
     no_emoji: bool,
 ) -> None:
     """Create a new n8n server (name supports UTF-8)"""
     try:
-        config = get_config(base_folder=data_dir)
+        config = get_config()
     except ValueError as e:
         console.print(f"[red]{e}[/red]")
         raise click.Abort()
