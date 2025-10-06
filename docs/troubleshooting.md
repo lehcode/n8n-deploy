@@ -5,7 +5,6 @@ nav_order: 6
 description: "Common issues, solutions, and debugging techniques for n8n-deploy"
 ---
 
-
 This guide helps you resolve common issues when using n8n-deploy.
 
 ## 🚨 Common Problems and Solutions
@@ -15,6 +14,7 @@ This guide helps you resolve common issues when using n8n-deploy.
 **Symptom**: Unable to connect to n8n server
 
 **Solutions**:
+
 ```bash
 # Test API key
 n8n-deploy apikey test my_server
@@ -34,6 +34,7 @@ n8n-deploy --verbose apikey test my_server
 > Use the `--import` flag to accept an existing database without prompting.
 
 **Solutions**:
+
 ```bash
 # Reinitialize database with import flag
 n8n-deploy db init --import
@@ -53,6 +54,7 @@ n8n-deploy --app-dir /custom/path db init
 > **Warning**: SSL verification issues? Use `--skip-ssl-verify` flag for self-signed certificates, but be aware of security implications.
 
 **Solutions**:
+
 ```bash
 # Check server connectivity
 n8n-deploy --server-url http://n8n.example.com:5678 wf list-server
@@ -69,6 +71,7 @@ n8n-deploy wf pull "Exact Workflow Name"
 **Symptom**: Unexpected configuration behavior
 
 **Solutions**:
+
 ```bash
 # Show current configuration
 n8n-deploy env
@@ -117,6 +120,7 @@ n8n-deploy apikey --help
 ```
 
 ### Online Resources
+
 - [GitHub Issues](https://github.com/lehcode/n8n-deploy/issues)
 - [Documentation](https://lehcode.github.io/n8n-deploy/)
 
