@@ -5,7 +5,6 @@ nav_order: 2
 description: "Quick start guide for n8n-deploy CLI installation and setup"
 ---
 
-
 Welcome to n8n-deploy! This guide will help you get up and running quickly with our workflow management CLI.
 
 ## 🎯 Prerequisites
@@ -34,6 +33,7 @@ pip install .
 ```bash
 n8n-deploy db init
 ```
+
 This creates a new SQLite database to track your workflows.
 
 ### 2. Configure n8n Server API Key

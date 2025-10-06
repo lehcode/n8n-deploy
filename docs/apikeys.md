@@ -5,7 +5,6 @@ nav_order: 5
 description: "Managing n8n API keys for server authentication and workflow operations"
 ---
 
-
 n8n-deploy provides a simple and secure way to manage API keys for n8n server interactions.
 
 ## 🔑 API Key Operations
@@ -58,7 +57,7 @@ n8n-deploy apikey test my_server --server-url http://n8n.example.com:5678
 
 ## 📋 API Key Database Schema
 
-```
+```bash
 Table: api_keys
 Columns:
 - name: Key identifier
