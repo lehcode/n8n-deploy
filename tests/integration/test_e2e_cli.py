@@ -90,7 +90,7 @@ class TestE2ECLI(E2ETestBase):
             "N8N_DEPLOY_FLOWS": self.temp_flow_dir,
         }
 
-        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "wf", "list"], env=env)
+        returncode, stdout, stderr = self.run_cli_command(["wf", "list"], env=env)
 
         self.assert_command_details(
             returncode,
@@ -133,7 +133,7 @@ class TestE2ECLI(E2ETestBase):
         """Test N8N_DEPLOY_FLOWS environment variable is respected"""
         env = {"N8N_DEPLOY_FLOWS": self.temp_flow_dir}
         returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "db", "init"])
-        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "wf", "list"], env=env)
+        returncode, stdout, stderr = self.run_cli_command(["wf", "list"], env=env)
 
         self.assert_command_details(
             returncode,
@@ -236,7 +236,7 @@ class TestE2ECLI(E2ETestBase):
         # Initialize database first
         returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "db", "init"])
 
-        cmd = ["--data-dir", self.temp_dir, "wf", "list"]
+        cmd = ["wf", "list"]
 
         returncode1, stdout1, stderr1 = self.run_cli_command(cmd)
         returncode2, stdout2, stderr2 = self.run_cli_command(cmd)
@@ -250,7 +250,7 @@ class TestE2ECLI(E2ETestBase):
         sub_dir = Path(self.temp_dir) / "subdir"
         sub_dir.mkdir()
         returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "db", "init"])
-        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "wf", "list"], cwd=str(sub_dir))
+        returncode, stdout, stderr = self.run_cli_command(["wf", "list"], cwd=str(sub_dir))
 
         self.assert_command_details(
             returncode,
@@ -303,7 +303,7 @@ class TestE2ECLI(E2ETestBase):
         results = []
 
         def run_command() -> None:
-            returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "wf", "list"])
+            returncode, stdout, stderr = self.run_cli_command(["wf", "list"])
             results.append((returncode, stdout, stderr))
 
         threads = []
@@ -327,8 +327,8 @@ class TestE2ECLI(E2ETestBase):
         returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "db", "init"])
 
         env1 = {"N8N_DEPLOY_FLOWS": self.temp_flow_dir}
-        returncode1, stdout1, stderr1 = self.run_cli_command(["--data-dir", self.temp_dir, "wf", "list"], env=env1)
-        returncode2, stdout2, stderr2 = self.run_cli_command(["--data-dir", self.temp_dir, "wf", "list"])
+        returncode1, stdout1, stderr1 = self.run_cli_command(["wf", "list"], env=env1)
+        returncode2, stdout2, stderr2 = self.run_cli_command(["wf", "list"])
 
         self.assert_command_details(
             returncode1,

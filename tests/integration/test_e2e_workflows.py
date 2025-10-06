@@ -73,7 +73,7 @@ class TestE2EWorkflows(E2ETestBase):
         """Test listing workflows when none exist"""
         self.setup_database()
 
-        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "wf", "list"])
+        returncode, stdout, stderr = self.run_cli_command(["wf", "list"])
 
         assert returncode == 0
         # Should show empty list or appropriate message
@@ -97,7 +97,7 @@ class TestE2EWorkflows(E2ETestBase):
             )
 
         # List workflows
-        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "wf", "list"])
+        returncode, stdout, stderr = self.run_cli_command(["wf", "list"])
 
         assert returncode == 0
 
@@ -132,7 +132,7 @@ class TestE2EWorkflows(E2ETestBase):
         ]
 
         for pattern in search_patterns:
-            returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "wf", "search", pattern])
+            returncode, stdout, stderr = self.run_cli_command(["wf", "search", pattern])
 
             # Search should complete successfully
             assert returncode == 0
@@ -170,7 +170,7 @@ class TestE2EWorkflows(E2ETestBase):
         ]
 
         for search_term in comprehensive_searches:
-            returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "wf", "search", search_term])
+            returncode, stdout, stderr = self.run_cli_command(["wf", "search", search_term])
             assert returncode == 0
 
     def test_workflow_stats_display(self) -> None:
@@ -188,7 +188,7 @@ class TestE2EWorkflows(E2ETestBase):
                 "Stats-Test",
             ]
         )
-        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "wf", "stats"])
+        returncode, stdout, stderr = self.run_cli_command(["wf", "stats"])
 
         assert returncode == 0
         # Should show statistics without errors
@@ -231,7 +231,7 @@ class TestE2EWorkflows(E2ETestBase):
                     workflow_name.replace("_", "-"),
                 ]
             )
-        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "wf", "stats"])
+        returncode, stdout, stderr = self.run_cli_command(["wf", "stats"])
 
         assert returncode == 0
 
@@ -253,14 +253,12 @@ class TestE2EWorkflows(E2ETestBase):
 
         if add_returncode == 0:
             # List workflows - should show file exists
-            list_returncode, list_stdout, _ = self.run_cli_command(["--data-dir", self.temp_dir, "wf", "list"])
+            list_returncode, list_stdout, _ = self.run_cli_command(["wf", "list"])
             assert list_returncode == 0
             workflow_file.unlink()
 
             # List again - should reflect file no longer exists
-            list_after_delete_returncode, list_after_stdout, _ = self.run_cli_command(
-                ["--data-dir", self.temp_dir, "wf", "list"]
-            )
+            list_after_delete_returncode, list_after_stdout, _ = self.run_cli_command(["wf", "list"])
             assert list_after_delete_returncode == 0
 
     def test_workflow_add_nonexistent_file(self) -> None:
@@ -481,7 +479,7 @@ class TestE2EWorkflows(E2ETestBase):
         env = {"N8N_DEPLOY_FLOWS": self.temp_flow_dir}
 
         # Test that search command uses environment variable for flow directory
-        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "wf", "list"], env=env)
+        returncode, stdout, stderr = self.run_cli_command(["wf", "list"], env=env)
 
         # Should use environment variable for flow directory and succeed
         assert returncode == 0
@@ -519,8 +517,8 @@ class TestE2EWorkflows(E2ETestBase):
         # Should fail with server URL error and output in JSON format if requested
         assert returncode == 1
 
-    def test_wf_list_only_backupable(self) -> None:
-        """Test wf list --only flag to show only backupable workflows"""
+    def test_wf_list_shows_backupable_status(self) -> None:
+        """Test wf list shows backupable status in workflow metadata"""
         self.setup_database()
         self.create_test_workflow("backupable_test")
         self.run_cli_command(
@@ -536,10 +534,10 @@ class TestE2EWorkflows(E2ETestBase):
             ]
         )
 
-        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "wf", "list", "--only"])
+        returncode, stdout, stderr = self.run_cli_command(["wf", "list"])
 
         assert returncode == 0
-        # Should list only workflows with existing JSON files
+        # Should list all workflows with backupable status (file_exists field)
 
     def test_wf_list_json_format(self) -> None:
         """Test wf list --format json output"""
@@ -558,7 +556,7 @@ class TestE2EWorkflows(E2ETestBase):
             ]
         )
 
-        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "wf", "list", "--json"])
+        returncode, stdout, stderr = self.run_cli_command(["wf", "list", "--json"])
 
         assert returncode == 0
         # Should be valid JSON
@@ -614,7 +612,7 @@ class TestE2EWorkflows(E2ETestBase):
             ]
         )
 
-        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "wf", "search", "search", "--json"])
+        returncode, stdout, stderr = self.run_cli_command(["wf", "search", "search", "--json"])
 
         assert returncode == 0
         # Should be valid JSON
@@ -625,7 +623,7 @@ class TestE2EWorkflows(E2ETestBase):
         """Test wf stats (overall) --format json output"""
         self.setup_database()
 
-        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "wf", "stats", "--json"])
+        returncode, stdout, stderr = self.run_cli_command(["wf", "stats", "--json"])
 
         assert returncode == 0
         # Should be valid JSON with stats data
