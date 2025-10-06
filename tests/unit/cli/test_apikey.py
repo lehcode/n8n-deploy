@@ -41,7 +41,6 @@ class TestAPIKeyCommands:
         assert "API key management commands" in result.output
         assert "add" in result.output
         assert "list" in result.output
-        assert "get" in result.output
         assert "delete" in result.output
         assert "test" in result.output
 
@@ -59,16 +58,7 @@ class TestAPIKeyCommands:
         result = self.runner.invoke(apikey, ["list", "--help"])
         assert result.exit_code == 0
         assert "List all stored API keys" in result.output
-        assert "--show-keys" in result.output
-        assert "--data-dir" in result.output
-
-    def test_get_command_help(self):
-        """Test get command help"""
-        result = self.runner.invoke(apikey, ["get", "--help"])
-        assert result.exit_code == 0
-        assert "Get API key details" in result.output
-        assert "--show-key" in result.output
-        assert "--data-dir" in result.output
+        assert "--unmask" in result.output
 
     def test_deactivate_command_help(self):
         """Test deactivate command help"""
@@ -107,9 +97,7 @@ class TestAPIKeyCommands:
         mock_manager_instance.add_api_key.return_value = True
 
         # Test add command with stdin input (use valid JWT format)
-        result = self.runner.invoke(
-            apikey, ["add", "--name", "test_key", "--data-dir", self.temp_dir], input="eyJhbGci.eyJzdWI.signature\n"
-        )
+        result = self.runner.invoke(apikey, ["add", "--name", "test_key"], input="eyJhbGci.eyJzdWI.signature\n")
 
         assert result.exit_code == 0
         mock_manager_instance.add_api_key.assert_called_once()
@@ -128,35 +116,11 @@ class TestAPIKeyCommands:
         mock_api_manager.return_value = mock_manager_instance
         mock_manager_instance.list_api_keys.return_value = []
 
-        result = self.runner.invoke(apikey, ["list", "--data-dir", self.temp_dir])
+        result = self.runner.invoke(apikey, ["list"])
 
         assert result.exit_code == 0
         assert "No API keys found" in result.output
         mock_manager_instance.list_api_keys.assert_called_once()
-
-    @patch("api.cli.apikey.KeyApi")
-    @patch("api.config.AppConfig")
-    def test_get_command_existing_key(self, mock_config, mock_api_manager):
-        """Test get command with existing key"""
-        # Mock config
-        mock_config_instance = MagicMock()
-        mock_config_instance.base_folder = Path(self.temp_dir)
-        mock_config.return_value = mock_config_instance
-
-        # Mock API manager
-        mock_manager_instance = MagicMock()
-        mock_api_manager.return_value = mock_manager_instance
-
-        # Mock API key
-        mock_key = MagicMock()
-        mock_key.name = "test_key"
-        mock_key.description = "Test key"
-        mock_manager_instance.get_api_key.return_value = mock_key
-
-        result = self.runner.invoke(apikey, ["get", "test_key", "--show-key", "--data-dir", self.temp_dir])
-
-        assert result.exit_code == 0
-        mock_manager_instance.get_api_key.assert_called_once_with("test_key")
 
     @patch("api.cli.apikey.KeyApi")
     @patch("api.config.AppConfig")
@@ -172,7 +136,7 @@ class TestAPIKeyCommands:
         mock_api_manager.return_value = mock_manager_instance
         mock_manager_instance.delete_api_key.return_value = True
 
-        result = self.runner.invoke(apikey, ["delete", "test_key", "--confirm", "--data-dir", self.temp_dir])
+        result = self.runner.invoke(apikey, ["delete", "test_key", "--confirm"])
 
         assert result.exit_code == 0
         mock_manager_instance.delete_api_key.assert_called_once_with("test_key", confirm=True)

@@ -15,42 +15,39 @@ print_section "Test Category 3: API Key Management"
 
     # Check database exists (must be initialized with 'db init' first)
     if ! check_database_exists "$app_dir" "API Key"; then
-        ((SKIPPED_TESTS+=12))  # Skip all API key tests
-        ((TOTAL_TESTS+=12))
+        ((SKIPPED_TESTS+=10))  # Skip all API key tests
+        ((TOTAL_TESTS+=10))
         return
     fi
 
     # Add API key
-    run_test "Add API key" "echo '$SAMPLE_API_KEY' | $CLI_COMMAND apikey add - --name test_key --data-dir $app_dir --no-emoji" 0 "Add new API key"
+    run_test "Add API key" "echo '$SAMPLE_API_KEY' | $CLI_COMMAND apikey add - --name test_key --no-emoji" 0 "Add new API key"
 
-    # List API keys
-    run_test "List API keys table" "$CLI_COMMAND apikey list --data-dir $app_dir --no-emoji" 0 "List API keys in table format"
-    run_test "List API keys JSON" "$CLI_COMMAND apikey list --data-dir $app_dir --format json" 0 "List API keys in JSON format"
-    validate_output "API key list content" "$CLI_COMMAND apikey list --data-dir $app_dir --no-emoji" "test_key"
+    # List API keys (credentials masked by default)
+    run_test "List API keys table" "$CLI_COMMAND apikey list --no-emoji" 0 "List API keys in table format"
+    run_test "List API keys JSON" "$CLI_COMMAND apikey list --format json" 0 "List API keys in JSON format"
+    validate_output "API key list content" "$CLI_COMMAND apikey list --no-emoji" "test_key"
 
-    # Get API key (without showing key)
-    run_test "Get API key (no show)" "$CLI_COMMAND apikey get test_key --data-dir $app_dir --no-emoji" 0 "Get API key without showing key"
-
-    # Get API key (with key)
-    run_test "Get API key (show)" "$CLI_COMMAND apikey get test_key --show-key --data-dir $app_dir --no-emoji" 0 "Get API key showing actual key"
+    # List API keys with credentials unmasked (SECURITY WARNING)
+    run_test "List API keys (unmask)" "$CLI_COMMAND apikey list --unmask --no-emoji" 0 "List API keys showing actual credentials"
 
     # Test API key
-    run_test "Test API key" "$CLI_COMMAND apikey test test_key --data-dir $app_dir" 0 "Test API key validity"
+    run_test "Test API key" "$CLI_COMMAND apikey test test_key" 0 "Test API key validity"
 
     # Add another key for testing
-    run_test "Add second API key" "echo '$SAMPLE_API_KEY' | $CLI_COMMAND apikey add - --name test_key2 --description 'Second test key' --expires-in 30 --data-dir $app_dir --no-emoji" 0 "Add second API key with expiration"
+    run_test "Add second API key" "echo '$SAMPLE_API_KEY' | $CLI_COMMAND apikey add - --name test_key2 --description 'Second test key' --expires-in 30 --no-emoji" 0 "Add second API key with expiration"
 
     # Deactivate API key
-    run_test "Deactivate API key" "$CLI_COMMAND apikey deactivate test_key2 --data-dir $app_dir" 0 "Deactivate API key"
+    run_test "Deactivate API key" "$CLI_COMMAND apikey deactivate test_key2" 0 "Deactivate API key"
 
     # Delete API key
-    run_test "Delete API key" "$CLI_COMMAND apikey delete test_key2 --confirm --data-dir $app_dir" 0 "Delete API key"
+    run_test "Delete API key" "$CLI_COMMAND apikey delete test_key2 --confirm" 0 "Delete API key"
 
     # Test with invalid key name
-    run_test "Invalid key name" "echo '$SAMPLE_API_KEY' | $CLI_COMMAND apikey add - --name 'invalid key!' --data-dir $app_dir" 1 "Test invalid key name handling"
+    run_test "Invalid key name" "echo '$SAMPLE_API_KEY' | $CLI_COMMAND apikey add - --name 'invalid key!'" 1 "Test invalid key name handling"
 
     # Test with invalid JWT format
-    run_test "Invalid JWT format" "echo 'not.a.valid.jwt.format' | $CLI_COMMAND apikey add - --name invalid_jwt --data-dir $app_dir" 1 "Test invalid JWT format handling"
+    run_test "Invalid JWT format" "echo 'not.a.valid.jwt.format' | $CLI_COMMAND apikey add - --name invalid_jwt" 1 "Test invalid JWT format handling"
 
     pause_if_requested
 }

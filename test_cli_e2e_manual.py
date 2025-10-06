@@ -416,16 +416,16 @@ class N8nDeployE2ETester:
         jwt_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0IiwiaWF0IjoxNjE2MjM5MDIyfQ.test"
         self.run_cli_command(["apikey", "add", jwt_token, "--name", "test_key"])
 
-        # Test get without showing key
-        exit_code, output, stderr = self.run_cli_command(["apikey", "get", "test_key"])
-        assert exit_code == 0, f"API key get failed: {stderr}"
+        # Test list without unmasking credentials
+        exit_code, output, stderr = self.run_cli_command(["apikey", "list"])
+        assert exit_code == 0, f"API key list failed: {stderr}"
         assert "test_key" in output, "Key name not in output"
-        assert jwt_token not in output, "Key value should be hidden"
+        assert jwt_token not in output, "Key value should be hidden by default"
 
-        # Test get with showing key
-        exit_code, output, stderr = self.run_cli_command(["apikey", "get", "test_key", "--show-key"])
-        assert exit_code == 0, f"API key get with show failed: {stderr}"
-        assert jwt_token in output, "Key value should be shown"
+        # Test list with unmasking credentials
+        exit_code, output, stderr = self.run_cli_command(["apikey", "list", "--unmask"])
+        assert exit_code == 0, f"API key list with unmask failed: {stderr}"
+        assert jwt_token in output, "Key value should be shown with --unmask"
 
     def test_apikey_lifecycle(self) -> None:
         """Test complete API key lifecycle"""

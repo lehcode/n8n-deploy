@@ -205,10 +205,10 @@ class TestE2EServer(E2ETestBase):
         invalid_key = "invalid-api-key-12345"
 
         # Replace stored API key with invalid one
-        self.run_cli_command(["--data-dir", self.temp_dir, "apikey", "delete", "test_server", "--confirm"])
+        self.run_cli_command(["apikey", "delete", "test_server", "--confirm"])
 
         self.run_cli_command(
-            ["apikey", "add", "-", "--name", "test_server", "--data-dir", self.temp_dir],
+            ["apikey", "add", "-", "--name", "test_server"],
             stdin_input=invalid_key,
         )
         returncode, stdout, stderr = self.run_cli_command(

@@ -341,7 +341,7 @@ class TestE2ECLI(E2ETestBase):
         test_cases = [
             (["--data-dir", self.temp_dir, "db", "status"], "db status with data-dir"),
             (["--flow-dir", self.temp_flow_dir, "wf", "list"], "wf list with flow-dir"),
-            (["--data-dir", self.temp_dir, "apikey", "list"], "apikey list with data-dir"),
+            (["apikey", "list"], "apikey list"),
             (["--data-dir", self.temp_dir, "db", "status"], "db status repeat"),
         ]
 
