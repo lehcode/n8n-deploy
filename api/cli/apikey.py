@@ -179,7 +179,7 @@ def add_apikey(
                     # Create new server from URL
                     auto_server_name = f"Auto server {key_id}"
                     try:
-                        server_id = server_api.add_server(url=server_url, name=auto_server_name)
+                        server_api.add_server(url=server_url, name=auto_server_name)
                         server_api.link_api_key(auto_server_name, name)
                         if no_emoji:
                             console.print(f"Server '{auto_server_name}' created from N8N_SERVER_URL ({server_url})")

@@ -142,7 +142,6 @@ class TestN8nApiIntegration:
             patch.object(test_manager.key_api, "list_api_keys", return_value=[]),
             patch.dict("os.environ", {"N8N_API_URL": "http://localhost:5678", "N8N_DEPLOY_SERVER_KEY": "env_api_key_54321"}),
         ):
-
             credentials = test_manager.n8n_api._get_n8n_credentials()
 
             assert credentials is not None
@@ -157,7 +156,6 @@ class TestN8nApiIntegration:
             patch.object(test_manager.key_api, "list_api_keys", return_value=[]),
             patch.dict("os.environ", {}, clear=True),
         ):
-
             credentials = test_manager.n8n_api._get_n8n_credentials()
             assert credentials is None
 
