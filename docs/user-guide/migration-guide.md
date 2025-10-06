@@ -367,7 +367,7 @@ ls -la ~/.n8n-deploy/
 If you encounter migration issues:
 
 1. **Check logs**: Review error messages carefully
-2. **Consult FAQ**: [Troubleshooting Guide](../troubleshooting.md)
+2. **Consult FAQ**: [Troubleshooting Guide](../troubleshooting/)
 3. **Backup first**: Always backup before troubleshooting
 4. **Open issue**: Provide version info and error logs
 

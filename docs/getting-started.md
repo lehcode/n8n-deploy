@@ -81,10 +81,10 @@ n8n-deploy --server-url http://n8n.example.com:5678 wf push "Deploy Workflow"
 If you encounter any issues:
 - Check your Python version (`python --version`)
 - Verify n8n server connectivity
-- Review the [Troubleshooting Guide](troubleshooting.md)
+- Review the [Troubleshooting Guide](troubleshooting/)
 
 ## 📖 Next Steps
 
-- [Configuration Guide](configuration.md)
-- [Workflow Management](workflows.md)
-- [API Key Management](apikeys.md)
+- [Configuration Guide](configuration/)
+- [Workflow Management](workflows/)
+- [API Key Management](apikeys/)

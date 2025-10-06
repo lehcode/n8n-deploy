@@ -12,14 +12,14 @@ Comprehensive guide to testing n8n-deploy using multiple testing approaches.
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [Test Types](#test-types)
-- [Quick Start](#quick-start)
-- [Manual Testing](#manual-testing)
-- [Automated Testing](#automated-testing)
-- [Property-Based Testing](#property-based-testing)
-- [Test Generation](#test-generation)
-- [Best Practices](#best-practices)
+- [Overview](#overview/)
+- [Test Types](#test-types/)
+- [Quick Start](#quick-start/)
+- [Manual Testing](#manual-testing/)
+- [Automated Testing](#automated-testing/)
+- [Property-Based Testing](#property-based-testing/)
+- [Test Generation](#test-generation/)
+- [Best Practices](#best-practices/)
 
 ---
 
@@ -740,7 +740,7 @@ TestCLI = CLIStateMachine.TestCase
 ### Further Reading
 - [Property-Based Testing with Hypothesis](https://hypothesis.works/)
 - [Effective Python Testing](https://realpython.com/python-testing/)
-- [Test Pyramid](https://martinfowler.com/articles/practical-test-pyramid.html)
+- [Test Pyramid](https://martinfowler.com/articles/practical-test-pyramid.html/)
 
 ---
 

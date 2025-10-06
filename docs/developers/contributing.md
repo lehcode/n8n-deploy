@@ -40,7 +40,7 @@ pip install -e .
 
 ### 1. Find an Issue
 
-- Check [GitHub Issues](https://github.com/lehcode/n8n-deploy/issues)
+- Check [GitHub Issues](https://github.com/lehcode/n8n-deploy/issues/)
 - Look for "good first issue" or "help wanted" labels
 - Discuss potential changes in the issue comments
 

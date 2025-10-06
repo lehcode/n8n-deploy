@@ -21,14 +21,14 @@ n8n-deploy is a powerful Python CLI tool for managing n8n workflows with a SQLit
 
 ## Quick Links
 
-- [System Architecture](architecture.md)
-- [Contributing Guidelines](contributing.md)
-- [Testing Framework](testing.md)
-- [Testing Guide (Comprehensive)](testing-framework.md)
-- [CI/CD Troubleshooting](ci-cd-troubleshooting.md)
-- [API Reference](api-reference.md)
-- [Database Schema](database.md)
-- [Local GitHub Pages Testing](local-github-pages-testing.md)
+- [System Architecture](architecture/)
+- [Contributing Guidelines](contributing/)
+- [Testing Framework](testing/)
+- [Testing Guide (Comprehensive)](testing-framework/)
+- [CI/CD Troubleshooting](ci-cd-troubleshooting/)
+- [API Reference](api-reference/)
+- [Database Schema](database/)
+- [Local GitHub Pages Testing](local-github-pages-testing/)
 
 ## Key Project Goals
 

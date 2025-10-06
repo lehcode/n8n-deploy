@@ -27,7 +27,7 @@ Ideal scenarios include:
 
 ### How do I install n8n-deploy?
 
-See our comprehensive [Installation Guide](user-guide/installation.md) for all details and methods.
+See our comprehensive [Installation Guide](user-guide/installation/) for all details and methods.
 
 ### What are the system requirements?
 
@@ -45,13 +45,13 @@ Configuration follows this priority:
 3. `.env` files (development mode only)
 4. Default values
 
-Full details in the [Configuration Guide](configuration.md).
+Full details in the [Configuration Guide](configuration/).
 
 ## Workflow Management
 
 ### How do I list, pull, or push workflows?
 
-Workflow operations are covered in the [Workflow Management Guide](workflows.md). Basic examples:
+Workflow operations are covered in the [Workflow Management Guide](workflows/). Basic examples:
 
 ```bash
 # List local workflows
@@ -72,7 +72,7 @@ n8n-deploy wf push "Deploy Workflow"
 ### Common Issues
 
 If you encounter problems, check:
-- [Troubleshooting Guide](troubleshooting.md)
+- [Troubleshooting Guide](troubleshooting/)
 - Verify Python version: `python --version`
 - Check server connectivity
 - Review error messages carefully
@@ -81,7 +81,7 @@ If you encounter problems, check:
 
 ### How can I contribute?
 
-See our [Contributing Guide](developers/contributing.md) for:
+See our [Contributing Guide](developers/contributing/) for:
 - Development setup
 - Code style requirements
 - Testing procedures
@@ -103,12 +103,12 @@ No. n8n-deploy does not collect or transmit any telemetry data. All operations a
 
 ## Resources
 
-- [Official Documentation](index.md)
-- [GitHub Repository](https://github.com/lehcode/n8n-deploy)
-- [Issue Tracker](https://github.com/lehcode/n8n-deploy/issues)
+- [Official Documentation](index/)
+- [GitHub Repository](https://github.com/lehcode/n8n-deploy/)
+- [Issue Tracker](https://github.com/lehcode/n8n-deploy/issues/)
 
 ---
 
 **Didn't find your answer?**
-- Check [GitHub Discussions](https://github.com/lehcode/n8n-deploy/discussions)
-- [Open an Issue](https://github.com/lehcode/n8n-deploy/issues)
+- Check [GitHub Discussions](https://github.com/lehcode/n8n-deploy/discussions/)
+- [Open an Issue](https://github.com/lehcode/n8n-deploy/issues/)
