@@ -2,7 +2,7 @@
 layout: default
 title: Contributing
 parent: Developer Guide
-nav_order: 1
+nav_order: 5
 description: "Details about Contributing in n8n-deploy"
 ---
 
