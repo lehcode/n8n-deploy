@@ -316,8 +316,8 @@ class TestE2EAPIKeys(E2ETestBase):
         )
 
         if add_returncode == 0:
-            self.run_cli_command(["wf", "list", "--data-dir", self.temp_dir, "--flows-dir", self.temp_flow_dir])
-            self.run_cli_command(["stats", "--data-dir", self.temp_dir, "--flows-dir", self.temp_flow_dir])
+            self.run_cli_command(["wf", "list", "--data-dir", self.temp_dir, "--flow-dir", self.temp_flow_dir])
+            self.run_cli_command(["stats", "--data-dir", self.temp_dir, "--flow-dir", self.temp_flow_dir])
             get_returncode, get_stdout, get_stderr = self.run_cli_command(
                 ["apikey", "get", "persistence_test", "--data-dir", self.temp_dir]
             )

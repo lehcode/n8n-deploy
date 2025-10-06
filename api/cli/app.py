@@ -134,19 +134,21 @@ def cli() -> None:
     \b
     📂 Core Directories:
 
-    App Directory (--data-dir):
+    \b
+    App Directory ('--data-dir'):
       Stores application data (database, backups)
-      Priority: --data-dir CLI option > N8N_DEPLOY_DATA env > current directory
+      Priority: '--data-dir' CLI option > N8N_DEPLOY_DATA env var > current directory
       Default file: n8n-deploy.db
 
-    Flow Directory (--flows-dir):
+    \b
+    Flow Directory ('--flow-dir'):
       Contains wf JSON files
-      Priority: --flows-dir CLI option > N8N_DEPLOY_FLOWS env > current directory
+      Priority: '--flow-dir' CLI option > N8N_DEPLOY_FLOWS env var > current directory
       Default: current directory
 
     \b
     🌐 Server Configuration:
-      n8n Server URL: --remote CLI option > N8N_SERVER_URL env
+      n8n Server URL: '--remote' CLI option > N8N_SERVER_URL env var
       API Keys: Stored in database, managed via 'apikey' commands
     """
     pass
@@ -158,14 +160,14 @@ def register_commands() -> None:
     from .apikey import apikey
     from .db import db
     from .env import env
-    from .server import server_group
+    from .server import server
     from .wf import wf
 
     # Register command groups
     cli.add_command(wf)
     cli.add_command(db)
     cli.add_command(apikey)
-    cli.add_command(server_group)
+    cli.add_command(server)
     cli.add_command(env)
 
 

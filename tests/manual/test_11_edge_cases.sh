@@ -31,16 +31,16 @@ print_section "Test Category 10: Edge Cases"
     local special_wf_id="special-test-id"
     local valid_special_name="Workflow with Spaces (test) & symbols! 日本語 🎉"
     local invalid_special_name="wf/with\\path"
-    run_test "Add wf with UTF-8" "$CLI_COMMAND wf add workflows/${SAMPLE_WF_ID}.json '$valid_special_name' --data-dir $app_dir --flows-dir $flow_dir" 0 "Add wf with spaces, UTF-8, and special characters (should pass)"
-    run_test "Add invalid char wf" "$CLI_COMMAND wf add workflows/${SAMPLE_WF_ID}.json '$invalid_special_name' --data-dir $app_dir --flows-dir $flow_dir" 1 "Add wf with path separators (should fail)"
+    run_test "Add wf with UTF-8" "$CLI_COMMAND wf add workflows/${SAMPLE_WF_ID}.json '$valid_special_name' --data-dir $app_dir --flow-dir $flow_dir" 0 "Add wf with spaces, UTF-8, and special characters (should pass)"
+    run_test "Add invalid char wf" "$CLI_COMMAND wf add workflows/${SAMPLE_WF_ID}.json '$invalid_special_name' --data-dir $app_dir --flow-dir $flow_dir" 1 "Add wf with path separators (should fail)"
 
     # Test very long arguments
     local long_description="This is a very long description that contains many words and should test the handling of lengthy input parameters in the CLI system to ensure robust operation"
     run_test "Long description" "echo '$SAMPLE_API_KEY' | $CLI_COMMAND apikey add - --name long_test_key --description '$long_description' --data-dir $app_dir --no-emoji" 0 "Test long description handling"
 
     # Test duplicate wf ID (first add the original, then try to add duplicate)
-    run_test "Add original wf" "$CLI_COMMAND wf add workflows/${SAMPLE_WF_ID}.json '$SAMPLE_WF_NAME' --data-dir $app_dir --flows-dir $flow_dir" 0 "Add original wf for duplicate test"
-    run_test "Duplicate wf ID" "$CLI_COMMAND wf add workflows/${SAMPLE_WF_ID}.json 'Duplicate Workflow' --data-dir $app_dir --flows-dir $flow_dir" 1 "Test duplicate wf ID handling"
+    run_test "Add original wf" "$CLI_COMMAND wf add workflows/${SAMPLE_WF_ID}.json '$SAMPLE_WF_NAME' --data-dir $app_dir --flow-dir $flow_dir" 0 "Add original wf for duplicate test"
+    run_test "Duplicate wf ID" "$CLI_COMMAND wf add workflows/${SAMPLE_WF_ID}.json 'Duplicate Workflow' --data-dir $app_dir --flow-dir $flow_dir" 1 "Test duplicate wf ID handling"
 
     # Test operations on deactivated API keys
     run_test "Deactivate API key" "$CLI_COMMAND apikey deactivate long_test_key --data-dir $app_dir" 0 "Deactivate API key for testing"
@@ -49,7 +49,7 @@ print_section "Test Category 10: Edge Cases"
     # Test wf file that exists but is invalid JSON
     local invalid_json_file="$flow_dir/workflows/invalid.json"
     echo "{ invalid json }" > "$invalid_json_file"
-    run_test "Add invalid JSON wf" "$CLI_COMMAND wf add workflows/invalid.json 'invalid_json_workflow' --data-dir $app_dir --flows-dir $flow_dir" 1 "Add wf with invalid JSON (should fail)"
+    run_test "Add invalid JSON wf" "$CLI_COMMAND wf add workflows/invalid.json 'invalid_json_workflow' --data-dir $app_dir --flow-dir $flow_dir" 1 "Add wf with invalid JSON (should fail)"
 
 
     pause_if_requested

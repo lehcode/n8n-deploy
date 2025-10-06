@@ -15,10 +15,10 @@ from typing import Any, Optional
 from unittest.mock import patch
 
 import pytest
-from api.workflow import WorkflowApi
 
 from api.config import AppConfig
 from api.models import Workflow
+from api.workflow import WorkflowApi
 
 from .e2e_base import E2ETestBase
 
@@ -88,7 +88,7 @@ class TestE2EWorkflows(E2ETestBase):
                 [
                     "--data-dir",
                     self.temp_dir,
-                    "--flows-dir",
+                    "--flow-dir",
                     self.temp_flow_dir,
                     "add",
                     f"{workflow_name}.json",
@@ -117,7 +117,7 @@ class TestE2EWorkflows(E2ETestBase):
                 [
                     "--data-dir",
                     self.temp_dir,
-                    "--flows-dir",
+                    "--flow-dir",
                     self.temp_flow_dir,
                     "add",
                     f"{workflow_name}.json",
@@ -153,7 +153,7 @@ class TestE2EWorkflows(E2ETestBase):
                 [
                     "--data-dir",
                     self.temp_dir,
-                    "--flows-dir",
+                    "--flow-dir",
                     self.temp_flow_dir,
                     "add",
                     f"{workflow_name}.json",
@@ -181,7 +181,7 @@ class TestE2EWorkflows(E2ETestBase):
             [
                 "--data-dir",
                 self.temp_dir,
-                "--flows-dir",
+                "--flow-dir",
                 self.temp_flow_dir,
                 "add",
                 "stats_test.json",
@@ -224,7 +224,7 @@ class TestE2EWorkflows(E2ETestBase):
                 [
                     "--data-dir",
                     self.temp_dir,
-                    "--flows-dir",
+                    "--flow-dir",
                     self.temp_flow_dir,
                     "add",
                     f"{workflow_name}.json",
@@ -243,7 +243,7 @@ class TestE2EWorkflows(E2ETestBase):
             [
                 "--data-dir",
                 self.temp_dir,
-                "--flows-dir",
+                "--flow-dir",
                 self.temp_flow_dir,
                 "add",
                 "existence_test.json",
@@ -312,7 +312,7 @@ class TestE2EWorkflows(E2ETestBase):
 
         # Test 'wf list' with default emoji output
         emoji_returncode, emoji_stdout, _ = self.run_cli_command(
-            ["--data-dir", self.temp_dir, "--flows-dir", self.temp_flow_dir, "wf", "list"]
+            ["--data-dir", self.temp_dir, "--flow-dir", self.temp_flow_dir, "wf", "list"]
         )
 
         # Test 'wf list' with --no-emoji flag
@@ -320,7 +320,7 @@ class TestE2EWorkflows(E2ETestBase):
             [
                 "--data-dir",
                 self.temp_dir,
-                "--flows-dir",
+                "--flow-dir",
                 self.temp_flow_dir,
                 "--no-emoji",
                 "wf",
@@ -346,7 +346,7 @@ class TestE2EWorkflows(E2ETestBase):
 
         # Test that search command works with custom flow directory
         returncode, stdout, stderr = self.run_cli_command(
-            ["--data-dir", self.temp_dir, "--flows-dir", str(subdir), "wf", "search", "TestWorkflow"]
+            ["--data-dir", self.temp_dir, "--flow-dir", str(subdir), "wf", "search", "TestWorkflow"]
         )
 
         # Should handle path resolution and return success (even if no results)
@@ -460,7 +460,7 @@ class TestE2EWorkflows(E2ETestBase):
             [
                 "--data-dir",
                 self.temp_dir,
-                "--flows-dir",
+                "--flow-dir",
                 self.temp_flow_dir,
                 "add",
                 "backup_integration_test.json",
@@ -528,7 +528,7 @@ class TestE2EWorkflows(E2ETestBase):
             [
                 "--data-dir",
                 self.temp_dir,
-                "--flows-dir",
+                "--flow-dir",
                 self.temp_flow_dir,
                 "wf",
                 "add",
@@ -550,7 +550,7 @@ class TestE2EWorkflows(E2ETestBase):
             [
                 "--data-dir",
                 self.temp_dir,
-                "--flows-dir",
+                "--flow-dir",
                 self.temp_flow_dir,
                 "wf",
                 "add",
@@ -574,7 +574,7 @@ class TestE2EWorkflows(E2ETestBase):
             [
                 "--data-dir",
                 self.temp_dir,
-                "--flows-dir",
+                "--flow-dir",
                 self.temp_flow_dir,
                 "wf",
                 "add",
@@ -606,7 +606,7 @@ class TestE2EWorkflows(E2ETestBase):
             [
                 "--data-dir",
                 self.temp_dir,
-                "--flows-dir",
+                "--flow-dir",
                 self.temp_flow_dir,
                 "wf",
                 "add",
@@ -643,7 +643,7 @@ class TestE2EWorkflows(E2ETestBase):
             [
                 "--data-dir",
                 self.temp_dir,
-                "--flows-dir",
+                "--flow-dir",
                 self.temp_flow_dir,
                 "wf",
                 "add",
@@ -697,7 +697,7 @@ class TestE2EWorkflows(E2ETestBase):
             [
                 "--data-dir",
                 self.temp_dir,
-                "--flows-dir",
+                "--flow-dir",
                 self.temp_flow_dir,
                 "wf",
                 "createbackup",
