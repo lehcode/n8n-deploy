@@ -39,20 +39,7 @@ n8n-deploy --server-url http://n8n.example.com:5678 wf push "Deployment Pipeline
 n8n-deploy --flow-dir /path/to/workflows wf push "Deployment Pipeline"
 ```
 
-### Workflow Backup
-```bash
-# Backup all workflows
-n8n-deploy wf backup
-
-# Backup specific workflow
-n8n-deploy wf backup "My Workflow"
-```
-
-### Workflow Restore
-```bash
-# Restore from backup
-n8n-deploy wf restore backup_file.tar.gz
-```
+> **Note**: Workflow files should be managed with version control (git). Use `db backup` for database metadata, API keys, and server configurations.
 
 ## 🔍 Advanced Workflow Management
 
@@ -113,9 +100,6 @@ n8n-deploy --server-url http://n8n.example.com:5678 wf list-server
 
 # Pull a specific workflow
 n8n-deploy wf pull "Customer Onboarding"
-
-# Backup all workflows
-n8n-deploy wf backup
 
 # Search workflows
 n8n-deploy wf search "customer"
