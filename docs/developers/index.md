@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Developer Guide
-nav_order: 9
+nav_order: 12
 has_children: true
 permalink: /developers
 description: "Comprehensive guide for developers working with n8n-deploy"
