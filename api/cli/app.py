@@ -80,7 +80,7 @@ class CustomCommand(click.Command):
         # Build usage line showing the full command path
         command_path = " ".join(pieces[1:]) if len(pieces) > 1 else ""
         if command_path:
-            usage_line = f"n8n-deploy|./n8n-deploy {command_path} [OPTIONS]..."
+            usage_line = f"n8n-deploy|./n8n-deploy {command_path}{args_str} [OPTIONS]..."
         else:
             usage_line = "n8n-deploy|./n8n-deploy COMMAND [OPTIONS]..."
 
