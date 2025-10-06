@@ -512,8 +512,7 @@ class TestE2EWorkflows(E2ETestBase):
                 "wf",
                 "add",
                 "JSONAddTest",
-                "--format",
-                "json",
+                "--json",
             ]
         )
 
@@ -559,7 +558,7 @@ class TestE2EWorkflows(E2ETestBase):
             ]
         )
 
-        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "wf", "list", "--format", "json"])
+        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "wf", "list", "--json"])
 
         assert returncode == 0
         # Should be valid JSON
@@ -615,9 +614,7 @@ class TestE2EWorkflows(E2ETestBase):
             ]
         )
 
-        returncode, stdout, stderr = self.run_cli_command(
-            ["--data-dir", self.temp_dir, "wf", "search", "search", "--format", "json"]
-        )
+        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "wf", "search", "search", "--json"])
 
         assert returncode == 0
         # Should be valid JSON
@@ -628,7 +625,7 @@ class TestE2EWorkflows(E2ETestBase):
         """Test wf stats (overall) --format json output"""
         self.setup_database()
 
-        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "wf", "stats", "--format", "json"])
+        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "wf", "stats", "--json"])
 
         assert returncode == 0
         # Should be valid JSON with stats data
@@ -660,8 +657,7 @@ class TestE2EWorkflows(E2ETestBase):
                     "wf",
                     "stats",
                     "test_workflow_id",
-                    "--format",
-                    "json",
+                    "--json",
                 ]
             )
 
@@ -679,8 +675,7 @@ class TestE2EWorkflows(E2ETestBase):
                 "server",
                 "--remote",
                 "http://test-server:5678",
-                "--format",
-                "json",
+                "--json",
             ]
         )
 
@@ -738,9 +733,7 @@ class TestE2EWorkflows(E2ETestBase):
         backup_dir = Path(self.temp_dir) / "json_backups"
         backup_dir.mkdir(exist_ok=True)
 
-        returncode, stdout, stderr = self.run_cli_command(
-            ["wf", "backups", "--backup-dir", str(backup_dir), "--format", "json"]
-        )
+        returncode, stdout, stderr = self.run_cli_command(["wf", "backups", "--backup-dir", str(backup_dir), "--json"])
 
         assert returncode == 0
 
