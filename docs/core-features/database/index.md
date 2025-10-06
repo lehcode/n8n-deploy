@@ -1,7 +1,9 @@
 ---
 layout: default
 title: Database Management
-nav_order: 8
+parent: Core Features
+nav_order: 1
+has_children: true
 description: "SQLite database management for n8n workflow metadata"
 ---
 
@@ -19,9 +21,11 @@ The n8n-deploy database serves as the single source of truth for:
 - **Server Configurations**: Multiple n8n server connections
 - **Backup History**: Database backup operations with SHA256 verification
 
-### Database Architecture
+---
 
-#### 1. Workflow Management
+## 📊 Database Architecture
+
+### 1. Workflow Management
 
 ```mermaid
 erDiagram
@@ -46,7 +50,7 @@ erDiagram
     WORKFLOWS ||--o{ DEPENDENCIES : "has dependencies"
 ```
 
-#### 2. Server & API Key Management
+### 2. Server & API Key Management
 
 ```mermaid
 erDiagram
@@ -76,7 +80,7 @@ erDiagram
     }
 ```
 
-#### 3. Configuration & Schema Tracking
+### 3. Configuration & Schema Tracking
 
 ```mermaid
 erDiagram
@@ -94,102 +98,7 @@ erDiagram
 
 ---
 
-## 🚀 Database Operations
-
-### Initialize Database
-
-Create the SQLite database with required schema:
-
-```bash
-# Basic initialization
-n8n-deploy db init
-
-# Initialize with custom directory
-n8n-deploy --data-dir /opt/n8n-deploy db init
-
-# Initialize with custom filename
-n8n-deploy db init --filename my-workflows.db
-
-# JSON output for automation
-n8n-deploy db init --json --no-emoji
-```
-
-**What happens during initialization:**
-1. Creates SQLite database file
-2. Sets up schema with 5 tables
-3. Initializes schema versioning
-4. Creates indexes for performance
-
-{: .note }
-> If the database already exists, you'll be prompted for confirmation. Use `--import` flag to accept existing databases without prompting.
-
-### Check Database Status
-
-View database statistics:
-
-```bash
-# Rich emoji output
-n8n-deploy db status
-
-# Script-friendly output
-n8n-deploy db status --no-emoji
-
-# JSON for parsing
-n8n-deploy db status --json
-```
-
-**Status information includes:**
-- Database file location and size
-- Schema version
-- Record counts (workflows, API keys, servers)
-- Last backup timestamp
-- Database integrity status
-
-### Backup Database
-
-Create timestamped database backups:
-
-```bash
-# Backup to default location
-n8n-deploy db backup
-
-# Backup to specific path
-n8n-deploy db backup /backups/n8n-deploy-$(date +%Y%m%d).db
-
-# With custom data directory
-n8n-deploy --data-dir /opt/n8n-deploy db backup
-```
-
-**Backup features:**
-- **Atomic operations**: Backup completes or fails entirely
-- **SHA256 checksums**: Verify backup integrity
-- **Metadata tracking**: Store backup history in database
-- **No downtime**: Backup while using the database
-
-{: .warning }
-> **Important**: Backups only include the database file (metadata). Workflow JSON files should be managed with git version control.
-
-### Compact Database
-
-Optimize database storage:
-
-```bash
-# Compact database
-n8n-deploy db compact
-
-# Script-friendly output
-n8n-deploy db compact --no-emoji
-```
-
-**When to compact:**
-- After deleting many workflows
-- After removing unused API keys
-- Monthly maintenance routine
-- Before creating backups
-
----
-
-## 🏗️ Database Schema
+## 🗂️ Schema Details
 
 **1. Workflow Management** - Core workflow management with dependency relationships
 - **workflows** - Workflow metadata with UTF-8 names, file paths, status, and sync management
@@ -209,57 +118,55 @@ n8n-deploy db compact --no-emoji
 
 ---
 
-## 🆘 Common Issues
+## 📖 Documentation Sections
 
-### Database Locked
+### [Database Operations](operations/)
+Learn how to initialize, manage, backup, and compact your database.
 
-**Error**: `database is locked`
+**Topics:**
+- Initialize new databases
+- Check database status
+- Create backups with SHA256 verification
+- Compact and optimize storage
 
-**Solutions**:
-```bash
-# Check for running processes
-ps aux | grep n8n-deploy
+### [Schema Reference](schema/)
+Detailed database schema documentation and relationships.
 
-# Wait for operations to complete
-sleep 5 && n8n-deploy db status
-```
+**Topics:**
+- Table structures and fields
+- Foreign key relationships
+- Indexes and constraints
+- Schema versioning
 
-### Corrupted Database
+### [Troubleshooting](troubleshooting/)
+Common database issues and solutions.
 
-**Error**: `database disk image is malformed`
+**Topics:**
+- Database locked errors
+- Corrupted database recovery
+- Missing database initialization
+- Performance optimization
 
-**Recovery**:
-```bash
-# Restore from backup
-cp /backups/latest.db ~/.n8n-deploy/n8n-deploy.db
+---
 
-# Verify integrity
-n8n-deploy db status
-```
+## 🚀 Quick Commands
 
-### Missing Database
-
-**Error**: `Oops! Database not found`
-
-**Solutions**:
-```bash
-# Initialize new database
-n8n-deploy db init
-
-# Or restore from backup
-n8n-deploy db init --import /backups/latest.db
-```
+| Operation | Command |
+|-----------|---------|
+| Initialize | `n8n-deploy db init` |
+| Status | `n8n-deploy db status` |
+| Backup | `n8n-deploy db backup` |
+| Compact | `n8n-deploy db compact` |
 
 ---
 
 ## 📖 Related Documentation
 
-- [Getting Started](getting-started/) - Initial setup guide
-- [API Key Management](apikeys/) - Manage authentication
-- [Server Management](servers/) - Configure n8n servers
-- [DevOps Integration](user-guide/devops-integration/) - CI/CD workflows and automation
-- [Configuration](configuration/) - Environment variables and settings
-- [Troubleshooting](troubleshooting/) - Common issues and solutions
+- [Getting Started](../../getting-started/) - Initial setup guide
+- [Server Management](../servers/) - Configure n8n servers
+- [API Key Management](../apikeys/) - Manage authentication
+- [DevOps Guide](../../devops-guide/) - CI/CD automation
+- [Configuration](../../configuration/) - Environment variables
 
 ---
 

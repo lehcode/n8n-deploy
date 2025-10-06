@@ -15,7 +15,7 @@ Welcome to n8n-deploy, a powerful Python CLI tool for managing n8n workflows wit
 
 - **Database-First Management**
   - SQLite as the single source of truth for workflow metadata
-  - Efficient workflow tracking, management, and versioning
+  - Efficient workflow management, metadata organization, and versioning
 
 - **Remote Server Integration**
   - Seamless push/pull operations with n8n servers
