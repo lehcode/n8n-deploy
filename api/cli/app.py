@@ -40,8 +40,16 @@ class CustomCommand(click.Command):
 
         # Build usage line showing the full command path
         command_path = " ".join(pieces[1:]) if len(pieces) > 1 else ""
+
+        # Collect arguments for this command
+        args_str = ""
+        if hasattr(self, "params"):
+            args = [p.name.upper() for p in self.params if isinstance(p, click.Argument) and p.name]
+            if args:
+                args_str = " " + " ".join(args)
+
         if command_path:
-            usage_line = f"n8n-deploy|./n8n-deploy {command_path} [OPTIONS]..."
+            usage_line = f"n8n-deploy|./n8n-deploy {command_path}{args_str} [OPTIONS]..."
         else:
             usage_line = "n8n-deploy|./n8n-deploy COMMAND [OPTIONS]..."
 
