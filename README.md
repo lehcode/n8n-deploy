@@ -100,11 +100,16 @@ Quick Links:
 
 ### Contributing
 
-We welcome contributions! Please see [CONTRIBUTING.md](/docs/CONTRIBUTING.md) for details.
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) and [Code of Conduct](CODE_OF_CONDUCT.md).
+
+**Quick Links**:
+- [Developer Guide](https://lehcode.github.io/n8n-deploy/developers/)
+- [Architecture Overview](https://lehcode.github.io/n8n-deploy/developers/architecture.html)
+- [Testing Framework](https://lehcode.github.io/n8n-deploy/developers/testing.html)
 
 ### License
 
-This project is licensed under the terms specified in the [LICENSE](/LICENSE) file.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ### Requirements
 

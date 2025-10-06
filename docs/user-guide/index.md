@@ -66,13 +66,14 @@ graph LR
 ## Documentation Map
 
 📖 **[Installation & Setup](installation.md)** - Get up and running in minutes
-⚙️ **[Configuration](configuration.md)** - Environment variables and directory setup
-🚀 **[Getting Started](getting-started.md)** - Your first workflows
-📝 **[Workflow Management](workflows.md)** - Add, sync, push, pull, backup
-🔑 **[API Key Management](api-keys.md)** - Secure credential handling
-💾 **[Database Operations](database.md)** - Init, status, backup, maintenance
-📚 **[Command Reference](commands.md)** - Complete CLI documentation
-🔧 **[Troubleshooting](troubleshooting.md)** - Common issues and solutions
+⚙️ **[Configuration](../configuration.md)** - Environment variables and directory setup
+🚀 **[Getting Started](../getting-started.md)** - Your first workflows
+📝 **[Workflow Management](../workflows.md)** - Add, sync, push, pull, backup
+🎯 **[Workflow Patterns](workflow-patterns.md)** - Common patterns and real-world examples
+🔄 **[Migration Guide](migration-guide.md)** - Upgrade between versions
+🔑 **[API Key Management](../apikeys.md)** - Secure credential handling
+🔧 **[Troubleshooting](../troubleshooting.md)** - Common issues and solutions
+❓ **[FAQ](../faq.md)** - Frequently asked questions
 
 ## System Requirements
 
