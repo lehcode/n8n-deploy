@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Optional
 
 from .config import AppConfig
 from .db import DBApi
+from .db.apikeys import ApiKeyCrud
 
 
 @dataclass
@@ -25,11 +26,13 @@ class ApiKey:
 
 
 class KeyApi:
-    """API key storage and management"""
+    """API key storage and management (business logic layer)"""
 
     def __init__(self, db: DBApi, config: Optional[AppConfig] = None) -> None:
         self.config = config
         self.db = db
+        # Use the CRUD layer for database operations
+        self.crud = ApiKeyCrud(config=config)
 
     def add_api_key(
         self,
@@ -38,92 +41,30 @@ class KeyApi:
         description: Optional[str] = None,
     ) -> int:
         """Add a new API key to storage"""
-        with self.db.get_connection() as conn:
-            cursor = conn.execute(
-                """
-                INSERT INTO api_keys (name, api_key, description, is_active, created_at)
-                VALUES (?, ?, ?, ?, ?)
-            """,
-                (
-                    name,
-                    api_key,
-                    description,
-                    True,
-                    datetime.now(),
-                ),
-            )
-            conn.commit()
-            key_id = cursor.lastrowid
-
-        if key_id is None:
-            raise RuntimeError("Failed to create API key: lastrowid is None")
-
-        return key_id
+        return self.crud.add_api_key(name, api_key, description)
 
     def get_api_key(self, key_name: str) -> Optional[str]:
         """Retrieve API key by name"""
-        with self.db.get_connection() as conn:
-            cursor = conn.execute(
-                """
-                SELECT id, api_key
-                FROM api_keys
-                WHERE name = ? AND is_active = 1
-                ORDER BY created_at DESC LIMIT 1
-            """,
-                (key_name,),
-            )
+        return self.crud.get_api_key(key_name)
 
-            row = cursor.fetchone()
-            if not row:
-                return None
+    def list_api_keys(self, unmask: bool = False) -> List[Dict[str, Any]]:
+        """List all stored API keys metadata
 
-            key_id, plain_key = row
-
-            # Return key
-            return str(plain_key) if plain_key is not None else None
-
-    def list_api_keys(self) -> List[Dict[str, Any]]:
-        """List all stored API keys metadata"""
-        with self.db.get_connection() as conn:
-            cursor = conn.execute(
-                """
-                SELECT id, name, created_at, description, is_active
-                FROM api_keys
-                ORDER BY created_at DESC
-            """
-            )
-
-            keys = []
-            for row in cursor.fetchall():
-                key_data = {
-                    "id": row[0],
-                    "name": row[1],
-                    "created_at": row[2],
-                    "description": row[3],
-                    "is_active": bool(row[4]),
-                }
-                keys.append(key_data)
-
-            return keys
+        Args:
+            unmask: If True, include actual API key values (security warning!)
+        """
+        return self.crud.list_api_keys(unmask=unmask)
 
     def deactivate_api_key(self, key_name: str) -> bool:
         """Deactivate an API key (soft delete)"""
-        with self.db.get_connection() as conn:
-            cursor = conn.execute(
-                """
-                UPDATE api_keys SET is_active = 0
-                WHERE name = ? AND is_active = 1
-            """,
-                (key_name,),
-            )
-            conn.commit()
+        success = self.crud.deactivate_api_key(key_name)
 
-            if cursor.rowcount > 0:
-                print(f"✅ API key deactivated: {key_name}")
-                return True
-            else:
-                print(f"❌ API key not found or already inactive: {key_name}")
-                return False
+        if success:
+            print(f"✅ API key deactivated: {key_name}")
+        else:
+            print(f"❌ API key not found or already inactive: {key_name}")
+
+        return success
 
     def delete_api_key(self, key_name: str, confirm: bool = False) -> bool:
         """Permanently delete an API key"""
@@ -132,21 +73,14 @@ class KeyApi:
             print("⚠️  Use --confirm flag to permanently delete API key")
             return False
 
-        with self.db.get_connection() as conn:
-            cursor = conn.execute(
-                """
-                DELETE FROM api_keys WHERE name = ?
-            """,
-                (key_name,),
-            )
-            conn.commit()
+        success = self.crud.delete_api_key(key_name)
 
-            if cursor.rowcount > 0:
-                print(f"✅ API key permanently deleted: {key_name}")
-                return True
-            else:
-                print(f"❌ API key not found: {key_name}")
-                return False
+        if success:
+            print(f"✅ API key permanently deleted: {key_name}")
+        else:
+            print(f"❌ API key not found: {key_name}")
+
+        return success
 
     def test_api_key(self, key_name: str) -> bool:
         """Test if an API key is valid and accessible"""
