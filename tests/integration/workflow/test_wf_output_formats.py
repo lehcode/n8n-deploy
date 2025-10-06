@@ -25,8 +25,21 @@ from api.workflow import WorkflowApi
 from .conftest import WorkflowTestHelpers
 
 
-class TestWorkflowOutputFormats(WorkflowTestHelpers):
-    """Test Workflow Output Formats tests"""
+class TestOutputFormats(WorkflowTestHelpers):
+    """Test Output Formats tests"""
+
+    def test_output_format_data_consistency(self) -> None:
+        """Test output format is consistent between runs"""
+        # Initialize database first
+        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "db", "init"])
+
+        cmd = ["--flow-dir", self.temp_flow_dir, "wf", "list"]
+
+        returncode1, stdout1, stderr1 = self.run_cli_command(cmd)
+        returncode2, stdout2, stderr2 = self.run_cli_command(cmd)
+
+        assert returncode1 == 0, f"First run failed: {stderr1}"
+        assert returncode2 == 0, f"Second run failed: {stderr2}"
 
     def test_workflow_operations_emoji_consistency(self) -> None:
         """Test wf operations with emoji and no-emoji modes"""

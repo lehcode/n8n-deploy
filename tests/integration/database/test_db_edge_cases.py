@@ -21,5 +21,5 @@ import pytest
 from .conftest import DatabaseTestHelpers
 
 
-class Testdbedgecases(DatabaseTestHelpers):
+class TestDbEdgeCases(DatabaseTestHelpers):
     """Test Db Edge Cases tests"""

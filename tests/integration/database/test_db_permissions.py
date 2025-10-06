@@ -21,7 +21,7 @@ import pytest
 from .conftest import DatabaseTestHelpers
 
 
-class Testdbpermissions(DatabaseTestHelpers):
+class TestDbPermissions(DatabaseTestHelpers):
     """Test Db Permissions tests"""
 
     def test_database_permissions_handling(self) -> None:

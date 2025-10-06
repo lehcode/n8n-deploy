@@ -21,5 +21,5 @@ import pytest
 from .conftest import DatabaseTestHelpers
 
 
-class Testdbcomprehensive(DatabaseTestHelpers):
+class TestDbComprehensive(DatabaseTestHelpers):
     """Test Db Comprehensive tests"""
