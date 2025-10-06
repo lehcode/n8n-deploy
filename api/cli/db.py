@@ -23,7 +23,7 @@ from rich.table import Table
 
 from ..config import get_config
 from ..db import DBApi
-from .app import HELP_APP_DIR, HELP_FLOW_DIR, HELP_NO_EMOJI, CustomGroup, CustomCommand
+from .app import HELP_APP_DIR, HELP_FLOW_DIR, HELP_NO_EMOJI, CustomCommand, CustomGroup
 
 console = Console()
 
@@ -259,12 +259,12 @@ def init(data_dir: Optional[str], format: str, no_emoji: bool, import_db: bool) 
             if no_emoji:
                 console.print()
                 console.print("NOTE: Workflow directory not configured.")
-                console.print("Set N8N_DEPLOY_FLOWS environment variable or use --flows-dir option")
+                console.print("Set N8N_DEPLOY_FLOWS environment variable or use --flow-dir option")
                 console.print("for wf operations (add, push, pull, etc.)")
             else:
                 console.print()
                 console.print("⚠️ NOTE: Workflow directory not configured.")
-                console.print("Set N8N_DEPLOY_FLOWS environment variable or use --flows-dir option")
+                console.print("Set N8N_DEPLOY_FLOWS environment variable or use --flow-dir option")
                 console.print("for wf operations (add, push, pull, etc.)")
 
 

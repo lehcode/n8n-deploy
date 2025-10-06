@@ -25,7 +25,7 @@ print_section "Test Category 9: Error Handling"
 
     # Test invalid directory paths
     run_test "Invalid app dir" "$CLI_COMMAND db status --data-dir $invalid_dir" 1 "Test invalid app directory"
-    run_test "Invalid flow dir" "$CLI_COMMAND wf list --data-dir $app_dir --flows-dir $invalid_dir --no-emoji" 1 "Test invalid flow directory (creates directory, fails)"
+    run_test "Invalid flow dir" "$CLI_COMMAND wf list --data-dir $app_dir --flow-dir $invalid_dir --no-emoji" 1 "Test invalid flow directory (creates directory, fails)"
 
     # Test non-existent database operations
     local nonexistent_dir="$TEST_BASE_DIR/nonexistent"
@@ -34,16 +34,16 @@ print_section "Test Category 9: Error Handling"
     # Setup database for remove tests
     "$CLI_COMMAND" db init --data-dir "$app_dir" --import --no-emoji > /dev/null 2>&1
     create_sample_workflow "$flow_dir/workflows"
-    "$CLI_COMMAND" wf add "workflows/${SAMPLE_WF_ID}.json" "$SAMPLE_WF_NAME" --data-dir "$app_dir" --flows-dir "$flow_dir" --no-emoji > /dev/null 2>&1
+    "$CLI_COMMAND" wf add "workflows/${SAMPLE_WF_ID}.json" "$SAMPLE_WF_NAME" --data-dir "$app_dir" --flow-dir "$flow_dir" --no-emoji > /dev/null 2>&1
 
     # Test remove wf with confirmation (should succeed with 'n' response)
-    run_test "Remove without confirmation" "echo 'n' | $CLI_COMMAND wf remove $SAMPLE_WF_ID --data-dir $app_dir --flows-dir $flow_dir" 0 "Test remove wf without confirmation (cancels)"
+    run_test "Remove without confirmation" "echo 'n' | $CLI_COMMAND wf remove $SAMPLE_WF_ID --data-dir $app_dir --flow-dir $flow_dir" 0 "Test remove wf without confirmation (cancels)"
 
     # Test remove wf with --yes flag (should succeed)
-    run_test "Remove with --yes flag" "$CLI_COMMAND wf remove $SAMPLE_WF_ID --yes --data-dir $app_dir --flows-dir $flow_dir" 0 "Test remove wf with --yes flag"
+    run_test "Remove with --yes flag" "$CLI_COMMAND wf remove $SAMPLE_WF_ID --yes --data-dir $app_dir --flow-dir $flow_dir" 0 "Test remove wf with --yes flag"
 
     # Test backup to invalid directory (succeeds with 0 workflows)
-    run_test "Backup to invalid dir" "$CLI_COMMAND wf createbackup --backup-dir $invalid_dir --data-dir $app_dir --flows-dir $flow_dir" 0 "Test backup to invalid directory (succeeds with 0 workflows)"
+    run_test "Backup to invalid dir" "$CLI_COMMAND wf createbackup --backup-dir $invalid_dir --data-dir $app_dir --flow-dir $flow_dir" 0 "Test backup to invalid directory (succeeds with 0 workflows)"
 
     pause_if_requested
 }

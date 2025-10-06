@@ -144,14 +144,14 @@ class TestE2ECLI(E2ETestBase):
         )
 
     def test_cli_option_precedence_over_env(self) -> None:
-        """Test CLI --flows-dir option takes precedence over environment"""
+        """Test CLI --flow-dir option takes precedence over environment"""
 
         env = {"N8N_DEPLOY_FLOWS": "/tmp/env-dir"}
         returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "db", "init"])
 
         # Use CLI option for different directory
         returncode, stdout, stderr = self.run_cli_command(
-            ["--data-dir", self.temp_dir, "--flows-dir", self.temp_flow_dir, "wf", "list"],
+            ["--data-dir", self.temp_dir, "--flow-dir", self.temp_flow_dir, "wf", "list"],
             env=env,
         )
 

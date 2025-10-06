@@ -56,7 +56,7 @@ class N8nDeployInstaller(object):
             print("\nOptions:")
             print("  1. Unset these variables before running n8n-deploy")
             print("  2. Ensure they point to the correct directories")
-            print("  3. Use CLI options (--data-dir, --flows-dir, --remote) to override")
+            print("  3. Use CLI options (--data-dir, --flow-dir, --remote) to override")
 
             response = input("\nContinue installation anyway? [y/N]: ").strip().lower()
             if response not in ["y", "yes"]:
@@ -215,7 +215,7 @@ class N8nDeployInstaller(object):
 
         print("\n3. Configure wf directory:")
         print("   export N8N_DEPLOY_FLOWS=/path/to/your/workflows")
-        print("   Or use --flows-dir option")
+        print("   Or use --flow-dir option")
 
         if has_conflicts:
             print("\n⚠️  WARNING: Environment variable conflicts detected!")
