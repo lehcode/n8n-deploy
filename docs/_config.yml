@@ -48,6 +48,9 @@ facebook:
   app_id: ""
   publisher: ""
 
+# Google Analytics (add your GA4 measurement ID)
+google_analytics: ""  # Format: G-XXXXXXXXXX
+
 # Webmaster Verifications (add your codes when ready)
 webmaster_verifications:
   google: ""
