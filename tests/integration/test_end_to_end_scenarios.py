@@ -68,19 +68,18 @@ class TestEndToEndAPIKeyManagement:
         """
         Test complete API key management from creation to deletion
 
-        Scenario: Full lifecycle - add, list, get, test, deactivate, delete
+        Scenario: Full lifecycle - add, list, test, deactivate, delete
         Expected: All operations work correctly and state changes persist
 
         TODO: Implement test sequence:
         1. apikey add test_key --description "Test key"
-        2. apikey list (verify key exists)
-        3. apikey get test_key (verify retrieval)
-        4. apikey get test_key --show-key (verify full key display)
-        5. apikey test test_key (verify validation)
-        6. apikey deactivate test_key (verify deactivation)
-        7. apikey list (verify inactive status)
-        8. apikey delete test_key --confirm (verify deletion)
-        9. apikey list (verify key removed)
+        2. apikey list (verify key exists, credentials masked)
+        3. apikey list --unmask (verify credentials displayed)
+        4. apikey test test_key (verify validation)
+        5. apikey deactivate test_key (verify deactivation)
+        6. apikey list (verify inactive status)
+        7. apikey delete test_key --confirm (verify deletion)
+        8. apikey list (verify key removed)
         """
         pass
 

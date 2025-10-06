@@ -52,25 +52,6 @@ class ApikeyTestHelpers(E2ETestBase):
 
         return self.run_cli_command(args)
 
-    def run_apikey_get(
-        self,
-        name: str,
-        data_dir: Optional[str] = None,
-        show_key: bool = False,
-        output_json: bool = False,
-    ) -> Tuple[int, str, str]:
-        """Execute 'apikey get' command with common parameters"""
-        args = ["apikey", "get", name]
-
-        if data_dir:
-            args.extend(["--data-dir", data_dir])
-        if show_key:
-            args.append("--show-key")
-        if output_json:
-            args.append("--json")
-
-        return self.run_cli_command(args)
-
     def run_apikey_delete(
         self,
         name: str,

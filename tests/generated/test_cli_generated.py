@@ -34,11 +34,11 @@ def test_apikey_add_help():
 
 
 def test_apikey_add_data_dir_valid_path():
-    """Test apikey  add with valid --data-dir"""
-    result = subprocess.run(CLI_COMMAND + ["apikey", "add", "--data-dir", "/tmp"], capture_output=True, text=True, timeout=10)
+    """Test apikey  add command"""
+    result = subprocess.run(CLI_COMMAND + ["apikey", "add"], capture_output=True, text=True, timeout=10)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
-        f"Command: apikey add --data-dir /tmp\n"
+        f"Command: apikey add\n"
         f"stdout: {result.stdout[:500]}\n"
         f"stderr: {result.stderr[:500]}"
     )
@@ -70,13 +70,11 @@ def test_apikey_deactivate_help():
 
 
 def test_apikey_deactivate_data_dir_valid_path():
-    """Test apikey  deactivate with valid --data-dir"""
-    result = subprocess.run(
-        CLI_COMMAND + ["apikey", "deactivate", "--data-dir", "/tmp"], capture_output=True, text=True, timeout=10
-    )
+    """Test apikey  deactivate command"""
+    result = subprocess.run(CLI_COMMAND + ["apikey", "deactivate"], capture_output=True, text=True, timeout=10)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
-        f"Command: apikey deactivate --data-dir /tmp\n"
+        f"Command: apikey deactivate\n"
         f"stdout: {result.stdout[:500]}\n"
         f"stderr: {result.stderr[:500]}"
     )
@@ -135,13 +133,11 @@ def test_apikey_delete_confirm_flag():
 
 
 def test_apikey_delete_data_dir_valid_path():
-    """Test apikey  delete with valid --data-dir"""
-    result = subprocess.run(
-        CLI_COMMAND + ["apikey", "delete", "--data-dir", "/tmp"], capture_output=True, text=True, timeout=10
-    )
+    """Test apikey  delete command"""
+    result = subprocess.run(CLI_COMMAND + ["apikey", "delete"], capture_output=True, text=True, timeout=10)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
-        f"Command: apikey delete --data-dir /tmp\n"
+        f"Command: apikey delete\n"
         f"stdout: {result.stdout[:500]}\n"
         f"stderr: {result.stderr[:500]}"
     )
@@ -164,89 +160,6 @@ def test_apikey_delete_missing_required_args():
     assert result.returncode in [2], (
         f"Command failed with exit code {result.returncode}\n"
         f"Command: apikey delete\n"
-        f"stdout: {result.stdout[:500]}\n"
-        f"stderr: {result.stderr[:500]}"
-    )
-    assert "Error:" in result.stdout or "Error:" in result.stderr, (
-        f"Expected 'Error:' in output\n" f"stdout: {result.stdout[:500]}\n" f"stderr: {result.stderr[:500]}"
-    )
-
-
-def test_apikey_get_help():
-    """Test apikey  get --help"""
-    result = subprocess.run(CLI_COMMAND + ["apikey", "get", "--help"], capture_output=True, text=True, timeout=10)
-    assert result.returncode in [0], (
-        f"Command failed with exit code {result.returncode}\n"
-        f"Command: apikey get --help\n"
-        f"stdout: {result.stdout[:500]}\n"
-        f"stderr: {result.stderr[:500]}"
-    )
-    assert "Usage:" in result.stdout or "Usage:" in result.stderr, (
-        f"Expected 'Usage:' in output\n" f"stdout: {result.stdout[:500]}\n" f"stderr: {result.stderr[:500]}"
-    )
-
-
-def test_apikey_get_show_key_flag():
-    """Test apikey  get with --show-key flag"""
-    result = subprocess.run(CLI_COMMAND + ["apikey", "get", "--show-key"], capture_output=True, text=True, timeout=10)
-    assert result.returncode in [0, 1, 2], (
-        f"Command failed with exit code {result.returncode}\n"
-        f"Command: apikey get --show-key\n"
-        f"stdout: {result.stdout[:500]}\n"
-        f"stderr: {result.stderr[:500]}"
-    )
-
-
-def test_apikey_get_output_json_flag():
-    """Test apikey  get with --output-json flag"""
-    result = subprocess.run(CLI_COMMAND + ["apikey", "get", "--output-json"], capture_output=True, text=True, timeout=10)
-    assert result.returncode in [0, 1, 2], (
-        f"Command failed with exit code {result.returncode}\n"
-        f"Command: apikey get --output-json\n"
-        f"stdout: {result.stdout[:500]}\n"
-        f"stderr: {result.stderr[:500]}"
-    )
-
-
-def test_apikey_get_output_table_flag():
-    """Test apikey  get with --output-table flag"""
-    result = subprocess.run(CLI_COMMAND + ["apikey", "get", "--output-table"], capture_output=True, text=True, timeout=10)
-    assert result.returncode in [0, 1, 2], (
-        f"Command failed with exit code {result.returncode}\n"
-        f"Command: apikey get --output-table\n"
-        f"stdout: {result.stdout[:500]}\n"
-        f"stderr: {result.stderr[:500]}"
-    )
-
-
-def test_apikey_get_data_dir_valid_path():
-    """Test apikey  get with valid --data-dir"""
-    result = subprocess.run(CLI_COMMAND + ["apikey", "get", "--data-dir", "/tmp"], capture_output=True, text=True, timeout=10)
-    assert result.returncode in [0, 1, 2], (
-        f"Command failed with exit code {result.returncode}\n"
-        f"Command: apikey get --data-dir /tmp\n"
-        f"stdout: {result.stdout[:500]}\n"
-        f"stderr: {result.stderr[:500]}"
-    )
-
-
-def test_apikey_get_with_positional_args():
-    """Test apikey  get with positional arguments"""
-    result = subprocess.run(CLI_COMMAND + ["apikey", "get", "test_key_name_or_id"], capture_output=True, text=True, timeout=10)
-    assert result.returncode in [0, 1, 2], (
-        f"Command failed with exit code {result.returncode}\n"
-        f"Command: apikey get test_key_name_or_id\n"
-        f"stdout: {result.stdout[:500]}\n"
-        f"stderr: {result.stderr[:500]}"
-    )
-
-
-def test_apikey_get_missing_required_args():
-    """Test apikey  get with missing required arguments"""
-    result = subprocess.run(CLI_COMMAND + ["apikey", "get"], capture_output=True, text=True, timeout=10)
-    assert result.returncode in [2], (
-        f"Command failed with exit code {result.returncode}\n"
-        f"Command: apikey get\n"
         f"stdout: {result.stdout[:500]}\n"
         f"stderr: {result.stderr[:500]}"
     )
@@ -280,12 +193,12 @@ def test_apikey_list_no_args():
     )
 
 
-def test_apikey_list_show_keys_flag():
-    """Test apikey  list with --show-keys flag"""
-    result = subprocess.run(CLI_COMMAND + ["apikey", "list", "--show-keys"], capture_output=True, text=True, timeout=10)
+def test_apikey_list_unmask_flag():
+    """Test apikey  list with --unmask flag"""
+    result = subprocess.run(CLI_COMMAND + ["apikey", "list", "--unmask"], capture_output=True, text=True, timeout=10)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
-        f"Command: apikey list --show-keys\n"
+        f"Command: apikey list --unmask\n"
         f"stdout: {result.stdout[:500]}\n"
         f"stderr: {result.stderr[:500]}"
     )
@@ -314,11 +227,11 @@ def test_apikey_list_output_table_flag():
 
 
 def test_apikey_list_data_dir_valid_path():
-    """Test apikey  list with valid --data-dir"""
-    result = subprocess.run(CLI_COMMAND + ["apikey", "list", "--data-dir", "/tmp"], capture_output=True, text=True, timeout=10)
+    """Test apikey  list command"""
+    result = subprocess.run(CLI_COMMAND + ["apikey", "list"], capture_output=True, text=True, timeout=10)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
-        f"Command: apikey list --data-dir /tmp\n"
+        f"Command: apikey list\n"
         f"stdout: {result.stdout[:500]}\n"
         f"stderr: {result.stderr[:500]}"
     )
@@ -339,11 +252,11 @@ def test_apikey_test_help():
 
 
 def test_apikey_test_data_dir_valid_path():
-    """Test apikey  test with valid --data-dir"""
-    result = subprocess.run(CLI_COMMAND + ["apikey", "test", "--data-dir", "/tmp"], capture_output=True, text=True, timeout=10)
+    """Test apikey  test command"""
+    result = subprocess.run(CLI_COMMAND + ["apikey", "test"], capture_output=True, text=True, timeout=10)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
-        f"Command: apikey test --data-dir /tmp\n"
+        f"Command: apikey test\n"
         f"stdout: {result.stdout[:500]}\n"
         f"stderr: {result.stderr[:500]}"
     )

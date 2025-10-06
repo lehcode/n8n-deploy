@@ -18,7 +18,7 @@ from rich.json import JSON
 from rich.table import Table
 
 from ..api_keys import KeyApi
-from ..config import AppConfig
+from ..config import get_config
 from ..db import DBApi
 from .app import HELP_APP_DIR, HELP_JSON, HELP_NO_EMOJI, HELP_TABLE, CustomCommand, CustomGroup
 from .output import cli_error
@@ -42,14 +42,12 @@ def apikey() -> None:
 @click.option("--name", required=True, help="API key name (UTF-8 supported, no path separators)")
 @click.option("--server", help="Server name to link this API key to (uses N8N_SERVER_URL if not specified)")
 @click.option("--description", help="Description of the API key")
-@click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
 def add_apikey(
     key: Optional[str],
     name: str,
     server: Optional[str],
     description: Optional[str],
-    data_dir: Optional[str],
     no_emoji: bool,
 ) -> None:
     """🔑 Add new API key
@@ -111,9 +109,8 @@ def add_apikey(
         import os
         from ..db.servers import ServerCrud
 
-        # API key operations only need base folder, not wf directories
-        base_path = Path(data_dir) if data_dir else Path.cwd()
-        config = AppConfig(base_folder=base_path)
+        # Use default config from environment variables
+        config = get_config()
         db_api = DBApi(config=config)
         key_api = KeyApi(db=db_api, config=config)
         key_id = key_api.add_api_key(
@@ -202,15 +199,14 @@ def add_apikey(
 
 
 @apikey.command("list", cls=CustomCommand)
-@click.option("--show-keys", is_flag=True, help="Show actual API keys (use with caution)")
+@click.option("--unmask", is_flag=True, help="Display actual credentials (SECURITY WARNING: use with extreme caution)")
 @click.option("--json", "output_json", is_flag=True, help=HELP_JSON)
 @click.option("--table", "output_table", is_flag=True, help=HELP_TABLE)
-@click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
-def list_apikeys(show_keys: bool, output_json: bool, output_table: bool, data_dir: Optional[str], no_emoji: bool) -> None:
+def list_apikeys(unmask: bool, output_json: bool, output_table: bool, no_emoji: bool) -> None:
     """📋 List all stored API keys
 
-    Display all stored API keys with metadata (keys are hidden by default).
+    Display all stored API keys with metadata (credentials are masked by default).
     Use --json for machine-readable output.
     """
     # JSON output implies no emoji
@@ -218,9 +214,8 @@ def list_apikeys(show_keys: bool, output_json: bool, output_table: bool, data_di
         no_emoji = True
 
     try:
-        # API key operations only need base folder, not wf directories
-        base_path = Path(data_dir) if data_dir else Path.cwd()
-        config = AppConfig(base_folder=base_path)
+        # Use default config from environment variables
+        config = get_config()
         db_api = DBApi(config=config)
         key_api = KeyApi(db=db_api, config=config)
         keys = key_api.list_api_keys()
@@ -244,7 +239,7 @@ def list_apikeys(show_keys: bool, output_json: bool, output_table: bool, data_di
             table.add_column("Created", style="blue")
             table.add_column("Status", style="magenta")
             table.add_column("Description", style="dim")
-            if show_keys:
+            if unmask:
                 table.add_column("API Key", style="red")
 
             for key in keys:
@@ -262,8 +257,11 @@ def list_apikeys(show_keys: bool, output_json: bool, output_table: bool, data_di
                     status,
                     key["description"] or "",
                 ]
-                if show_keys:
+                if unmask:
                     row_data.append(key.get("api_key", "***"))
+                else:
+                    # Mask credentials by default
+                    pass  # Don't add API key column at all
                 table.add_row(*row_data)
 
             console.print(table)
@@ -271,75 +269,14 @@ def list_apikeys(show_keys: bool, output_json: bool, output_table: bool, data_di
         raise click.ClickException(f"Failed to list API keys: {e}")
 
 
-@apikey.command("get", cls=CustomCommand)
-@click.argument("key_name_or_id")
-@click.option("--show-key", is_flag=True, help="Show the actual API key (use with caution)")
-@click.option("--json", "output_json", is_flag=True, help=HELP_JSON)
-@click.option("--table", "output_table", is_flag=True, help=HELP_TABLE)
-@click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
-@click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
-def get_apikey(
-    key_name_or_id: str, show_key: bool, output_json: bool, output_table: bool, data_dir: Optional[str], no_emoji: bool
-) -> None:
-    """🔍 Get API key details"""
-    # JSON output implies no emoji
-    if output_json:
-        no_emoji = True
-
-    # API key operations only need base folder, not wf directories
-    try:
-        base_path = Path(data_dir) if data_dir else Path.cwd()
-        config = AppConfig(base_folder=base_path)
-        db_api = DBApi(config=config)
-        key_api = KeyApi(db=db_api, config=config)
-    except Exception as e:
-        if no_emoji:
-            console.print(f"Error: Failed to retrieve API key: {e}")
-        else:
-            console.print(f"❌ Error: Failed to retrieve API key: {e}")
-        raise click.Abort()
-
-    if show_key:
-        api_key = key_api.get_api_key(key_name_or_id)
-        if api_key:
-            if no_emoji:
-                console.print(f"API key retrieved: {key_name_or_id}")
-                console.print(f"Key: {api_key}")
-            else:
-                console.print(f"✅ API key retrieved: {key_name_or_id}")
-                console.print(f"   Key: {api_key}")
-        else:
-            if no_emoji:
-                console.print(f"API key not found: {key_name_or_id}")
-            else:
-                console.print(f"❌ API key not found: {key_name_or_id}")
-            raise click.Abort()
-    else:
-        # Just test if key exists and is valid
-        success = key_api.test_api_key(key_name_or_id)
-        if success:
-            if no_emoji:
-                console.print(f"API key is valid and accessible: {key_name_or_id}")
-            else:
-                console.print(f"✅ API key is valid and accessible: {key_name_or_id}")
-        else:
-            if no_emoji:
-                console.print(f"API key not found or invalid: {key_name_or_id}")
-            else:
-                console.print(f"❌ API key not found or invalid: {key_name_or_id}")
-            raise click.Abort()
-
-
 @apikey.command("deactivate", cls=CustomCommand)
 @click.argument("key_name")
-@click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
-def deactivate_apikey(key_name: str, data_dir: Optional[str], no_emoji: bool) -> None:
+def deactivate_apikey(key_name: str, no_emoji: bool) -> None:
     """🚫 Deactivate API key (soft delete)"""
     try:
-        # API key operations only need base folder, not wf directories
-        base_path = Path(data_dir) if data_dir else Path.cwd()
-        config = AppConfig(base_folder=base_path)
+        # Use default config from environment variables
+        config = get_config()
         db_api = DBApi(config=config)
         key_api = KeyApi(db=db_api, config=config)
         success = key_api.deactivate_api_key(key_name)
@@ -356,13 +293,11 @@ def deactivate_apikey(key_name: str, data_dir: Optional[str], no_emoji: bool) ->
 @apikey.command("delete", cls=CustomCommand)
 @click.argument("key_name")
 @click.option("--confirm", is_flag=True, help="Confirm permanent deletion")
-@click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
-def delete_apikey(key_name: str, confirm: bool, data_dir: Optional[str]) -> None:
+def delete_apikey(key_name: str, confirm: bool) -> None:
     """🗑️ Permanently delete an API key"""
     try:
-        # API key operations only need base folder, not wf directories
-        base_path = Path(data_dir) if data_dir else Path.cwd()
-        config = AppConfig(base_folder=base_path)
+        # Use default config from environment variables
+        config = get_config()
         db_api = DBApi(config=config)
         key_api = KeyApi(db=db_api, config=config)
         success = key_api.delete_api_key(key_name, confirm=confirm)
@@ -374,13 +309,11 @@ def delete_apikey(key_name: str, confirm: bool, data_dir: Optional[str]) -> None
 
 @apikey.command("test", cls=CustomCommand)
 @click.argument("key_name")
-@click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
-def test_apikey(key_name: str, data_dir: Optional[str]) -> None:
+def test_apikey(key_name: str) -> None:
     """🧪 Test API key validity"""
     try:
-        # API key operations only need base folder, not wf directories
-        base_path = Path(data_dir) if data_dir else Path.cwd()
-        config = AppConfig(base_folder=base_path)
+        # Use default config from environment variables
+        config = get_config()
         db_api = DBApi(config=config)
         key_api = KeyApi(db=db_api, config=config)
         success = key_api.test_api_key(key_name)

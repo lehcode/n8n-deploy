@@ -326,7 +326,7 @@ class TestFormatValidation:
     def test_apikey_list_json_structure(self, app_dir):
         """Property: apikey list --format json has consistent structure"""
         result = subprocess.run(
-            ["./n8n-deploy", "apikey", "list", "--data-dir", app_dir, "--json"],
+            ["./n8n-deploy", "apikey", "list", "--json"],
             capture_output=True,
             timeout=5,
             text=True,

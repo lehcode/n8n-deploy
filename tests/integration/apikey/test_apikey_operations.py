@@ -18,7 +18,7 @@ class TestApikeyOperations(ApikeyTestHelpers):
         self.setup_database()
         test_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkNGEyODkxMy04ODQxLTRhMTAtODIzNC1iODQ2OTE1MmJhZTYiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzU4NzY3MDI4LCJleHAiOjE3NjEyNzg0MDB9.d9u2SovTMfUGZ8EzD4SDLYNUTBarHpdwhv96pO-5imE"
         returncode, stdout, stderr = self.run_cli_command(
-            ["apikey", "add", test_key, "--name", "test_interactive", "--data-dir", self.temp_dir],
+            ["apikey", "add", test_key, "--name", "test_interactive"],
         )
 
         # Should succeed
@@ -29,7 +29,7 @@ class TestApikeyOperations(ApikeyTestHelpers):
         self.setup_database()
         test_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkNGEyODkxMy04ODQxLTRhMTAtODIzNC1iODQ2OTE1MmJhZTYiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzU4NzY3MDI4LCJleHAiOjE3NjEyNzg0MDB9.d9u2SovTMfUGZ8EzD4SDLYNUTBarHpdwhv96pO-5imE"
         returncode, stdout, stderr = self.run_cli_command(
-            ["apikey", "add", "-", "--name", "test_stdin", "--data-dir", self.temp_dir],
+            ["apikey", "add", "-", "--name", "test_stdin"],
             stdin_input=test_key,
         )
 
@@ -40,59 +40,39 @@ class TestApikeyOperations(ApikeyTestHelpers):
         """Test listing API keys when none exist"""
         self.setup_database()
 
-        returncode, stdout, stderr = self.run_cli_command(["apikey", "list", "--data-dir", self.temp_dir])
+        returncode, stdout, stderr = self.run_cli_command(["apikey", "list"])
 
         assert returncode == 0
         # Should show empty list or appropriate message
 
     def test_api_key_complete_lifecycle(self) -> None:
-        """Test complete API key lifecycle: add, list, get, delete"""
+        """Test complete API key lifecycle: add, list, delete"""
         self.setup_database()
 
         key_name = "lifecycle_test"
-        test_key = "lifecycle-test-key-789"
+        test_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dGVzdA.c2lnbmF0dXJl"
 
         # Step 1: Add API key
         add_returncode, add_stdout, add_stderr = self.run_cli_command(
-            ["apikey", "add", key_name, "--data-dir", self.temp_dir],
-            stdin_input=test_key,
+            ["apikey", "add", test_key, "--name", key_name],
         )
 
         if add_returncode == 0:
-            # Step 2: List API keys (should show the added key)
-            list_returncode, list_stdout, list_stderr = self.run_cli_command(["apikey", "list", "--data-dir", self.temp_dir])
+            # Step 2: List API keys (should show the added key, credentials masked)
+            list_returncode, list_stdout, list_stderr = self.run_cli_command(["apikey", "list"])
             assert list_returncode == 0
+            assert key_name in list_stdout
 
-            # Step 3: Get specific API key (without showing actual key)
-            get_returncode, get_stdout, get_stderr = self.run_cli_command(
-                ["apikey", "get", key_name, "--data-dir", self.temp_dir]
-            )
-            assert get_returncode == 0
-
-            # Step 4: Get API key with --show-key flag
-            show_returncode, show_stdout, show_stderr = self.run_cli_command(
-                ["apikey", "get", key_name, "--show-key", "--data-dir", self.temp_dir]
-            )
-            if show_returncode == 0:
+            # Step 3: List with --unmask flag (should show actual credentials)
+            unmask_returncode, unmask_stdout, unmask_stderr = self.run_cli_command(["apikey", "list", "--unmask"])
+            if unmask_returncode == 0:
                 # Should show the actual key
-                assert test_key in show_stdout
+                assert test_key in unmask_stdout
 
-            # Step 5: Delete API key
-            delete_returncode, delete_stdout, delete_stderr = self.run_cli_command(
-                ["apikey", "delete", key_name, "--confirm", "--data-dir", self.temp_dir]
-            )
+            # Step 4: Delete API key
+            delete_returncode, delete_stdout, delete_stderr = self.run_cli_command(["apikey", "delete", key_name, "--confirm"])
             # Should succeed or ask for confirmation
             assert delete_returncode in [0, 1]
-
-    def test_api_key_get_nonexistent(self) -> None:
-        """Test getting nonexistent API key"""
-        self.setup_database()
-
-        returncode, stdout, stderr = self.run_cli_command(["apikey", "get", "nonexistent_key", "--data-dir", self.temp_dir])
-
-        # Should fail gracefully
-        assert returncode == 1
-        assert "not found" in stdout.lower() or "not found" in stderr.lower()
 
     def test_create_and_delete_apikey(self) -> None:
         """Test deleting nonexistent API key"""
@@ -104,8 +84,6 @@ class TestApikeyOperations(ApikeyTestHelpers):
                 "delete",
                 "nonexistent_key",
                 "--confirm",
-                "--data-dir",
-                self.temp_dir,
             ]
         )
 
@@ -120,14 +98,14 @@ class TestApikeyOperations(ApikeyTestHelpers):
         first_key = "first-key-123"
         second_key = "second-key-456"
         first_returncode, first_stdout, first_stderr = self.run_cli_command(
-            ["apikey", "add", key_name, "--data-dir", self.temp_dir],
+            ["apikey", "add", key_name],
             stdin_input=first_key,
         )
 
         if first_returncode == 0:
             # Try to add second key with same name
             second_returncode, second_stdout, second_stderr = self.run_cli_command(
-                ["apikey", "add", key_name, "--data-dir", self.temp_dir],
+                ["apikey", "add", key_name],
                 stdin_input=second_key,
             )
 
@@ -137,10 +115,8 @@ class TestApikeyOperations(ApikeyTestHelpers):
     def test_api_key_emoji_vs_no_emoji_output(self) -> None:
         """Test API key commands with and without emoji"""
         self.setup_database()
-        emoji_returncode, emoji_stdout, emoji_stderr = self.run_cli_command(["apikey", "list", "--data-dir", self.temp_dir])
-        no_emoji_returncode, no_emoji_stdout, no_emoji_stderr = self.run_cli_command(
-            ["apikey", "list", "--data-dir", self.temp_dir]
-        )
+        emoji_returncode, emoji_stdout, emoji_stderr = self.run_cli_command(["apikey", "list"])
+        no_emoji_returncode, no_emoji_stdout, no_emoji_stderr = self.run_cli_command(["apikey", "list"])
 
         assert emoji_returncode == no_emoji_returncode == 0
         if "🔐" in emoji_stdout:
@@ -151,7 +127,7 @@ class TestApikeyOperations(ApikeyTestHelpers):
         self.setup_database()
         special_key = "test-key-with-special-chars!@#$%^&*()"
         returncode, stdout, stderr = self.run_cli_command(
-            ["apikey", "add", "-", "--name", "special_test", "--data-dir", self.temp_dir],
+            ["apikey", "add", "-", "--name", "special_test"],
             stdin_input=special_key,
         )
 
@@ -165,7 +141,7 @@ class TestApikeyOperations(ApikeyTestHelpers):
         long_key = "very-long-api-key-value-" + "y" * 200
 
         returncode, stdout, stderr = self.run_cli_command(
-            ["apikey", "add", "-", "--name", long_name, "--data-dir", self.temp_dir],
+            ["apikey", "add", "-", "--name", long_name],
             stdin_input=long_key,
         )
 
@@ -175,9 +151,7 @@ class TestApikeyOperations(ApikeyTestHelpers):
     def test_api_key_empty_input(self) -> None:
         """Test API key commands with empty input"""
         self.setup_database()
-        returncode, stdout, stderr = self.run_cli_command(
-            ["apikey", "add", "-", "--name", "empty_test", "--data-dir", self.temp_dir], stdin_input=""
-        )
+        returncode, stdout, stderr = self.run_cli_command(["apikey", "add", "-", "--name", "empty_test"], stdin_input="")
 
         # Should handle empty input appropriately
         assert returncode in [0, 1]
@@ -187,7 +161,7 @@ class TestApikeyOperations(ApikeyTestHelpers):
         self.setup_database()
         whitespace_key = "  test-key-with-whitespace  \n"
         returncode, stdout, stderr = self.run_cli_command(
-            ["apikey", "add", "-", "--name", "whitespace_test", "--data-dir", self.temp_dir],
+            ["apikey", "add", "-", "--name", "whitespace_test"],
             stdin_input=whitespace_key,
         )
 
@@ -221,8 +195,8 @@ class TestApikeyOperations(ApikeyTestHelpers):
             ["apikey", "--help"],
             ["apikey", "add", "--help"],
             ["apikey", "list", "--help"],
-            ["apikey", "get", "--help"],
             ["apikey", "delete", "--help"],
+            ["apikey", "test", "--help"],
         ]
 
         for cmd in help_commands:
@@ -233,27 +207,24 @@ class TestApikeyOperations(ApikeyTestHelpers):
     def test_api_key_case_sensitivity(self) -> None:
         """Test API key name case sensitivity"""
         self.setup_database()
-        lower_key = "lowercase-test-key"
+        lower_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dGVzdA.c2lnbmF0dXJl"
         lower_returncode, _, _ = self.run_cli_command(
-            ["apikey", "add", "testkey", "--data-dir", self.temp_dir],
-            stdin_input=lower_key,
+            ["apikey", "add", lower_key, "--name", "testkey"],
         )
 
         if lower_returncode == 0:
-            # Try to get with different case
-            upper_returncode, upper_stdout, upper_stderr = self.run_cli_command(
-                ["apikey", "get", "TESTKEY", "--data-dir", self.temp_dir]
-            )
+            # Try to list and verify name appears
+            list_returncode, list_stdout, list_stderr = self.run_cli_command(["apikey", "list"])
 
-            # Behavior depends on implementation (case sensitive or insensitive)
-            assert upper_returncode in [0, 1]
+            assert list_returncode == 0
+            assert "testkey" in list_stdout
 
     def test_server_commands_use_stored_api_keys(self) -> None:
         """Test server commands can use stored API keys"""
         self.setup_database()
         test_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test"  # Mock JWT format
         add_returncode, _, _ = self.run_cli_command(
-            ["apikey", "add", "n8n_server", "--data-dir", self.temp_dir],
+            ["apikey", "add", "n8n_server"],
             stdin_input=test_key,
         )
 
@@ -261,8 +232,6 @@ class TestApikeyOperations(ApikeyTestHelpers):
             server_returncode, server_stdout, server_stderr = self.run_cli_command(
                 [
                     "server",
-                    "--data-dir",
-                    self.temp_dir,
                     "--remote",
                     "http://localhost:5678",
                 ]
@@ -286,8 +255,6 @@ class TestApikeyOperations(ApikeyTestHelpers):
                     "apikey",
                     "add",
                     f"concurrent_test_{key_suffix}",
-                    "--data-dir",
-                    self.temp_dir,
                 ],
                 stdin_input=f"test-key-{key_suffix}",
             )
@@ -311,33 +278,30 @@ class TestApikeyOperations(ApikeyTestHelpers):
         """Test API keys persist across different command invocations"""
         self.setup_database()
         add_returncode, _, _ = self.run_cli_command(
-            ["apikey", "add", "persistence_test", "--data-dir", self.temp_dir],
+            ["apikey", "add", "persistence_test"],
             stdin_input="persistent-test-key",
         )
 
         if add_returncode == 0:
             # Note: wf list uses --flow-dir only, not --data-dir
             self.run_cli_command(["wf", "list", "--flow-dir", self.temp_flow_dir])
-            self.run_cli_command(["stats", "--data-dir", self.temp_dir, "--flow-dir", self.temp_flow_dir])
-            get_returncode, get_stdout, get_stderr = self.run_cli_command(
-                ["apikey", "get", "persistence_test", "--data-dir", self.temp_dir]
-            )
+            self.run_cli_command(["stats", "--flow-dir", self.temp_flow_dir])
+            list_returncode, list_stdout, list_stderr = self.run_cli_command(["apikey", "list"])
 
-            assert get_returncode == 0
+            assert list_returncode == 0
+            assert "persistence_test" in list_stdout
 
     def test_api_key_deletion_confirmation(self) -> None:
         """Test API key deletion requires confirmation"""
         self.setup_database()
         add_returncode, _, _ = self.run_cli_command(
-            ["apikey", "add", "deletion_test", "--data-dir", self.temp_dir],
+            ["apikey", "add", "deletion_test"],
             stdin_input="deletion-test-key",
         )
 
         if add_returncode == 0:
             # Try to delete without --confirm
-            delete_no_confirm_returncode, _, _ = self.run_cli_command(
-                ["apikey", "delete", "deletion_test", "--data-dir", self.temp_dir]
-            )
+            delete_no_confirm_returncode, _, _ = self.run_cli_command(["apikey", "delete", "deletion_test"])
 
             # Should require confirmation
             if delete_no_confirm_returncode != 0:
@@ -348,8 +312,6 @@ class TestApikeyOperations(ApikeyTestHelpers):
                         "delete",
                         "deletion_test",
                         "--confirm",
-                        "--data-dir",
-                        self.temp_dir,
                     ]
                 )
                 assert delete_confirm_returncode in [0, 1]
@@ -362,14 +324,14 @@ class TestApikeyOperations(ApikeyTestHelpers):
         original_key = "original-test-key"
         updated_key = "updated-test-key"
         add_returncode, _, _ = self.run_cli_command(
-            ["apikey", "add", key_name, "--data-dir", self.temp_dir],
+            ["apikey", "add", key_name],
             stdin_input=original_key,
         )
 
         if add_returncode == 0:
             # Try to update/overwrite
             update_returncode, _, _ = self.run_cli_command(
-                ["apikey", "add", key_name, "--data-dir", self.temp_dir],
+                ["apikey", "add", key_name],
                 stdin_input=updated_key,
             )
 
@@ -384,7 +346,7 @@ class TestApikeyOperations(ApikeyTestHelpers):
         test_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dGVzdA.c2lnbmF0dXJl"  # Valid JWT format
 
         returncode, stdout, stderr = self.run_cli_command(
-            ["apikey", "add", "-", "--name", "stdin_dash_test", "--data-dir", self.temp_dir],
+            ["apikey", "add", "-", "--name", "stdin_dash_test"],
             stdin_input=test_key,
         )
 
@@ -404,15 +366,13 @@ class TestApikeyOperations(ApikeyTestHelpers):
                 "description_test",
                 "--description",
                 "This is a test API key",
-                "--data-dir",
-                self.temp_dir,
             ]
         )
 
         assert returncode in [0, 1]
         if returncode == 0:
             # List to verify description was added
-            list_returncode, list_stdout, list_stderr = self.run_cli_command(["apikey", "list", "--data-dir", self.temp_dir])
+            list_returncode, list_stdout, list_stderr = self.run_cli_command(["apikey", "list"])
             assert list_returncode == 0
 
     def test_apikey_add_with_server(self) -> None:
@@ -427,8 +387,6 @@ class TestApikeyOperations(ApikeyTestHelpers):
                 "create",
                 "test_server",
                 "http://localhost:5678",
-                "--data-dir",
-                self.temp_dir,
             ]
         )
 
@@ -442,8 +400,6 @@ class TestApikeyOperations(ApikeyTestHelpers):
                 "server_test",
                 "--server",
                 "test_server",
-                "--data-dir",
-                self.temp_dir,
             ]
         )
 
@@ -451,18 +407,18 @@ class TestApikeyOperations(ApikeyTestHelpers):
         assert "server_test" in stdout.lower()
         assert "test_server" in stdout.lower() or "linked" in stdout.lower()
 
-    def test_apikey_list_show_keys(self) -> None:
-        """Test apikey list --show-keys displays actual keys"""
+    def test_apikey_list_unmask(self) -> None:
+        """Test apikey list --unmask displays actual credentials"""
         self.setup_database()
         test_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dGVzdA.c2lnbmF0dXJl"
 
-        self.run_cli_command(["apikey", "add", test_key, "--name", "show_keys_test", "--data-dir", self.temp_dir])
+        self.run_cli_command(["apikey", "add", test_key, "--name", "unmask_test"])
 
-        returncode, stdout, stderr = self.run_cli_command(["apikey", "list", "--show-keys", "--data-dir", self.temp_dir])
+        returncode, stdout, stderr = self.run_cli_command(["apikey", "list", "--unmask"])
 
         assert returncode == 0
-        if test_key in stdout or "show_keys_test" in stdout:
-            # Keys are shown
+        if test_key in stdout or "unmask_test" in stdout:
+            # Credentials are shown
             pass
 
     def test_apikey_list_json_format(self) -> None:
@@ -470,9 +426,9 @@ class TestApikeyOperations(ApikeyTestHelpers):
         self.setup_database()
         test_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dGVzdA.c2lnbmF0dXJl"
 
-        self.run_cli_command(["apikey", "add", test_key, "--name", "json_list_test", "--data-dir", self.temp_dir])
+        self.run_cli_command(["apikey", "add", test_key, "--name", "json_list_test"])
 
-        returncode, stdout, stderr = self.run_cli_command(["apikey", "list", "--json", "--data-dir", self.temp_dir])
+        returncode, stdout, stderr = self.run_cli_command(["apikey", "list", "--json"])
 
         assert returncode == 0
         # Should be valid JSON
@@ -481,73 +437,20 @@ class TestApikeyOperations(ApikeyTestHelpers):
         data = json.loads(stdout)
         assert isinstance(data, list) or isinstance(data, str)  # May be list or JSON string
 
-    def test_apikey_get_without_show_key(self) -> None:
-        """Test apikey get <name> without --show-key (just validates)"""
-        self.setup_database()
-        test_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dGVzdA.c2lnbmF0dXJl"
-
-        add_result = self.run_cli_command(
-            ["apikey", "add", test_key, "--name", "get_validate_test", "--data-dir", self.temp_dir]
-        )
-
-        if add_result[0] == 0:
-            returncode, stdout, stderr = self.run_cli_command(
-                ["apikey", "get", "get_validate_test", "--data-dir", self.temp_dir]
-            )
-
-            assert returncode == 0
-            # Should validate without showing key
-            assert "valid" in stdout.lower() or "accessible" in stdout.lower()
-
-    def test_apikey_get_with_show_key(self) -> None:
-        """Test apikey get <name> --show-key displays the key"""
-        self.setup_database()
-        test_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dGVzdA.c2lnbmF0dXJl"
-
-        add_result = self.run_cli_command(["apikey", "add", test_key, "--name", "get_show_test", "--data-dir", self.temp_dir])
-
-        if add_result[0] == 0:
-            returncode, stdout, stderr = self.run_cli_command(
-                ["apikey", "get", "get_show_test", "--show-key", "--data-dir", self.temp_dir]
-            )
-
-            assert returncode == 0
-            # Should show the actual key
-            assert test_key in stdout or "key" in stdout.lower()
-
-    def test_apikey_get_json_format(self) -> None:
-        """Test apikey get --format json output"""
-        self.setup_database()
-        test_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dGVzdA.c2lnbmF0dXJl"
-
-        add_result = self.run_cli_command(["apikey", "add", test_key, "--name", "get_json_test", "--data-dir", self.temp_dir])
-
-        if add_result[0] == 0:
-            returncode, stdout, stderr = self.run_cli_command(
-                ["apikey", "get", "get_json_test", "--json", "--data-dir", self.temp_dir]
-            )
-
-            # May succeed or fail based on implementation
-            assert returncode in [0, 1]
-
     def test_apikey_deactivate_soft_delete(self) -> None:
         """Test apikey deactivate performs soft delete"""
         self.setup_database()
         test_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dGVzdA.c2lnbmF0dXJl"
 
-        add_result = self.run_cli_command(
-            ["apikey", "add", test_key, "--name", "deactivate_test", "--data-dir", self.temp_dir]
-        )
+        add_result = self.run_cli_command(["apikey", "add", test_key, "--name", "deactivate_test"])
 
         if add_result[0] == 0:
-            returncode, stdout, stderr = self.run_cli_command(
-                ["apikey", "deactivate", "deactivate_test", "--data-dir", self.temp_dir]
-            )
+            returncode, stdout, stderr = self.run_cli_command(["apikey", "deactivate", "deactivate_test"])
 
             assert returncode in [0, 1]
             if returncode == 0:
                 # Verify key is deactivated but still exists
-                list_result = self.run_cli_command(["apikey", "list", "--data-dir", self.temp_dir])
+                list_result = self.run_cli_command(["apikey", "list"])
                 assert list_result[0] == 0
 
     def test_apikey_delete_with_confirm(self) -> None:
@@ -555,9 +458,7 @@ class TestApikeyOperations(ApikeyTestHelpers):
         self.setup_database()
         test_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dGVzdA.c2lnbmF0dXJl"
 
-        add_result = self.run_cli_command(
-            ["apikey", "add", test_key, "--name", "delete_confirm_test", "--data-dir", self.temp_dir]
-        )
+        add_result = self.run_cli_command(["apikey", "add", test_key, "--name", "delete_confirm_test"])
 
         if add_result[0] == 0:
             returncode, stdout, stderr = self.run_cli_command(
@@ -566,31 +467,25 @@ class TestApikeyOperations(ApikeyTestHelpers):
                     "delete",
                     "delete_confirm_test",
                     "--confirm",
-                    "--data-dir",
-                    self.temp_dir,
                 ]
             )
 
             assert returncode in [0, 1]
             if returncode == 0:
-                # Verify key is completely removed
-                get_result = self.run_cli_command(["apikey", "get", "delete_confirm_test", "--data-dir", self.temp_dir])
-                # Should fail since key is deleted
-                assert get_result[0] == 1
+                # Verify key is completely removed by listing
+                list_result = self.run_cli_command(["apikey", "list"])
+                # Key should not appear in the list
+                assert "delete_confirm_test" not in list_result[1]
 
     def test_apikey_test_validates_key(self) -> None:
         """Test apikey test <name> validates API key"""
         self.setup_database()
         test_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dGVzdA.c2lnbmF0dXJl"
 
-        add_result = self.run_cli_command(
-            ["apikey", "add", test_key, "--name", "test_validation", "--data-dir", self.temp_dir]
-        )
+        add_result = self.run_cli_command(["apikey", "add", test_key, "--name", "test_validation"])
 
         if add_result[0] == 0:
-            returncode, stdout, stderr = self.run_cli_command(
-                ["apikey", "test", "test_validation", "--data-dir", self.temp_dir]
-            )
+            returncode, stdout, stderr = self.run_cli_command(["apikey", "test", "test_validation"])
 
             # Test command should validate the key exists
             assert returncode in [0, 1]
@@ -614,8 +509,6 @@ class TestApikeyOperations(ApikeyTestHelpers):
                     test_key,
                     "--name",
                     invalid_name,
-                    "--data-dir",
-                    self.temp_dir,
                 ]
             )
 
@@ -642,8 +535,6 @@ class TestApikeyOperations(ApikeyTestHelpers):
                     test_key,
                     "--name",
                     valid_name,
-                    "--data-dir",
-                    self.temp_dir,
                 ]
             )
 
@@ -669,8 +560,6 @@ class TestApikeyOperations(ApikeyTestHelpers):
                     invalid_key,
                     "--name",
                     "invalid_jwt_test",
-                    "--data-dir",
-                    self.temp_dir,
                 ]
             )
 

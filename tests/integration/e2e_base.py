@@ -52,7 +52,7 @@ class E2ETestBase:
             if args[i] in ["--data-dir", "--flow-dir", "--remote"] and i + 1 < len(args):
                 global_options.extend([args[i], args[i + 1]])
                 i += 2
-            elif args[i] in ["--no-emoji", "--confirm", "--show-key", "--only"]:
+            elif args[i] in ["--no-emoji", "--confirm", "--unmask", "--only"]:
                 global_options.append(args[i])
                 i += 1
             else:
@@ -165,7 +165,7 @@ class E2ETestBase:
 
         # Add API key
         returncode, stdout, stderr = self.run_cli_command(
-            ["--data-dir", self.temp_dir, "apikey", "add", "test_server"],
+            ["apikey", "add", "test_server"],
             stdin_input=f"{api_key}\n",
         )
         return returncode == 0
