@@ -25,8 +25,8 @@ from api.workflow import WorkflowApi
 from .conftest import WorkflowTestHelpers
 
 
-class Testwffilehandling(WorkflowTestHelpers):
-    """Test Wf File Handling tests"""
+class TestWorkflowFileHandling(WorkflowTestHelpers):
+    """Test Workflow File Handling tests"""
 
     def test_workflow_file_existence_accuracy(self) -> None:
         """Test accuracy of wf file existence checks"""
