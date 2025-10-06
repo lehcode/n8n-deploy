@@ -98,6 +98,6 @@ n8n-deploy env --format json
 
 ## 📖 Related Guides
 
-- [Getting Started](getting-started.md)
-- [Workflow Management](workflows.md)
-- [API Key Management](apikeys.md)
+- [Getting Started](getting-started/)
+- [Workflow Management](workflows/)
+- [API Key Management](apikeys/)
