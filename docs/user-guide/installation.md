@@ -166,7 +166,7 @@ N8N_SERVER_URL=http://localhost:5678
 ## Next Steps
 
 - [Configuration Guide](../configuration/)
-- [Workflow Management Guide](../workflows/)
+- [Workflow Management Guide](../core-features/workflows/)
 - [Troubleshooting](../troubleshooting/)
 
 ---

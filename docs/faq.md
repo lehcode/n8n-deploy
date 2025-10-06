@@ -1,7 +1,7 @@
 ---
 layout: default
 title: FAQ
-nav_order: 10
+nav_order: 6
 description: "Frequently asked questions about n8n-deploy"
 ---
 
@@ -51,7 +51,7 @@ Full details in the [Configuration Guide](configuration/).
 
 ### How do I list, pull, or push workflows?
 
-Workflow operations are covered in the [Workflow Management Guide](workflows/). Basic examples:
+Workflow operations are covered in the [Workflow Management Guide](core-features/workflows/). Basic examples:
 
 ```bash
 # List local workflows
@@ -105,6 +105,10 @@ No. n8n-deploy does not collect or transmit any telemetry data. All operations a
 
 - [Official Documentation](index/)
 - [GitHub Repository](https://github.com/lehcode/n8n-deploy/)
+- [Changelog](https://github.com/lehcode/n8n-deploy/blob/master/CHANGELOG.md) - Version history
+- [TODO](https://github.com/lehcode/n8n-deploy/blob/master/TODO.md) - Planned features
+- [Contributing Guide](https://github.com/lehcode/n8n-deploy/blob/master/CONTRIBUTING.md)
+- [Code of Conduct](https://github.com/lehcode/n8n-deploy/blob/master/CODE_OF_CONDUCT.md)
 - [Issue Tracker](https://github.com/lehcode/n8n-deploy/issues/)
 
 ---

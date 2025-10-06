@@ -86,5 +86,5 @@ If you encounter any issues:
 ## 📖 Next Steps
 
 - [Configuration Guide](configuration/)
-- [Workflow Management](workflows/)
-- [API Key Management](apikeys/)
+- [Workflow Management](core-features/workflows/)
+- [API Key Management](core-features/apikeys/)

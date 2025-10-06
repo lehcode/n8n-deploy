@@ -56,7 +56,7 @@ Push and pull workflows between local storage and remote n8n servers.
 - Pull workflows from servers
 - Search and list workflows
 
-[Learn more →](workflows.md)
+[Learn more →](workflows/)
 
 ---
 

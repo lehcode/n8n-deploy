@@ -53,8 +53,14 @@ search:
 # Navigation
 nav_sort: case_sensitive
 nav_external_links:
+  - title: License
+    url: https://github.com/lehcode/n8n-deploy/blob/master/LICENSE
+    hide_icon: false
   - title: GitHub Repository
     url: https://github.com/lehcode/n8n-deploy
+    hide_icon: false
+  - title: TODO
+    url: https://github.com/lehcode/n8n-deploy/blob/master/TODO.md
     hide_icon: false
 
 # Aux links (top right)
@@ -63,7 +69,7 @@ aux_links:
     - "https://github.com/lehcode/n8n-deploy"
 
 # Footer
-footer_content: "Copyright &copy; 2025 n8n-deploy Contributors. Distributed under the MIT License."
+footer_content: "Copyright &copy; 2025 n8n-deploy Contributors. Distributed under the <a href='https://github.com/lehcode/n8n-deploy/blob/master/LICENSE'>MIT License</a>."
 
 # Back to top
 back_to_top: true

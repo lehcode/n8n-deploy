@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Troubleshooting
-nav_order: 9
+nav_order: 5
 description: "Common issues and solutions for n8n-deploy"
 ---
 
@@ -140,8 +140,8 @@ n8n-deploy apikey --help
 ## 📖 Related Guides
 
 - [Configuration](configuration/)
-- [Workflow Management](workflows/)
-- [API Key Management](apikeys/)
+- [Workflow Management](core-features/workflows/)
+- [API Key Management](core-features/apikeys/)
 
 ## 🐛 Reporting Issues
 

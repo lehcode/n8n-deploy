@@ -648,9 +648,9 @@ sudo systemctl status n8n-deploy-backup.timer
 
 ## 📖 Related Documentation
 
-- [Database Management](../database/) - Database operations
-- [API Key Management](../apikeys/) - Secure key handling
-- [Server Management](../servers/) - Multi-server configuration
+- [Database Management](../core-features/database/) - Database operations
+- [API Key Management](../core-features/apikeys/) - Secure key handling
+- [Server Management](../core-features/servers/) - Multi-server configuration
 - [Configuration](../configuration/) - Environment setup
 
 ---

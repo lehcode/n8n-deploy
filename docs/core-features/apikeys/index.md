@@ -1,19 +1,20 @@
 ---
 layout: default
 title: API Key Management
-nav_order: 6
+parent: Core Features
+nav_order: 4
+has_children: false
 description: "Managing API keys for n8n server access"
 ---
 
 # API Key Management
-
-> "To err is human; to really foul things up requires storing passwords in plaintext." — Unknown DevOps Engineer
 
 n8n-deploy provides streamlined API key management for authenticating with n8n servers across multiple environments.
 
 ## 🎯 Overview
 
 API keys in n8n-deploy serve as authentication tokens for n8n server operations:
+
 - **Push/Pull Workflows**: Sync workflows with remote servers
 - **Server Management**: Link keys to specific server instances
 - **Multi-Environment Support**: Manage separate keys for dev/staging/prod
@@ -48,10 +49,10 @@ N8N_SERVER_URL=http://n8n.local:5678 n8n-deploy apikey add - --name local_key
 ```
 
 **Options:**
+
 - `--name`: Unique identifier (supports UTF-8, emojis)
 - `--server`: Link to specific server (creates server if doesn't exist)
 - `--description`: Optional documentation string
-- `--data-dir`: Custom database location
 
 {: .tip }
 > **Pro Tip**: Use descriptive names like `prod_readonly` or `staging_admin` to indicate environment and permission level.
@@ -61,25 +62,31 @@ N8N_SERVER_URL=http://n8n.local:5678 n8n-deploy apikey add - --name local_key
 View all stored API keys:
 
 ```bash
-# Rich emoji output
+# Rich emoji output (credentials masked)
 n8n-deploy apikey list
 
-# Script-friendly output
+# Script-friendly output (credentials masked)
 n8n-deploy apikey list --no-emoji
+
+# Display actual credentials (SECURITY WARNING: use with extreme caution)
+n8n-deploy apikey list --unmask
 
 # JSON format for parsing
 n8n-deploy apikey list --json
 ```
 
 **Output includes:**
+
 - Key name and description
 - Creation timestamp
 - Last used timestamp
 - Active/inactive status
 - Linked servers (if any)
+- API key credentials (only with `--unmask` flag)
 
-**Example output:**
-```
+**Example output (credentials masked by default):**
+
+```text
 🔑 API Keys
 
 ┌────────────────────┬─────────────────────┬──────────────┬────────────┐
@@ -92,23 +99,8 @@ n8n-deploy apikey list --json
 └────────────────────┴─────────────────────┴──────────────┴────────────┘
 ```
 
-### Get API Key Details
-
-Retrieve details for a specific key:
-
-```bash
-# View key metadata
-n8n-deploy apikey get production_key
-
-# Show actual API key value (use with caution!)
-n8n-deploy apikey get production_key --show-key
-
-# JSON output
-n8n-deploy apikey get staging_key --json
-```
-
 {: .warning }
-> **Security Warning**: Use `--show-key` sparingly and never in logs or shared terminals.
+> **Security Warning**: The `--unmask` flag displays actual API credentials. Use only when absolutely necessary and never in logs, shared terminals, or automated scripts.
 
 ### Test API Key
 
@@ -123,13 +115,15 @@ n8n-deploy --server-url http://n8n.example.com:5678 apikey test staging_key
 ```
 
 **What testing checks:**
+
 - Key format (JWT structure)
 - Server connectivity
 - Authentication success
 - Token expiration status
 
 **Example output:**
-```
+
+```text
 🧪 Testing API key: production_key
 
 ✓ Key format valid
@@ -193,6 +187,7 @@ n8n-deploy server keys "Production Server"
 ```
 
 **Benefits of linking:**
+
 - **Automatic authentication**: No need to specify key for each operation
 - **Multi-server support**: Different keys for different environments
 - **Organized management**: Group keys by server purpose
@@ -272,187 +267,6 @@ n8n-deploy apikey deactivate prod_key_old
 # n8n-deploy apikey delete prod_key_old --confirm
 ```
 
-### Environment Variables
-
-Store sensitive keys in environment variables:
-
-```bash
-# .env file (never commit to git!)
-N8N_API_KEY_PROD=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-N8N_API_KEY_STAGING=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-
-# Use in scripts
-echo "$N8N_API_KEY_PROD" | n8n-deploy apikey add - --name prod_key
-```
-
-### CI/CD Integration
-
-Secure key management in pipelines:
-
-```yaml
-# GitLab CI example
-.n8n_auth:
-  before_script:
-    - echo "$N8N_PROD_KEY" | n8n-deploy apikey add - --name ci_key --no-emoji
-  after_script:
-    - n8n-deploy apikey delete ci_key --confirm --no-emoji
-
-deploy_workflows:
-  extends: .n8n_auth
-  script:
-    - n8n-deploy wf push "Production Workflow"
-  environment:
-    name: production
-  only:
-    - master
-```
-
-**GitHub Actions example:**
-```yaml
-name: Deploy Workflows
-
-on:
-  push:
-    branches: [main]
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Setup n8n-deploy
-        run: |
-          pip install n8n-deploy
-          n8n-deploy db init --no-emoji
-
-      - name: Add API key
-        env:
-          N8N_API_KEY: ${{ secrets.N8N_PROD_KEY }}
-        run: |
-          echo "$N8N_API_KEY" | n8n-deploy apikey add - --name ci_key --no-emoji
-
-      - name: Deploy workflows
-        run: |
-          n8n-deploy wf push "Production Workflow" --no-emoji
-
-      - name: Cleanup
-        if: always()
-        run: |
-          n8n-deploy apikey delete ci_key --confirm --no-emoji
-```
-
----
-
-## 🎯 Real-World Scenarios
-
-### Scenario 1: Multi-Environment DevOps Team
-
-Setup for a team managing 3 environments:
-
-```bash
-# Initialize database
-n8n-deploy db init
-
-# Development environment
-n8n-deploy server create http://n8n-dev:5678 --name "Dev 🔧"
-echo "$DEV_KEY" | n8n-deploy apikey add - --name dev_team --server "Dev 🔧"
-
-# Staging environment
-n8n-deploy server create http://n8n-staging:5678 --name "Staging 🧪"
-echo "$STAGING_KEY" | n8n-deploy apikey add - --name staging_qa --server "Staging 🧪"
-
-# Production environment (read-only for most users)
-n8n-deploy server create https://n8n-prod:5678 --name "Production 🚀"
-echo "$PROD_READONLY_KEY" | n8n-deploy apikey add - --name prod_readonly --server "Production 🚀"
-echo "$PROD_ADMIN_KEY" | n8n-deploy apikey add - --name prod_admin --server "Production 🚀"
-
-# Verify setup
-n8n-deploy server list
-n8n-deploy apikey list
-```
-
-### Scenario 2: Automated Testing Pipeline
-
-API key lifecycle in automated tests:
-
-```bash
-#!/bin/bash
-# test-pipeline.sh
-
-set -e
-
-# Setup
-n8n-deploy db init --no-emoji
-echo "$TEST_KEY" | n8n-deploy apikey add - --name test_key --server "Test Server" --no-emoji
-
-# Run tests
-n8n-deploy wf pull "Test Workflow" --no-emoji
-pytest tests/
-
-# Cleanup
-n8n-deploy apikey delete test_key --confirm --no-emoji
-```
-
-### Scenario 3: Key Rotation Automation
-
-Monthly automated key rotation:
-
-```bash
-#!/bin/bash
-# monthly-rotation.sh
-
-ENVIRONMENT="production"
-SERVER_NAME="Production 🚀"
-OLD_KEY_NAME="prod_key"
-NEW_KEY_NAME="prod_key_$(date +%Y%m)"
-
-# Add new key (generated manually in n8n)
-echo "Enter new API key:"
-read -s NEW_KEY
-echo "$NEW_KEY" | n8n-deploy apikey add - --name "$NEW_KEY_NAME" --server "$SERVER_NAME"
-
-# Test new key
-if n8n-deploy apikey test "$NEW_KEY_NAME"; then
-    echo "✓ New key validated"
-
-    # Deactivate old key (keep for 30 days grace period)
-    n8n-deploy apikey deactivate "$OLD_KEY_NAME"
-    echo "✓ Old key deactivated"
-
-    # Schedule deletion
-    echo "n8n-deploy apikey delete $OLD_KEY_NAME --confirm" | at now + 30 days
-else
-    echo "✗ New key validation failed, keeping old key"
-    n8n-deploy apikey delete "$NEW_KEY_NAME" --confirm
-    exit 1
-fi
-```
-
-### Scenario 4: Emergency Key Revocation
-
-Immediate key revocation procedure:
-
-```bash
-#!/bin/bash
-# emergency-revoke.sh
-
-COMPROMISED_KEY="prod_key"
-
-# Immediate deactivation
-n8n-deploy apikey deactivate "$COMPROMISED_KEY"
-echo "✓ Key deactivated in n8n-deploy"
-
-# Generate new key in n8n immediately
-echo "1. Go to n8n Settings → API"
-echo "2. Revoke the compromised key"
-echo "3. Generate new API key"
-echo "4. Run: n8n-deploy apikey add - --name prod_key_new --server Production"
-
-# Notify team
-echo "⚠️  SECURITY ALERT: API key '$COMPROMISED_KEY' has been revoked"
-```
-
 ---
 
 ## 📋 API Key Database Schema
@@ -490,11 +304,13 @@ CREATE TABLE server_api_keys (
 **Error**: `Invalid JWT token format`
 
 **Causes**:
+
 - Incomplete token (copying error)
 - Extra whitespace or newlines
 - Expired token
 
 **Solutions**:
+
 ```bash
 # Verify token format (should start with eyJ)
 echo "$API_KEY" | head -c 10
@@ -509,6 +325,7 @@ echo "$API_KEY" | n8n-deploy apikey add - --name fixed_key
 **Error**: `403 Forbidden` or `401 Unauthorized`
 
 **Diagnosis**:
+
 ```bash
 # Test key explicitly
 n8n-deploy apikey test suspicious_key
@@ -521,47 +338,21 @@ curl -I http://n8n.example.com:5678
 ```
 
 **Solutions**:
+
 - Regenerate key in n8n
 - Check server URL is correct
 - Verify key hasn't expired
 - Ensure key has necessary permissions
 
-### Duplicate Key Name
-
-**Error**: `UNIQUE constraint failed: api_keys.name`
-
-**Solutions**:
-```bash
-# Delete existing key first
-n8n-deploy apikey delete conflicting_name --confirm
-
-# Or use different name
-n8n-deploy apikey add - --name conflicting_name_v2
-```
-
-### Key Not Found
-
-**Error**: `API key 'xyz' not found`
-
-**Solutions**:
-```bash
-# List all keys
-n8n-deploy apikey list
-
-# Check for typos (names are case-sensitive)
-n8n-deploy apikey get prod_key  # ✓ Correct
-n8n-deploy apikey get Prod_Key  # ✗ Wrong case
-```
-
 ---
 
 ## 📖 Related Documentation
 
-- [Server Management](servers/) - Manage n8n server connections
-- [Database Management](database/) - Database operations and backups
-- [Configuration](configuration/) - Environment variables and settings
-- [Workflow Management](workflows/) - Push/pull workflows using API keys
-- [Troubleshooting](troubleshooting/) - Common issues and solutions
+- [Server Management](/n8n-deploy/core-features/servers/) - Manage n8n server connections
+- [Database Management](/n8n-deploy/core-features/database/) - Database operations and backups
+- [Configuration](/n8n-deploy/configuration/) - Environment variables and settings
+- [Workflow Management](/n8n-deploy/core-features/workflows/) - Push/pull workflows using API keys
+- [Troubleshooting](/n8n-deploy/troubleshooting/) - Common issues and solutions
 
 ---
 

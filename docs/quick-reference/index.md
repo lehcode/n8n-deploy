@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Quick Reference
-nav_order: 11
+nav_order: 8
 has_children: true
 description: "Quick reference guides and cheat sheets for n8n-deploy"
 ---
