@@ -149,7 +149,7 @@ class TestE2EServer(E2ETestBase):
             [
                 "--data-dir",
                 self.temp_dir,
-                "--flows-dir",
+                "--flow-dir",
                 self.temp_flow_dir,
                 "wf",
                 "add",
@@ -377,7 +377,7 @@ class TestE2EServer(E2ETestBase):
             [
                 "--data-dir",
                 self.temp_dir,
-                "--flows-dir",
+                "--flow-dir",
                 self.temp_flow_dir,
                 "wf",
                 "add",
@@ -429,7 +429,7 @@ class TestE2EServer(E2ETestBase):
             [
                 "--data-dir",
                 self.temp_dir,
-                "--flows-dir",
+                "--flow-dir",
                 self.temp_flow_dir,
                 "wf",
                 "add",

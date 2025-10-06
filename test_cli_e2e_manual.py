@@ -488,16 +488,14 @@ class N8nDeployE2ETester:
                 "test_workflow.json",
                 "--data-dir",
                 app_dir,
-                "--flows-dir",
+                "--flow-dir",
                 flow_dir,
             ]
         )
         assert exit_code == 0, f"Workflow add failed: {stderr}"
 
         # List workflows
-        exit_code, output, stderr = self.run_cli_command(
-            ["list", "--data-dir", app_dir, "--flows-dir", flow_dir, "--no-emoji"]
-        )
+        exit_code, output, stderr = self.run_cli_command(["list", "--data-dir", app_dir, "--flow-dir", flow_dir, "--no-emoji"])
         assert exit_code == 0, f"Workflow list failed: {stderr}"
         assert "test_workflow" in output, "Added wf not in list"
 
@@ -519,7 +517,7 @@ class N8nDeployE2ETester:
                 "search_test.json",
                 "--data-dir",
                 app_dir,
-                "--flows-dir",
+                "--flow-dir",
                 flow_dir,
             ]
         )
@@ -531,19 +529,19 @@ class N8nDeployE2ETester:
                 "search_automation.json",
                 "--data-dir",
                 app_dir,
-                "--flows-dir",
+                "--flow-dir",
                 flow_dir,
             ]
         )
 
         # Test search
-        exit_code, output, stderr = self.run_cli_command(["search", "search", "--data-dir", app_dir, "--flows-dir", flow_dir])
+        exit_code, output, stderr = self.run_cli_command(["search", "search", "--data-dir", app_dir, "--flow-dir", flow_dir])
         assert exit_code == 0, f"Workflow search failed: {stderr}"
         assert "search_test" in output or "search_automation" in output, "Search results missing"
 
         # Test stats
         exit_code, output, stderr = self.run_cli_command(
-            ["stats", "search_test", "--data-dir", app_dir, "--flows-dir", flow_dir]
+            ["stats", "search_test", "--data-dir", app_dir, "--flow-dir", flow_dir]
         )
         assert exit_code == 0, f"Workflow stats failed: {stderr}"
         assert "Total" in output and "2" in output, "Stats missing wf count"
@@ -563,12 +561,12 @@ class N8nDeployE2ETester:
                 "sync_test.json",
                 "--data-dir",
                 app_dir,
-                "--flows-dir",
+                "--flow-dir",
                 flow_dir,
             ]
         )
 
-        exit_code, output, stderr = self.run_cli_command(["sync", "sync_test", "--data-dir", app_dir, "--flows-dir", flow_dir])
+        exit_code, output, stderr = self.run_cli_command(["sync", "sync_test", "--data-dir", app_dir, "--flow-dir", flow_dir])
         assert exit_code == 0, f"Workflow sync failed: {stderr}"
         assert "sync_test" in output or "Synchronized" in output, "Sync results missing"
 
@@ -587,21 +585,19 @@ class N8nDeployE2ETester:
                 "remove_test.json",
                 "--data-dir",
                 app_dir,
-                "--flows-dir",
+                "--flow-dir",
                 flow_dir,
             ]
         )
 
         # Remove wf
         exit_code, output, stderr = self.run_cli_command(
-            ["remove", "remove_test", "--data-dir", app_dir, "--flows-dir", flow_dir]
+            ["remove", "remove_test", "--data-dir", app_dir, "--flow-dir", flow_dir]
         )
         assert exit_code == 0, f"Workflow remove failed: {stderr}"
 
         # Verify removal
-        exit_code, output, stderr = self.run_cli_command(
-            ["list", "--data-dir", app_dir, "--flows-dir", flow_dir, "--no-emoji"]
-        )
+        exit_code, output, stderr = self.run_cli_command(["list", "--data-dir", app_dir, "--flow-dir", flow_dir, "--no-emoji"])
         assert "remove_test" not in output, "Removed wf still in list"
 
     # === Backup Operation Tests ===
@@ -623,7 +619,7 @@ class N8nDeployE2ETester:
                 "backup_test.json",
                 "--data-dir",
                 app_dir,
-                "--flows-dir",
+                "--flow-dir",
                 flow_dir,
             ]
         )
@@ -636,7 +632,7 @@ class N8nDeployE2ETester:
                 backup_dir,
                 "--data-dir",
                 app_dir,
-                "--flows-dir",
+                "--flow-dir",
                 flow_dir,
             ]
         )
@@ -663,7 +659,7 @@ class N8nDeployE2ETester:
                 "list_backup_test.json",
                 "--data-dir",
                 app_dir,
-                "--flows-dir",
+                "--flow-dir",
                 flow_dir,
             ]
         )
@@ -674,7 +670,7 @@ class N8nDeployE2ETester:
                 backup_dir,
                 "--data-dir",
                 app_dir,
-                "--flows-dir",
+                "--flow-dir",
                 flow_dir,
             ]
         )
@@ -701,7 +697,7 @@ class N8nDeployE2ETester:
                 "verify_test.json",
                 "--data-dir",
                 app_dir,
-                "--flows-dir",
+                "--flow-dir",
                 flow_dir,
             ]
         )
@@ -712,7 +708,7 @@ class N8nDeployE2ETester:
                 backup_dir,
                 "--data-dir",
                 app_dir,
-                "--flows-dir",
+                "--flow-dir",
                 flow_dir,
             ]
         )
@@ -758,7 +754,7 @@ class N8nDeployE2ETester:
                 "test_workflow",
                 "--data-dir",
                 app_dir,
-                "--flows-dir",
+                "--flow-dir",
                 flow_dir,
                 "--remote",
                 self.test_server_url,
@@ -777,7 +773,7 @@ class N8nDeployE2ETester:
                 "push_test.json",
                 "--data-dir",
                 app_dir,
-                "--flows-dir",
+                "--flow-dir",
                 flow_dir,
             ]
         )
@@ -788,7 +784,7 @@ class N8nDeployE2ETester:
                 "push_test",
                 "--data-dir",
                 app_dir,
-                "--flows-dir",
+                "--flow-dir",
                 flow_dir,
                 "--remote",
                 self.test_server_url,
@@ -814,18 +810,18 @@ class N8nDeployE2ETester:
                 "emoji_test.json",
                 "--data-dir",
                 app_dir,
-                "--flows-dir",
+                "--flow-dir",
                 flow_dir,
             ]
         )
 
         # Test with emoji (default)
-        exit_code, output_emoji, stderr = self.run_cli_command(["list", "--data-dir", app_dir, "--flows-dir", flow_dir])
+        exit_code, output_emoji, stderr = self.run_cli_command(["list", "--data-dir", app_dir, "--flow-dir", flow_dir])
         assert exit_code == 0, f"List with emoji failed: {stderr}"
 
         # Test without emoji
         exit_code, output_no_emoji, stderr = self.run_cli_command(
-            ["list", "--data-dir", app_dir, "--flows-dir", flow_dir, "--no-emoji"]
+            ["list", "--data-dir", app_dir, "--flow-dir", flow_dir, "--no-emoji"]
         )
         assert exit_code == 0, f"List without emoji failed: {stderr}"
 
@@ -847,14 +843,14 @@ class N8nDeployE2ETester:
                 "json_test.json",
                 "--data-dir",
                 app_dir,
-                "--flows-dir",
+                "--flow-dir",
                 flow_dir,
             ]
         )
 
         # Test JSON output for list
         exit_code, output, stderr = self.run_cli_command(
-            ["list", "--data-dir", app_dir, "--flows-dir", flow_dir, "--format", "json"]
+            ["list", "--data-dir", app_dir, "--flow-dir", flow_dir, "--format", "json"]
         )
         assert exit_code == 0, f"JSON list failed: {stderr}"
         assert self.validate_json_output(output), "Invalid JSON output format"
@@ -877,7 +873,7 @@ class N8nDeployE2ETester:
         self.run_cli_command(["db", "init", "--data-dir", app_dir])
 
         exit_code, output, stderr = self.run_cli_command(
-            ["list", "--data-dir", app_dir, "--flows-dir", "/dev/null/invalid_path"]
+            ["list", "--data-dir", app_dir, "--flow-dir", "/dev/null/invalid_path"]
         )
         # May succeed with empty list or fail gracefully
         assert exit_code == 0 or "error" in stderr.lower(), "Should handle invalid flow directory"
@@ -896,7 +892,7 @@ class N8nDeployE2ETester:
                 "nonexistent_workflow.json",
                 "--data-dir",
                 app_dir,
-                "--flows-dir",
+                "--flow-dir",
                 flow_dir,
             ]
         )
@@ -936,7 +932,7 @@ class N8nDeployE2ETester:
                 "malformed.json",
                 "--data-dir",
                 app_dir,
-                "--flows-dir",
+                "--flow-dir",
                 flow_dir,
             ]
         )
@@ -977,7 +973,7 @@ class N8nDeployE2ETester:
                 "cli_dir_workflow.json",
                 "--data-dir",
                 app_dir,
-                "--flows-dir",
+                "--flow-dir",
                 flow_dir,
             ]
         )
@@ -990,7 +986,7 @@ class N8nDeployE2ETester:
 
         # Test CLI override of environment variable
         exit_code, output, stderr = self.run_cli_command(
-            ["sync", "cli_dir_workflow", "--data-dir", app_dir, "--flows-dir", flow_dir],
+            ["sync", "cli_dir_workflow", "--data-dir", app_dir, "--flow-dir", flow_dir],
             env={"N8N_DEPLOY_FLOWS": env_flow_dir},
         )
         assert exit_code == 0, f"Sync with CLI override failed: {stderr}"

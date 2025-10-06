@@ -86,7 +86,7 @@ def get_config(
     3. Current working directory (default)
 
     Flow folder priority:
-    1. Explicit --flows-dir parameter (highest priority)
+    1. Explicit --flow-dir parameter (highest priority)
     2. N8N_DEPLOY_FLOWS environment variable
     3. Current working directory (default)
 

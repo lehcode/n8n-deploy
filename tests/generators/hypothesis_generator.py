@@ -139,7 +139,7 @@ class TestPropertyBased:
     @settings(max_examples=30)
     def test_env_command_format_options(self, app_dir, flow_dir, format_choice):
         """Property: env command should handle all format options"""
-        cmd = ["./n8n-deploy", "env", "--data-dir", app_dir, "--flows-dir", flow_dir]
+        cmd = ["./n8n-deploy", "env", "--data-dir", app_dir, "--flow-dir", flow_dir]
         if format_choice:
             cmd.extend(["--format", format_choice])
 
@@ -370,7 +370,7 @@ class TestPathHandling:
     def test_matching_special_char_paths(self, app_dir, flow_dir):
         """Property: Both app-dir and flow-dir with special chars work"""
         result = subprocess.run(
-            ["./n8n-deploy", "env", "--data-dir", app_dir, "--flows-dir", flow_dir],
+            ["./n8n-deploy", "env", "--data-dir", app_dir, "--flow-dir", flow_dir],
             capture_output=True,
             timeout=5,
             text=True,
@@ -588,7 +588,7 @@ class TestOptionCombinations:
             "env",
             "--data-dir",
             app_dir,
-            "--flows-dir",
+            "--flow-dir",
             flow_dir,
             "--remote",
             server_url,

@@ -49,7 +49,7 @@ class E2ETestBase:
 
         # Extract global options from the beginning
         while i < len(args):
-            if args[i] in ["--data-dir", "--flows-dir", "--remote"] and i + 1 < len(args):
+            if args[i] in ["--data-dir", "--flow-dir", "--remote"] and i + 1 < len(args):
                 global_options.extend([args[i], args[i + 1]])
                 i += 2
             elif args[i] in ["--no-emoji", "--confirm", "--show-key", "--only"]:

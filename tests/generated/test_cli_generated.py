@@ -598,17 +598,6 @@ def test_env_data_dir_valid_path():
     )
 
 
-def test_env_flows_dir_valid_path():
-    """Test env with valid --flows-dir"""
-    result = subprocess.run(CLI_COMMAND + ["env", "--flows-dir", "/tmp"], capture_output=True, text=True, timeout=10)
-    assert result.returncode in [0, 1, 2], (
-        f"Command failed with exit code {result.returncode}\n"
-        f"Command: env --flows-dir /tmp\n"
-        f"stdout: {result.stdout[:500]}\n"
-        f"stderr: {result.stderr[:500]}"
-    )
-
-
 def test_env_format_table():
     """Test env with --format=table"""
     result = subprocess.run(CLI_COMMAND + ["env", "--format", "table"], capture_output=True, text=True, timeout=10)
@@ -888,17 +877,6 @@ def test_wf_add_data_dir_valid_path():
     )
 
 
-def test_wf_add_flows_dir_valid_path():
-    """Test wf  add with valid --flows-dir"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "add", "--flows-dir", "/tmp"], capture_output=True, text=True, timeout=10)
-    assert result.returncode in [0, 1, 2], (
-        f"Command failed with exit code {result.returncode}\n"
-        f"Command: wf add --flows-dir /tmp\n"
-        f"stdout: {result.stdout[:500]}\n"
-        f"stderr: {result.stderr[:500]}"
-    )
-
-
 def test_wf_add_skip_ssl_verify_flag():
     """Test wf  add with --skip-ssl-verify flag"""
     result = subprocess.run(CLI_COMMAND + ["wf", "add", "--skip-ssl-verify"], capture_output=True, text=True, timeout=10)
@@ -1068,19 +1046,6 @@ def test_wf_createbackup_data_dir_valid_path():
     )
 
 
-def test_wf_createbackup_flows_dir_valid_path():
-    """Test wf  createbackup with valid --flows-dir"""
-    result = subprocess.run(
-        CLI_COMMAND + ["wf", "createbackup", "--flows-dir", "/tmp"], capture_output=True, text=True, timeout=10
-    )
-    assert result.returncode in [0, 1, 2], (
-        f"Command failed with exit code {result.returncode}\n"
-        f"Command: wf createbackup --flows-dir /tmp\n"
-        f"stdout: {result.stdout[:500]}\n"
-        f"stderr: {result.stderr[:500]}"
-    )
-
-
 def test_wf_list_help():
     """Test wf  list --help"""
     result = subprocess.run(CLI_COMMAND + ["wf", "list", "--help"], capture_output=True, text=True, timeout=10)
@@ -1112,17 +1077,6 @@ def test_wf_list_data_dir_valid_path():
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
         f"Command: wf list --data-dir /tmp\n"
-        f"stdout: {result.stdout[:500]}\n"
-        f"stderr: {result.stderr[:500]}"
-    )
-
-
-def test_wf_list_flows_dir_valid_path():
-    """Test wf  list with valid --flows-dir"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "list", "--flows-dir", "/tmp"], capture_output=True, text=True, timeout=10)
-    assert result.returncode in [0, 1, 2], (
-        f"Command failed with exit code {result.returncode}\n"
-        f"Command: wf list --flows-dir /tmp\n"
         f"stdout: {result.stdout[:500]}\n"
         f"stderr: {result.stderr[:500]}"
     )
@@ -1197,17 +1151,6 @@ def test_wf_pull_data_dir_valid_path():
     )
 
 
-def test_wf_pull_flows_dir_valid_path():
-    """Test wf  pull with valid --flows-dir"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "pull", "--flows-dir", "/tmp"], capture_output=True, text=True, timeout=10)
-    assert result.returncode in [0, 1, 2], (
-        f"Command failed with exit code {result.returncode}\n"
-        f"Command: wf pull --flows-dir /tmp\n"
-        f"stdout: {result.stdout[:500]}\n"
-        f"stderr: {result.stderr[:500]}"
-    )
-
-
 def test_wf_pull_with_positional_args():
     """Test wf  pull with positional arguments"""
     result = subprocess.run(CLI_COMMAND + ["wf", "pull", "test_workflow_id"], capture_output=True, text=True, timeout=10)
@@ -1269,17 +1212,6 @@ def test_wf_push_data_dir_valid_path():
     )
 
 
-def test_wf_push_flows_dir_valid_path():
-    """Test wf  push with valid --flows-dir"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "push", "--flows-dir", "/tmp"], capture_output=True, text=True, timeout=10)
-    assert result.returncode in [0, 1, 2], (
-        f"Command failed with exit code {result.returncode}\n"
-        f"Command: wf push --flows-dir /tmp\n"
-        f"stdout: {result.stdout[:500]}\n"
-        f"stderr: {result.stderr[:500]}"
-    )
-
-
 def test_wf_push_with_positional_args():
     """Test wf  push with positional arguments"""
     result = subprocess.run(CLI_COMMAND + ["wf", "push", "test_workflow_id"], capture_output=True, text=True, timeout=10)
@@ -1325,17 +1257,6 @@ def test_wf_remove_data_dir_valid_path():
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
         f"Command: wf remove --data-dir /tmp\n"
-        f"stdout: {result.stdout[:500]}\n"
-        f"stderr: {result.stderr[:500]}"
-    )
-
-
-def test_wf_remove_flows_dir_valid_path():
-    """Test wf  remove with valid --flows-dir"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "remove", "--flows-dir", "/tmp"], capture_output=True, text=True, timeout=10)
-    assert result.returncode in [0, 1, 2], (
-        f"Command failed with exit code {result.returncode}\n"
-        f"Command: wf remove --flows-dir /tmp\n"
         f"stdout: {result.stdout[:500]}\n"
         f"stderr: {result.stderr[:500]}"
     )
@@ -1415,17 +1336,6 @@ def test_wf_restore_data_dir_valid_path():
     )
 
 
-def test_wf_restore_flows_dir_valid_path():
-    """Test wf  restore with valid --flows-dir"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "restore", "--flows-dir", "/tmp"], capture_output=True, text=True, timeout=10)
-    assert result.returncode in [0, 1, 2], (
-        f"Command failed with exit code {result.returncode}\n"
-        f"Command: wf restore --flows-dir /tmp\n"
-        f"stdout: {result.stdout[:500]}\n"
-        f"stderr: {result.stderr[:500]}"
-    )
-
-
 def test_wf_restore_with_positional_args():
     """Test wf  restore with positional arguments"""
     result = subprocess.run(CLI_COMMAND + ["wf", "restore", "test_backup_file"], capture_output=True, text=True, timeout=10)
@@ -1471,17 +1381,6 @@ def test_wf_search_data_dir_valid_path():
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
         f"Command: wf search --data-dir /tmp\n"
-        f"stdout: {result.stdout[:500]}\n"
-        f"stderr: {result.stderr[:500]}"
-    )
-
-
-def test_wf_search_flows_dir_valid_path():
-    """Test wf  search with valid --flows-dir"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "search", "--flows-dir", "/tmp"], capture_output=True, text=True, timeout=10)
-    assert result.returncode in [0, 1, 2], (
-        f"Command failed with exit code {result.returncode}\n"
-        f"Command: wf search --flows-dir /tmp\n"
         f"stdout: {result.stdout[:500]}\n"
         f"stderr: {result.stderr[:500]}"
     )
@@ -1581,17 +1480,6 @@ def test_wf_server_data_dir_valid_path():
     )
 
 
-def test_wf_server_flows_dir_valid_path():
-    """Test wf  server with valid --flows-dir"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "server", "--flows-dir", "/tmp"], capture_output=True, text=True, timeout=10)
-    assert result.returncode in [0, 1, 2], (
-        f"Command failed with exit code {result.returncode}\n"
-        f"Command: wf server --flows-dir /tmp\n"
-        f"stdout: {result.stdout[:500]}\n"
-        f"stderr: {result.stderr[:500]}"
-    )
-
-
 def test_wf_server_format_table():
     """Test wf  server with --format=table"""
     result = subprocess.run(CLI_COMMAND + ["wf", "server", "--format", "table"], capture_output=True, text=True, timeout=10)
@@ -1634,17 +1522,6 @@ def test_wf_stats_data_dir_valid_path():
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
         f"Command: wf stats --data-dir /tmp\n"
-        f"stdout: {result.stdout[:500]}\n"
-        f"stderr: {result.stderr[:500]}"
-    )
-
-
-def test_wf_stats_flows_dir_valid_path():
-    """Test wf  stats with valid --flows-dir"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "stats", "--flows-dir", "/tmp"], capture_output=True, text=True, timeout=10)
-    assert result.returncode in [0, 1, 2], (
-        f"Command failed with exit code {result.returncode}\n"
-        f"Command: wf stats --flows-dir /tmp\n"
         f"stdout: {result.stdout[:500]}\n"
         f"stderr: {result.stderr[:500]}"
     )
