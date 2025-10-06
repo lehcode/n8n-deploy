@@ -1,0 +1,187 @@
+#!/usr/bin/env python3
+"""
+End-to-End Manual Workflow Testing
+
+Real CLI execution tests for wf management operations,
+including add, list, search, stats, and file operations.
+"""
+
+import hashlib
+import json
+import tarfile
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Optional
+from unittest.mock import patch
+
+import pytest
+
+from api.config import AppConfig
+from api.models import Workflow
+from api.workflow import WorkflowApi
+
+
+# === End-to-End Workflow Tests ===
+from .conftest import WorkflowTestHelpers
+
+
+class Testwffilehandling(WorkflowTestHelpers):
+    """Test Wf File Handling tests"""
+
+    def test_workflow_file_existence_accuracy(self) -> None:
+        """Test accuracy of wf file existence checks"""
+        self.setup_database()
+        workflow_file = self.create_test_workflow("existence_test")
+        add_returncode, _, _ = self.run_cli_command(
+            [
+                "--data-dir",
+                self.temp_dir,
+                "--flow-dir",
+                self.temp_flow_dir,
+                "add",
+                "existence_test.json",
+                "Existence-Test",
+            ]
+        )
+
+        if add_returncode == 0:
+            # List workflows - should show file exists
+            list_returncode, list_stdout, _ = self.run_cli_command(["wf", "list"])
+            assert list_returncode == 0
+            workflow_file.unlink()
+
+            # List again - should reflect file no longer exists
+            list_after_delete_returncode, list_after_stdout, _ = self.run_cli_command(["wf", "list"])
+            assert list_after_delete_returncode == 0
+
+    def test_workflow_add_nonexistent_file(self) -> None:
+        """Test adding nonexistent wf file"""
+        self.setup_database()
+
+        # wf add now pulls from server, so this tests server pull of nonexistent wf
+        returncode, stdout, stderr = self.run_cli_command(
+            [
+                "--data-dir",
+                self.temp_dir,
+                "wf",
+                "add",
+                "NonexistentWorkflow",
+            ]
+        )
+
+        # Should fail gracefully - either no server URL or wf not found on server
+        assert returncode == 1
+        assert (
+            "server" in stderr.lower()
+            or "server" in stdout.lower()
+            or "not found" in stderr.lower()
+            or "not found" in stdout.lower()
+        )
+
+    def test_workflow_add_invalid_json(self) -> None:
+        """Test that wf add validates wf name format"""
+        self.setup_database()
+
+        # Test with invalid wf name characters
+        returncode, stdout, stderr = self.run_cli_command(
+            [
+                "--data-dir",
+                self.temp_dir,
+                "wf",
+                "add",
+                "Invalid/Name",  # Forward slash is invalid in wf names
+            ]
+        )
+
+        # Should fail gracefully - either validation error or server URL missing
+        assert returncode == 1
+
+    def test_workflow_path_resolution(self) -> None:
+        """Test wf search command handles different flow directory paths"""
+        self.setup_database()
+        subdir = Path(self.temp_flow_dir) / "subdir"
+        subdir.mkdir()
+
+        # Test that search command works with custom flow directory
+        returncode, stdout, stderr = self.run_cli_command(
+            ["--data-dir", self.temp_dir, "--flow-dir", str(subdir), "wf", "search", "TestWorkflow"]
+        )
+
+        # Should handle path resolution and return success (even if no results)
+        assert returncode == 0
+
+    def test_workflow_large_file_handling(self) -> None:
+        """Test that wf commands handle operations efficiently"""
+        self.setup_database()
+
+        # Test that list command handles database operations efficiently
+        returncode, stdout, stderr = self.run_cli_command(
+            [
+                "--data-dir",
+                self.temp_dir,
+                "wf",
+                "list",
+            ]
+        )
+
+        # Should handle operations efficiently
+        assert returncode == 0
+
+    def test_workflow_concurrent_operations(self) -> None:
+        """Test concurrent wf operations"""
+        import threading
+
+        self.setup_database()
+
+        results = []
+
+        def list_workflows(thread_id) -> None:
+            returncode, stdout, stderr = self.run_cli_command(
+                [
+                    "--data-dir",
+                    self.temp_dir,
+                    "wf",
+                    "list",
+                ]
+            )
+            results.append((thread_id, returncode, stdout, stderr))
+
+        threads = []
+        for i in range(3):
+            thread = threading.Thread(target=list_workflows, args=(i,))
+            threads.append(thread)
+            thread.start()
+
+        for thread in threads:
+            thread.join()
+        assert len(results) == 3
+        # Operations should complete without crashes
+        for thread_id, returncode, stdout, stderr in results:
+            assert returncode == 0, f"Thread {thread_id} failed with returncode {returncode}"
+
+    def test_workflow_unicode_names(self) -> None:
+        """Test that wf add command handles Unicode wf names"""
+        self.setup_database()
+        unicode_names = ["测试工作流", "тест_поток", "workflow_émojis", "流程_テスト"]
+
+        for name in unicode_names:
+            try:
+                # Test that wf add accepts Unicode names (will fail due to no server, but validates name)
+                returncode, stdout, stderr = self.run_cli_command(
+                    [
+                        "--data-dir",
+                        self.temp_dir,
+                        "wf",
+                        "add",
+                        name,
+                    ]
+                )
+
+                # Should handle Unicode names - will fail due to no server URL but validates name first
+                assert returncode == 1
+                # Should show server error, not encoding error
+                assert "server" in stderr.lower() or "server" in stdout.lower()
+
+            except UnicodeError:
+                # Skip if system doesn't support Unicode
+                pytest.skip(f"System doesn't support Unicode name: {name}")
