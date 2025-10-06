@@ -704,16 +704,54 @@ class TestE2EDatabase(E2ETestBase):
 
     # === Additional DB Command Tests for Complete Coverage ===
 
-    def test_db_init_with_import_flag(self) -> None:
-        """Test db init --import accepts existing database without prompting"""
-        # First initialization
-        self.run_cli_command(["--data-dir", self.temp_dir, "db", "init"])
+    def test_db_init_with_custom_filename_auto_import(self) -> None:
+        """Test db init --filename auto-imports existing database"""
+        # First initialization with custom filename
+        self.run_cli_command(["--data-dir", self.temp_dir, "db", "init", "--filename", "custom-test.db"])
 
-        # Second init with --import flag should use existing database
-        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "db", "init", "--import"])
+        # Second init with same custom filename should auto-import
+        returncode, stdout, stderr = self.run_cli_command(
+            ["--data-dir", self.temp_dir, "db", "init", "--filename", "custom-test.db"]
+        )
 
         assert returncode == 0
         assert "Using existing database" in stdout or "already exists" in stdout
+
+        # Verify custom database file exists
+        db_path = Path(self.temp_dir) / "custom-test.db"
+        assert db_path.exists()
+
+    def test_db_init_custom_filename_creates_new_database(self) -> None:
+        """Test db init --filename creates new database with custom name"""
+        # Initialize with custom filename
+        returncode, stdout, stderr = self.run_cli_command(
+            ["--data-dir", self.temp_dir, "db", "init", "--filename", "my-workflows.db"]
+        )
+
+        assert returncode == 0
+        assert "Database initialized" in stdout
+
+        # Verify custom database file was created
+        db_path = Path(self.temp_dir) / "my-workflows.db"
+        assert db_path.exists()
+        assert db_path.stat().st_size > 0
+
+        # Verify default database was NOT created
+        default_db_path = Path(self.temp_dir) / "n8n-deploy.db"
+        assert not default_db_path.exists()
+
+    def test_db_init_default_filename_behavior(self) -> None:
+        """Test db init with default filename creates n8n-deploy.db"""
+        # Initialize with default filename (no --filename option)
+        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "db", "init"])
+
+        assert returncode == 0
+        assert "Database initialized" in stdout
+
+        # Verify default database file was created
+        db_path = Path(self.temp_dir) / "n8n-deploy.db"
+        assert db_path.exists()
+        assert db_path.stat().st_size > 0
 
     def test_db_init_with_json_format(self) -> None:
         """Test db init --format json output"""

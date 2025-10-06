@@ -1292,6 +1292,137 @@ class TestServerManagement:
         assert result2.returncode in [0, 1, 2]
 
 
+# ═══════════════════════════════════════════════════════════════════════════
+# Database Init Tests (--filename option)
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+class TestDatabaseInit:
+    """Property: Database init with --filename option behaves correctly"""
+
+    @given(filename=db_filenames, data_dir=valid_paths)
+    @settings(max_examples=30, deadline=3000)
+    def test_db_init_filename_creates_database(self, filename, data_dir):
+        """Property: db init --filename creates database with specified name"""
+        import tempfile
+        from pathlib import Path
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            result = subprocess.run(
+                ["./n8n-deploy", "db", "init", "--data-dir", temp_dir, "--filename", filename, "--no-emoji"],
+                capture_output=True,
+                timeout=5,
+                text=True,
+            )
+
+            # Should succeed
+            assert result.returncode == 0, f"db init failed for filename {filename}"
+            assert "initialized" in result.stdout.lower()
+
+            # Database file should exist with specified name
+            db_path = Path(temp_dir) / filename
+            assert db_path.exists(), f"Database {filename} not created"
+            assert db_path.stat().st_size > 0, f"Database {filename} is empty"
+
+    @given(filename=db_filenames)
+    @settings(max_examples=20, deadline=3000)
+    def test_db_init_custom_filename_auto_imports(self, filename):
+        """Property: Custom filename auto-imports on second init"""
+        import tempfile
+        from pathlib import Path
+
+        # Skip default filename (it prompts interactively)
+        assume(filename != "n8n-deploy.db")
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # First init
+            result1 = subprocess.run(
+                ["./n8n-deploy", "db", "init", "--data-dir", temp_dir, "--filename", filename, "--no-emoji"],
+                capture_output=True,
+                timeout=5,
+                text=True,
+            )
+            assert result1.returncode == 0
+
+            # Second init with same filename should auto-import
+            result2 = subprocess.run(
+                ["./n8n-deploy", "db", "init", "--data-dir", temp_dir, "--filename", filename, "--no-emoji"],
+                capture_output=True,
+                timeout=5,
+                text=True,
+            )
+
+            assert result2.returncode == 0
+            assert "using existing" in result2.stdout.lower() or "already exists" in result2.stdout.lower()
+
+    @given(filename=db_filenames)
+    @settings(max_examples=15, deadline=3000)
+    def test_db_init_filename_json_output(self, filename):
+        """Property: db init --filename with --json produces valid JSON"""
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            result = subprocess.run(
+                ["./n8n-deploy", "db", "init", "--data-dir", temp_dir, "--filename", filename, "--json"],
+                capture_output=True,
+                timeout=5,
+                text=True,
+            )
+
+            if result.returncode == 0:
+                # Should be valid JSON
+                try:
+                    data = json.loads(result.stdout)
+                    assert "success" in data
+                    assert "database_path" in data
+                    assert filename in data["database_path"]
+                except json.JSONDecodeError:
+                    assert False, f"Invalid JSON output for filename {filename}"
+
+    @given(
+        filename1=db_filenames,
+        filename2=db_filenames,
+    )
+    @settings(max_examples=20, deadline=3000)
+    def test_db_init_different_filenames_create_separate_databases(self, filename1, filename2):
+        """Property: Different filenames create separate database files"""
+        import tempfile
+        from pathlib import Path
+
+        # Only test if filenames are different
+        assume(filename1 != filename2)
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Create first database
+            result1 = subprocess.run(
+                ["./n8n-deploy", "db", "init", "--data-dir", temp_dir, "--filename", filename1, "--no-emoji"],
+                capture_output=True,
+                timeout=5,
+                text=True,
+            )
+
+            # Create second database
+            result2 = subprocess.run(
+                ["./n8n-deploy", "db", "init", "--data-dir", temp_dir, "--filename", filename2, "--no-emoji"],
+                capture_output=True,
+                timeout=5,
+                text=True,
+            )
+
+            # Both should succeed
+            assert result1.returncode == 0
+            assert result2.returncode == 0
+
+            # Both database files should exist
+            db_path1 = Path(temp_dir) / filename1
+            db_path2 = Path(temp_dir) / filename2
+            assert db_path1.exists()
+            assert db_path2.exists()
+
+            # They should be separate files
+            assert db_path1 != db_path2
+
+
 def generate_example_runs():
     """Generate example test data for documentation"""
     print("Generating example test inputs that Hypothesis would try:\n")
