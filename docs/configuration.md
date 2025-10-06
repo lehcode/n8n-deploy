@@ -2,6 +2,7 @@
 layout: default
 title: Configuration
 nav_order: 3
+description: "Environment variables, CLI flags, and configuration options for n8n-deploy"
 ---
 
 ## Configuration Guide
@@ -14,7 +15,7 @@ n8n-deploy offers multiple configuration methods to suit different environments 
 Highest priority configuration method.
 
 ```bash
-n8n-deploy --server-url http://n8n.example.com:5678 wf list-server
+n8n-deploy server create "Production n8n Server 🚀" http://n8n.example.com:5678
 ```
 
 ### 2. Environment Variables
@@ -75,19 +76,18 @@ Configuration options are evaluated in this order:
 3. .env Files (Development Mode Only)
 4. Default Values (Lowest Priority)
 
-## 💡 Pro Tips
+{: .tip }
+> **Tip**: Use environment variables for persistent settings and CLI flags for one-time overrides.
 
-- Use environment variables for persistent settings
-- Use CLI flags for one-time overrides
-- Keep sensitive information out of version control
-- Use the `env` command to view current configuration
+{: .warning }
+> **Warning**: Keep sensitive information like API keys out of version control. Never commit `.env` files.
 
 ```bash
 # Show current configuration
 n8n-deploy env
 
 # Show configuration in JSON format
-n8n-deploy env --json
+n8n-deploy env --format json
 ```
 
 ## 🆘 Troubleshooting
