@@ -12,7 +12,9 @@ services:
       - jekyll-bundle:/usr/local/bundle
     environment:
       - JEKYLL_ENV=development
-    command: bundle exec jekyll serve --host 0.0.0.0 --livereload --force_polling --quiet
+    command: >
+      bash -c "bundle install &&
+      bundle exec jekyll serve --host 0.0.0.0 --livereload --force_polling"
 
 volumes:
   jekyll-bundle:
