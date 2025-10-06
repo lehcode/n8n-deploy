@@ -17,7 +17,8 @@ n8n-deploy employs a comprehensive, multi-layered testing approach:
 - **Unit Tests**: Individual component validation
 - **Integration Tests**: Component interaction testing
 - **End-to-End (E2E) Tests**: Real-world scenario validation
-- **Property-Based Testing**: Automated test case generation
+- **Property-Based Testing**: Automated test case generation with Hypothesis
+- **Manual Testing**: Interactive bash-based testing scripts
 
 ## Test Types
 
@@ -32,7 +33,21 @@ graph TD
     A --> F[API Key Module]
 ```
 
-- Located in `tests/unit/`
+**Purpose**: Test individual functions in isolation
+
+**Example**:
+```python
+def test_config_creation():
+    """Test n8n_deploy_Config initialization"""
+    config = n8n_deploy_Config(
+        app_dir="/tmp/app",
+        flow_dir="/tmp/flows"
+    )
+    assert config.app_dir == Path("/tmp/app")
+    assert config.flow_dir == Path("/tmp/flows")
+```
+
+**Location**: `tests/unit/`
 - Test individual functions and classes
 - Mock external dependencies
 - 100% coverage goal for core modules
@@ -47,13 +62,53 @@ graph TD
     A --> E[API Key Lifecycle]
 ```
 
-- Located in `tests/integration/`
+**Purpose**: Validate component interactions
+
+**Example**:
+```python
+def test_workflow_database_integration(tmp_path):
+    """Test adding workflow updates database"""
+    db = n8n_deploy_DB(tmp_path / "test.db")
+    manager = WorkflowManager(db)
+
+    # Add workflow
+    manager.add_workflow("test.json", "Test Workflow")
+
+    # Verify in database
+    workflows = db.list_workflows()
+    assert len(workflows) == 1
+    assert workflows[0].name == "Test Workflow"
+```
+
+**Location**: `tests/integration/`
 - Test interactions between modules
 - Validate complex workflows
 - Ensure components work together correctly
 
 ### End-to-End (E2E) Tests
 
+**Purpose**: Validate complete user scenarios via actual CLI execution
+
+**Example**:
+```python
+def test_workflow_lifecycle_complete(temp_dirs):
+    """Test: Add → List → Update → Delete → Restore"""
+    app_dir, flow_dir = temp_dirs
+
+    # 1. Initialize database
+    result = run_cli(["db", "init"], app_dir=app_dir)
+    assert result.returncode == 0
+
+    # 2. Add workflow
+    result = run_cli(["wf", "add", "test.json", "My Workflow"])
+    assert "added successfully" in result.stdout
+
+    # 3. Verify in list
+    result = run_cli(["wf", "list", "--no-emoji"])
+    assert "My Workflow" in result.stdout
+```
+
+**Characteristics**:
 - Full CLI command testing
 - Real subprocess execution
 - Validate complete user scenarios
@@ -61,9 +116,52 @@ graph TD
 
 ### Property-Based Testing
 
+**Purpose**: Generate hundreds of test cases automatically to find edge cases
+
+**Example**:
+```python
+from hypothesis import given, strategies as st
+
+@given(
+    workflow_name=st.text(min_size=1, max_size=100),
+    app_dir=st.text(min_size=1, max_size=50)
+)
+def test_workflow_add_never_crashes(workflow_name, app_dir):
+    """Property: Adding workflow should never crash"""
+    result = run_cli(["wf", "add", "test.json", workflow_name])
+    # Should handle any input gracefully
+    assert result.returncode in [0, 1, 2]
+    # Should never expose Python tracebacks
+    assert "Traceback" not in result.stderr
+```
+
+**Capabilities**:
 - Uses Hypothesis framework
 - Generates 750+ test cases automatically
 - Finds edge cases human testers might miss
+- Tests Unicode, special chars, path traversal, injection attempts
+
+### Manual Testing
+
+**Purpose**: Interactive testing for visual verification
+
+**Example**:
+```bash
+# Run all manual tests
+./tests/manual_test_cli.sh
+
+# Run specific test categories
+./tests/manual_test_cli.sh help env db
+
+# Verbose mode with output
+./tests/manual_test_cli.sh -v
+```
+
+**Features**:
+- Bash-based interactive scripts
+- 90+ tests across 10 categories
+- Emoji and color output verification
+- Real-time user experience validation
 
 ## Running Tests
 

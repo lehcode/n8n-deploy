@@ -1,0 +1,391 @@
+---
+layout: default
+title: Workflow Patterns
+parent: User Guide
+nav_order: 3
+description: "Common workflow management patterns in n8n-deploy"
+---
+
+# Workflow Management Patterns
+
+> "Any fool can write code that a computer can understand. Good programmers write code that humans can understand." — Martin Fowler
+
+This guide demonstrates practical workflow management patterns using n8n-deploy.
+
+## Basic Patterns
+
+### Initialize New Project
+
+Set up n8n-deploy for a new workflow project:
+
+```bash
+# Create project directory
+mkdir ~/my-n8n-workflows
+cd ~/my-n8n-workflows
+
+# Set environment
+export N8N_DEPLOY_FLOW_DIR="$(pwd)"
+export N8N_DEPLOY_APP_DIR="$(pwd)/.n8n-deploy"
+
+# Initialize database
+n8n-deploy db init
+
+# Verify setup
+n8n-deploy db status
+```
+
+### Pull Workflows from Server
+
+Fetch workflows from your n8n server:
+
+```bash
+# Add server API key
+echo "your-api-key" | n8n-deploy apikey add production
+
+# List available workflows on server
+n8n-deploy --server-url https://n8n.example.com wf list-server
+
+# Pull specific workflow
+n8n-deploy --server-url https://n8n.example.com wf pull "Customer Onboarding"
+
+# Pull all workflows
+for workflow in $(n8n-deploy wf list-server --no-emoji | grep -v "ID" | awk '{print $2}'); do
+    n8n-deploy wf pull "$workflow"
+done
+```
+
+### Push Workflows to Server
+
+Deploy local workflows to n8n server:
+
+```bash
+# Push single workflow
+n8n-deploy --server-url https://n8n.example.com wf push "Data Pipeline"
+
+# Verify push success
+n8n-deploy wf list --no-emoji | grep "Data Pipeline"
+
+# Push with SSL verification disabled (self-signed certificates)
+n8n-deploy --server-url https://n8n.local wf push "Internal Process" --skip-ssl-verify
+```
+
+## Advanced Patterns
+
+### Multi-Environment Workflow Management
+
+Manage workflows across development, staging, and production:
+
+```bash
+# Setup directory structure
+mkdir -p ~/workflows/{dev,staging,prod}
+
+# Configure environments
+cat > ~/.env.dev << EOF
+N8N_DEPLOY_FLOW_DIR=~/workflows/dev
+N8N_DEPLOY_APP_DIR=~/workflows/dev/.n8n-deploy
+N8N_SERVER_URL=https://dev.n8n.example.com
+EOF
+
+cat > ~/.env.staging << EOF
+N8N_DEPLOY_FLOW_DIR=~/workflows/staging
+N8N_DEPLOY_APP_DIR=~/workflows/staging/.n8n-deploy
+N8N_SERVER_URL=https://staging.n8n.example.com
+EOF
+
+cat > ~/.env.prod << EOF
+N8N_DEPLOY_FLOW_DIR=~/workflows/prod
+N8N_DEPLOY_APP_DIR=~/workflows/prod/.n8n-deploy
+N8N_SERVER_URL=https://n8n.example.com
+EOF
+
+# Use with environment switching
+source ~/.env.dev
+n8n-deploy wf list-server
+
+source ~/.env.prod
+n8n-deploy wf push "Stable Workflow"
+```
+
+### Backup and Restore Strategy
+
+Implement regular workflow backups:
+
+```bash
+# Create backup with timestamp
+backup_name="workflows-$(date +%Y%m%d-%H%M%S)"
+n8n-deploy wf backup --name "$backup_name"
+
+# List all backups
+n8n-deploy wf list-backups
+
+# Restore specific backup
+n8n-deploy wf restore "$backup_name"
+
+# Automated backup script
+cat > ~/bin/n8n-backup.sh << 'EOF'
+#!/bin/bash
+BACKUP_DIR="$HOME/workflow-backups"
+mkdir -p "$BACKUP_DIR"
+
+# Create backup
+n8n-deploy wf backup --name "auto-$(date +%Y%m%d)"
+
+# Clean old backups (keep last 7 days)
+find "$BACKUP_DIR" -name "auto-*.tar.gz" -mtime +7 -delete
+EOF
+
+chmod +x ~/bin/n8n-backup.sh
+
+# Schedule with cron (daily at 2 AM)
+echo "0 2 * * * ~/bin/n8n-backup.sh" | crontab -
+```
+
+### Workflow Search and Organization
+
+Efficiently find and organize workflows:
+
+```bash
+# Search by name
+n8n-deploy wf search "customer"
+
+# List workflows with specific tags
+n8n-deploy wf list --filter-tag production
+
+# Show workflow statistics
+n8n-deploy wf stats
+
+# Export workflow list to CSV
+n8n-deploy wf list --no-emoji --format csv > workflows.csv
+```
+
+### Batch Operations
+
+Process multiple workflows efficiently:
+
+```bash
+# Add tags to multiple workflows
+for workflow in "Order Processing" "Payment Gateway" "Email Notifications"; do
+    n8n-deploy wf update "$workflow" --add-tag critical
+done
+
+# Update workflow status in batch
+workflows=("Workflow A" "Workflow B" "Workflow C")
+for wf in "${workflows[@]}"; do
+    n8n-deploy wf update "$wf" --status active
+done
+
+# Pull workflows matching pattern
+n8n-deploy wf list-server --no-emoji | \
+    grep -i "api" | \
+    awk '{print $2}' | \
+    xargs -I {} n8n-deploy wf pull "{}"
+```
+
+## Integration Patterns
+
+### Git Version Control
+
+Track workflow changes in Git:
+
+```bash
+# Initialize Git in workflow directory
+cd ~/my-n8n-workflows
+git init
+
+# Create .gitignore
+cat > .gitignore << EOF
+.n8n-deploy/
+*.log
+.env
+EOF
+
+# Commit workflows
+git add *.json
+git commit -m "feat: add initial workflows"
+
+# Track workflow changes
+git diff HEAD~1 HEAD -- "deAVBp391wvomsWY.json"
+```
+
+### CI/CD Integration
+
+Automate workflow deployment in CI/CD pipelines:
+
+```yaml
+# .gitlab-ci.yml example
+deploy:workflows:
+  stage: deploy
+  script:
+    - pip install n8n-deploy
+    - echo "$N8N_API_KEY" | n8n-deploy apikey add production
+    - n8n-deploy --server-url "$N8N_SERVER_URL" wf push "Production Pipeline"
+  only:
+    - master
+  tags:
+    - python
+```
+
+### Script-Friendly Output
+
+Use `--no-emoji` for automation:
+
+```bash
+# Parse workflow list in scripts
+workflow_count=$(n8n-deploy wf list --no-emoji | grep -c "json")
+echo "Total workflows: $workflow_count"
+
+# Extract workflow IDs
+n8n-deploy wf list --no-emoji | \
+    awk '{print $1}' | \
+    grep -E '^[a-zA-Z0-9]+$' > workflow_ids.txt
+
+# JSON output for complex parsing
+n8n-deploy wf list --format json | jq '.[] | select(.status == "active")'
+```
+
+## Troubleshooting Patterns
+
+### Verify Server Connectivity
+
+Test n8n server connection:
+
+```bash
+# Test API key
+n8n-deploy apikey test production
+
+# List server workflows (verifies connectivity)
+n8n-deploy --server-url https://n8n.example.com wf list-server
+
+# Debug with verbose output
+n8n-deploy --server-url https://n8n.example.com wf list-server --debug
+```
+
+### Handle Workflow Conflicts
+
+Resolve workflow synchronization issues:
+
+```bash
+# Check local vs server differences
+n8n-deploy wf list --no-emoji > local.txt
+n8n-deploy wf list-server --no-emoji > server.txt
+diff local.txt server.txt
+
+# Force pull (overwrite local)
+n8n-deploy wf pull "Conflict Workflow" --force
+
+# Force push (overwrite server)
+n8n-deploy wf push "Conflict Workflow" --force
+```
+
+### Database Maintenance
+
+Keep database healthy:
+
+```bash
+# Check database status
+n8n-deploy db status
+
+# Compact database (reclaim space)
+n8n-deploy db compact
+
+# Backup database before major changes
+n8n-deploy db backup --name "pre-migration-$(date +%Y%m%d)"
+```
+
+## Best Practices
+
+{: .tip }
+> **Workflow Naming**: Use descriptive, consistent names with spaces and emojis supported
+
+{: .tip }
+> **Regular Backups**: Automate backups before major deployments
+
+{: .tip }
+> **Environment Separation**: Maintain separate databases for dev/staging/prod
+
+{: .warning }
+> **API Key Security**: Never commit API keys to version control
+
+## Performance Optimization
+
+### Efficient Bulk Operations
+
+```bash
+# Parallel workflow pulls (requires GNU parallel)
+n8n-deploy wf list-server --no-emoji | \
+    awk '{print $2}' | \
+    parallel -j 4 n8n-deploy wf pull {}
+
+# Batch process with error handling
+while IFS= read -r workflow; do
+    n8n-deploy wf pull "$workflow" || echo "Failed: $workflow" >> failed.log
+done < workflows.txt
+```
+
+### Reduce Database Size
+
+```bash
+# Remove inactive workflows
+n8n-deploy wf list --filter-status inactive --no-emoji | \
+    awk '{print $1}' | \
+    xargs -I {} n8n-deploy wf remove {}
+
+# Compact after bulk deletions
+n8n-deploy db compact
+```
+
+## Real-World Examples
+
+### Daily Workflow Sync
+
+```bash
+#!/bin/bash
+# sync-workflows.sh - Daily workflow synchronization
+
+set -e
+
+# Configuration
+SERVER="https://n8n.example.com"
+FLOW_DIR="$HOME/workflows"
+
+# Pull latest from server
+cd "$FLOW_DIR"
+n8n-deploy --server-url "$SERVER" wf pull --all
+
+# Backup
+n8n-deploy wf backup --name "daily-$(date +%Y%m%d)"
+
+# Commit to Git
+git add *.json
+git commit -m "sync: daily workflow update $(date +%Y-%m-%d)" || true
+git push origin master
+```
+
+### Workflow Deployment Pipeline
+
+```bash
+#!/bin/bash
+# deploy-workflows.sh - Deploy workflows to production
+
+# Validate workflows locally
+n8n-deploy wf list --no-emoji
+
+# Run tests (custom validation)
+./validate-workflows.sh
+
+# Backup production
+n8n-deploy --server-url "$PROD_SERVER" wf backup --name "pre-deploy"
+
+# Deploy
+for workflow in $(cat deploy-list.txt); do
+    echo "Deploying: $workflow"
+    n8n-deploy --server-url "$PROD_SERVER" wf push "$workflow"
+done
+
+echo "Deployment complete"
+```
+
+---
+
+{: .note }
+> These patterns demonstrate how n8n-deploy integrates into real-world workflows. Adapt them to your specific needs and environment.
