@@ -25,7 +25,6 @@ def server_api(temp_dir: Path) -> ServerCrud:
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 url TEXT NOT NULL,
                 name TEXT NOT NULL UNIQUE,
-                description TEXT,
                 is_active BOOLEAN DEFAULT TRUE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 last_used TIMESTAMP
@@ -66,7 +65,7 @@ class TestServerCRUD:
 
     def test_add_server_basic(self, server_api: ServerCrud) -> None:
         """Test adding a basic server"""
-        server_id = server_api.add_server(url="http://localhost:5678", name="test_server", description="Test server")
+        server_id = server_api.add_server(url="http://localhost:5678", name="test_server")
 
         assert_that(server_id).is_greater_than(0)
 
@@ -75,15 +74,14 @@ class TestServerCRUD:
         assert_that(server).is_not_none()
         assert_that(server["url"]).is_equal_to("http://localhost:5678")
         assert_that(server["name"]).is_equal_to("test_server")
-        assert_that(server["description"]).is_equal_to("Test server")
         assert_that(server["is_active"]).is_true()
 
     def test_add_server_duplicate_name(self, server_api: ServerCrud) -> None:
         """Test adding server with duplicate name fails"""
-        server_api.add_server(url="http://localhost:5678", name="duplicate", description="First")
+        server_api.add_server(url="http://localhost:5678", name="duplicate")
 
         with pytest.raises(Exception):  # Should raise UNIQUE constraint error
-            server_api.add_server(url="http://other:5678", name="duplicate", description="Second")
+            server_api.add_server(url="http://other:5678", name="duplicate")
 
     def test_get_server_by_name(self, server_api: ServerCrud) -> None:
         """Test retrieving server by name"""
@@ -141,17 +139,14 @@ class TestServerCRUD:
 
     def test_update_server(self, server_api: ServerCrud) -> None:
         """Test updating server properties"""
-        server_api.add_server(url="http://old:5678", name="update_test", description="Old description")
+        server_api.add_server(url="http://old:5678", name="update_test")
 
-        success = server_api.update_server(
-            name="update_test", url="http://new:5678", description="New description", is_active=False
-        )
+        success = server_api.update_server(name="update_test", url="http://new:5678", is_active=False)
 
         assert_that(success).is_true()
 
         server = server_api.get_server_by_name("update_test")
         assert_that(server["url"]).is_equal_to("http://new:5678")
-        assert_that(server["description"]).is_equal_to("New description")
         assert_that(server["is_active"]).is_false()
 
     def test_delete_server(self, server_api: ServerCrud) -> None:
@@ -259,7 +254,6 @@ class TestServerEdgeCases:
 
         assert_that(server_id).is_greater_than(0)
         server = server_api.get_server_by_name("minimal")
-        assert_that(server["description"]).is_none()
         assert_that(server["is_active"]).is_true()
 
     def test_update_server_nonexistent(self, server_api: ServerCrud) -> None:
