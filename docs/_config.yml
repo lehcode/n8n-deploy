@@ -3,6 +3,23 @@ title: "n8n-deploy Documentation"
 description: "Python CLI tool for managing n8n workflows with SQLite metadata"
 url: "https://lehcode.github.io"
 baseurl: "/n8n-deploy"
+author:
+  name: "n8n-deploy Contributors"
+  url: "https://github.com/lehcode/n8n-deploy/graphs/contributors"
+logo: "/assets/images/logo.png"
+lang: "en-US"
+
+# SEO
+plugins:
+  - jekyll-seo-tag
+  - jekyll-sitemap
+  - jekyll-feed
+
+# Social
+twitter:
+  username: lehcode
+  card: summary
+github_username: lehcode
 
 # Theme
 theme: just-the-docs
