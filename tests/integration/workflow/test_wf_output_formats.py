@@ -25,8 +25,8 @@ from api.workflow import WorkflowApi
 from .conftest import WorkflowTestHelpers
 
 
-class Testwfoutputformats(WorkflowTestHelpers):
-    """Test Wf Output Formats tests"""
+class TestWorkflowOutputFormats(WorkflowTestHelpers):
+    """Test Workflow Output Formats tests"""
 
     def test_workflow_operations_emoji_consistency(self) -> None:
         """Test wf operations with emoji and no-emoji modes"""

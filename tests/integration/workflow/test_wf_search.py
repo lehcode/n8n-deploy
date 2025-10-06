@@ -25,8 +25,8 @@ from api.workflow import WorkflowApi
 from .conftest import WorkflowTestHelpers
 
 
-class Testwfsearch(WorkflowTestHelpers):
-    """Test Wf Search tests"""
+class TestWorkflowSearch(WorkflowTestHelpers):
+    """Test Workflow Search tests"""
 
     def test_workflow_search_functionality(self) -> None:
         """Test wf search with various patterns"""

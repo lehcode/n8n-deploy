@@ -25,8 +25,8 @@ from api.workflow import WorkflowApi
 from .conftest import WorkflowTestHelpers
 
 
-class Testwfstats(WorkflowTestHelpers):
-    """Test Wf Stats tests"""
+class TestWorkflowStats(WorkflowTestHelpers):
+    """Test Workflow Stats tests"""
 
     def test_workflow_stats_display(self) -> None:
         """Test wf stats display functionality"""

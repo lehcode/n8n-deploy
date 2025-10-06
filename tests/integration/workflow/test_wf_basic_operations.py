@@ -25,8 +25,8 @@ from api.workflow import WorkflowApi
 from .conftest import WorkflowTestHelpers
 
 
-class Testwfbasicoperations(WorkflowTestHelpers):
-    """Test Wf Basic Operations tests"""
+class TestWorkflowBasicOps(WorkflowTestHelpers):
+    """Test Workflow Basic Operations tests"""
 
     def test_workflow_add_requires_server(self) -> None:
         """Test that wf add command requires server URL (pulls from remote)"""
