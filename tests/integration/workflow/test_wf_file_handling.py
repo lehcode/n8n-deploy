@@ -59,10 +59,9 @@ class Testwffilehandling(WorkflowTestHelpers):
         self.setup_database()
 
         # wf add now pulls from server, so this tests server pull of nonexistent wf
+        # Note: wf add doesn't have --data-dir option
         returncode, stdout, stderr = self.run_cli_command(
             [
-                "--data-dir",
-                self.temp_dir,
                 "wf",
                 "add",
                 "NonexistentWorkflow",
@@ -83,10 +82,9 @@ class Testwffilehandling(WorkflowTestHelpers):
         self.setup_database()
 
         # Test with invalid wf name characters
+        # Note: wf add doesn't have --data-dir option
         returncode, stdout, stderr = self.run_cli_command(
             [
-                "--data-dir",
-                self.temp_dir,
                 "wf",
                 "add",
                 "Invalid/Name",  # Forward slash is invalid in wf names
@@ -115,10 +113,11 @@ class Testwffilehandling(WorkflowTestHelpers):
         self.setup_database()
 
         # Test that list command handles database operations efficiently
+        # Note: wf list uses --flow-dir, not --data-dir
         returncode, stdout, stderr = self.run_cli_command(
             [
-                "--data-dir",
-                self.temp_dir,
+                "--flow-dir",
+                self.temp_flow_dir,
                 "wf",
                 "list",
             ]
@@ -136,10 +135,11 @@ class Testwffilehandling(WorkflowTestHelpers):
         results = []
 
         def list_workflows(thread_id) -> None:
+            # Note: wf list uses --flow-dir, not --data-dir
             returncode, stdout, stderr = self.run_cli_command(
                 [
-                    "--data-dir",
-                    self.temp_dir,
+                    "--flow-dir",
+                    self.temp_flow_dir,
                     "wf",
                     "list",
                 ]
@@ -167,10 +167,9 @@ class Testwffilehandling(WorkflowTestHelpers):
         for name in unicode_names:
             try:
                 # Test that wf add accepts Unicode names (will fail due to no server, but validates name)
+                # Note: wf add doesn't have --data-dir option
                 returncode, stdout, stderr = self.run_cli_command(
                     [
-                        "--data-dir",
-                        self.temp_dir,
                         "wf",
                         "add",
                         name,
