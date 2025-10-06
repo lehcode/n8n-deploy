@@ -121,7 +121,7 @@ n8n-deploy apikey --help
 
 ### Online Resources
 
-- [GitHub Issues](https://github.com/lehcode/n8n-deploy/issues)
+- [GitHub Issues](https://github.com/lehcode/n8n-deploy/issues/)
 - [Documentation](https://lehcode.github.io/n8n-deploy/)
 
 {: .tip }
@@ -139,9 +139,9 @@ n8n-deploy apikey --help
 
 ## 📖 Related Guides
 
-- [Configuration](configuration.md)
-- [Workflow Management](workflows.md)
-- [API Key Management](apikeys.md)
+- [Configuration](configuration/)
+- [Workflow Management](workflows/)
+- [API Key Management](apikeys/)
 
 ## 🐛 Reporting Issues
 

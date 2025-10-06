@@ -98,9 +98,9 @@ n8n-deploy wf stats
 
 ## 📖 Related Guides
 
-- [Configuration](configuration.md)
-- [API Key Management](apikeys.md)
-- [Troubleshooting](troubleshooting.md)
+- [Configuration](configuration/)
+- [API Key Management](apikeys/)
+- [Troubleshooting](troubleshooting/)
 
 ## 💻 Example Workflow Management Scenario
 

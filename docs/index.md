@@ -28,7 +28,7 @@ Welcome to n8n-deploy, a powerful Python CLI tool for managing n8n workflows wit
 ## 🚀 Quick Start
 
 1. **Installation**
-   - Full details in the [Installation Guide](user-guide/installation.md)
+   - Full details in the [Installation Guide](user-guide/installation/)
    ```bash
    pip install n8n-deploy
    ```
@@ -45,17 +45,17 @@ Welcome to n8n-deploy, a powerful Python CLI tool for managing n8n workflows wit
 
 ## 📖 Documentation
 
-- [Installation Guide](user-guide/installation.md)
-- [Getting Started](getting-started.md)
-- [Configuration](configuration.md)
-- [Workflow Management](workflows.md)
-- [API Key Management](apikeys.md)
-- [Troubleshooting](troubleshooting.md)
+- [Installation Guide](user-guide/installation/)
+- [Getting Started](getting-started/)
+- [Configuration](configuration/)
+- [Workflow Management](workflows/)
+- [API Key Management](apikeys/)
+- [Troubleshooting](troubleshooting/)
 
 ## 🤝 Contributing
 
-Interested in contributing? Check out our [Contributing Guide](developers/contributing.md).
+Interested in contributing? Check out our [Contributing Guide](developers/contributing/).
 
 ## 📝 License
 
-MIT License. See [LICENSE](../LICENSE) for details.
+MIT License. See [LICENSE](https://github.com/lehcode/n8n-deploy/blob/master/LICENSE) for details.

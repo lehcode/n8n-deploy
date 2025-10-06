@@ -75,9 +75,9 @@ Columns:
 
 ## 📖 Related Guides
 
-- [Configuration](configuration.md)
-- [Workflow Management](workflows.md)
-- [Troubleshooting](troubleshooting.md)
+- [Configuration](configuration/)
+- [Workflow Management](workflows/)
+- [Troubleshooting](troubleshooting/)
 
 ## 💻 API Key Management Workflow
 

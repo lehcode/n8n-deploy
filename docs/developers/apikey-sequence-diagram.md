@@ -34,7 +34,7 @@ sequenceDiagram
     KeyManager->>DB: Query server_api_keys
     DB-->>KeyManager: API key: prod_key
     KeyManager-->>CLI: Return API key
-    CLI->>N8nServer: Push wf with API key
+    CLI->>N8nServer: Push workflow with API key
     N8nServer-->>CLI: Success
     CLI-->>User: Workflow pushed
 ```

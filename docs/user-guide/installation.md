@@ -1,7 +1,8 @@
 ---
 layout: default
 title: Installation
-nav_order: 3
+parent: User Guide
+nav_order: 1
 description: "Comprehensive guide for installing and setting up n8n-deploy"
 ---
 
@@ -164,10 +165,10 @@ N8N_SERVER_URL=http://localhost:5678
 
 ## Next Steps
 
-- [Configuration Guide](../configuration.md)
-- [Workflow Management Guide](../workflows.md)
-- [Troubleshooting](../troubleshooting.md)
+- [Configuration Guide](../configuration/)
+- [Workflow Management Guide](../workflows/)
+- [Troubleshooting](../troubleshooting/)
 
 ---
 
-Installation complete! Proceed to the [Getting Started Guide](getting-started.md) to manage your first workflows.
+Installation complete! Proceed to the [Getting Started Guide](getting-started/) to manage your first workflows.
