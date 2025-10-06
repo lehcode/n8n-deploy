@@ -1,0 +1,38 @@
+<!-- Social Media Icons -->
+<div class="social-icons" style="margin: 20px 0; text-align: center;">
+  {% if site.github_username %}
+  <a href="https://github.com/{{ site.github_username }}/n8n-deploy" target="_blank" rel="noopener noreferrer" style="margin: 0 10px; font-size: 24px; color: #333;" title="GitHub">
+    <i class="fab fa-github"></i>
+  </a>
+  {% endif %}
+
+  {% if site.twitter.username %}
+  <a href="https://twitter.com/{{ site.twitter.username }}" target="_blank" rel="noopener noreferrer" style="margin: 0 10px; font-size: 24px; color: #1DA1F2;" title="Twitter">
+    <i class="fab fa-twitter"></i>
+  </a>
+  {% endif %}
+
+  <a href="https://github.com/lehcode/n8n-deploy/discussions" target="_blank" rel="noopener noreferrer" style="margin: 0 10px; font-size: 24px; color: #333;" title="GitHub Discussions">
+    <i class="fab fa-github-alt"></i>
+  </a>
+
+  <a href="https://github.com/lehcode/n8n-deploy/issues" target="_blank" rel="noopener noreferrer" style="margin: 0 10px; font-size: 24px; color: #d73a49;" title="Issues">
+    <i class="fas fa-bug"></i>
+  </a>
+
+  <a href="{{ site.baseurl }}/feed.xml" target="_blank" rel="noopener noreferrer" style="margin: 0 10px; font-size: 24px; color: #ff6600;" title="RSS Feed">
+    <i class="fas fa-rss"></i>
+  </a>
+</div>
+
+<style>
+.social-icons a {
+  transition: transform 0.2s ease-in-out, opacity 0.2s ease-in-out;
+  display: inline-block;
+}
+
+.social-icons a:hover {
+  transform: scale(1.2);
+  opacity: 0.8;
+}
+</style>
