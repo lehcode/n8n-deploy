@@ -106,39 +106,38 @@ source ~/.env.prod
 n8n-deploy wf push "Stable Workflow"
 ```
 
-### Backup and Restore Strategy
+### Version Control Strategy
 
-Implement regular workflow backups:
+Workflow files should be managed with git:
 
 ```bash
-# Create backup with timestamp
-backup_name="workflows-$(date +%Y%m%d-%H%M%S)"
-n8n-deploy wf backup --name "$backup_name"
+# Initialize git repository in workflow directory
+cd /path/to/workflows
+git init
+git add *.json
+git commit -m "Initial workflow commit"
 
-# List all backups
-n8n-deploy wf list-backups
+# Regular workflow updates
+git add updated_workflow.json
+git commit -m "Updated customer onboarding workflow"
+git push origin main
 
-# Restore specific backup
-n8n-deploy wf restore "$backup_name"
-
-# Automated backup script
-cat > ~/bin/n8n-backup.sh << 'EOF'
+# Automated workflow backup with git
+cat > ~/bin/n8n-git-backup.sh << 'EOF'
 #!/bin/bash
-BACKUP_DIR="$HOME/workflow-backups"
-mkdir -p "$BACKUP_DIR"
-
-# Create backup
-n8n-deploy wf backup --name "auto-$(date +%Y%m%d)"
-
-# Clean old backups (keep last 7 days)
-find "$BACKUP_DIR" -name "auto-*.tar.gz" -mtime +7 -delete
+cd /path/to/workflows
+git add *.json
+git commit -m "Auto-backup $(date +%Y%m%d-%H%M%S)" || true
+git push origin main
 EOF
 
-chmod +x ~/bin/n8n-backup.sh
+chmod +x ~/bin/n8n-git-backup.sh
 
 # Schedule with cron (daily at 2 AM)
-echo "0 2 * * * ~/bin/n8n-backup.sh" | crontab -
+echo "0 2 * * * ~/bin/n8n-git-backup.sh" | crontab -
 ```
+
+> **Note**: Use `db backup` to backup database metadata, API keys, and server configurations separately.
 
 ### Workflow Search and Organization
 
@@ -298,7 +297,7 @@ n8n-deploy db backup --name "pre-migration-$(date +%Y%m%d)"
 > **Workflow Naming**: Use descriptive, consistent names with spaces and emojis supported
 
 {: .tip }
-> **Regular Backups**: Automate backups before major deployments
+> **Regular Backups**: Use git for workflow files, `db backup` for database metadata
 
 {: .tip }
 > **Environment Separation**: Maintain separate databases for dev/staging/prod
@@ -352,13 +351,13 @@ FLOW_DIR="$HOME/workflows"
 cd "$FLOW_DIR"
 n8n-deploy --server-url "$SERVER" wf pull --all
 
-# Backup
-n8n-deploy wf backup --name "daily-$(date +%Y%m%d)"
-
 # Commit to Git
 git add *.json
 git commit -m "sync: daily workflow update $(date +%Y-%m-%d)" || true
 git push origin master
+
+# Backup database metadata
+n8n-deploy db backup
 ```
 
 ### Workflow Deployment Pipeline
@@ -373,8 +372,8 @@ n8n-deploy wf list --no-emoji
 # Run tests (custom validation)
 ./validate-workflows.sh
 
-# Backup production
-n8n-deploy --server-url "$PROD_SERVER" wf backup --name "pre-deploy"
+# Backup production database
+n8n-deploy db backup
 
 # Deploy
 for workflow in $(cat deploy-list.txt); do
