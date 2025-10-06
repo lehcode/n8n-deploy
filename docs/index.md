@@ -51,10 +51,10 @@ Welcome to n8n-deploy, a powerful Python CLI tool for managing n8n workflows wit
 - [Configuration](configuration/)
 
 ### Core Features
-- [Database Management](database/) - SQLite operations and backups
-- [Workflow Management](workflows/) - Push/pull workflow operations
-- [API Key Management](apikeys/) - Secure key handling
-- [Server Management](servers/) - Multi-server configuration
+- [Database Management](core-features/database/) - SQLite operations and backups
+- [Workflow Management](core-features/workflows/) - Push/pull workflow operations
+- [API Key Management](core-features/apikeys/) - Secure key handling
+- [Server Management](core-features/servers/) - Multi-server configuration
 
 ### Advanced Topics
 - [DevOps Integration](user-guide/devops-integration/) - CI/CD pipelines and automation
@@ -65,7 +65,12 @@ Welcome to n8n-deploy, a powerful Python CLI tool for managing n8n workflows wit
 
 ## 🤝 Contributing
 
-Interested in contributing? Check out our [Contributing Guide](developers/contributing/).
+Interested in contributing? Check out our:
+
+- [Contributing Guide](https://github.com/lehcode/n8n-deploy/blob/master/CONTRIBUTING.md) - How to contribute
+- [Code of Conduct](https://github.com/lehcode/n8n-deploy/blob/master/CODE_OF_CONDUCT.md) - Community guidelines
+- [Changelog](https://github.com/lehcode/n8n-deploy/blob/master/CHANGELOG.md) - Project history
+- [TODO](https://github.com/lehcode/n8n-deploy/blob/master/TODO.md) - Planned features
 
 ## 📝 License
 

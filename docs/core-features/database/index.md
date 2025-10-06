@@ -9,8 +9,6 @@ description: "SQLite database management for n8n workflow metadata"
 
 # Database Management
 
-> "A backup of uncertain quality is equivalent to no backup at all." — Ancient DevOps Wisdom
-
 n8n-deploy uses SQLite as its metadata store, providing a reliable, efficient, and portable solution for managing workflows, API keys, and server configurations.
 
 ## 🎯 Database Overview
@@ -163,8 +161,8 @@ Common database issues and solutions.
 ## 📖 Related Documentation
 
 - [Getting Started](../../getting-started/) - Initial setup guide
-- [Server Management](../servers/) - Configure n8n servers
-- [API Key Management](../apikeys/) - Manage authentication
+- [Server Management](../core-features/servers/) - Configure n8n servers
+- [API Key Management](../core-features/apikeys/) - Manage authentication
 - [DevOps Guide](../../devops-guide/) - CI/CD automation
 - [Configuration](../../configuration/) - Environment variables
 

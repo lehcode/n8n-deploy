@@ -1,8 +1,7 @@
 ---
 layout: default
 title: DevOps Guide
-nav_order: 9
-has_children: true
+nav_order: 7
 description: "CI/CD integration and automation patterns for n8n-deploy"
 ---
 

@@ -1,7 +1,7 @@
 ---
 layout: default
 title: User Guide
-nav_order: 10
+nav_order: 3
 description: "Comprehensive guide for using n8n-deploy CLI tool"
 ---
 
@@ -65,10 +65,10 @@ graph LR
 - 📖 **[Installation & Setup](installation/)** - Get up and running in minutes
 - ⚙️ **[Configuration](../configuration/)** - Environment variables and directory setup
 - 🚀 **[Getting Started](../getting-started/)** - Your first workflows
-- 📝 **[Workflow Management](../workflows/)** - Add, sync, push, pull, backup
+- 📝 **[Workflow Management](../core-features/workflows/)** - Add, sync, push, pull, backup
 - 🎯 **[Workflow Patterns](workflow-patterns/)** - Common patterns and real-world examples
 - 🔄 **[Migration Guide](migration-guide/)** - Upgrade between versions
-- 🔑 **[API Key Management](../apikeys/)** - Secure credential handling
+- 🔑 **[API Key Management](../core-features/apikeys/)** - Secure credential handling
 - 🔧 **[Troubleshooting](../troubleshooting/)** - Common issues and solutions
 - ❓ **[FAQ](../faq/)** - Frequently asked questions
 

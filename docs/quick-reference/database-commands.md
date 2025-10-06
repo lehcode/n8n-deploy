@@ -100,4 +100,4 @@ n8n-deploy env
 
 ---
 
-**See Also**: [Database Management](../database/) | [Configuration](../configuration/)
+**See Also**: [Database Management](../core-features/database/) | [Configuration](../configuration/)

@@ -1,9 +1,13 @@
 ---
 layout: default
 title: Workflow Management
-nav_order: 7
+parent: Core Features
+nav_order: 3
+has_children: false
 description: "Managing n8n workflows with n8n-deploy"
 ---
+
+# Workflow Management
 
 n8n-deploy provides comprehensive workflow management capabilities, allowing you to interact with n8n workflows seamlessly.
 
@@ -12,16 +16,19 @@ n8n-deploy provides comprehensive workflow management capabilities, allowing you
 ### List Workflows
 
 #### Local Workflows
+
 ```bash
 n8n-deploy wf list
 ```
 
 #### Remote Server Workflows
+
 ```bash
 n8n-deploy --server-url http://n8n.example.com:5678 wf list-server
 ```
 
 ### Pull Workflow from Remote Server
+
 ```bash
 # Pull specific workflow
 n8n-deploy --server-url http://n8n.example.com:5678 wf pull "Customer Onboarding"
@@ -31,6 +38,7 @@ n8n-deploy --flow-dir /path/to/workflows wf pull "Customer Onboarding"
 ```
 
 ### Push Workflow to Remote Server
+
 ```bash
 # Push specific workflow
 n8n-deploy --server-url http://n8n.example.com:5678 wf push "Deployment Pipeline"
@@ -44,12 +52,14 @@ n8n-deploy --flow-dir /path/to/workflows wf push "Deployment Pipeline"
 ## 🔍 Advanced Workflow Management
 
 ### Search Workflows
+
 ```bash
 # Search workflows by name or tag
 n8n-deploy wf search "customer"
 ```
 
 ### Workflow Statistics
+
 ```bash
 # Show workflow statistics
 n8n-deploy wf stats
@@ -64,11 +74,13 @@ n8n-deploy wf stats
 ## 🧩 Workflow File Management
 
 ### Workflow File Location
+
 - Stored as JSON files
 - Named by n8n workflow ID
 - Can be stored in custom directories
 
 ### Workflow Status Tracking
+
 - Workflows tracked in SQLite database
 - Metadata includes:
   - Workflow name
@@ -85,9 +97,9 @@ n8n-deploy wf stats
 
 ## 📖 Related Guides
 
-- [Configuration](configuration/)
-- [API Key Management](apikeys/)
-- [Troubleshooting](troubleshooting/)
+- [Configuration](/n8n-deploy/configuration/)
+- [API Key Management](/n8n-deploy/core-features/apikeys/)
+- [Troubleshooting](/n8n-deploy/troubleshooting/)
 
 ## 💻 Example Workflow Management Scenario
 

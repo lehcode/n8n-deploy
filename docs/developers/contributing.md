@@ -8,8 +8,11 @@ description: "Details about Contributing in n8n-deploy"
 
 # Contributing to n8n-deploy
 
+{: .note }
+> For the complete contributing guide, see [CONTRIBUTING.md](https://github.com/lehcode/n8n-deploy/blob/master/CONTRIBUTING.md)
+
 {: .warning }
-> **Important**: By contributing, you agree to follow our code of conduct and development practices.
+> **Important**: By contributing, you agree to follow our [Code of Conduct](https://github.com/lehcode/n8n-deploy/blob/master/CODE_OF_CONDUCT.md) and development practices.
 
 ## Getting Started
 

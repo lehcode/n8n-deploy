@@ -3,13 +3,11 @@ layout: default
 title: Server Management
 parent: Core Features
 nav_order: 2
-has_children: true
+has_children: false
 description: "Managing n8n server connections and configurations"
 ---
 
 # Server Management
-
-> "If you can't manage one server, adding more won't help." — Murphy's Law of Distributed Systems
 
 n8n-deploy enables management of multiple n8n server connections, each with dedicated API keys and configurations for seamless multi-environment workflows.
 
@@ -134,7 +132,7 @@ n8n-deploy server list --active --json
 - [Workflow Management](../workflows/) - Push/pull workflows using servers
 - [DevOps Guide](../../devops-guide/) - CI/CD automation
 - [Configuration](../../configuration/) - Environment variables
-- [Troubleshooting](troubleshooting/) - Common issues
+- [Troubleshooting](../../troubleshooting/) - Common issues
 
 ---
 
