@@ -2,7 +2,7 @@
 layout: default
 title: API Key Conceptual Flow
 parent: Developer Guide
-nav_order: 6
+nav_order: 4
 description: "API Key Conceptual Flow for n8n-deploy API key management"
 ---
 
