@@ -21,7 +21,7 @@ import pytest
 from .conftest import DatabaseTestHelpers
 
 
-class Testdbintegrity(DatabaseTestHelpers):
+class TestDbIntegrity(DatabaseTestHelpers):
     """Test Db Integrity tests"""
 
     def test_database_integrity_after_operations(self) -> None:

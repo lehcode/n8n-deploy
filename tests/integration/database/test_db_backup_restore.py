@@ -21,7 +21,7 @@ import pytest
 from .conftest import DatabaseTestHelpers
 
 
-class Testdbbackuprestore(DatabaseTestHelpers):
+class TestDbBackupRestore(DatabaseTestHelpers):
     """Test Db Backup Restore tests"""
 
     def test_database_backup_creation(self) -> None:
@@ -48,7 +48,7 @@ class Testdbbackuprestore(DatabaseTestHelpers):
             "active": False,
         }
         workflow_file.write_text(json.dumps(workflow_data, indent=2))
-        env = {"N8N_DEPLOY_FLOWS": self.temp_flow_dir}
+        env = {"N8N_DEPLOY_FLOWS_DIR": self.temp_flow_dir}
         self.run_cli_command(
             [
                 "--data-dir",

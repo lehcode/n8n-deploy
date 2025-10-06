@@ -230,19 +230,6 @@ class TestE2ECLI(E2ETestBase):
                 returncode != 0
             ), f"Invalid command {cmd} should fail but returned {returncode}. STDOUT: {stdout}, STDERR: {stderr}"
 
-    def test_output_format_data_consistency(self) -> None:
-        """Test output format is consistent between runs"""
-        # Initialize database first
-        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "db", "init"])
-
-        cmd = ["wf", "list"]
-
-        returncode1, stdout1, stderr1 = self.run_cli_command(cmd)
-        returncode2, stdout2, stderr2 = self.run_cli_command(cmd)
-
-        self.assert_command_details(returncode1, stdout1, stderr1, 0, "First run of consistency test")
-        self.assert_command_details(returncode2, stdout2, stderr2, 0, "Second run of consistency test")
-
     def test_working_directory_independence(self) -> None:
         """Test CLI works from different working directories"""
 

@@ -21,7 +21,7 @@ import pytest
 from .conftest import DatabaseTestHelpers
 
 
-class Testdboperations(DatabaseTestHelpers):
+class TestDbOperations(DatabaseTestHelpers):
     """Test Db Operations tests"""
 
     def test_database_compact_command(self) -> None:

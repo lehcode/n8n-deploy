@@ -21,7 +21,7 @@ import pytest
 from .conftest import DatabaseTestHelpers
 
 
-class Testdbinitstatus(DatabaseTestHelpers):
+class TestDbInitStatus(DatabaseTestHelpers):
     """Test Db Init Status tests"""
 
     def test_database_initialization(self) -> None:

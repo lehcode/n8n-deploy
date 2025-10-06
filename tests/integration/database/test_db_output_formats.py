@@ -21,5 +21,5 @@ import pytest
 from .conftest import DatabaseTestHelpers
 
 
-class Testdboutputformats(DatabaseTestHelpers):
+class TestDbOutputFormats(DatabaseTestHelpers):
     """Test Db Output Formats tests"""
