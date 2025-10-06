@@ -44,7 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Environment Configuration Display Command**
   - New `env` command to display all environment variables and their values
-  - Support for JSON (`--format json`) and table (`--format table`) output
+  - Support for JSON (`--json`) and table (`--table`) output
   - Shows configuration precedence and default values
 
 - **Development Environment Support**

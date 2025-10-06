@@ -68,7 +68,7 @@ n8n-deploy wf pull "Exact Workflow Name"
 n8n-deploy env
 
 # Show configuration in JSON
-n8n-deploy env --format json
+n8n-deploy env --json
 
 # Check environment variables
 echo $N8N_SERVER_URL
