@@ -79,6 +79,7 @@ n8n-deploy wf push "Deploy Workflow"
 4. [Workflow Management](workflows.md)
 5. [API Key Management](apikeys.md)
 6. [Troubleshooting](troubleshooting.md)
+7. [Developer Guide](developers/index.md)
 
 ## 🤝 Contributing
 
