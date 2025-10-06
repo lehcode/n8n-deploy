@@ -36,15 +36,15 @@ print_section "Test Category 10: Edge Cases"
 
     # Test very long arguments
     local long_description="This is a very long description that contains many words and should test the handling of lengthy input parameters in the CLI system to ensure robust operation"
-    run_test "Long description" "echo '$SAMPLE_API_KEY' | $CLI_COMMAND apikey add - --name long_test_key --description '$long_description' --data-dir $app_dir --no-emoji" 0 "Test long description handling"
+    run_test "Long description" "echo '$SAMPLE_API_KEY' | $CLI_COMMAND apikey add - --name long_test_key --description '$long_description' --no-emoji" 0 "Test long description handling"
 
     # Test duplicate wf ID (first add the original, then try to add duplicate)
     run_test "Add original wf" "$CLI_COMMAND wf add workflows/${SAMPLE_WF_ID}.json '$SAMPLE_WF_NAME' --data-dir $app_dir --flow-dir $flow_dir" 0 "Add original wf for duplicate test"
     run_test "Duplicate wf ID" "$CLI_COMMAND wf add workflows/${SAMPLE_WF_ID}.json 'Duplicate Workflow' --data-dir $app_dir --flow-dir $flow_dir" 1 "Test duplicate wf ID handling"
 
     # Test operations on deactivated API keys
-    run_test "Deactivate API key" "$CLI_COMMAND apikey deactivate long_test_key --data-dir $app_dir" 0 "Deactivate API key for testing"
-    run_test "Test deactivated key" "$CLI_COMMAND apikey test long_test_key --data-dir $app_dir" 1 "Test deactivated API key"
+    run_test "Deactivate API key" "$CLI_COMMAND apikey deactivate long_test_key" 0 "Deactivate API key for testing"
+    run_test "Test deactivated key" "$CLI_COMMAND apikey test long_test_key" 1 "Test deactivated API key"
 
     # Test wf file that exists but is invalid JSON
     local invalid_json_file="$flow_dir/workflows/invalid.json"

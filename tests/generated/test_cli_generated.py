@@ -292,7 +292,7 @@ def test_apikey_list_data_dir_valid_path():
     result = subprocess.run(CLI_COMMAND + ["apikey", "list", "--data-dir", "/tmp"], capture_output=True, text=True, timeout=10)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
-        f"Command: apikey list --data-dir /tmp\n"
+        f"Command: apikey list\n"
         f"stdout: {result.stdout[:500]}\n"
         f"stderr: {result.stderr[:500]}"
     )
