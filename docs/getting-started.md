@@ -2,9 +2,9 @@
 layout: default
 title: Getting Started
 nav_order: 2
+description: "Quick start guide for n8n-deploy CLI installation and setup"
 ---
 
-## Getting Started with n8n-deploy
 
 Welcome to n8n-deploy! This guide will help you get up and running quickly with our workflow management CLI.
 
@@ -70,11 +70,11 @@ n8n-deploy --server-url http://n8n.example.com:5678 wf pull "My Workflow"
 n8n-deploy --server-url http://n8n.example.com:5678 wf push "Deploy Workflow"
 ```
 
-## 💡 Pro Tips
+{: .tip }
+> **Tip**: Use the `--no-emoji` flag for script-friendly output when integrating with automation scripts.
 
-- Use the `--no-emoji` flag for script-friendly output
-- Configure environment variables for persistent settings
-- Always use the latest version for best performance and features
+{: .note }
+> Configure environment variables for persistent settings across terminal sessions.
 
 ## 🆘 Troubleshooting
 

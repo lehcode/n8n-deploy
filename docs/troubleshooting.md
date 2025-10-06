@@ -2,9 +2,9 @@
 layout: default
 title: Troubleshooting
 nav_order: 6
+description: "Common issues, solutions, and debugging techniques for n8n-deploy"
 ---
 
-## Troubleshooting Guide
 
 This guide helps you resolve common issues when using n8n-deploy.
 
@@ -30,10 +30,13 @@ n8n-deploy --verbose apikey test my_server
 
 **Symptom**: Database not found or cannot be created
 
+{: .note }
+> Use the `--import` flag to accept an existing database without prompting.
+
 **Solutions**:
 ```bash
-# Reinitialize database
-n8n-deploy db init --force
+# Reinitialize database with import flag
+n8n-deploy db init --import
 
 # Check database status
 n8n-deploy db status
@@ -45,6 +48,9 @@ n8n-deploy --app-dir /custom/path db init
 ### 3. Workflow Pull/Push Failures
 
 **Symptom**: Cannot pull or push workflows
+
+{: .warning }
+> **Warning**: SSL verification issues? Use `--skip-ssl-verify` flag for self-signed certificates, but be aware of security implications.
 
 **Solutions**:
 ```bash
@@ -114,13 +120,11 @@ n8n-deploy apikey --help
 - [GitHub Issues](https://github.com/lehcode/n8n-deploy/issues)
 - [Documentation](https://lehcode.github.io/n8n-deploy/)
 
-## 💡 Pro Tips
+{: .tip }
+> **Tip**: Always use the latest version of n8n-deploy for bug fixes and new features.
 
-- Always use the latest version
-- Keep API keys secure
-- Verify server URLs
-- Use environment variables for consistent configuration
-- Check file permissions for workflow directories
+{: .note }
+> Use environment variables for consistent configuration across terminal sessions. Run `n8n-deploy env` to verify your settings.
 
 ## 🚧 Known Limitations
 

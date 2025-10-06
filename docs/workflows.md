@@ -2,9 +2,9 @@
 layout: default
 title: Workflow Management
 nav_order: 4
+description: "Complete guide to managing n8n workflows - push, pull, backup, and restore"
 ---
 
-## Workflow Management
 
 n8n-deploy provides comprehensive workflow management capabilities, allowing you to interact with n8n workflows seamlessly.
 
@@ -69,11 +69,11 @@ n8n-deploy wf search "customer"
 n8n-deploy wf stats
 ```
 
-## 💡 Pro Tips
+{: .tip }
+> **Tip**: Always use quotes for workflow names with spaces. Example: `n8n-deploy wf pull "Customer Onboarding"`
 
-- Use quotes for workflow names with spaces
-- Leverage `--no-emoji` flag for scripting
-- Keep workflow files organized in a consistent directory
+{: .note }
+> Leverage the `--no-emoji` flag for scripting to get clean, parseable output.
 
 ## 🧩 Workflow File Management
 
