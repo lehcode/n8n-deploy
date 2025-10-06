@@ -108,10 +108,10 @@ def db() -> None:
 
 @db.command(cls=CustomCommand)
 @click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
-@click.option("--format", type=click.Choice(["table", "json"]), default="table", help="Output format")
+@click.option("--json", "output_json", is_flag=True, help=HELP_JSON)
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
 @click.option("--import", "import_db", is_flag=True, help="Import existing database without prompting")
-def init(data_dir: Optional[str], format: str, no_emoji: bool, import_db: bool) -> None:
+def init(data_dir: Optional[str], output_json: bool, no_emoji: bool, import_db: bool) -> None:
     """🎬 Initialize n8n-deploy database
 
     Create the SQLite database with the required schema.
@@ -119,8 +119,8 @@ def init(data_dir: Optional[str], format: str, no_emoji: bool, import_db: bool) 
 
     NOTE: Database must be initialized before using other commands.
     """
-    # JSON format implies no emoji
-    if format == "json":
+    # JSON output implies no emoji
+    if output_json:
         no_emoji = True
     # Database init only needs base folder, not wf directories
     from ..config import AppConfig
@@ -143,7 +143,7 @@ def init(data_dir: Optional[str], format: str, no_emoji: bool, import_db: bool) 
                 # Database is initialized, use it
                 flow_dir = os.environ.get("N8N_DEPLOY_FLOWS")
 
-                if format == "json":
+                if output_json:
                     result = {
                         "success": True,
                         "database_path": str(db_path),
@@ -238,8 +238,8 @@ def init(data_dir: Optional[str], format: str, no_emoji: bool, import_db: bool) 
 
     flow_dir = os.environ.get("N8N_DEPLOY_FLOWS")
 
-    # Output based on format
-    if format == "json":
+    # Output based on output format
+    if output_json:
         result = {
             "success": True,
             "database_path": str(db_path),
