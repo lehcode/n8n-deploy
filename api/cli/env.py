@@ -31,17 +31,14 @@ if os.getenv("ENVIRONMENT", "").lower() == "development":
 @click.option("--data-dir", type=click.Path(), help="Application directory path")
 @click.option("--flow-dir", type=click.Path(), help="Flow directory path")
 @click.option("--remote", type=str, help="n8n server URL")
-@click.option(
-    "--format",
-    type=click.Choice(["table", "json"]),
-    default=None,
-    help="Output format: table (emoji tables) or json (structured data). Default: plain text",
-)
+@click.option("--json", "output_json", is_flag=True, help="Output in JSON format for scripting")
+@click.option("--table", "output_table", is_flag=True, help="Output in table format with emoji")
 def env(
     data_dir: Optional[str],
     flow_dir: Optional[str],
     remote: Optional[str],
-    format: Optional[str],
+    output_json: bool,
+    output_table: bool,
 ) -> None:
     """🌍 Show environment configuration and variable precedence
 
@@ -95,7 +92,7 @@ def env(
     # Add to config_items - value depends on format
     config_items.append(("ENVIRONMENT", env_mode, env_source))
 
-    if format == "json":
+    if output_json:
         # JSON output for programmatic use
         # Priority order depends on whether dotenv is enabled
         if HAS_DOTENV:
@@ -126,7 +123,7 @@ def env(
 
         # Use click.echo for JSON to avoid Rich's text processing
         click.echo(json.dumps(output, indent=2, ensure_ascii=False))
-    elif format == "table":
+    elif output_table:
         # Rich emoji table output
         console.print("\n🌍 [bold cyan]Environment Configuration[/bold cyan]\n")
 

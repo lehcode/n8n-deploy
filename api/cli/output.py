@@ -6,7 +6,7 @@ Centralizes emoji handling and output formatting to eliminate duplicate code
 across CLI commands. Provides consistent user experience with emoji/no-emoji modes.
 """
 
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List
 
 import click
 from rich.console import Console
@@ -344,50 +344,6 @@ def print_backup_files_table(backup_files: List[Any], no_emoji: bool = False, ba
     if backup_path:
         console.print(f"\nBackup directory: {backup_path}")
     console.print(table)
-
-
-def output_json_or_table(
-    data: List[Any],
-    format: str,
-    no_emoji: bool,
-    table_func: Callable[..., None],
-    query: str = "",
-) -> None:
-    """Output data as JSON or formatted table
-
-    Args:
-        data: Data to output (list of dicts or objects)
-        format: Output format ("json" or "table")
-        no_emoji: Whether to suppress emojis
-        table_func: Function to call for table formatting
-        query: Optional query string for search results
-    """
-    if format == "json":
-        # Convert objects to dictionaries if needed
-        if data and hasattr(data[0], "__dict__"):
-            json_data = []
-            for item in data:
-                if hasattr(item, "id"):
-                    # Workflow object
-                    json_data.append(
-                        {
-                            "id": item.id,
-                            "name": item.name,
-                            "status": str(item.status),
-                            "created_at": str(item.created_at) if item.created_at else None,
-                            "last_synced": str(item.last_synced) if item.last_synced else None,
-                        }
-                    )
-                else:
-                    json_data.append(item.__dict__)
-            console.print(JSON.from_data(json_data))
-        else:
-            console.print(JSON.from_data(data))
-    else:
-        if query:
-            table_func(data, no_emoji, query)
-        else:
-            table_func(data, no_emoji)
 
 
 def format_server_table(servers: List[Dict[str, Any]], no_emoji: bool = False) -> None:
