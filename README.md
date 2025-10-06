@@ -67,10 +67,14 @@ n8n-deploy --server-url http://n8n.example.com wf pull "My Workflow"
 
 ### Documentation
 
-- [User Guide](/docs/user-guide/README.md)
-- [Configuration Guide](/docs/configuration.md)
-- [Workflow Management](/docs/workflows.md)
-- [Troubleshooting](/docs/troubleshooting.md)
+📚 **[Read the full documentation](https://lehcode.github.io/n8n-deploy/)**
+
+Quick Links:
+- [Getting Started](https://lehcode.github.io/n8n-deploy/getting-started.html)
+- [Configuration Guide](https://lehcode.github.io/n8n-deploy/configuration.html)
+- [Workflow Management](https://lehcode.github.io/n8n-deploy/workflows.html)
+- [API Key Management](https://lehcode.github.io/n8n-deploy/apikeys.html)
+- [Troubleshooting](https://lehcode.github.io/n8n-deploy/troubleshooting.html)
 
 ### Contributing
 
