@@ -2,9 +2,9 @@
 layout: default
 title: API Key Management
 nav_order: 5
+description: "Managing n8n API keys for server authentication and workflow operations"
 ---
 
-## API Key Management
 
 n8n-deploy provides a simple and secure way to manage API keys for n8n server interactions.
 
@@ -47,12 +47,14 @@ n8n-deploy apikey test my_server --server-url http://n8n.example.com:5678
 - Designed specifically for n8n API keys
 - Created/last used timestamps tracked
 
-## 💡 Best Practices
+{: .tip }
+> **Tip**: Use unique, descriptive names for API keys to easily identify different server environments.
 
-- Use unique, descriptive names for API keys
-- Rotate keys periodically
-- Use environment variables or .env files for sensitive keys
-- Avoid sharing API keys publicly
+{: .warning }
+> **Warning**: Never share API keys publicly or commit them to version control. Store them securely using environment variables or .env files.
+
+{: .note }
+> Rotate API keys periodically as a security best practice.
 
 ## 📋 API Key Database Schema
 

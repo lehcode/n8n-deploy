@@ -1,10 +1,11 @@
 ---
 layout: default
-title: n8n-deploy Documentation
+title: Home
 nav_order: 1
+description: "Python CLI tool for managing n8n workflows with SQLite metadata"
+permalink: /
 ---
-
-## n8n-deploy: Database-First n8n Workflow Management CLI
+# n8n-deploy: Database-First n8n Workflow Management CLI
 
 Welcome to the official documentation for n8n-deploy, a powerful Python CLI tool for managing n8n workflows with a SQLite metadata store.
 
