@@ -179,9 +179,6 @@ class DBApi(BaseDB):
             cursor = conn.execute("SELECT COUNT(*) FROM api_keys")
             api_key_count = cursor.fetchone()[0]
 
-            cursor = conn.execute("SELECT COUNT(*) FROM versions")
-            version_count = cursor.fetchone()[0]
-
             cursor = conn.execute("SELECT COUNT(*) FROM dependencies")
             dependency_count = cursor.fetchone()[0]
 
@@ -201,7 +198,6 @@ class DBApi(BaseDB):
                 tables={
                     "workflows": workflow_count,
                     "api_keys": api_key_count,
-                    "versions": version_count,
                     "dependencies": dependency_count,
                     "configurations": configuration_count,
                 },

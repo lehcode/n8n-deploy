@@ -55,7 +55,7 @@ class TestWorkflowIntegration(WorkflowTestHelpers):
     def test_workflow_environment_variable_integration(self) -> None:
         """Test wf operations respect environment variables"""
         self.setup_database()
-        env = {"N8N_DEPLOY_FLOWS": self.temp_flow_dir}
+        env = {"N8N_DEPLOY_FLOWS_DIR": self.temp_flow_dir}
 
         # Test that search command uses environment variable for flow directory
         returncode, stdout, stderr = self.run_cli_command(["wf", "list"], env=env)

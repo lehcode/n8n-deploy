@@ -78,10 +78,10 @@ Configure where to store application data and workflow files:
 
 ```bash
 # Application data directory
-export N8N_DEPLOY_DATA=~/n8n-data
+export N8N_DEPLOY_DATA_DIR=~/n8n-data
 
 # Workflow JSON files directory
-export N8N_DEPLOY_FLOW_DIR=~/workflows
+export N8N_DEPLOY_FLOWS_DIR=~/workflows
 ```
 
 Add these to your shell profile for persistence.
@@ -134,8 +134,8 @@ cp .env.example .env
 Edit with your settings:
 ```bash
 ENVIRONMENT=development
-N8N_DEPLOY_DATA=/home/user/n8n-data
-N8N_DEPLOY_FLOW_DIR=/home/user/workflows
+N8N_DEPLOY_DATA_DIR=/home/user/n8n-data
+N8N_DEPLOY_FLOWS_DIR=/home/user/workflows
 N8N_SERVER_URL=http://localhost:5678
 ```
 

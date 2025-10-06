@@ -55,7 +55,7 @@ n8n-deploy db status
 
 | Old (Pre-2.0) | New (2.0+) | Purpose |
 |---------------|------------|---------|
-| `ELEKTRONIK_FLOW_DIR` | `N8N_DEPLOY_FLOW_DIR` | Workflow directory |
+| `ELEKTRONIK_FLOW_DIR` | `N8N_DEPLOY_FLOWS_DIR` | Workflow directory |
 | `ELEKTRONIK_APP_DIR` | `N8N_DEPLOY_APP_DIR` | Application data directory |
 | `ELEKTRONIK_TESTING` | `N8N_DEPLOY_TESTING` | Testing mode flag |
 
@@ -67,7 +67,7 @@ sed -i 's/ELEKTRONIK_/N8N_DEPLOY_/g' ~/.env
 
 # Or manually update
 cat > ~/.env << EOF
-N8N_DEPLOY_FLOW_DIR=$HOME/workflows
+N8N_DEPLOY_FLOWS_DIR=$HOME/workflows
 N8N_DEPLOY_APP_DIR=$HOME/.n8n-deploy
 N8N_SERVER_URL=https://n8n.example.com
 EOF
@@ -235,7 +235,7 @@ nano .env
 ENVIRONMENT=development
 
 # Directory configuration
-N8N_DEPLOY_FLOW_DIR=/path/to/workflows
+N8N_DEPLOY_FLOWS_DIR=/path/to/workflows
 N8N_DEPLOY_APP_DIR=/path/to/app/data
 
 # Server configuration

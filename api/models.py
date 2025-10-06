@@ -36,23 +36,6 @@ class Workflow(BaseModel):
         json_encoders = {datetime: lambda v: v.isoformat()}
 
 
-class WorkflowVersion(BaseModel):
-    """Workflow version tracking"""
-
-    id: Optional[int] = Field(None, description="Auto-increment primary key")
-    workflow_id: str = Field(..., description="Workflow identifier")
-    version: str = Field(..., description="Version identifier")
-    changes_summary: Optional[str] = Field(None, description="Brief summary of changes")
-    changes_detail: Dict[str, Any] = Field(default_factory=dict, description="Detailed changes (JSON diff)")
-    file_hash: Optional[str] = Field(None, description="File content hash")
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="Version creation time")
-    created_by: str = Field(default="system", description="Who created this version")
-
-    class Config:
-        use_enum_values = True
-        json_encoders = {datetime: lambda v: v.isoformat()}
-
-
 class WorkflowConfiguration(BaseModel):
     """Workflow configuration snapshots"""
 

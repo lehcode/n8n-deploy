@@ -25,8 +25,8 @@ class TestE2EEnv(E2ETestBase):
         assert "Environment Configuration" in stdout
         assert "Configuration Variables" in stdout
         assert "Priority Order" in stdout
-        assert "N8N_DEPLOY_DATA" in stdout
-        assert "N8N_DEPLOY_FLOWS" in stdout
+        assert "N8N_DEPLOY_DATA_DIR" in stdout
+        assert "N8N_DEPLOY_FLOWS_DIR" in stdout
 
     def test_env_table_format(self) -> None:
         """Test env command with table format (emoji tables)"""
@@ -36,8 +36,8 @@ class TestE2EEnv(E2ETestBase):
 
         # Should show emoji tables
         assert "🌍" in stdout or "Environment Configuration" in stdout
-        assert "N8N_DEPLOY_DATA" in stdout
-        assert "N8N_DEPLOY_FLOWS" in stdout
+        assert "N8N_DEPLOY_DATA_DIR" in stdout
+        assert "N8N_DEPLOY_FLOWS_DIR" in stdout
         assert "Priority Order" in stdout
 
     def test_env_json_format(self) -> None:
@@ -50,8 +50,8 @@ class TestE2EEnv(E2ETestBase):
         data = json.loads(stdout)
         assert "variables" in data
         assert "priority_order" in data
-        assert "N8N_DEPLOY_DATA" in data["variables"]
-        assert "N8N_DEPLOY_FLOWS" in data["variables"]
+        assert "N8N_DEPLOY_DATA_DIR" in data["variables"]
+        assert "N8N_DEPLOY_FLOWS_DIR" in data["variables"]
         assert "N8N_SERVER_URL" in data["variables"]
 
     def test_env_with_app_dir_option(self) -> None:
@@ -64,8 +64,8 @@ class TestE2EEnv(E2ETestBase):
 
         # Verify CLI option takes precedence
         data = json.loads(stdout)
-        assert data["variables"]["N8N_DEPLOY_DATA"]["value"] == test_app_dir
-        assert data["variables"]["N8N_DEPLOY_DATA"]["source"] == "CLI"
+        assert data["variables"]["N8N_DEPLOY_DATA_DIR"]["value"] == test_app_dir
+        assert data["variables"]["N8N_DEPLOY_DATA_DIR"]["source"] == "CLI"
 
     def test_env_with_flow_dir_option(self) -> None:
         """Test env command with --flow-dir CLI option"""
@@ -77,8 +77,8 @@ class TestE2EEnv(E2ETestBase):
 
         # Verify CLI option takes precedence
         data = json.loads(stdout)
-        assert data["variables"]["N8N_DEPLOY_FLOWS"]["value"] == test_flow_dir
-        assert data["variables"]["N8N_DEPLOY_FLOWS"]["source"] == "CLI"
+        assert data["variables"]["N8N_DEPLOY_FLOWS_DIR"]["value"] == test_flow_dir
+        assert data["variables"]["N8N_DEPLOY_FLOWS_DIR"]["source"] == "CLI"
 
     def test_env_with_server_url_option(self) -> None:
         """Test env command with --remote CLI option"""
@@ -116,18 +116,18 @@ class TestE2EEnv(E2ETestBase):
 
         # Verify all CLI options are used
         data = json.loads(stdout)
-        assert data["variables"]["N8N_DEPLOY_DATA"]["value"] == test_app_dir
-        assert data["variables"]["N8N_DEPLOY_DATA"]["source"] == "CLI"
-        assert data["variables"]["N8N_DEPLOY_FLOWS"]["value"] == test_flow_dir
-        assert data["variables"]["N8N_DEPLOY_FLOWS"]["source"] == "CLI"
+        assert data["variables"]["N8N_DEPLOY_DATA_DIR"]["value"] == test_app_dir
+        assert data["variables"]["N8N_DEPLOY_DATA_DIR"]["source"] == "CLI"
+        assert data["variables"]["N8N_DEPLOY_FLOWS_DIR"]["value"] == test_flow_dir
+        assert data["variables"]["N8N_DEPLOY_FLOWS_DIR"]["source"] == "CLI"
         assert data["variables"]["N8N_SERVER_URL"]["value"] == test_server_url
         assert data["variables"]["N8N_SERVER_URL"]["source"] == "CLI"
 
     def test_env_with_environment_variables(self) -> None:
         """Test env command respects environment variables"""
         env = {
-            "N8N_DEPLOY_DATA": str(Path(self.temp_dir) / "env_app"),
-            "N8N_DEPLOY_FLOWS": str(Path(self.temp_dir) / "env_flow"),
+            "N8N_DEPLOY_DATA_DIR": str(Path(self.temp_dir) / "env_app"),
+            "N8N_DEPLOY_FLOWS_DIR": str(Path(self.temp_dir) / "env_flow"),
             "N8N_SERVER_URL": "http://env-server.example.com:5678",
         }
 
@@ -137,15 +137,15 @@ class TestE2EEnv(E2ETestBase):
 
         # Verify environment variables are used
         data = json.loads(stdout)
-        assert env["N8N_DEPLOY_DATA"] in data["variables"]["N8N_DEPLOY_DATA"]["value"]
-        assert "N8N_DEPLOY_DATA" in data["variables"]["N8N_DEPLOY_DATA"]["source"]
+        assert env["N8N_DEPLOY_DATA_DIR"] in data["variables"]["N8N_DEPLOY_DATA_DIR"]["value"]
+        assert "N8N_DEPLOY_DATA_DIR" in data["variables"]["N8N_DEPLOY_DATA_DIR"]["source"]
 
     def test_env_cli_option_precedence_over_env_vars(self) -> None:
         """Test that CLI options take precedence over environment variables"""
         cli_app_dir = str(Path(self.temp_dir) / "cli_app")
         env_app_dir = str(Path(self.temp_dir) / "env_app")
 
-        env = {"N8N_DEPLOY_DATA": env_app_dir}
+        env = {"N8N_DEPLOY_DATA_DIR": env_app_dir}
 
         returncode, stdout, stderr = self.run_cli_command(["env", "--data-dir", cli_app_dir, "--json"], env=env)
 
@@ -153,8 +153,8 @@ class TestE2EEnv(E2ETestBase):
 
         # Verify CLI option wins over environment variable
         data = json.loads(stdout)
-        assert data["variables"]["N8N_DEPLOY_DATA"]["value"] == cli_app_dir
-        assert data["variables"]["N8N_DEPLOY_DATA"]["source"] == "CLI"
+        assert data["variables"]["N8N_DEPLOY_DATA_DIR"]["value"] == cli_app_dir
+        assert data["variables"]["N8N_DEPLOY_DATA_DIR"]["source"] == "CLI"
 
     def test_env_shows_priority_order(self) -> None:
         """Test that env command shows correct priority order"""
@@ -185,7 +185,7 @@ class TestE2EEnv(E2ETestBase):
 
     def test_env_defaults_to_cwd_when_app_dir_invalid(self) -> None:
         """Test that invalid N8N_DEPLOY_DATA defaults to cwd"""
-        env = {"N8N_DEPLOY_DATA": "/nonexistent/invalid/path"}
+        env = {"N8N_DEPLOY_DATA_DIR": "/nonexistent/invalid/path"}
 
         returncode, stdout, stderr = self.run_cli_command(["env", "--json"], env=env)
 
@@ -193,13 +193,13 @@ class TestE2EEnv(E2ETestBase):
 
         # Verify command succeeds (falls back to cwd instead of crashing)
         data = json.loads(stdout)
-        assert "N8N_DEPLOY_DATA" in data["variables"]
+        assert "N8N_DEPLOY_DATA_DIR" in data["variables"]
         # Source shows the environment variable name
-        assert data["variables"]["N8N_DEPLOY_DATA"]["source"] == "N8N_DEPLOY_DATA"
+        assert data["variables"]["N8N_DEPLOY_DATA_DIR"]["source"] == "N8N_DEPLOY_DATA_DIR"
 
     def test_env_defaults_to_cwd_when_flow_dir_invalid(self) -> None:
         """Test that invalid N8N_DEPLOY_FLOWS defaults to cwd"""
-        env = {"N8N_DEPLOY_FLOWS": "/nonexistent/invalid/flow/path"}
+        env = {"N8N_DEPLOY_FLOWS_DIR": "/nonexistent/invalid/flow/path"}
 
         returncode, stdout, stderr = self.run_cli_command(["env", "--json"], env=env)
 
@@ -207,6 +207,6 @@ class TestE2EEnv(E2ETestBase):
 
         # Verify command succeeds (falls back to cwd instead of crashing)
         data = json.loads(stdout)
-        assert "N8N_DEPLOY_FLOWS" in data["variables"]
+        assert "N8N_DEPLOY_FLOWS_DIR" in data["variables"]
         # Source shows the environment variable name
-        assert data["variables"]["N8N_DEPLOY_FLOWS"]["source"] == "N8N_DEPLOY_FLOWS"
+        assert data["variables"]["N8N_DEPLOY_FLOWS_DIR"]["source"] == "N8N_DEPLOY_FLOWS_DIR"

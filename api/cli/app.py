@@ -147,13 +147,13 @@ def cli() -> None:
     \b
     App Directory ('--data-dir'):
       Stores application data (database, backups)
-      Priority: '--data-dir' CLI option > N8N_DEPLOY_DATA env var > current directory
+      Priority: '--data-dir' CLI option > N8N_DEPLOY_DATA_DIR env var > current directory
       Default file: n8n-deploy.db
 
     \b
     Flow Directory ('--flow-dir'):
       Contains wf JSON files
-      Priority: '--flow-dir' CLI option > N8N_DEPLOY_FLOWS env var > current directory
+      Priority: '--flow-dir' CLI option > N8N_DEPLOY_FLOWS_DIR env var > current directory
       Default: current directory
 
     \b

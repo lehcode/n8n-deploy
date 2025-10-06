@@ -17,8 +17,8 @@ class N8nDeployInstaller(object):
 
     # Environment variables used by n8n-deploy
     ENV_VARS = {
-        "N8N_DEPLOY_DATA": "Application directory for database and app data",
-        "N8N_DEPLOY_FLOWS": "User wf files directory path",
+        "N8N_DEPLOY_DATA_DIR": "Application directory for database and app data",
+        "N8N_DEPLOY_FLOWS_DIR": "User wf files directory path",
         "N8N_SERVER_URL": "n8n server URL for remote operations",
         "N8N_API_KEY": "Default API key for n8n server",
         "N8N_DEPLOY_TESTING": "Testing mode flag (internal use)",
@@ -211,10 +211,10 @@ class N8nDeployInstaller(object):
 
         print("\n2. Initialize database:")
         print("   n8n-deploy --data-dir /path/to/app/dir db init")
-        print("   Or set N8N_DEPLOY_DATA environment variable")
+        print("   Or set N8N_DEPLOY_DATA_DIR environment variable")
 
         print("\n3. Configure wf directory:")
-        print("   export N8N_DEPLOY_FLOWS=/path/to/your/workflows")
+        print("   export N8N_DEPLOY_FLOWS_DIR=/path/to/your/workflows")
         print("   Or use --flow-dir option")
 
         if has_conflicts:

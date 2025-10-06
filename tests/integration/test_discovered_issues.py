@@ -280,7 +280,7 @@ class TestDiscoveredDisplayIssues:
         import os
 
         env = os.environ.copy()
-        env["N8N_DEPLOY_DATA"] = str(test_config.base_folder)
+        env["N8N_DEPLOY_DATA_DIR"] = str(test_config.base_folder)
 
         result = subprocess.run(
             ["./n8n-deploy", "wf", "list"],

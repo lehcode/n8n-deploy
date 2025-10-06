@@ -28,8 +28,8 @@ n8n-deploy transforms workflow management from a point-and-click web UI experien
 Set up your environment, pull a workflow, edit it locally, and push it back:
 
 ```bash
-export N8N_DEPLOY_DATA=~/n8n-data
-export N8N_DEPLOY_FLOW_DIR=~/workflows
+export N8N_DEPLOY_DATA_DIR=~/n8n-data
+export N8N_DEPLOY_FLOWS_DIR=~/workflows
 n8n-deploy db init
 
 echo "your-api-key" | n8n-deploy apikey add production

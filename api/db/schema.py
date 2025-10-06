@@ -119,23 +119,6 @@ class SchemaApi(BaseDB):
             """
             )
 
-            # Create versions table for wf versioning
-            conn.execute(
-                """
-                CREATE TABLE IF NOT EXISTS versions (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    workflow_id TEXT NOT NULL,
-                    version TEXT NOT NULL,
-                    changes_summary TEXT,
-                    changes_detail TEXT,
-                    file_hash TEXT,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    created_by TEXT,
-                    FOREIGN KEY (workflow_id) REFERENCES workflows (id) ON DELETE CASCADE
-                )
-            """
-            )
-
             # Create dependencies table for wf dependencies
             conn.execute(
                 """
@@ -159,7 +142,6 @@ class SchemaApi(BaseDB):
             conn.execute("CREATE INDEX IF NOT EXISTS idx_api_keys_name ON api_keys (name)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_server_api_keys_server ON server_api_keys (server_id)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_server_api_keys_key ON server_api_keys (api_key_id)")
-            conn.execute("CREATE INDEX IF NOT EXISTS idx_versions_workflow_id ON versions (workflow_id)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_dependencies_workflow_id ON dependencies (workflow_id)")
 
             # Record schema version
