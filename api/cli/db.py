@@ -109,9 +109,10 @@ def db() -> None:
 @db.command(cls=CustomCommand)
 @click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
 @click.option("--filename", type=str, default="n8n-deploy.db", help="Database filename (default: n8n-deploy.db)")
+@click.option("--import", "auto_import", is_flag=True, help="Accept existing database without prompting")
 @click.option("--json", "output_json", is_flag=True, help=HELP_JSON)
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
-def init(data_dir: Optional[str], filename: str, output_json: bool, no_emoji: bool) -> None:
+def init(data_dir: Optional[str], filename: str, auto_import: bool, output_json: bool, no_emoji: bool) -> None:
     """🎬 Initialize n8n-deploy database
 
     Create the SQLite database with the required schema.
@@ -127,20 +128,26 @@ def init(data_dir: Optional[str], filename: str, output_json: bool, no_emoji: bo
     # Database init only needs base folder, not wf directories
     from ..config import AppConfig
 
-    base_path = Path(data_dir) if data_dir else Path.cwd()
+    # Check environment variable if --data-dir not provided
+    if data_dir:
+        base_path = Path(data_dir)
+    else:
+        env_app_dir = os.environ.get("N8N_DEPLOY_DATA_DIR")
+        base_path = Path(env_app_dir) if env_app_dir else Path.cwd()
+
     config = AppConfig(base_folder=base_path, db_filename=filename)
     db_path = config.database_path
 
-    # If --filename was explicitly provided (not default) and file exists, auto-import
+    # Auto-import if:
+    # 1. --import flag explicitly provided, OR
+    # 2. Custom filename provided (not default) and file exists
     custom_filename_provided = filename != "n8n-deploy.db"
-    auto_import = custom_filename_provided and db_path.exists()
+    should_auto_import = auto_import or (custom_filename_provided and db_path.exists())
 
     # Check if database already exists
     if db_path.exists():
-        # Auto-import if custom filename provided with existing file
-        if auto_import:
-            import os
-
+        # Auto-import if flag provided or custom filename with existing file
+        if should_auto_import:
             # Check if database is actually initialized
             db_api_check = DBApi(config=config)
             schema_version = db_api_check.schema_api.get_schema_version()
@@ -240,8 +247,6 @@ def init(data_dir: Optional[str], filename: str, output_json: bool, no_emoji: bo
     db_api.schema_api.initialize_database()
 
     # Check flow directory configuration
-    import os
-
     flow_dir = os.environ.get("N8N_DEPLOY_FLOWS_DIR")
 
     # Output based on output format

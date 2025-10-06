@@ -84,7 +84,7 @@ n8n-deploy --server-url http://n8n.example.com wf pull "My Workflow"
 #### Environment Variables
 
 - `N8N_DEPLOY_FLOWS_DIR`: Workflow files directory
-- `N8N_DEPLOY_APP_DIR`: Application data directory
+- `N8N_DEPLOY_DATA_DIR`: Application data directory
 - `N8N_SERVER_URL`: n8n server URL for remote operations
 
 ### Documentation
