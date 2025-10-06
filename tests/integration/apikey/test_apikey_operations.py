@@ -6,11 +6,11 @@ Real CLI execution tests for API key management lifecycle,
 including creation, listing, retrieval, and deletion operations.
 """
 
-from .e2e_base import E2ETestBase
+from .conftest import ApikeyTestHelpers
 
 
 # === End-to-End Tests ===
-class TestE2EAPIKeys(E2ETestBase):
+class TestApikeyOperations(ApikeyTestHelpers):
     """Manual end-to-end testing for API key operations"""
 
     def test_api_key_add_interactive(self) -> None:

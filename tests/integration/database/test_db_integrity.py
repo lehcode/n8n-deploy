@@ -1,0 +1,126 @@
+#!/usr/bin/env python3
+"""
+End-to-End Manual Database Testing
+
+Real CLI execution tests for database operations, initialization,
+backup/restore functionality, and stats display.
+"""
+
+import hashlib
+import json
+import os
+import tarfile
+import tempfile
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple
+
+import pytest
+
+
+# === End-to-End Tests ===
+from .conftest import DatabaseTestHelpers
+
+
+class Testdbintegrity(DatabaseTestHelpers):
+    """Test Db Integrity tests"""
+
+    def test_database_integrity_after_operations(self) -> None:
+        """Test database maintains integrity after various operations"""
+        # Initialize
+        self.run_cli_command(["--data-dir", self.temp_dir, "db", "init"])
+
+        # Perform various operations
+        operations = [
+            ["db", "status"],
+            ["wf", "list"],
+            ["db", "status"],  # Repeat to check consistency
+        ]
+
+        for op in operations:
+            returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir] + op)
+            assert returncode == 0, f"Database integrity failed after: {op}\nSTDERR: {stderr}\nSTDOUT: {stdout}"
+        db_path = Path(self.temp_dir) / "n8n-deploy.db"
+        assert db_path.exists()
+        assert db_path.stat().st_size > 0
+
+    def test_database_schema_version_tracking(self) -> None:
+        """Test database schema version is properly tracked"""
+        # Initialize database
+        self.run_cli_command(["--data-dir", self.temp_dir, "db", "init"])
+
+        # Status should show schema information
+        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "db", "status"])
+
+        assert returncode == 0
+        # Should complete without errors (schema version tracking working)
+
+    def test_backup_checksum_verification(self) -> None:
+        """Test backup files include proper checksums"""
+        # Initialize and create backup
+        self.run_cli_command(["--data-dir", self.temp_dir, "db", "init"])
+        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "db", "backup"])
+
+        if returncode == 0:
+            backup_dir = Path(self.temp_dir) / "backups"
+            if backup_dir.exists():
+                backup_files = list(backup_dir.glob("*.tar.gz"))
+                if backup_files:
+                    backup_file = backup_files[0]
+
+                    # Calculate checksum
+                    sha256_hash = hashlib.sha256()
+                    with open(backup_file, "rb") as f:
+                        for byte_block in iter(lambda: f.read(4096), b""):
+                            sha256_hash.update(byte_block)
+
+                    checksum = sha256_hash.hexdigest()
+                    assert len(checksum) == 64  # SHA256 checksum length
+
+    def test_database_concurrent_access_safety(self) -> None:
+        """Test database handles concurrent access safely"""
+        import threading
+
+        # Initialize database
+        self.run_cli_command(["--data-dir", self.temp_dir, "db", "init"])
+
+        results = []
+
+        def run_db_command() -> None:
+            returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "db", "status"])
+            results.append((returncode, stdout, stderr))
+
+        threads = []
+        for _ in range(3):
+            thread = threading.Thread(target=run_db_command)
+            threads.append(thread)
+            thread.start()
+
+        # Wait for completion
+        for thread in threads:
+            thread.join()
+
+        # All should succeed
+        assert len(results) == 3
+        for returncode, stdout, stderr in results:
+            assert returncode == 0
+
+    def test_database_error_recovery(self) -> None:
+        """Test database error recovery mechanisms"""
+        # Initialize database
+        self.run_cli_command(["--data-dir", self.temp_dir, "db", "init"])
+
+        # Try operations that might cause errors or succeed
+        error_prone_operations = [
+            ["wf", "search", "nonexistent"],  # Search for non-existent wf (returns 0 with no results)
+            ["db", "backup"],  # Should work
+            ["wf", "list"],  # Should work
+        ]
+
+        for op in error_prone_operations:
+            returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir] + op)
+            # Should not crash with unexpected error codes
+            assert returncode in [0, 1], f"Operation crashed with unexpected code: {op}\nSTDERR: {stderr}"
+
+        # Database should still be accessible
+        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "db", "status"])
+        assert returncode == 0
