@@ -27,7 +27,7 @@ print_section "Test Category 8: Directory Options"
 
     # Test flow-dir option
     create_sample_workflow "$flow_dir2/workflows"
-    run_test "Add wf different dirs" "$CLI_COMMAND wf add workflows/${SAMPLE_WF_ID}.json '$SAMPLE_WF_NAME' --data-dir $app_dir2 --flows-dir $flow_dir2" 0 "Add wf with different directories"
+    run_test "Add wf different dirs" "$CLI_COMMAND wf add workflows/${SAMPLE_WF_ID}.json '$SAMPLE_WF_NAME' --data-dir $app_dir2 --flow-dir $flow_dir2" 0 "Add wf with different directories"
 
     # Test environment variable (simulate)
     export N8N_DEPLOY_FLOW_DIR="$flow_dir2"
@@ -36,7 +36,7 @@ print_section "Test Category 8: Directory Options"
 
     # Test directory precedence - CLI option should override environment
     export N8N_DEPLOY_FLOW_DIR="$flow_dir1"
-    run_test "Directory precedence" "$CLI_COMMAND wf list --data-dir $app_dir2 --flows-dir $flow_dir2 --no-emoji" 0 "Test directory option precedence"
+    run_test "Directory precedence" "$CLI_COMMAND wf list --data-dir $app_dir2 --flow-dir $flow_dir2 --no-emoji" 0 "Test directory option precedence"
     unset N8N_DEPLOY_FLOW_DIR
 
     pause_if_requested

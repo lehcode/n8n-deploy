@@ -116,7 +116,7 @@ class TestE2EDatabase(E2ETestBase):
             [
                 "--data-dir",
                 self.temp_dir,
-                "--flows-dir",
+                "--flow-dir",
                 self.temp_flow_dir,
                 "add",
                 "test_workflow",
@@ -281,7 +281,7 @@ class TestE2EDatabase(E2ETestBase):
             [
                 "--data-dir",
                 self.temp_dir,
-                "--flows-dir",
+                "--flow-dir",
                 self.temp_flow_dir,
                 "add",
                 "size_test",
@@ -497,7 +497,7 @@ class TestE2EDatabase(E2ETestBase):
             [
                 "--data-dir",
                 self.temp_dir,
-                "--flows-dir",
+                "--flow-dir",
                 self.temp_flow_dir,
                 "add",
                 "integration_test1",
@@ -508,7 +508,7 @@ class TestE2EDatabase(E2ETestBase):
             [
                 "--data-dir",
                 self.temp_dir,
-                "--flows-dir",
+                "--flow-dir",
                 self.temp_flow_dir,
                 "add",
                 "integration_test2",
@@ -564,7 +564,7 @@ class TestE2EDatabase(E2ETestBase):
             [
                 "--data-dir",
                 self.temp_dir,
-                "--flows-dir",
+                "--flow-dir",
                 self.temp_flow_dir,
                 "add",
                 "consistency_test",
@@ -802,7 +802,7 @@ class TestE2EDatabaseInit:
 
         # Extract global options from the beginning
         while i < len(args):
-            if args[i] in ["--data-dir", "--flows-dir", "--remote"] and i + 1 < len(args):
+            if args[i] in ["--data-dir", "--flow-dir", "--remote"] and i + 1 < len(args):
                 global_options.extend([args[i], args[i + 1]])
                 i += 2
             elif args[i] in ["--no-emoji"]:

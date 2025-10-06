@@ -595,7 +595,7 @@ class TestOptionCombinations:
             "env",
             "--data-dir",
             app_dir,
-            "--flows-dir",
+            "--flow-dir",
             flow_dir,
             "--remote",
             server_url,
