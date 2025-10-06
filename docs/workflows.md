@@ -1,8 +1,8 @@
 ---
 layout: default
 title: Workflow Management
-nav_order: 4
-description: "Complete guide to managing n8n workflows - push, pull, backup, and restore"
+nav_order: 5
+description: "Managing n8n workflows with n8n-deploy"
 ---
 
 n8n-deploy provides comprehensive workflow management capabilities, allowing you to interact with n8n workflows seamlessly.

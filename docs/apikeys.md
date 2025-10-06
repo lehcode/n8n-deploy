@@ -1,8 +1,8 @@
 ---
 layout: default
 title: API Key Management
-nav_order: 5
-description: "Managing n8n API keys for server authentication and workflow operations"
+nav_order: 6
+description: "Managing API keys for n8n server access"
 ---
 
 n8n-deploy provides a simple and secure way to manage API keys for n8n server interactions.
