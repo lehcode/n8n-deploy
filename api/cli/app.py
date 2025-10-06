@@ -20,7 +20,9 @@ HELP_APP_DIR = "Application directory for database and backups"
 HELP_FLOW_DIR = "Plain directory where wf JSON files are located"
 HELP_SERVER_URL = "n8n server URL (overrides N8N_SERVER_URL)"
 HELP_NO_EMOJI = "Disable emoji output for automation/scripting"
-HELP_FORMAT = "Output format"
+HELP_JSON = "Output in JSON format for scripting/automation"
+HELP_FORMAT = "Output format"  # Deprecated - use HELP_JSON/HELP_TABLE
+HELP_TABLE = "Output in table format (default for interactive use)"
 
 
 class CustomCommand(click.Command):

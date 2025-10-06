@@ -12,7 +12,6 @@ from contextlib import redirect_stderr
 from .app import cli, PROG_NAME
 
 if __name__ == "__main__":
-
     # If no arguments provided, capture stderr and redirect to stdout to match test expectations
     if len(sys.argv) == 1:
         stderr_capture = io.StringIO()

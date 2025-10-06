@@ -30,7 +30,7 @@ class TestE2EEnv(E2ETestBase):
 
     def test_env_table_format(self) -> None:
         """Test env command with table format (emoji tables)"""
-        returncode, stdout, stderr = self.run_cli_command(["env", "--format", "table"])
+        returncode, stdout, stderr = self.run_cli_command(["env", "--table"])
 
         self.assert_command_details(returncode, stdout, stderr, 0, "env table format")
 
@@ -42,7 +42,7 @@ class TestE2EEnv(E2ETestBase):
 
     def test_env_json_format(self) -> None:
         """Test env command with JSON format"""
-        returncode, stdout, stderr = self.run_cli_command(["env", "--format", "json"])
+        returncode, stdout, stderr = self.run_cli_command(["env", "--json"])
 
         self.assert_command_details(returncode, stdout, stderr, 0, "env JSON format")
 
@@ -58,7 +58,7 @@ class TestE2EEnv(E2ETestBase):
         """Test env command with --data-dir CLI option"""
         test_app_dir = str(Path(self.temp_dir) / "custom_app")
 
-        returncode, stdout, stderr = self.run_cli_command(["env", "--data-dir", test_app_dir, "--format", "json"])
+        returncode, stdout, stderr = self.run_cli_command(["env", "--data-dir", test_app_dir, "--json"])
 
         self.assert_command_details(returncode, stdout, stderr, 0, "env with --data-dir option")
 
@@ -71,7 +71,7 @@ class TestE2EEnv(E2ETestBase):
         """Test env command with --flow-dir CLI option"""
         test_flow_dir = str(Path(self.temp_dir) / "custom_flow")
 
-        returncode, stdout, stderr = self.run_cli_command(["env", "--flow-dir", test_flow_dir, "--format", "json"])
+        returncode, stdout, stderr = self.run_cli_command(["env", "--flow-dir", test_flow_dir, "--json"])
 
         self.assert_command_details(returncode, stdout, stderr, 0, "env with --flow-dir option")
 
@@ -84,7 +84,7 @@ class TestE2EEnv(E2ETestBase):
         """Test env command with --remote CLI option"""
         test_server_url = "http://test-server.example.com:5678"
 
-        returncode, stdout, stderr = self.run_cli_command(["env", "--remote", test_server_url, "--format", "json"])
+        returncode, stdout, stderr = self.run_cli_command(["env", "--remote", test_server_url, "--json"])
 
         self.assert_command_details(returncode, stdout, stderr, 0, "env with --remote option")
 
@@ -108,8 +108,7 @@ class TestE2EEnv(E2ETestBase):
                 test_flow_dir,
                 "--remote",
                 test_server_url,
-                "--format",
-                "json",
+                "--json",
             ]
         )
 
@@ -132,7 +131,7 @@ class TestE2EEnv(E2ETestBase):
             "N8N_SERVER_URL": "http://env-server.example.com:5678",
         }
 
-        returncode, stdout, stderr = self.run_cli_command(["env", "--format", "json"], env=env)
+        returncode, stdout, stderr = self.run_cli_command(["env", "--json"], env=env)
 
         self.assert_command_details(returncode, stdout, stderr, 0, "env with environment variables")
 
@@ -148,7 +147,7 @@ class TestE2EEnv(E2ETestBase):
 
         env = {"N8N_DEPLOY_DATA": env_app_dir}
 
-        returncode, stdout, stderr = self.run_cli_command(["env", "--data-dir", cli_app_dir, "--format", "json"], env=env)
+        returncode, stdout, stderr = self.run_cli_command(["env", "--data-dir", cli_app_dir, "--json"], env=env)
 
         self.assert_command_details(returncode, stdout, stderr, 0, "CLI option precedence test")
 
@@ -159,7 +158,7 @@ class TestE2EEnv(E2ETestBase):
 
     def test_env_shows_priority_order(self) -> None:
         """Test that env command shows correct priority order"""
-        returncode, stdout, stderr = self.run_cli_command(["env", "--format", "json"])
+        returncode, stdout, stderr = self.run_cli_command(["env", "--json"])
 
         self.assert_command_details(returncode, stdout, stderr, 0, "Priority order test")
 
@@ -174,7 +173,7 @@ class TestE2EEnv(E2ETestBase):
         """Test that env command masks API key values"""
         env = {"N8N_DEPLOY_SERVER_KEY": "secret_api_key_should_be_hidden"}
 
-        returncode, stdout, stderr = self.run_cli_command(["env", "--format", "json"], env=env)
+        returncode, stdout, stderr = self.run_cli_command(["env", "--json"], env=env)
 
         self.assert_command_details(returncode, stdout, stderr, 0, "API key masking test")
 
@@ -188,7 +187,7 @@ class TestE2EEnv(E2ETestBase):
         """Test that invalid N8N_DEPLOY_DATA defaults to cwd"""
         env = {"N8N_DEPLOY_DATA": "/nonexistent/invalid/path"}
 
-        returncode, stdout, stderr = self.run_cli_command(["env", "--format", "json"], env=env)
+        returncode, stdout, stderr = self.run_cli_command(["env", "--json"], env=env)
 
         self.assert_command_details(returncode, stdout, stderr, 0, "Invalid app dir defaults to cwd")
 
@@ -202,7 +201,7 @@ class TestE2EEnv(E2ETestBase):
         """Test that invalid N8N_DEPLOY_FLOWS defaults to cwd"""
         env = {"N8N_DEPLOY_FLOWS": "/nonexistent/invalid/flow/path"}
 
-        returncode, stdout, stderr = self.run_cli_command(["env", "--format", "json"], env=env)
+        returncode, stdout, stderr = self.run_cli_command(["env", "--json"], env=env)
 
         self.assert_command_details(returncode, stdout, stderr, 0, "Invalid flow dir defaults to cwd")
 
