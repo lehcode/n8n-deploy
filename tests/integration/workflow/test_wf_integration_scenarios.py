@@ -25,8 +25,8 @@ from api.workflow import WorkflowApi
 from .conftest import WorkflowTestHelpers
 
 
-class Testwfintegrationscenarios(WorkflowTestHelpers):
-    """Test Wf Integration Scenarios tests"""
+class TestWorkflowIntegration(WorkflowTestHelpers):
+    """Test Workflow Integration tests"""
 
     def test_workflow_type_classification(self) -> None:
         """Test wf search handles different wf name patterns"""
