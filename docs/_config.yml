@@ -1,12 +1,16 @@
 # Site settings
 title: "n8n-deploy Documentation"
-description: "Python CLI tool for managing n8n workflows with SQLite metadata"
+description: "Python CLI tool for managing n8n workflows with SQLite metadata. Database-first workflow management for remote n8n servers."
+tagline: "Database-First n8n Workflow Management CLI"
 url: "https://lehcode.github.io"
 baseurl: "/n8n-deploy"
+repository: "lehcode/n8n-deploy"
 author:
   name: "n8n-deploy Contributors"
   url: "https://github.com/lehcode/n8n-deploy/graphs/contributors"
+  email: "noreply@github.com"
 lang: "en-US"
+timezone: "UTC"
 
 # SEO and plugins
 plugins:
@@ -18,22 +22,50 @@ plugins:
   - jekyll-optional-front-matter
   - jekyll-titles-from-headings
 
-# Social
+# Social media and Open Graph
+logo: /assets/images/logo.png
+social:
+  name: n8n-deploy
+  links:
+    - https://github.com/lehcode/n8n-deploy
+    - https://github.com/lehcode
+
 twitter:
   username: lehcode
   card: summary_large_image
+
 github_username: lehcode
 
-# Open Graph
-og_image: /assets/images/social-preview.png
+# Open Graph defaults
+defaults:
+  - scope:
+      path: ""
+    values:
+      image: /assets/images/social-preview.png
+
+# Facebook
+facebook:
+  app_id: ""
+  publisher: ""
 
 # Webmaster Verifications (add your codes when ready)
 webmaster_verifications:
   google: ""
   bing: ""
+  alexa: ""
+  yandex: ""
 
-# Permalink structure
+# Permalink structure (SEO-friendly URLs)
 permalink: pretty
+
+# Compression
+compress_html:
+  clippings: all
+  comments: all
+  endings: all
+  startings: []
+  blanklines: false
+  profile: false
 
 # Theme
 theme: just-the-docs
