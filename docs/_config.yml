@@ -69,3 +69,8 @@ callouts:
 # Mermaid diagrams support
 mermaid:
   version: "10.6.1"
+
+# Sass configuration - suppress deprecation warnings from theme dependencies
+sass:
+  quiet_deps: true
+  silence_deprecations: ["import"]
