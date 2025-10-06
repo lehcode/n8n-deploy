@@ -17,13 +17,13 @@ WORKDIR /site
 RUN gem install bundler:2.4.22
 
 # Copy Gemfile first for better caching
-COPY docs/Gemfile* ./
+COPY Gemfile* ./
 
 # Install gems
 RUN bundle install
 
 # Copy the rest of the site
-COPY docs/ ./
+COPY . ./
 
 # Expose Jekyll default port
 EXPOSE 4000
