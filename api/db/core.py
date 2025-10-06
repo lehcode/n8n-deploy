@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
@@ -273,7 +273,7 @@ class DBApi(BaseDB):
                     backup_metadata.get("backup_id", "unknown"),
                     backup_metadata.get("backup_path", ""),
                     backup_metadata.get("sha256_hash", ""),
-                    datetime.utcnow().isoformat(),
+                    datetime.now(timezone.utc).isoformat(),
                     1,
                 ),
             )

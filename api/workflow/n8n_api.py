@@ -6,7 +6,7 @@ Handles: pull, push, server operations
 """
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 import requests
@@ -208,11 +208,6 @@ class N8nAPI:
             # Get n8n server version for tracking
             n8n_version = self.get_n8n_version()
 
-            # Sync to database using crud operations
-            from .crud import WorkflowCRUD
-
-            crud = WorkflowCRUD(self.db, self.config)
-
             # Check if wf exists in database, if not add it
             existing_workflow = self.db.get_workflow(workflow_id)
             if not existing_workflow:
@@ -223,16 +218,16 @@ class N8nAPI:
                     file=None,
                     file_folder=str(self.base_path),
                     n8n_version_id=n8n_version,
-                    created_at=datetime.utcnow(),
-                    updated_at=datetime.utcnow(),
-                    last_synced=datetime.utcnow(),
+                    created_at=datetime.now(timezone.utc),
+                    updated_at=datetime.now(timezone.utc),
+                    last_synced=datetime.now(timezone.utc),
                 )
                 self.db.add_workflow(wf)
             else:
                 # Update existing wf with n8n version
                 existing_workflow.n8n_version_id = n8n_version
-                existing_workflow.updated_at = datetime.utcnow()
-                existing_workflow.last_synced = datetime.utcnow()
+                existing_workflow.updated_at = datetime.now(timezone.utc)
+                existing_workflow.last_synced = datetime.now(timezone.utc)
                 self.db.update_workflow(existing_workflow)
 
             # Increment pull counter
@@ -283,7 +278,7 @@ class N8nAPI:
                     db_workflow = self.db.get_workflow(workflow_id)
                     if db_workflow:
                         db_workflow.n8n_version_id = n8n_version
-                        db_workflow.updated_at = datetime.utcnow()
+                        db_workflow.updated_at = datetime.now(timezone.utc)
                         self.db.update_workflow(db_workflow)
 
                 # Increment push counter
