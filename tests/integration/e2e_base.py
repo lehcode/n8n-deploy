@@ -24,10 +24,18 @@ class E2ETestBase:
         self.temp_dir = tempfile.mkdtemp()
         self.temp_flow_dir = tempfile.mkdtemp()
 
+        # Set app directory for tests (so apikey commands can find database)
+        os.environ["N8N_DEPLOY_DATA_DIR"] = self.temp_dir
+        os.environ["N8N_DEPLOY_FLOWS_DIR"] = self.temp_flow_dir
+
         yield
 
         # Cleanup
         import shutil
+
+        # Remove environment variables
+        os.environ.pop("N8N_DEPLOY_DATA_DIR", None)
+        os.environ.pop("N8N_DEPLOY_FLOWS_DIR", None)
 
         shutil.rmtree(self.temp_dir, ignore_errors=True)
         shutil.rmtree(self.temp_flow_dir, ignore_errors=True)
@@ -154,7 +162,8 @@ class E2ETestBase:
 
     def setup_database(self) -> None:
         """Initialize database for testing"""
-        returncode, stdout, stderr = self.run_cli_command(["db", "init", "--data-dir", self.temp_dir])
+        # Use --import to accept existing database without prompting
+        returncode, stdout, stderr = self.run_cli_command(["db", "init", "--import"])
         self.assert_command_details(returncode, stdout, stderr, 0, "Database setup for E2E tests")
 
     def setup_database_with_api_key(self, api_key: str = "test-api-key-12345") -> bool:
