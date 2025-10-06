@@ -1,130 +1,108 @@
-# Installation & Setup
+# Installation & Setup for n8n-deploy
 
-Get n8n-deploy running on your system in minutes.
+> "Automation is about augmenting human capabilities, not replacing them." — Adapted from Arthur Bloch's Murphy's Laws on Complexity
+
+Get n8n-deploy running on your system quickly and efficiently.
+
+## Prerequisites
+
+- **Python 3.8+**: Verified on versions 3.8 through 3.12
+- **Basic Understanding**: Familiarity with n8n workflows and CLI tools
 
 ## Installation Methods
 
 ### Option 1: PyPI (Recommended)
 
-Install from Python Package Index – the easiest method for most users:
+The simplest way to install n8n-deploy:
 
 ```bash
 pip install n8n-deploy
 ```
 
 Verify installation:
-
 ```bash
 n8n-deploy --version
 ```
 
-### Option 2: From GitHub
+### Option 2: Direct from GitHub
 
-Get the latest development version:
+For the latest development version:
 
 ```bash
 pip install git+https://github.com/lehcode/n8n-deploy.git
 ```
 
-### Option 3: No Installation Required
+### Option 3: Local Development
 
-Clone and run directly – perfect for development or trying it out:
-
-```bash
-git clone https://github.com/lehcode/n8n-deploy.git
-cd n8n-deploy
-./n8n-deploy --help  # Works immediately
-```
-
-The wrapper script automatically creates a virtual environment on first run.
-
-### Option 4: Development Setup
-
-For contributors or advanced users:
+Clone and run directly:
 
 ```bash
 git clone https://github.com/lehcode/n8n-deploy.git
 cd n8n-deploy
-
-# Using uv (faster)
-uv venv --python /usr/bin/python3 .venv
-source .venv/bin/activate
-uv pip install -r requirements.txt
-
-# Or using pip
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-
-# Install in development mode
-pip install -e .
+./n8n-deploy --help  # Immediate usage
 ```
+
+The wrapper script creates a virtual environment automatically.
 
 ## System Requirements
 
-### Python Version
+### Supported Platforms
 
-- **Python 3.8 or higher** (tested on 3.8, 3.9, 3.10, 3.11, 3.12)
-- Check your version: `python --version`
+- Linux (Ubuntu, Debian, Fedora, Arch)
+- macOS (10.14+)
+- Windows (via WSL2)
 
-### Operating Systems
+### Python and Dependencies
 
-- ✅ Linux (Ubuntu, Debian, Fedora, Arch, etc.)
-- ✅ macOS (10.14+)
-- ✅ Windows (via WSL2)
-
-### Dependencies
-
-Core dependencies are automatically installed:
-
-- **click** - CLI framework
-- **rich** - Terminal formatting
-- **pydantic** - Data validation
-- **requests** - HTTP client for n8n API
-- **python-dotenv** - Environment file support (dev only)
+- **Python Version**: 3.8+
+- **Core Dependencies** (auto-installed):
+  - click: CLI framework
+  - rich: Terminal formatting
+  - pydantic: Data validation
+  - requests: HTTP client
+  - python-dotenv: Environment file support (dev only)
 
 ## Initial Configuration
 
-### Step 1: Set Up Directories
+### Set Up Directories
 
-Choose where to store your data and wf files:
+Configure where to store application data and workflow files:
 
 ```bash
-# Application data (database, backups)
+# Application data directory
 export N8N_DEPLOY_DATA=~/n8n-data
 
-# Workflow JSON files
+# Workflow JSON files directory
 export N8N_DEPLOY_FLOW_DIR=~/workflows
 ```
 
-Add these to your shell profile (`~/.bashrc`, `~/.zshrc`) for persistence.
+Add these to your shell profile for persistence.
 
-### Step 2: Initialize Database
+### Initialize Database
 
-Create the SQLite database:
+Create the SQLite metadata store:
 
 ```bash
 n8n-deploy db init
 ```
 
-If a database already exists:
-
+For existing databases:
 ```bash
 n8n-deploy db init --import  # Accept existing database
 ```
 
-### Step 3: Verify Setup
+### Verify Setup
 
-Check your installation:
+Confirm your installation:
 
 ```bash
 n8n-deploy db status
-n8n-deploy env  # Show current configuration
+n8n-deploy env  # Show configuration
 ```
 
-## Optional: n8n Server Setup
+## Optional: n8n Server Integration
 
-If you plan to sync with a remote n8n server:
+To sync with a remote n8n server:
 
 ```bash
 # Set server URL
@@ -134,10 +112,10 @@ export N8N_SERVER_URL=https://n8n.example.com
 echo "your-api-key-here" | n8n-deploy apikey add production
 
 # Test connection
-n8n-deploy wf server list
+n8n-deploy wf list-server
 ```
 
-## Development Environment (.env file)
+## Development Environment
 
 For development, create a `.env` file:
 
@@ -145,8 +123,7 @@ For development, create a `.env` file:
 cp .env.example .env
 ```
 
-Edit `.env` with your settings:
-
+Edit with your settings:
 ```bash
 ENVIRONMENT=development
 N8N_DEPLOY_DATA=/home/user/n8n-data
@@ -154,63 +131,36 @@ N8N_DEPLOY_FLOW_DIR=/home/user/workflows
 N8N_SERVER_URL=http://localhost:5678
 ```
 
-**Note**: `.env` files only work when `ENVIRONMENT=development`. Production environments should use system environment variables.
+**Note**: `.env` files only work in development mode.
 
-## Verification Checklist
+## Troubleshooting
 
-✅ Python 3.8+ installed
-✅ n8n-deploy command available
-✅ Database initialized successfully
-✅ Directories configured (via env vars or CLI flags)
-✅ API key added (if using remote server)
+### Common Installation Issues
 
-## Troubleshooting Installation
+- **Command Not Found**:
+  ```bash
+  pip show n8n-deploy
+  python -m n8n_deploy --help
+  ```
 
-### Command Not Found
+- **Permission Errors**:
+  ```bash
+  pip install --user n8n-deploy
+  ```
 
-If `n8n-deploy` isn't found after pip install:
-
-```bash
-# Check if it's installed
-pip show n8n-deploy
-
-# Try with python -m
-python -m n8n_deploy --help
-
-# Or use full path
-~/.local/bin/n8n-deploy --help
-```
-
-Add `~/.local/bin` to your PATH:
-
-```bash
-export PATH="$HOME/.local/bin:$PATH"
-```
-
-### Permission Errors
-
-On some systems, use `--user` flag:
-
-```bash
-pip install --user n8n-deploy
-```
-
-### Version Conflicts
-
-Create a fresh virtual environment:
-
-```bash
-python -m venv n8n-env
-source n8n-env/bin/activate
-pip install n8n-deploy
-```
+- **Version Conflicts**:
+  ```bash
+  python -m venv n8n-env
+  source n8n-env/bin/activate
+  pip install n8n-deploy
+  ```
 
 ## Next Steps
 
-- **[Configuration Guide](configuration.md)** - Detailed configuration options
-- **[Getting Started](getting-started.md)** - Your first workflows
-- **[Troubleshooting](troubleshooting.md)** - Common issues
+- [Configuration Guide](../configuration.md)
+- [Workflow Management Guide](../workflows.md)
+- [Troubleshooting](../troubleshooting.md)
 
 ---
 
-Installation complete! Move on to **[Getting Started](getting-started.md)** to manage your first wf.
+Installation complete! Proceed to the [Getting Started Guide](getting-started.md) to manage your first workflows.
