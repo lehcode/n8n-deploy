@@ -2,7 +2,7 @@
 layout: default
 title: Database
 parent: Developer Guide
-nav_order: 4
+nav_order: 2
 description: "Details about Database in n8n-deploy"
 ---
 

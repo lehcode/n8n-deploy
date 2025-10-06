@@ -1,9 +1,9 @@
 ---
 layout: default
-title: Local-Github-Pages-Testing
+title: GitHub Pages Testing
 parent: Developer Guide
-nav_order: 1
-description: "Details about Local-Github-Pages-Testing in n8n-deploy"
+nav_order: 10
+description: "Local testing guide for GitHub Pages documentation"
 ---
 
 # Local GitHub Pages Testing with Docker

@@ -2,7 +2,7 @@
 layout: default
 title: Api-Reference
 parent: Developer Guide
-nav_order: 1
+nav_order: 3
 description: "Details about Api-Reference in n8n-deploy"
 ---
 

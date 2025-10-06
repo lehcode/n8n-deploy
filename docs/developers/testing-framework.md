@@ -2,7 +2,7 @@
 layout: default
 title: Testing Framework
 parent: Developer Guide
-nav_order: 3
+nav_order: 9
 description: "Comprehensive testing framework guide for n8n-deploy"
 ---
 
