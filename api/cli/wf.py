@@ -22,15 +22,15 @@ from ..workflow import WorkflowApi
 from .app import (
     HELP_APP_DIR,
     HELP_FLOW_DIR,
-    HELP_FORMAT,
+    HELP_JSON,
     HELP_NO_EMOJI,
     HELP_SERVER_URL,
+    HELP_TABLE,
     CustomCommand,
     CustomGroup,
 )
 from .output import (
     cli_error,
-    output_json_or_table,
     print_backup_files_table,
     print_error,
     print_success,
@@ -54,12 +54,8 @@ def wf() -> None:
 @click.option("--flow-dir", type=click.Path(), help=HELP_FLOW_DIR)
 @click.option("--remote", help=HELP_SERVER_URL)
 @click.option("--skip-ssl-verify", is_flag=True, help="Skip SSL certificate verification for self-signed certificates")
-@click.option(
-    "--format",
-    type=click.Choice(["table", "json"]),
-    default="table",
-    help=HELP_FORMAT,
-)
+@click.option("--json", "output_json", is_flag=True, help=HELP_JSON)
+@click.option("--table", "output_table", is_flag=True, help=HELP_TABLE)
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
 def add(
     name: str,
@@ -67,7 +63,8 @@ def add(
     flow_dir: Optional[str],
     remote: Optional[str],
     skip_ssl_verify: bool,
-    format: str,
+    output_json: bool,
+    output_table: bool,
     no_emoji: bool,
 ) -> None:
     """➕ Add wf to database
@@ -78,6 +75,10 @@ def add(
     Example:
       n8n-deploy wf add MyWorkflow  # Pulls from server
     """
+    # JSON output implies no emoji
+    if output_json:
+        no_emoji = True
+
     # Validate wf name - allow UTF-8 characters, spaces, and common punctuation
     # Only reject control characters, null bytes, and path separators for security
     stripped_name = name.strip()
@@ -112,22 +113,23 @@ def add(
 @wf.command("list", cls=CustomCommand)
 @click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
 @click.option("--flow-dir", type=click.Path(), help=HELP_FLOW_DIR)
-@click.option(
-    "--format",
-    type=click.Choice(["table", "json"]),
-    default="table",
-    help=HELP_FORMAT,
-)
+@click.option("--json", "output_json", is_flag=True, help=HELP_JSON)
+@click.option("--table", "output_table", is_flag=True, help=HELP_TABLE)
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
 @click.option("--only", is_flag=True, help="Show only workflows with existing JSON files (backupable)")
 def list(
     data_dir: Optional[str],
     flow_dir: Optional[str],
-    format: str,
+    output_json: bool,
+    output_table: bool,
     no_emoji: bool,
     only: bool,
 ) -> None:
     """📋 List all workflows"""
+    # JSON output implies no emoji
+    if output_json:
+        no_emoji = True
+
     try:
         config = get_config(base_folder=data_dir, flow_folder=flow_dir)
     except ValueError as e:
@@ -142,7 +144,7 @@ def list(
         if only:
             workflows = [wf for wf in workflows if wf.get("file_exists", False)]
 
-        if format == "json":
+        if output_json:
             console.print(JSON.from_data(workflows))
         else:
             print_workflow_table(workflows, no_emoji)
@@ -225,18 +227,15 @@ def remove(
 @click.argument("query")
 @click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
 @click.option("--flow-dir", type=click.Path(), help=HELP_FLOW_DIR)
-@click.option(
-    "--format",
-    type=click.Choice(["table", "json"]),
-    default="table",
-    help=HELP_FORMAT,
-)
+@click.option("--json", "output_json", is_flag=True, help=HELP_JSON)
+@click.option("--table", "output_table", is_flag=True, help=HELP_TABLE)
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
 def search(
     query: str,
     data_dir: Optional[str],
     flow_dir: Optional[str],
-    format: str,
+    output_json: bool,
+    output_table: bool,
     no_emoji: bool,
 ) -> None:
     """🔍 Search workflows by name or wf ID
@@ -248,6 +247,10 @@ def search(
     Results are ordered by relevance: exact matches first, then partial matches.
     Use exact n8n wf IDs for direct operations like pull/push/remove.
     """
+    # JSON output implies no emoji
+    if output_json:
+        no_emoji = True
+
     try:
         config = get_config(base_folder=data_dir, flow_folder=flow_dir)
     except ValueError as e:
@@ -257,7 +260,11 @@ def search(
     try:
         manager = WorkflowApi(config=config)
         workflows = manager.search_workflows(query)
-        output_json_or_table(workflows, format, no_emoji, print_workflow_search_table, query)
+
+        if output_json:
+            console.print(JSON.from_data(workflows))
+        else:
+            print_workflow_search_table(workflows, no_emoji, query)
 
     except Exception as e:
         error_msg = f"Failed to search workflows: {e}"
@@ -271,19 +278,16 @@ def search(
 @wf.command(cls=CustomCommand)
 @click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
 @click.option("--flow-dir", type=click.Path(), help=HELP_FLOW_DIR)
-@click.option(
-    "--format",
-    type=click.Choice(["table", "json"]),
-    default="table",
-    help=HELP_FORMAT,
-)
+@click.option("--json", "output_json", is_flag=True, help=HELP_JSON)
+@click.option("--table", "output_table", is_flag=True, help=HELP_TABLE)
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
 @click.argument("workflow_id", required=False, metavar="wf-id")
 def stats(
     workflow_id: Optional[str],
     data_dir: Optional[str],
     flow_dir: Optional[str],
-    format: str,
+    output_json: bool,
+    output_table: bool,
     no_emoji: bool,
 ) -> None:
     """📊 Show wf statistics
@@ -294,6 +298,10 @@ def stats(
     The wf-id should be the actual n8n wf ID (e.g., 'deAVBp391wvomsWY'),
     not the user-friendly name assigned in n8n-deploy.
     """
+    # JSON output implies no emoji
+    if output_json:
+        no_emoji = True
+
     try:
         config = get_config(base_folder=data_dir, flow_folder=flow_dir)
     except ValueError as e:
@@ -304,7 +312,7 @@ def stats(
         manager = WorkflowApi(config=config)
         stats_data = manager.get_workflow_stats(workflow_id)
 
-        if format == "json":
+        if output_json:
             console.print(JSON.from_data(stats_data))
         else:
             if workflow_id:
@@ -456,22 +464,23 @@ def push(
 @click.option("--skip-ssl-verify", is_flag=True, help="Skip SSL certificate verification for self-signed certificates")
 @click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
 @click.option("--flow-dir", type=click.Path(), help=HELP_FLOW_DIR)
-@click.option(
-    "--format",
-    type=click.Choice(["table", "json"]),
-    default="table",
-    help=HELP_FORMAT,
-)
+@click.option("--json", "output_json", is_flag=True, help=HELP_JSON)
+@click.option("--table", "output_table", is_flag=True, help=HELP_TABLE)
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
 def list_server(
     remote: Optional[str],
     skip_ssl_verify: bool,
     data_dir: Optional[str],
     flow_dir: Optional[str],
-    format: str,
+    output_json: bool,
+    output_table: bool,
     no_emoji: bool,
 ) -> None:
     """🌐 List workflows from n8n server"""
+    # JSON output implies no emoji
+    if output_json:
+        no_emoji = True
+
     try:
         config = get_config(base_folder=data_dir, flow_folder=flow_dir)
     except ValueError as e:
@@ -482,7 +491,7 @@ def list_server(
         manager = WorkflowApi(config=config, skip_ssl_verify=skip_ssl_verify, remote=remote)
         workflows = manager.list_n8n_workflows()
 
-        if format == "json":
+        if output_json:
             console.print(JSON.from_data(workflows))
         else:
             if not workflows:
@@ -640,16 +649,13 @@ def restore(
 
 @wf.command("backups", cls=CustomCommand)
 @click.option("--backup-dir", type=click.Path(), help="Backup directory (overrides N8N_BACKUP_DIR, default: cwd)")
-@click.option(
-    "--format",
-    type=click.Choice(["table", "json"]),
-    default="table",
-    help=HELP_FORMAT,
-)
+@click.option("--json", "output_json", is_flag=True, help=HELP_JSON)
+@click.option("--table", "output_table", is_flag=True, help=HELP_TABLE)
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
 def list_backups(
     backup_dir: Optional[str],
-    format: str,
+    output_json: bool,
+    output_table: bool,
     no_emoji: bool,
 ) -> None:
     """📋 List available wf backups
@@ -658,6 +664,10 @@ def list_backups(
     Looks in current directory by default, N8N_DEPLOY_FLOWS environment variable,
     or --backup-dir parameter.
     """
+    # JSON output implies no emoji
+    if output_json:
+        no_emoji = True
+
     try:
         backup_path = get_backup_dir(backup_dir)
         # Use list() builtin explicitly to avoid conflict with Click's list command
@@ -665,7 +675,7 @@ def list_backups(
 
         backup_files = builtins.list(backup_path.glob("*.tar.gz"))
 
-        if format == "json":
+        if output_json:
             import json as json_module
 
             backup_data = []

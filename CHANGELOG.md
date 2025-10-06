@@ -44,7 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Environment Configuration Display Command**
   - New `env` command to display all environment variables and their values
-  - Support for JSON (`--format json`) and table (`--format table`) output
+  - Support for JSON (`--json`) and table (`--table`) output
   - Shows configuration precedence and default values
 
 - **Development Environment Support**
@@ -71,19 +71,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-#### CLI Breaking Changes
-- **Command Renames** (to fix Click prefix matching conflicts)
-  - `wf backup` → `wf createbackup` (create workflow backup)
-  - `wf list-backups` → `wf backups` (list available backups)
-  - `wf list-server` → `wf server` (list server workflows)
-  - `wf verify-backup` → `wf verify` (verify backup integrity)
-
-- **Environment Variable Standardization**
-  - Renamed all environment variables to `N8N_DEPLOY_*` convention
-  - `N8N_DEPLOY_FLOWS` → `N8N_DEPLOY_FLOW_DIR`
-  - Added `N8N_DEPLOY_DATA` for application directory
-  - Added `N8N_SERVER_URL` for n8n server URL
-
 #### Code Quality Improvements
 - **Database Code Refactoring**
   - Extracted base database class (`api/db/base.py`) to eliminate code duplication
@@ -102,11 +89,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **Click Command Prefix Matching Bug**
-  - Commands like `listbackups` were incorrectly routing to `list`
-  - `list()` builtin was shadowed by Click's `list` command
-  - Solution: Disabled prefix matching and renamed conflicting commands
-
 - **Database Initialization**
   - Added missing `main()` entry point in CLI modules
   - Improved db status error handling for non-existent databases
@@ -119,7 +101,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **JSON Output Validation**
   - Ensured JSON output from `env` command handles Unicode paths correctly
-  - Fixed `list backups` command to return valid JSON arrays
 
 ### CI/CD
 
@@ -135,23 +116,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated all help text for renamed commands
   - Clarified flow directory defaults to current directory
   - Improved directory configuration priority documentation
-
-### Test Statistics
-
-- **192** integration tests (E2E scenarios)
-- **59** unit tests (core functionality)
-- **107** manual tests (57 implemented, 50 placeholders)
-- **755** hypothesis examples (property-based testing)
-- **1,099** auto-generated tests (CLI introspection)
-- **Total: 2,212 test cases** across all testing layers
-
-### Developer Experience
-
-- Run tests with streaming output: `python3 tests/manual/runner.py -s`
-- Filter tests by class: `python run_tests.py --integration --class TestE2EDatabase`
-- Generate CLI tests: `python tests/generators/test_generator.py`
-- Run hypothesis tests: `pytest tests/generated/test_cli_generated.py`
-
 ---
 
 ## [2.0.0] - Previous Release

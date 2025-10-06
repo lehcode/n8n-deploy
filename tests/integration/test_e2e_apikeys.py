@@ -471,7 +471,7 @@ class TestE2EAPIKeys(E2ETestBase):
 
         self.run_cli_command(["apikey", "add", test_key, "--name", "json_list_test", "--data-dir", self.temp_dir])
 
-        returncode, stdout, stderr = self.run_cli_command(["apikey", "list", "--format", "json", "--data-dir", self.temp_dir])
+        returncode, stdout, stderr = self.run_cli_command(["apikey", "list", "--json", "--data-dir", self.temp_dir])
 
         assert returncode == 0
         # Should be valid JSON
@@ -523,7 +523,7 @@ class TestE2EAPIKeys(E2ETestBase):
 
         if add_result[0] == 0:
             returncode, stdout, stderr = self.run_cli_command(
-                ["apikey", "get", "get_json_test", "--format", "json", "--data-dir", self.temp_dir]
+                ["apikey", "get", "get_json_test", "--json", "--data-dir", self.temp_dir]
             )
 
             # May succeed or fail based on implementation

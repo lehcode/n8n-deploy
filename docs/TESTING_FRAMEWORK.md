@@ -420,7 +420,7 @@ def test_env_help():
 def test_env_format_table():
     """Test env with --format=table"""
     result = subprocess.run(
-        CLI_COMMAND + ['env', '--format', 'table'],
+        CLI_COMMAND + ['env', '--table'],
         capture_output=True,
         text=True,
         timeout=10
@@ -430,7 +430,7 @@ def test_env_format_table():
 def test_env_format_json():
     """Test env with --format=json"""
     result = subprocess.run(
-        CLI_COMMAND + ['env', '--format', 'json'],
+        CLI_COMMAND + ['env', '--json'],
         capture_output=True,
         text=True,
         timeout=10
@@ -514,15 +514,15 @@ Replace repetitive E2E tests with property-based tests for:
 ```python
 # Multiple E2E tests like this
 def test_env_json_format():
-    result = run_cli(["env", "--format", "json"])
+    result = run_cli(["env", "--json"])
     assert valid_json(result.stdout)
 
 def test_env_json_with_path():
-    result = run_cli(["env", "--data-dir", "/tmp", "--format", "json"])
+    result = run_cli(["env", "--data-dir", "/tmp", "--json"])
     assert valid_json(result.stdout)
 
 def test_env_json_with_unicode_path():
-    result = run_cli(["env", "--data-dir", "/tmp/测试", "--format", "json"])
+    result = run_cli(["env", "--data-dir", "/tmp/测试", "--json"])
     assert valid_json(result.stdout)
 ```
 
@@ -532,7 +532,7 @@ def test_env_json_with_unicode_path():
 @given(app_dir=paths, flow_dir=paths, format_choice=formats)
 def test_env_json_always_valid(app_dir, flow_dir, format_choice):
     """Property: env --format json always produces valid JSON"""
-    result = run_cli(["env", "--data-dir", app_dir, "--flows-dir", flow_dir, "--format", format_choice])
+    result = run_cli(["env", "--data-dir", app_dir, "--flow-dir", flow_dir, ("--json" if format_choice == "json" else "--table")])
     if format_choice == "json" and result.returncode == 0:
         assert valid_json(result.stdout)
 ```

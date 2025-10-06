@@ -20,7 +20,7 @@ from rich.table import Table
 from ..api_keys import KeyApi
 from ..config import AppConfig
 from ..db import DBApi
-from .app import HELP_APP_DIR, HELP_NO_EMOJI, CustomGroup, CustomCommand
+from .app import HELP_APP_DIR, HELP_JSON, HELP_NO_EMOJI, HELP_TABLE, CustomCommand, CustomGroup
 from .output import cli_error
 
 console = Console()
@@ -205,20 +205,20 @@ def add_apikey(
 
 @apikey.command("list", cls=CustomCommand)
 @click.option("--show-keys", is_flag=True, help="Show actual API keys (use with caution)")
-@click.option(
-    "--format",
-    type=click.Choice(["table", "json"]),
-    default="table",
-    help="Output format",
-)
+@click.option("--json", "output_json", is_flag=True, help=HELP_JSON)
+@click.option("--table", "output_table", is_flag=True, help=HELP_TABLE)
 @click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
-def list_apikeys(show_keys: bool, format: str, data_dir: Optional[str], no_emoji: bool) -> None:
+def list_apikeys(show_keys: bool, output_json: bool, output_table: bool, data_dir: Optional[str], no_emoji: bool) -> None:
     """📋 List all stored API keys
 
     Display all stored API keys with metadata (keys are hidden by default).
-    Use --format json for machine-readable output.
+    Use --json for machine-readable output.
     """
+    # JSON output implies no emoji
+    if output_json:
+        no_emoji = True
+
     try:
         # API key operations only need base folder, not wf directories
         base_path = Path(data_dir) if data_dir else Path.cwd()
@@ -227,7 +227,7 @@ def list_apikeys(show_keys: bool, format: str, data_dir: Optional[str], no_emoji
         key_api = KeyApi(db=db_api, config=config)
         keys = key_api.list_api_keys()
 
-        if format == "json":
+        if output_json:
             console.print(JSON(json.dumps(keys, indent=2, default=str)))
         else:
             if not keys:
@@ -276,16 +276,18 @@ def list_apikeys(show_keys: bool, format: str, data_dir: Optional[str], no_emoji
 @apikey.command("get", cls=CustomCommand)
 @click.argument("key_name_or_id")
 @click.option("--show-key", is_flag=True, help="Show the actual API key (use with caution)")
-@click.option(
-    "--format",
-    type=click.Choice(["table", "json"]),
-    default="table",
-    help="Output format",
-)
+@click.option("--json", "output_json", is_flag=True, help=HELP_JSON)
+@click.option("--table", "output_table", is_flag=True, help=HELP_TABLE)
 @click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
-def get_apikey(key_name_or_id: str, show_key: bool, format: str, data_dir: Optional[str], no_emoji: bool) -> None:
+def get_apikey(
+    key_name_or_id: str, show_key: bool, output_json: bool, output_table: bool, data_dir: Optional[str], no_emoji: bool
+) -> None:
     """🔍 Get API key details"""
+    # JSON output implies no emoji
+    if output_json:
+        no_emoji = True
+
     # API key operations only need base folder, not wf directories
     try:
         base_path = Path(data_dir) if data_dir else Path.cwd()
