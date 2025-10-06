@@ -6,7 +6,7 @@ Handles: add, remove, list, sync, search, stats wf operations
 """
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -35,8 +35,8 @@ class WorkflowCRUD:
             name=name,
             file=None,
             file_folder=str(self.base_path) if self.base_path else None,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
             last_synced=None,
             n8n_version_id=n8n_version_id,
         )
