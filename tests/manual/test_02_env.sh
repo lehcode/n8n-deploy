@@ -21,7 +21,7 @@ print_section "Test Category 1.5: Environment Configuration"
     # Test default plain text format
     run_test "Env default format" "$CLI_COMMAND env --data-dir $app_dir" 0 "Display env config in default plain text format"
     validate_output "Env default content" "$CLI_COMMAND env --data-dir $app_dir" "=== Environment Configuration ==="
-    validate_output "Env shows variables" "$CLI_COMMAND env --data-dir $app_dir" "N8N_DEPLOY_DATA"
+    validate_output "Env shows variables" "$CLI_COMMAND env --data-dir $app_dir" "N8N_DEPLOY_DATA_DIR"
     validate_output "Env shows priority" "$CLI_COMMAND env --data-dir $app_dir" "Priority Order"
 
     # Test table format with emojis
@@ -44,10 +44,10 @@ print_section "Test Category 1.5: Environment Configuration"
     validate_output "Env shows server" "$CLI_COMMAND env --remote $test_server" "$test_server"
 
     # Test environment variable detection
-    export N8N_DEPLOY_DATA="$app_dir"
-    run_test "Env detects env var" "$CLI_COMMAND env" 0 "Detect N8N_DEPLOY_DATA environment variable"
-    validate_output "Env shows env source" "$CLI_COMMAND env" "N8N_DEPLOY_DATA"
-    unset N8N_DEPLOY_DATA
+    export N8N_DEPLOY_DATA_DIR="$app_dir"
+    run_test "Env detects env var" "$CLI_COMMAND env" 0 "Detect N8N_DEPLOY_DATA_DIR environment variable"
+    validate_output "Env shows env source" "$CLI_COMMAND env" "N8N_DEPLOY_DATA_DIR"
+    unset N8N_DEPLOY_DATA_DIR
 
     # Test .env file detection (should show not found in test environment)
     validate_output "Env .env detection" "$CLI_COMMAND env" ".env file"
