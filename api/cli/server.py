@@ -31,17 +31,15 @@ def server() -> None:
 @server.command(name="create", cls=CustomCommand)
 @click.argument("name")
 @click.argument("url")
-@click.option("--description", "-d", help="Server description")
 @click.option("--data-dir", help="Application directory (overrides N8N_DEPLOY_DATA)")
 @click.option("--no-emoji", is_flag=True, help="Disable emoji in output")
 def create_server(
     name: str,
     url: str,
-    description: Optional[str],
     data_dir: Optional[str],
     no_emoji: bool,
 ) -> None:
-    """Create a new n8n server"""
+    """Create a new n8n server (name supports UTF-8)"""
     try:
         config = get_config(base_folder=data_dir)
     except ValueError as e:
@@ -53,7 +51,6 @@ def create_server(
         server_id = server_api.add_server(
             url=url,
             name=name,
-            description=description,
         )
 
         if no_emoji:

@@ -28,7 +28,6 @@ class ServerCrud(BaseDB):
         self,
         url: str,
         name: str,
-        description: Optional[str] = None,
         is_active: bool = True,
     ) -> int:
         """
@@ -36,8 +35,7 @@ class ServerCrud(BaseDB):
 
         Args:
             url: Server URL (e.g., http://n8n.example.com:5678)
-            name: Unique server name
-            description: Optional server description
+            name: Unique server name (supports UTF-8 characters)
             is_active: Server active status (default: True)
 
         Returns:
@@ -49,10 +47,10 @@ class ServerCrud(BaseDB):
         with self.get_connection() as conn:
             cursor = conn.execute(
                 """
-                INSERT INTO servers (url, name, description, is_active, created_at)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO servers (url, name, is_active, created_at)
+                VALUES (?, ?, ?, ?)
                 """,
-                (url, name, description, is_active, datetime.now()),
+                (url, name, is_active, datetime.now()),
             )
             conn.commit()
             return int(cursor.lastrowid) if cursor.lastrowid else 0
@@ -70,7 +68,7 @@ class ServerCrud(BaseDB):
         with self.get_connection() as conn:
             cursor = conn.execute(
                 """
-                SELECT id, url, name, description, is_active, created_at, last_used
+                SELECT id, url, name, is_active, created_at, last_used
                 FROM servers
                 WHERE name = ?
                 """,
@@ -82,10 +80,9 @@ class ServerCrud(BaseDB):
                     "id": row[0],
                     "url": row[1],
                     "name": row[2],
-                    "description": row[3],
-                    "is_active": bool(row[4]),
-                    "created_at": row[5],
-                    "last_used": row[6],
+                    "is_active": bool(row[3]),
+                    "created_at": row[4],
+                    "last_used": row[5],
                 }
             return None
 
@@ -102,7 +99,7 @@ class ServerCrud(BaseDB):
         with self.get_connection() as conn:
             cursor = conn.execute(
                 """
-                SELECT id, url, name, description, is_active, created_at, last_used
+                SELECT id, url, name, is_active, created_at, last_used
                 FROM servers
                 WHERE url = ? AND is_active = TRUE
                 ORDER BY created_at DESC
@@ -116,10 +113,9 @@ class ServerCrud(BaseDB):
                     "id": row[0],
                     "url": row[1],
                     "name": row[2],
-                    "description": row[3],
-                    "is_active": bool(row[4]),
-                    "created_at": row[5],
-                    "last_used": row[6],
+                    "is_active": bool(row[3]),
+                    "created_at": row[4],
+                    "last_used": row[5],
                 }
             return None
 
@@ -135,7 +131,7 @@ class ServerCrud(BaseDB):
         """
         with self.get_connection() as conn:
             query = """
-                SELECT id, url, name, description, is_active, created_at, last_used
+                SELECT id, url, name, is_active, created_at, last_used
                 FROM servers
             """
             if active_only:
@@ -149,10 +145,9 @@ class ServerCrud(BaseDB):
                     "id": row[0],
                     "url": row[1],
                     "name": row[2],
-                    "description": row[3],
-                    "is_active": bool(row[4]),
-                    "created_at": row[5],
-                    "last_used": row[6],
+                    "is_active": bool(row[3]),
+                    "created_at": row[4],
+                    "last_used": row[5],
                 }
                 for row in rows
             ]
@@ -161,7 +156,6 @@ class ServerCrud(BaseDB):
         self,
         name: str,
         url: Optional[str] = None,
-        description: Optional[str] = None,
         is_active: Optional[bool] = None,
     ) -> bool:
         """
@@ -170,7 +164,6 @@ class ServerCrud(BaseDB):
         Args:
             name: Server name (identifier)
             url: New server URL (optional)
-            description: New description (optional)
             is_active: New active status (optional)
 
         Returns:
@@ -186,9 +179,6 @@ class ServerCrud(BaseDB):
         if url is not None:
             updates.append("url = ?")
             params.append(url)
-        if description is not None:
-            updates.append("description = ?")
-            params.append(description)
         if is_active is not None:
             updates.append("is_active = ?")
             params.append(1 if is_active else 0)
@@ -307,7 +297,7 @@ class ServerCrud(BaseDB):
         with self.get_connection() as conn:
             cursor = conn.execute(
                 """
-                SELECT k.id, k.name, k.description, k.created_at, sk.created_at as linked_at
+                SELECT k.id, k.name, k.created_at, sk.created_at as linked_at
                 FROM api_keys k
                 JOIN server_api_keys sk ON k.id = sk.api_key_id
                 WHERE sk.server_id = ?
@@ -320,9 +310,8 @@ class ServerCrud(BaseDB):
                 {
                     "id": row[0],
                     "name": row[1],
-                    "description": row[2],
-                    "created_at": row[3],
-                    "linked_at": row[4],
+                    "created_at": row[2],
+                    "linked_at": row[3],
                 }
                 for row in rows
             ]
