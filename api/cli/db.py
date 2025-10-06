@@ -108,10 +108,11 @@ def db() -> None:
 
 @db.command(cls=CustomCommand)
 @click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
+@click.option("--filename", type=str, default="n8n-deploy.db", help="Database filename (default: n8n-deploy.db)")
 @click.option("--json", "output_json", is_flag=True, help=HELP_JSON)
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
 @click.option("--import", "import_db", is_flag=True, help="Import existing database without prompting")
-def init(data_dir: Optional[str], output_json: bool, no_emoji: bool, import_db: bool) -> None:
+def init(data_dir: Optional[str], filename: str, output_json: bool, no_emoji: bool, import_db: bool) -> None:
     """🎬 Initialize n8n-deploy database
 
     Create the SQLite database with the required schema.
@@ -126,8 +127,8 @@ def init(data_dir: Optional[str], output_json: bool, no_emoji: bool, import_db: 
     from ..config import AppConfig
 
     base_path = Path(data_dir) if data_dir else Path.cwd()
-    config = AppConfig(base_folder=base_path)
-    db_path = config.base_folder / "n8n-deploy.db"
+    config = AppConfig(base_folder=base_path, db_filename=filename)
+    db_path = config.database_path
 
     # Check if database already exists
     if db_path.exists():

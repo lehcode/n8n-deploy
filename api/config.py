@@ -25,10 +25,11 @@ class AppConfig:
     flow_folder: Optional[Path] = None
     n8n_url: Optional[str] = None
     backup_dir: Optional[Path] = None
+    db_filename: str = "n8n-deploy.db"
 
     @property
     def database_path(self) -> Path:
-        return self.base_folder / "n8n-deploy.db"
+        return self.base_folder / self.db_filename
 
     @property
     def workflows_path(self) -> Path:
