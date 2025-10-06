@@ -50,18 +50,16 @@ def wf() -> None:
 # Basic wf operations
 @wf.command(cls=CustomCommand)
 @click.argument("name")
-@click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
 @click.option("--flow-dir", type=click.Path(), help=HELP_FLOW_DIR)
-@click.option("--remote", help=HELP_SERVER_URL)
+@click.option("--link-remote", help="Link workflow to n8n server (server name, partial URL, or full URL with schema)")
 @click.option("--skip-ssl-verify", is_flag=True, help="Skip SSL certificate verification for self-signed certificates")
 @click.option("--json", "output_json", is_flag=True, help=HELP_JSON)
 @click.option("--table", "output_table", is_flag=True, help=HELP_TABLE)
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
 def add(
     name: str,
-    data_dir: Optional[str],
     flow_dir: Optional[str],
-    remote: Optional[str],
+    link_remote: Optional[str],
     skip_ssl_verify: bool,
     output_json: bool,
     output_table: bool,
@@ -73,7 +71,7 @@ def add(
 
     \b
     Example:
-      n8n-deploy wf add MyWorkflow  # Pulls from server
+      n8n-deploy wf add MyWorkflow --link-remote my-server
     """
     # JSON output implies no emoji
     if output_json:
@@ -89,17 +87,56 @@ def add(
         )
 
     try:
-        config = get_config(base_folder=data_dir, flow_folder=flow_dir, n8n_url=remote)
+        config = get_config(flow_folder=flow_dir)
     except ValueError as e:
         cli_error(str(e), no_emoji)
 
     try:
-        manager = WorkflowApi(config=config, skip_ssl_verify=skip_ssl_verify)
+        # Resolve server URL from --link-remote
+        server_url = None
+        if link_remote:
+            from api.db.servers import ServerCrud
 
-        # Pull wf from server
-        # Check if API key and server URL are configured
-        if not config.n8n_url:
-            cli_error("Server URL not configured. Use --remote or set N8N_SERVER_URL environment variable", no_emoji)
+            server_crud = ServerCrud(config=config)
+
+            # Check if it's a full URL (contains ://)
+            if "://" in link_remote:
+                # Full URL with schema - validate and use directly
+                server_url = link_remote
+            else:
+                # Could be partial URL or server name
+                # First, try to find by server name
+                server = server_crud.get_server_by_name(link_remote)
+                if server:
+                    server_url = server["url"]
+                else:
+                    # Try to find by partial URL match in database
+                    all_servers = server_crud.list_servers()
+                    matching_servers = [s for s in all_servers if link_remote in s["url"]]
+                    if len(matching_servers) == 1:
+                        server_url = matching_servers[0]["url"]
+                    elif len(matching_servers) > 1:
+                        server_names = [s["name"] for s in matching_servers]
+                        cli_error(
+                            f"Partial URL '{link_remote}' matches multiple servers: {', '.join(server_names)}. "
+                            f"Please be more specific or use full server name",
+                            no_emoji,
+                        )
+                    else:
+                        cli_error(
+                            f"No server found matching '{link_remote}'. "
+                            f"Check server name or URL in database with 'server list'",
+                            no_emoji,
+                        )
+        elif not config.n8n_url:
+            cli_error("Server URL not configured. Use --link-remote or set N8N_SERVER_URL environment variable", no_emoji)
+        else:
+            server_url = config.n8n_url
+
+        # Update config with resolved server URL
+        config.n8n_url = server_url
+
+        manager = WorkflowApi(config=config, skip_ssl_verify=skip_ssl_verify)
 
         # Try to pull wf from server
         success = manager.pull_workflow(name)
@@ -111,27 +148,26 @@ def add(
 
 
 @wf.command("list", cls=CustomCommand)
-@click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
 @click.option("--flow-dir", type=click.Path(), help=HELP_FLOW_DIR)
 @click.option("--json", "output_json", is_flag=True, help=HELP_JSON)
 @click.option("--table", "output_table", is_flag=True, help=HELP_TABLE)
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
-@click.option("--only", is_flag=True, help="Show only workflows with existing JSON files (backupable)")
 def list(
-    data_dir: Optional[str],
     flow_dir: Optional[str],
     output_json: bool,
     output_table: bool,
     no_emoji: bool,
-    only: bool,
 ) -> None:
-    """📋 List all workflows"""
+    """📋 List all workflows
+
+    Displays all workflows with backupable status in metadata.
+    """
     # JSON output implies no emoji
     if output_json:
         no_emoji = True
 
     try:
-        config = get_config(base_folder=data_dir, flow_folder=flow_dir)
+        config = get_config(flow_folder=flow_dir)
     except ValueError as e:
         console.print(f"[red]{e}[/red]")
         raise click.Abort()
@@ -140,9 +176,8 @@ def list(
         manager = WorkflowApi(config=config)
         workflows = manager.list_workflows()
 
-        # Filter to only backupable workflows if --only flag is set
-        if only:
-            workflows = [wf for wf in workflows if wf.get("file_exists", False)]
+        # Backupable status is shown in workflow metadata (file_exists field)
+        # No filtering - all workflows are displayed with their backupable status
 
         if output_json:
             console.print(JSON.from_data(workflows))

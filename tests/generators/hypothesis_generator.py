@@ -201,11 +201,11 @@ class TestPropertyBased:
         # Should exit gracefully even if DB doesn't exist
         assert result.returncode in [0, 1, 2], f"Unexpected exit code: {result.returncode}"
 
-    @given(app_dir=valid_paths, format_choice=st.sampled_from(["table", "json", None]))
+    @given(format_choice=st.sampled_from(["table", "json", None]))
     @settings(max_examples=20)
-    def test_wf_list_format_options(self, app_dir, format_choice):
+    def test_wf_list_handles_format_options(self, format_choice):
         """Property: wf list should handle all format options"""
-        cmd = ["./n8n-deploy", "wf", "list", "--data-dir", app_dir]
+        cmd = ["./n8n-deploy", "wf", "list"]
         if format_choice:
             cmd.extend(["--json"] if format_choice == "json" else ["--table"])
 
@@ -232,15 +232,12 @@ class TestPropertyBased:
         result = subprocess.run(["./n8n-deploy", "wf", "search", "--tag", tag], capture_output=True, timeout=5, text=True)
         assert result.returncode in [0, 1, 2], "Search by tag crashed unexpectedly"
 
-    @given(only_flag=boolean_flags)
     @settings(max_examples=10)
-    def test_wf_list_only_filter(self, only_flag):
-        """Property: wf list should handle --only flag"""
+    def test_wf_list_basic(self):
+        """Property: wf list should work without flags"""
         cmd = ["./n8n-deploy", "wf", "list"]
-        if only_flag:
-            cmd.append("--only")
         result = subprocess.run(cmd, capture_output=True, timeout=5, text=True)
-        assert result.returncode in [0, 1], f"--only flag caused crash"
+        assert result.returncode in [0, 1], "wf list caused crash"
 
     @given(
         path_components=st.lists(
@@ -622,19 +619,6 @@ class TestOptionCombinations:
                 json.loads(result.stdout)
             except json.JSONDecodeError:
                 assert False, "Combined options produced invalid JSON"
-
-    @given(app_dir=valid_paths, only_flag=boolean_flags, format_choice=format_options)
-    @settings(max_examples=30)
-    def test_wf_list_combined_options(self, app_dir, only_flag, format_choice):
-        """Property: wf list with --only and format options works"""
-        cmd = ["./n8n-deploy", "wf", "list", "--data-dir", app_dir]
-        if only_flag:
-            cmd.append("--only")
-        if format_choice:
-            cmd.extend(["--json"] if format_choice == "json" else ["--table"])
-
-        result = subprocess.run(cmd, capture_output=True, timeout=5, text=True)
-        assert result.returncode in [0, 1]
 
 
 # ═══════════════════════════════════════════════════════════════════════════
