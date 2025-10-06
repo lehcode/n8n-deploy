@@ -141,7 +141,7 @@ class TestPropertyBased:
         """Property: env command should handle all format options"""
         cmd = ["./n8n-deploy", "env", "--data-dir", app_dir, "--flow-dir", flow_dir]
         if format_choice:
-            cmd.extend(["--format", format_choice])
+            cmd.extend(["--json"] if format_choice == "json" else ["--table"])
 
         result = subprocess.run(cmd, capture_output=True, timeout=5, text=True)
 
@@ -192,7 +192,7 @@ class TestPropertyBased:
         """Property: wf list should handle all format options"""
         cmd = ["./n8n-deploy", "wf", "list", "--data-dir", app_dir]
         if format_choice:
-            cmd.extend(["--format", format_choice])
+            cmd.extend(["--json"] if format_choice == "json" else ["--table"])
 
         result = subprocess.run(cmd, capture_output=True, timeout=5, text=True)
         assert result.returncode in [0, 1], f"Unexpected crash: {result.returncode}"
@@ -244,7 +244,7 @@ class TestPropertyBased:
     def test_combined_options_never_crash(self, server_url, app_dir):
         """Property: Combining multiple options should never crash"""
         result = subprocess.run(
-            ["./n8n-deploy", "env", "--data-dir", app_dir, "--remote", server_url, "--format", "json"],
+            ["./n8n-deploy", "env", "--data-dir", app_dir, "--remote", server_url, "--json"],
             capture_output=True,
             timeout=5,
             text=True,
@@ -274,7 +274,7 @@ class TestFormatValidation:
     def test_env_json_always_valid(self, app_dir):
         """Property: env --format json always produces parseable JSON"""
         result = subprocess.run(
-            ["./n8n-deploy", "env", "--data-dir", app_dir, "--format", "json"],
+            ["./n8n-deploy", "env", "--data-dir", app_dir, "--json"],
             capture_output=True,
             timeout=5,
             text=True,
@@ -295,7 +295,7 @@ class TestFormatValidation:
         """Property: db status supports all format options correctly"""
         cmd = ["./n8n-deploy", "db", "status", "--data-dir", app_dir]
         if format_choice:
-            cmd.extend(["--format", format_choice])
+            cmd.extend(["--json"] if format_choice == "json" else ["--table"])
 
         result = subprocess.run(cmd, capture_output=True, timeout=5, text=True)
 
@@ -314,7 +314,7 @@ class TestFormatValidation:
     def test_apikey_list_json_structure(self, app_dir):
         """Property: apikey list --format json has consistent structure"""
         result = subprocess.run(
-            ["./n8n-deploy", "apikey", "list", "--data-dir", app_dir, "--format", "json"],
+            ["./n8n-deploy", "apikey", "list", "--data-dir", app_dir, "--json"],
             capture_output=True,
             timeout=5,
             text=True,
@@ -412,7 +412,7 @@ class TestPathHandling:
 
         # Commands should succeed by defaulting to cwd
         result = subprocess.run(
-            ["./n8n-deploy", "env", "--data-dir", invalid_path, "--format", "json"],
+            ["./n8n-deploy", "env", "--data-dir", invalid_path, "--json"],
             capture_output=True,
             timeout=5,
             text=True,
@@ -594,7 +594,7 @@ class TestOptionCombinations:
             server_url,
         ]
         if format_choice:
-            cmd.extend(["--format", format_choice])
+            cmd.extend(["--json"] if format_choice == "json" else ["--table"])
 
         result = subprocess.run(cmd, capture_output=True, timeout=5, text=True)
 
@@ -616,7 +616,7 @@ class TestOptionCombinations:
         if only_flag:
             cmd.append("--only")
         if format_choice:
-            cmd.extend(["--format", format_choice])
+            cmd.extend(["--json"] if format_choice == "json" else ["--table"])
 
         result = subprocess.run(cmd, capture_output=True, timeout=5, text=True)
         assert result.returncode in [0, 1]
@@ -667,7 +667,7 @@ class TestServerManagement:
         """Property: Server list should handle all format options"""
         cmd = ["./n8n-deploy", "server", "list"]
         if format_choice:
-            cmd.extend(["--format", format_choice])
+            cmd.extend(["--json"] if format_choice == "json" else ["--table"])
 
         result = subprocess.run(cmd, capture_output=True, timeout=5, text=True)
         assert result.returncode in [0, 1]
@@ -728,7 +728,7 @@ class TestServerManagement:
         # List with format
         list_cmd = ["./n8n-deploy", "server", "list"]
         if format_choice:
-            list_cmd.extend(["--format", format_choice])
+            list_cmd.extend(["--json"] if format_choice == "json" else ["--table"])
 
         list_result = subprocess.run(list_cmd, capture_output=True, timeout=5, text=True)
 

@@ -199,7 +199,7 @@ def test_apikey_get_show_key_flag():
 
 def test_apikey_get_format_table():
     """Test apikey  get with --format=table"""
-    result = subprocess.run(CLI_COMMAND + ["apikey", "get", "--format", "table"], capture_output=True, text=True, timeout=10)
+    result = subprocess.run(CLI_COMMAND + ["apikey", "get", "--table"], capture_output=True, text=True, timeout=10)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
         f"Command: apikey get --format table\n"
@@ -210,7 +210,7 @@ def test_apikey_get_format_table():
 
 def test_apikey_get_format_json():
     """Test apikey  get with --format=json"""
-    result = subprocess.run(CLI_COMMAND + ["apikey", "get", "--format", "json"], capture_output=True, text=True, timeout=10)
+    result = subprocess.run(CLI_COMMAND + ["apikey", "get", "--json"], capture_output=True, text=True, timeout=10)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
         f"Command: apikey get --format json\n"
@@ -293,7 +293,7 @@ def test_apikey_list_show_keys_flag():
 
 def test_apikey_list_format_table():
     """Test apikey  list with --format=table"""
-    result = subprocess.run(CLI_COMMAND + ["apikey", "list", "--format", "table"], capture_output=True, text=True, timeout=10)
+    result = subprocess.run(CLI_COMMAND + ["apikey", "list", "--table"], capture_output=True, text=True, timeout=10)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
         f"Command: apikey list --format table\n"
@@ -304,7 +304,7 @@ def test_apikey_list_format_table():
 
 def test_apikey_list_format_json():
     """Test apikey  list with --format=json"""
-    result = subprocess.run(CLI_COMMAND + ["apikey", "list", "--format", "json"], capture_output=True, text=True, timeout=10)
+    result = subprocess.run(CLI_COMMAND + ["apikey", "list", "--json"], capture_output=True, text=True, timeout=10)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
         f"Command: apikey list --format json\n"
@@ -484,7 +484,7 @@ def test_db_init_data_dir_valid_path():
 
 def test_db_init_format_table():
     """Test db  init with --format=table"""
-    result = subprocess.run(CLI_COMMAND + ["db", "init", "--format", "table"], capture_output=True, text=True, timeout=10)
+    result = subprocess.run(CLI_COMMAND + ["db", "init", "--table"], capture_output=True, text=True, timeout=10)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
         f"Command: db init --format table\n"
@@ -495,7 +495,7 @@ def test_db_init_format_table():
 
 def test_db_init_format_json():
     """Test db  init with --format=json"""
-    result = subprocess.run(CLI_COMMAND + ["db", "init", "--format", "json"], capture_output=True, text=True, timeout=10)
+    result = subprocess.run(CLI_COMMAND + ["db", "init", "--json"], capture_output=True, text=True, timeout=10)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
         f"Command: db init --format json\n"
@@ -553,7 +553,7 @@ def test_db_status_data_dir_valid_path():
 
 def test_db_status_format_json():
     """Test db  status with --format=json"""
-    result = subprocess.run(CLI_COMMAND + ["db", "status", "--format", "json"], capture_output=True, text=True, timeout=10)
+    result = subprocess.run(CLI_COMMAND + ["db", "status", "--json"], capture_output=True, text=True, timeout=10)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
         f"Command: db status --format json\n"
@@ -600,7 +600,7 @@ def test_env_data_dir_valid_path():
 
 def test_env_format_table():
     """Test env with --format=table"""
-    result = subprocess.run(CLI_COMMAND + ["env", "--format", "table"], capture_output=True, text=True, timeout=10)
+    result = subprocess.run(CLI_COMMAND + ["env", "--table"], capture_output=True, text=True, timeout=10)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
         f"Command: env --format table\n"
@@ -611,7 +611,7 @@ def test_env_format_table():
 
 def test_env_format_json():
     """Test env with --format=json"""
-    result = subprocess.run(CLI_COMMAND + ["env", "--format", "json"], capture_output=True, text=True, timeout=10)
+    result = subprocess.run(CLI_COMMAND + ["env", "--json"], capture_output=True, text=True, timeout=10)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
         f"Command: env --format json\n"
@@ -890,7 +890,7 @@ def test_wf_add_skip_ssl_verify_flag():
 
 def test_wf_add_format_table():
     """Test wf  add with --format=table"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "add", "--format", "table"], capture_output=True, text=True, timeout=10)
+    result = subprocess.run(CLI_COMMAND + ["wf", "add", "--table"], capture_output=True, text=True, timeout=10)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
         f"Command: wf add --format table\n"
@@ -901,7 +901,7 @@ def test_wf_add_format_table():
 
 def test_wf_add_format_json():
     """Test wf  add with --format=json"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "add", "--format", "json"], capture_output=True, text=True, timeout=10)
+    result = subprocess.run(CLI_COMMAND + ["wf", "add", "--json"], capture_output=True, text=True, timeout=10)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
         f"Command: wf add --format json\n"
@@ -975,7 +975,7 @@ def test_wf_backups_backup_dir_valid_path():
 
 def test_wf_backups_format_table():
     """Test wf  backups with --format=table"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "backups", "--format", "table"], capture_output=True, text=True, timeout=10)
+    result = subprocess.run(CLI_COMMAND + ["wf", "backups", "--table"], capture_output=True, text=True, timeout=10)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
         f"Command: wf backups --format table\n"
@@ -986,7 +986,7 @@ def test_wf_backups_format_table():
 
 def test_wf_backups_format_json():
     """Test wf  backups with --format=json"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "backups", "--format", "json"], capture_output=True, text=True, timeout=10)
+    result = subprocess.run(CLI_COMMAND + ["wf", "backups", "--json"], capture_output=True, text=True, timeout=10)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
         f"Command: wf backups --format json\n"
@@ -1084,7 +1084,7 @@ def test_wf_list_data_dir_valid_path():
 
 def test_wf_list_format_table():
     """Test wf  list with --format=table"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "list", "--format", "table"], capture_output=True, text=True, timeout=10)
+    result = subprocess.run(CLI_COMMAND + ["wf", "list", "--table"], capture_output=True, text=True, timeout=10)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
         f"Command: wf list --format table\n"
@@ -1095,7 +1095,7 @@ def test_wf_list_format_table():
 
 def test_wf_list_format_json():
     """Test wf  list with --format=json"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "list", "--format", "json"], capture_output=True, text=True, timeout=10)
+    result = subprocess.run(CLI_COMMAND + ["wf", "list", "--json"], capture_output=True, text=True, timeout=10)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
         f"Command: wf list --format json\n"
@@ -1388,7 +1388,7 @@ def test_wf_search_data_dir_valid_path():
 
 def test_wf_search_format_table():
     """Test wf  search with --format=table"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "search", "--format", "table"], capture_output=True, text=True, timeout=10)
+    result = subprocess.run(CLI_COMMAND + ["wf", "search", "--table"], capture_output=True, text=True, timeout=10)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
         f"Command: wf search --format table\n"
@@ -1399,7 +1399,7 @@ def test_wf_search_format_table():
 
 def test_wf_search_format_json():
     """Test wf  search with --format=json"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "search", "--format", "json"], capture_output=True, text=True, timeout=10)
+    result = subprocess.run(CLI_COMMAND + ["wf", "search", "--json"], capture_output=True, text=True, timeout=10)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
         f"Command: wf search --format json\n"
@@ -1482,7 +1482,7 @@ def test_wf_server_data_dir_valid_path():
 
 def test_wf_server_format_table():
     """Test wf  server with --format=table"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "server", "--format", "table"], capture_output=True, text=True, timeout=10)
+    result = subprocess.run(CLI_COMMAND + ["wf", "server", "--table"], capture_output=True, text=True, timeout=10)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
         f"Command: wf server --format table\n"
@@ -1493,7 +1493,7 @@ def test_wf_server_format_table():
 
 def test_wf_server_format_json():
     """Test wf  server with --format=json"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "server", "--format", "json"], capture_output=True, text=True, timeout=10)
+    result = subprocess.run(CLI_COMMAND + ["wf", "server", "--json"], capture_output=True, text=True, timeout=10)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
         f"Command: wf server --format json\n"
@@ -1529,7 +1529,7 @@ def test_wf_stats_data_dir_valid_path():
 
 def test_wf_stats_format_table():
     """Test wf  stats with --format=table"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "stats", "--format", "table"], capture_output=True, text=True, timeout=10)
+    result = subprocess.run(CLI_COMMAND + ["wf", "stats", "--table"], capture_output=True, text=True, timeout=10)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
         f"Command: wf stats --format table\n"
@@ -1540,7 +1540,7 @@ def test_wf_stats_format_table():
 
 def test_wf_stats_format_json():
     """Test wf  stats with --format=json"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "stats", "--format", "json"], capture_output=True, text=True, timeout=10)
+    result = subprocess.run(CLI_COMMAND + ["wf", "stats", "--json"], capture_output=True, text=True, timeout=10)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
         f"Command: wf stats --format json\n"

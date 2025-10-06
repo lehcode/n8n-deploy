@@ -16,7 +16,7 @@ from ..api_keys import KeyApi
 from ..config import AppConfig, get_config
 from ..db.core import DBApi
 from ..db.servers import ServerCrud
-from .app import CustomCommand, CustomGroup
+from .app import HELP_JSON, HELP_TABLE, CustomCommand, CustomGroup
 from .output import format_server_table
 
 console = Console()
@@ -71,16 +71,22 @@ def create_server(
 
 @server.command(name="list", cls=CustomCommand)
 @click.option("--active", is_flag=True, help="Show only active servers")
-@click.option("--format", "fmt", type=click.Choice(["table", "json"]), default="table", help="Output format")
+@click.option("--json", "output_json", is_flag=True, help=HELP_JSON)
+@click.option("--table", "output_table", is_flag=True, help=HELP_TABLE)
 @click.option("--data-dir", help="Application directory (overrides N8N_DEPLOY_DATA)")
 @click.option("--no-emoji", is_flag=True, help="Disable emoji in output")
 def list_servers(
     active: bool,
-    fmt: str,
+    output_json: bool,
+    output_table: bool,
     data_dir: Optional[str],
     no_emoji: bool,
 ) -> None:
     """List all n8n servers"""
+    # JSON output implies no emoji
+    if output_json:
+        no_emoji = True
+
     try:
         config = get_config(base_folder=data_dir)
     except ValueError as e:
@@ -91,7 +97,7 @@ def list_servers(
         server_api = ServerCrud(config=config)
         servers = server_api.list_servers(active_only=active)
 
-        if fmt == "json":
+        if output_json:
             print(json.dumps(servers, indent=2, default=str))
             return
 
@@ -250,16 +256,22 @@ def remove_server(
 
 @server.command(name="keys", cls=CustomCommand)
 @click.argument("server_name")
-@click.option("--format", "fmt", type=click.Choice(["table", "json"]), default="table", help="Output format")
+@click.option("--json", "output_json", is_flag=True, help=HELP_JSON)
+@click.option("--table", "output_table", is_flag=True, help=HELP_TABLE)
 @click.option("--data-dir", help="Application directory (overrides N8N_DEPLOY_DATA)")
 @click.option("--no-emoji", is_flag=True, help="Disable emoji in output")
 def show_keys(
     server_name: str,
-    fmt: str,
+    output_json: bool,
+    output_table: bool,
     data_dir: Optional[str],
     no_emoji: bool,
 ) -> None:
     """Show API keys linked to a server"""
+    # JSON output implies no emoji
+    if output_json:
+        no_emoji = True
+
     try:
         config = get_config(base_folder=data_dir)
     except ValueError as e:
@@ -270,7 +282,7 @@ def show_keys(
         server_api = ServerCrud(config=config)
         keys = server_api.get_server_api_keys(server_name)
 
-        if fmt == "json":
+        if output_json:
             print(json.dumps(keys, indent=2, default=str))
             return
 

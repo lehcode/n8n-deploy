@@ -69,7 +69,7 @@ class TestDatabaseHelpers:
 
         # Should raise click.Abort
         with pytest.raises(click.Abort):
-            check_database_exists(nonexistent_path, format=None, no_emoji=True)
+            check_database_exists(nonexistent_path, output_json=False, no_emoji=True)
 
     def test_check_database_exists_json_format(self):
         """Test check_database_exists with JSON format"""
@@ -81,7 +81,7 @@ class TestDatabaseHelpers:
 
         # Should raise click.Abort with JSON error
         with pytest.raises(click.Abort):
-            check_database_exists(nonexistent_path, format="json", no_emoji=False)
+            check_database_exists(nonexistent_path, output_json=True, no_emoji=False)
 
     def test_check_database_exists_with_existing_db(self):
         """Test check_database_exists with existing database (should not raise)"""
@@ -94,7 +94,7 @@ class TestDatabaseHelpers:
 
         try:
             # Should not raise
-            check_database_exists(tmp_path, format=None, no_emoji=True)
+            check_database_exists(tmp_path, output_json=False, no_emoji=True)
         finally:
             # Clean up
             tmp_path.unlink()
@@ -140,7 +140,7 @@ class TestDatabaseCommands:
         assert result.exit_code == 0
         assert "Show database status and statistics" in result.output
         assert "--data-dir" in result.output
-        assert "--format" in result.output
+        assert "--json" in result.output
 
     def test_compact_command_help(self):
         """Test compact command help"""
@@ -200,7 +200,7 @@ class TestDatabaseCommands:
     def test_init_import_flag_json_format(self):
         """Test --import flag with JSON format output"""
         # Create database
-        result1 = self.runner.invoke(db, ["init", "--data-dir", self.temp_dir, "--import", "--format", "json"])
+        result1 = self.runner.invoke(db, ["init", "--data-dir", self.temp_dir, "--import", "--json"])
         assert result1.exit_code == 0
 
         # Parse JSON output
@@ -214,7 +214,7 @@ class TestDatabaseCommands:
         assert output1.get("already_exists", False) is False
 
         # Run again with existing database
-        result2 = self.runner.invoke(db, ["init", "--data-dir", self.temp_dir, "--import", "--format", "json"])
+        result2 = self.runner.invoke(db, ["init", "--data-dir", self.temp_dir, "--import", "--json"])
         assert result2.exit_code == 0
 
         # Parse second JSON output
@@ -236,7 +236,7 @@ class TestDatabaseCommands:
 
     def test_init_json_format_implies_no_emoji(self):
         """Test that JSON format automatically disables emoji"""
-        result = self.runner.invoke(db, ["init", "--data-dir", self.temp_dir, "--import", "--format", "json"])
+        result = self.runner.invoke(db, ["init", "--data-dir", self.temp_dir, "--import", "--json"])
 
         assert result.exit_code == 0
         # JSON output should not contain emoji
@@ -290,7 +290,7 @@ class TestDatabaseCommands:
         mock_stats.tables = {"workflows": 5, "api_keys": 2}
         mock_db_instance.get_database_stats.return_value = mock_stats
 
-        result = self.runner.invoke(db, ["status", "--data-dir", self.temp_dir, "--format", "json"])
+        result = self.runner.invoke(db, ["status", "--data-dir", self.temp_dir, "--json"])
 
         assert result.exit_code == 0
         assert "database_path" in result.output
