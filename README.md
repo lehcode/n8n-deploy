@@ -1,6 +1,21 @@
 # n8n-deploy: Database-First n8n Workflow Management CLI
 
-> "If builders built buildings the way programmers wrote programs, then the first woodpecker that came along would destroy civilization." - Arthur Bloch, Murphy's Laws
+[![GitHub](https://img.shields.io/badge/GitHub-lehcode%2Fn8n--deploy-blue?style=flat-square&logo=github)](https://github.com/lehcode/n8n-deploy)
+[![CI/CD Pipeline](https://github.com/lehcode/n8n-deploy/workflows/CI/CD%20Pipeline/badge.svg)](https://github.com/lehcode/n8n-deploy/actions)
+[![GitHub stars](https://img.shields.io/github/stars/lehcode/n8n-deploy?style=flat-square&logo=github)](https://github.com/lehcode/n8n-deploy/stargazers)
+[![GitHub last commit](https://img.shields.io/github/last-commit/lehcode/n8n-deploy?style=flat-square&logo=github)](https://github.com/lehcode/n8n-deploy/commits/master)
+[![GitHub issues](https://img.shields.io/github/issues/lehcode/n8n-deploy?style=flat-square&logo=github)](https://github.com/lehcode/n8n-deploy/issues)
+
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue?style=flat-square&logo=python)](https://github.com/lehcode/n8n-deploy)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://github.com/lehcode/n8n-deploy/blob/master/LICENSE)
+[![Lines of code](https://img.shields.io/tokei/lines/github/lehcode/n8n-deploy?style=flat-square&logo=git)](https://github.com/lehcode/n8n-deploy)
+[![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg?style=flat-square)](https://github.com/psf/black)
+
+<!-- PyPI badges will be enabled after first release:
+[![PyPI](https://img.shields.io/pypi/v/n8n-deploy?style=flat-square&logo=pypi)](https://pypi.org/project/n8n-deploy/)
+[![Downloads](https://img.shields.io/pypi/dm/n8n-deploy?style=flat-square)](https://pypi.org/project/n8n-deploy/)
+-->
 
 ## Overview
 
@@ -26,13 +41,13 @@
 ### Installation
 
 ```bash
-# Recommended: Use uv for faster setup
+# Pip install
+pip install n8n-deploy
+
+# Use uv for faster setup and virtual environment
 uv venv --python /usr/bin/python3 .venv
 source .venv/bin/activate
 uv pip install n8n-deploy
-
-# Alternative: Pip install
-pip install n8n-deploy
 ```
 
 ### Quick Start
@@ -42,10 +57,17 @@ pip install n8n-deploy
 n8n-deploy db init
 
 # Add an API key for your n8n server
-echo "your-n8n-api-key" | n8n-deploy apikey add my_server_key
+echo "your-n8n-api-key" | n8n-deploy apikey add "My Server Key"
+n8n-deploy apikey add "your-n8n-api-key" --name "My Server Key"
+# Link to server, no need to specify key anymore for that server
+n8n-deploy apikey add "your-n8n-api-key" --name "My Server Key" --server "Production Server 🚀"
+
+# List local workflows
+n8n-deploy wf list --flow-dir /path/to/workflows
 
 # List workflows from a remote n8n server
-n8n-deploy --server-url http://n8n.example.com wf list-server
+n8n-deploy wf list --server https://n8n.example.com
+n8n-deploy wf list --server "Production Server 🚀"
 
 # Pull a specific workflow
 n8n-deploy --server-url http://n8n.example.com wf pull "My Workflow"
