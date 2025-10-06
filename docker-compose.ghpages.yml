@@ -1,0 +1,18 @@
+services:
+  jekyll:
+    build:
+      context: .
+      dockerfile: Dockerfile.ghpages
+    container_name: n8n-deploy-ghpages
+    ports:
+      - "4040:4000"
+      - "35729:35729" # LiveReload port
+    volumes:
+      - ./docs:/site:cached
+      - jekyll-bundle:/usr/local/bundle
+    environment:
+      - JEKYLL_ENV=development
+    command: bundle exec jekyll serve --host 0.0.0.0 --livereload --force_polling --quiet
+
+volumes:
+  jekyll-bundle:
