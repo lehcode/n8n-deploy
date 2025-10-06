@@ -2,7 +2,7 @@
 layout: default
 title: CI/CD Troubleshooting
 parent: Developer Guide
-nav_order: 9
+nav_order: 7
 description: "Troubleshooting CI/CD pipeline issues in n8n-deploy"
 ---
 

@@ -2,7 +2,7 @@
 layout: default
 title: Workflow Patterns
 parent: User Guide
-nav_order: 3
+nav_order: 2
 description: "Common workflow management patterns in n8n-deploy"
 ---
 

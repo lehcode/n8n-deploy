@@ -2,7 +2,7 @@
 layout: default
 title: GitHub Pages Testing
 parent: Developer Guide
-nav_order: 10
+nav_order: 8
 description: "Local testing guide for GitHub Pages documentation"
 ---
 

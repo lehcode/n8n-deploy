@@ -2,7 +2,7 @@
 layout: default
 title: Testing
 parent: Developer Guide
-nav_order: 8
+nav_order: 5
 description: "Details about Testing in n8n-deploy"
 ---
 

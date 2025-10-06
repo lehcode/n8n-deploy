@@ -2,7 +2,7 @@
 layout: default
 title: API Key Sequence Diagram
 parent: Developer Guide
-nav_order: 6
+nav_order: 11
 description: "API Key Sequence Diagram for n8n-deploy API key management"
 ---
 

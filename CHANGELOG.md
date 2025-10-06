@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2025-10-01
+## [Unreleased] - 2025-10-06
 
 ### Added
 
@@ -70,6 +70,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Test class filtering with `--class` parameter in `run_tests.py`
 
 ### Changed
+
+#### Code Quality Improvements (October 2025)
+- **Environment Variable Standardization**
+  - Renamed `N8N_DEPLOY_DATA` → `N8N_DEPLOY_DATA_DIR` for consistency
+  - Renamed `N8N_DEPLOY_FLOWS` → `N8N_DEPLOY_FLOWS_DIR` for clarity
+  - Updated 39 files across codebase, tests, and documentation
+  - Consistent `_DIR` suffix for all directory-related environment variables
+
+- **Python 3.12+ Compatibility**
+  - Replaced deprecated `datetime.utcnow()` with `datetime.now(timezone.utc)`
+  - Updated timezone-aware datetime handling in 4 core modules
+  - Added timezone import to models, workflow CRUD, n8n API, and database core
+  - Used lambda wrappers for Pydantic `default_factory` fields
+
+- **Test Class Naming Standardization**
+  - Fixed 8 database test classes to follow PEP-8 conventions
+  - Changed lowercase naming (e.g., `Testdbedgecases`) to PascalCase (`TestDbEdgeCases`)
+  - Improved test discoverability and consistency
+
+- **Code Cleanup**
+  - Removed unused imports from CLI modules (output.py, wf.py, db.py)
+  - Eliminated unused variables identified by flake8 analysis
+  - Achieved zero flake8 violations with `--max-line-length=127`
+  - Maintained strict mypy compliance across all modules
 
 #### Code Quality Improvements
 - **Database Code Refactoring**

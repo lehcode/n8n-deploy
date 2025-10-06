@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Workflow Management
-nav_order: 5
+nav_order: 7
 description: "Managing n8n workflows with n8n-deploy"
 ---
 

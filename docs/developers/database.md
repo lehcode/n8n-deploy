@@ -21,7 +21,8 @@ n8n-deploy uses a lightweight, efficient SQLite database to manage workflow meta
 erDiagram
     workflows ||--o{ dependencies : contains
     workflows ||--o{ versions : contains
-    api_keys }|--|| configurations : manages
+    servers ||--o{ server_api_keys : uses
+    api_keys ||--o{ server_api_keys : links
     workflows {
         TEXT id PK
         TEXT name
@@ -32,11 +33,26 @@ erDiagram
         DATETIME updated_at
     }
     api_keys {
-        TEXT id PK
-        TEXT key
+        INTEGER id PK
+        TEXT name UK
+        TEXT api_key
         TEXT description
         DATETIME created_at
+        DATETIME last_used_at
+        INTEGER is_active
+    }
+    servers {
+        INTEGER id PK
+        TEXT url
+        TEXT name UK
+        INTEGER is_active
+        DATETIME created_at
         DATETIME last_used
+    }
+    server_api_keys {
+        INTEGER server_id FK
+        INTEGER api_key_id FK
+        DATETIME created_at
     }
     configurations {
         TEXT key PK
@@ -69,15 +85,35 @@ erDiagram
   - `updated_at`: Last modification timestamp
 
 ### 2. `api_keys` Table
-- **Purpose**: Manage API key information
+- **Purpose**: Store n8n server API keys for authentication
 - **Key Fields**:
-  - `id`: Unique key identifier
-  - `key`: Plain-text API key
-  - `description`: Optional key description
+  - `id`: Auto-increment primary key
+  - `name`: Unique key identifier (UTF-8 supported)
+  - `api_key`: Plain-text n8n JWT token
+  - `description`: Optional key documentation
   - `created_at`: Key creation timestamp
-  - `last_used`: Last usage timestamp
+  - `last_used_at`: Last usage timestamp
+  - `is_active`: Active status (1=active, 0=inactive)
 
-### 3. `configurations` Table
+### 3. `servers` Table
+- **Purpose**: Store n8n server configurations
+- **Key Fields**:
+  - `id`: Auto-increment primary key
+  - `url`: Server URL (e.g., `http://n8n.example.com:5678`)
+  - `name`: Unique server name (UTF-8 supported, emojis allowed)
+  - `is_active`: Active status (1=active, 0=inactive)
+  - `created_at`: Server creation timestamp
+  - `last_used`: Last connection timestamp
+
+### 4. `server_api_keys` Junction Table
+- **Purpose**: Many-to-many relationship between servers and API keys
+- **Key Fields**:
+  - `server_id`: Foreign key to servers.id (CASCADE DELETE)
+  - `api_key_id`: Foreign key to api_keys.id (CASCADE DELETE)
+  - `created_at`: Link creation timestamp
+- **Composite Primary Key**: (server_id, api_key_id)
+
+### 5. `configurations` Table
 - **Purpose**: Store application configurations
 - **Key Fields**:
   - `key`: Configuration key

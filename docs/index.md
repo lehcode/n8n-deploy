@@ -45,12 +45,23 @@ Welcome to n8n-deploy, a powerful Python CLI tool for managing n8n workflows wit
 
 ## 📖 Documentation
 
+### User Guides
 - [Installation Guide](user-guide/installation/)
 - [Getting Started](getting-started/)
 - [Configuration](configuration/)
-- [Workflow Management](workflows/)
-- [API Key Management](apikeys/)
-- [Troubleshooting](troubleshooting/)
+
+### Core Features
+- [Database Management](database/) - SQLite operations and backups
+- [Workflow Management](workflows/) - Push/pull workflow operations
+- [API Key Management](apikeys/) - Secure key handling
+- [Server Management](servers/) - Multi-server configuration
+
+### Advanced Topics
+- [DevOps Integration](user-guide/devops-integration/) - CI/CD pipelines and automation
+- [Troubleshooting](troubleshooting/) - Common issues and solutions
+
+### Quick Reference
+- [Database Commands](quick-reference/database-commands/) - CLI cheat sheet
 
 ## 🤝 Contributing
 

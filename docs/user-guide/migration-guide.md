@@ -2,7 +2,7 @@
 layout: default
 title: Migration Guide
 parent: User Guide
-nav_order: 4
+nav_order: 3
 description: "Migration guide for n8n-deploy version upgrades"
 ---
 

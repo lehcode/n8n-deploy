@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Configuration
-nav_order: 4
+nav_order: 3
 description: "Configuration options for n8n-deploy"
 ---
 
