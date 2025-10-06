@@ -197,23 +197,23 @@ def test_apikey_get_show_key_flag():
     )
 
 
-def test_apikey_get_format_table():
-    """Test apikey  get with --format=table"""
-    result = subprocess.run(CLI_COMMAND + ["apikey", "get", "--table"], capture_output=True, text=True, timeout=10)
+def test_apikey_get_output_json_flag():
+    """Test apikey  get with --output-json flag"""
+    result = subprocess.run(CLI_COMMAND + ["apikey", "get", "--output-json"], capture_output=True, text=True, timeout=10)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
-        f"Command: apikey get --format table\n"
+        f"Command: apikey get --output-json\n"
         f"stdout: {result.stdout[:500]}\n"
         f"stderr: {result.stderr[:500]}"
     )
 
 
-def test_apikey_get_format_json():
-    """Test apikey  get with --format=json"""
-    result = subprocess.run(CLI_COMMAND + ["apikey", "get", "--json"], capture_output=True, text=True, timeout=10)
+def test_apikey_get_output_table_flag():
+    """Test apikey  get with --output-table flag"""
+    result = subprocess.run(CLI_COMMAND + ["apikey", "get", "--output-table"], capture_output=True, text=True, timeout=10)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
-        f"Command: apikey get --format json\n"
+        f"Command: apikey get --output-table\n"
         f"stdout: {result.stdout[:500]}\n"
         f"stderr: {result.stderr[:500]}"
     )
@@ -291,23 +291,23 @@ def test_apikey_list_show_keys_flag():
     )
 
 
-def test_apikey_list_format_table():
-    """Test apikey  list with --format=table"""
-    result = subprocess.run(CLI_COMMAND + ["apikey", "list", "--table"], capture_output=True, text=True, timeout=10)
+def test_apikey_list_output_json_flag():
+    """Test apikey  list with --output-json flag"""
+    result = subprocess.run(CLI_COMMAND + ["apikey", "list", "--output-json"], capture_output=True, text=True, timeout=10)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
-        f"Command: apikey list --format table\n"
+        f"Command: apikey list --output-json\n"
         f"stdout: {result.stdout[:500]}\n"
         f"stderr: {result.stderr[:500]}"
     )
 
 
-def test_apikey_list_format_json():
-    """Test apikey  list with --format=json"""
-    result = subprocess.run(CLI_COMMAND + ["apikey", "list", "--json"], capture_output=True, text=True, timeout=10)
+def test_apikey_list_output_table_flag():
+    """Test apikey  list with --output-table flag"""
+    result = subprocess.run(CLI_COMMAND + ["apikey", "list", "--output-table"], capture_output=True, text=True, timeout=10)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
-        f"Command: apikey list --format json\n"
+        f"Command: apikey list --output-table\n"
         f"stdout: {result.stdout[:500]}\n"
         f"stderr: {result.stderr[:500]}"
     )
@@ -482,34 +482,12 @@ def test_db_init_data_dir_valid_path():
     )
 
 
-def test_db_init_format_table():
-    """Test db  init with --format=table"""
-    result = subprocess.run(CLI_COMMAND + ["db", "init", "--table"], capture_output=True, text=True, timeout=10)
+def test_db_init_output_json_flag():
+    """Test db  init with --output-json flag"""
+    result = subprocess.run(CLI_COMMAND + ["db", "init", "--output-json"], capture_output=True, text=True, timeout=10)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
-        f"Command: db init --format table\n"
-        f"stdout: {result.stdout[:500]}\n"
-        f"stderr: {result.stderr[:500]}"
-    )
-
-
-def test_db_init_format_json():
-    """Test db  init with --format=json"""
-    result = subprocess.run(CLI_COMMAND + ["db", "init", "--json"], capture_output=True, text=True, timeout=10)
-    assert result.returncode in [0, 1, 2], (
-        f"Command failed with exit code {result.returncode}\n"
-        f"Command: db init --format json\n"
-        f"stdout: {result.stdout[:500]}\n"
-        f"stderr: {result.stderr[:500]}"
-    )
-
-
-def test_db_init_import_db_flag():
-    """Test db  init with --import-db flag"""
-    result = subprocess.run(CLI_COMMAND + ["db", "init", "--import-db"], capture_output=True, text=True, timeout=10)
-    assert result.returncode in [0, 1, 2], (
-        f"Command failed with exit code {result.returncode}\n"
-        f"Command: db init --import-db\n"
+        f"Command: db init --output-json\n"
         f"stdout: {result.stdout[:500]}\n"
         f"stderr: {result.stderr[:500]}"
     )
@@ -551,12 +529,12 @@ def test_db_status_data_dir_valid_path():
     )
 
 
-def test_db_status_format_json():
-    """Test db  status with --format=json"""
-    result = subprocess.run(CLI_COMMAND + ["db", "status", "--json"], capture_output=True, text=True, timeout=10)
+def test_db_status_output_json_flag():
+    """Test db  status with --output-json flag"""
+    result = subprocess.run(CLI_COMMAND + ["db", "status", "--output-json"], capture_output=True, text=True, timeout=10)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
-        f"Command: db status --format json\n"
+        f"Command: db status --output-json\n"
         f"stdout: {result.stdout[:500]}\n"
         f"stderr: {result.stderr[:500]}"
     )
@@ -598,23 +576,23 @@ def test_env_data_dir_valid_path():
     )
 
 
-def test_env_format_table():
-    """Test env with --format=table"""
-    result = subprocess.run(CLI_COMMAND + ["env", "--table"], capture_output=True, text=True, timeout=10)
+def test_env_output_json_flag():
+    """Test env with --output-json flag"""
+    result = subprocess.run(CLI_COMMAND + ["env", "--output-json"], capture_output=True, text=True, timeout=10)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
-        f"Command: env --format table\n"
+        f"Command: env --output-json\n"
         f"stdout: {result.stdout[:500]}\n"
         f"stderr: {result.stderr[:500]}"
     )
 
 
-def test_env_format_json():
-    """Test env with --format=json"""
-    result = subprocess.run(CLI_COMMAND + ["env", "--json"], capture_output=True, text=True, timeout=10)
+def test_env_output_table_flag():
+    """Test env with --output-table flag"""
+    result = subprocess.run(CLI_COMMAND + ["env", "--output-table"], capture_output=True, text=True, timeout=10)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
-        f"Command: env --format json\n"
+        f"Command: env --output-table\n"
         f"stdout: {result.stdout[:500]}\n"
         f"stderr: {result.stderr[:500]}"
     )
@@ -675,23 +653,23 @@ def test_server_keys_help():
     )
 
 
-def test_server_keys_fmt_table():
-    """Test server  keys with --fmt=table"""
-    result = subprocess.run(CLI_COMMAND + ["server", "keys", "--fmt", "table"], capture_output=True, text=True, timeout=10)
+def test_server_keys_output_json_flag():
+    """Test server  keys with --output-json flag"""
+    result = subprocess.run(CLI_COMMAND + ["server", "keys", "--output-json"], capture_output=True, text=True, timeout=10)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
-        f"Command: server keys --fmt table\n"
+        f"Command: server keys --output-json\n"
         f"stdout: {result.stdout[:500]}\n"
         f"stderr: {result.stderr[:500]}"
     )
 
 
-def test_server_keys_fmt_json():
-    """Test server  keys with --fmt=json"""
-    result = subprocess.run(CLI_COMMAND + ["server", "keys", "--fmt", "json"], capture_output=True, text=True, timeout=10)
+def test_server_keys_output_table_flag():
+    """Test server  keys with --output-table flag"""
+    result = subprocess.run(CLI_COMMAND + ["server", "keys", "--output-table"], capture_output=True, text=True, timeout=10)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
-        f"Command: server keys --fmt json\n"
+        f"Command: server keys --output-table\n"
         f"stdout: {result.stdout[:500]}\n"
         f"stderr: {result.stderr[:500]}"
     )
@@ -758,23 +736,23 @@ def test_server_list_active_flag():
     )
 
 
-def test_server_list_fmt_table():
-    """Test server  list with --fmt=table"""
-    result = subprocess.run(CLI_COMMAND + ["server", "list", "--fmt", "table"], capture_output=True, text=True, timeout=10)
+def test_server_list_output_json_flag():
+    """Test server  list with --output-json flag"""
+    result = subprocess.run(CLI_COMMAND + ["server", "list", "--output-json"], capture_output=True, text=True, timeout=10)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
-        f"Command: server list --fmt table\n"
+        f"Command: server list --output-json\n"
         f"stdout: {result.stdout[:500]}\n"
         f"stderr: {result.stderr[:500]}"
     )
 
 
-def test_server_list_fmt_json():
-    """Test server  list with --fmt=json"""
-    result = subprocess.run(CLI_COMMAND + ["server", "list", "--fmt", "json"], capture_output=True, text=True, timeout=10)
+def test_server_list_output_table_flag():
+    """Test server  list with --output-table flag"""
+    result = subprocess.run(CLI_COMMAND + ["server", "list", "--output-table"], capture_output=True, text=True, timeout=10)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
-        f"Command: server list --fmt json\n"
+        f"Command: server list --output-table\n"
         f"stdout: {result.stdout[:500]}\n"
         f"stderr: {result.stderr[:500]}"
     )
@@ -866,17 +844,6 @@ def test_wf_add_help():
     )
 
 
-def test_wf_add_data_dir_valid_path():
-    """Test wf  add with valid --data-dir"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "add", "--data-dir", "/tmp"], capture_output=True, text=True, timeout=10)
-    assert result.returncode in [0, 1, 2], (
-        f"Command failed with exit code {result.returncode}\n"
-        f"Command: wf add --data-dir /tmp\n"
-        f"stdout: {result.stdout[:500]}\n"
-        f"stderr: {result.stderr[:500]}"
-    )
-
-
 def test_wf_add_skip_ssl_verify_flag():
     """Test wf  add with --skip-ssl-verify flag"""
     result = subprocess.run(CLI_COMMAND + ["wf", "add", "--skip-ssl-verify"], capture_output=True, text=True, timeout=10)
@@ -888,23 +855,23 @@ def test_wf_add_skip_ssl_verify_flag():
     )
 
 
-def test_wf_add_format_table():
-    """Test wf  add with --format=table"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "add", "--table"], capture_output=True, text=True, timeout=10)
+def test_wf_add_output_json_flag():
+    """Test wf  add with --output-json flag"""
+    result = subprocess.run(CLI_COMMAND + ["wf", "add", "--output-json"], capture_output=True, text=True, timeout=10)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
-        f"Command: wf add --format table\n"
+        f"Command: wf add --output-json\n"
         f"stdout: {result.stdout[:500]}\n"
         f"stderr: {result.stderr[:500]}"
     )
 
 
-def test_wf_add_format_json():
-    """Test wf  add with --format=json"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "add", "--json"], capture_output=True, text=True, timeout=10)
+def test_wf_add_output_table_flag():
+    """Test wf  add with --output-table flag"""
+    result = subprocess.run(CLI_COMMAND + ["wf", "add", "--output-table"], capture_output=True, text=True, timeout=10)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
-        f"Command: wf add --format json\n"
+        f"Command: wf add --output-table\n"
         f"stdout: {result.stdout[:500]}\n"
         f"stderr: {result.stderr[:500]}"
     )
@@ -935,117 +902,6 @@ def test_wf_add_missing_required_args():
     )
 
 
-def test_wf_backups_help():
-    """Test wf  backups --help"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "backups", "--help"], capture_output=True, text=True, timeout=10)
-    assert result.returncode in [0], (
-        f"Command failed with exit code {result.returncode}\n"
-        f"Command: wf backups --help\n"
-        f"stdout: {result.stdout[:500]}\n"
-        f"stderr: {result.stderr[:500]}"
-    )
-    assert "Usage:" in result.stdout or "Usage:" in result.stderr, (
-        f"Expected 'Usage:' in output\n" f"stdout: {result.stdout[:500]}\n" f"stderr: {result.stderr[:500]}"
-    )
-
-
-def test_wf_backups_no_args():
-    """Test wf  backups with no arguments"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "backups"], capture_output=True, text=True, timeout=10)
-    assert result.returncode in [0, 1], (
-        f"Command failed with exit code {result.returncode}\n"
-        f"Command: wf backups\n"
-        f"stdout: {result.stdout[:500]}\n"
-        f"stderr: {result.stderr[:500]}"
-    )
-
-
-def test_wf_backups_backup_dir_valid_path():
-    """Test wf  backups with valid --backup-dir"""
-    result = subprocess.run(
-        CLI_COMMAND + ["wf", "backups", "--backup-dir", "/tmp"], capture_output=True, text=True, timeout=10
-    )
-    assert result.returncode in [0, 1, 2], (
-        f"Command failed with exit code {result.returncode}\n"
-        f"Command: wf backups --backup-dir /tmp\n"
-        f"stdout: {result.stdout[:500]}\n"
-        f"stderr: {result.stderr[:500]}"
-    )
-
-
-def test_wf_backups_format_table():
-    """Test wf  backups with --format=table"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "backups", "--table"], capture_output=True, text=True, timeout=10)
-    assert result.returncode in [0, 1, 2], (
-        f"Command failed with exit code {result.returncode}\n"
-        f"Command: wf backups --format table\n"
-        f"stdout: {result.stdout[:500]}\n"
-        f"stderr: {result.stderr[:500]}"
-    )
-
-
-def test_wf_backups_format_json():
-    """Test wf  backups with --format=json"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "backups", "--json"], capture_output=True, text=True, timeout=10)
-    assert result.returncode in [0, 1, 2], (
-        f"Command failed with exit code {result.returncode}\n"
-        f"Command: wf backups --format json\n"
-        f"stdout: {result.stdout[:500]}\n"
-        f"stderr: {result.stderr[:500]}"
-    )
-
-
-def test_wf_createbackup_help():
-    """Test wf  createbackup --help"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "createbackup", "--help"], capture_output=True, text=True, timeout=10)
-    assert result.returncode in [0], (
-        f"Command failed with exit code {result.returncode}\n"
-        f"Command: wf createbackup --help\n"
-        f"stdout: {result.stdout[:500]}\n"
-        f"stderr: {result.stderr[:500]}"
-    )
-    assert "Usage:" in result.stdout or "Usage:" in result.stderr, (
-        f"Expected 'Usage:' in output\n" f"stdout: {result.stdout[:500]}\n" f"stderr: {result.stderr[:500]}"
-    )
-
-
-def test_wf_createbackup_no_args():
-    """Test wf  createbackup with no arguments"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "createbackup"], capture_output=True, text=True, timeout=10)
-    assert result.returncode in [0, 1], (
-        f"Command failed with exit code {result.returncode}\n"
-        f"Command: wf createbackup\n"
-        f"stdout: {result.stdout[:500]}\n"
-        f"stderr: {result.stderr[:500]}"
-    )
-
-
-def test_wf_createbackup_backup_dir_valid_path():
-    """Test wf  createbackup with valid --backup-dir"""
-    result = subprocess.run(
-        CLI_COMMAND + ["wf", "createbackup", "--backup-dir", "/tmp"], capture_output=True, text=True, timeout=10
-    )
-    assert result.returncode in [0, 1, 2], (
-        f"Command failed with exit code {result.returncode}\n"
-        f"Command: wf createbackup --backup-dir /tmp\n"
-        f"stdout: {result.stdout[:500]}\n"
-        f"stderr: {result.stderr[:500]}"
-    )
-
-
-def test_wf_createbackup_data_dir_valid_path():
-    """Test wf  createbackup with valid --data-dir"""
-    result = subprocess.run(
-        CLI_COMMAND + ["wf", "createbackup", "--data-dir", "/tmp"], capture_output=True, text=True, timeout=10
-    )
-    assert result.returncode in [0, 1, 2], (
-        f"Command failed with exit code {result.returncode}\n"
-        f"Command: wf createbackup --data-dir /tmp\n"
-        f"stdout: {result.stdout[:500]}\n"
-        f"stderr: {result.stderr[:500]}"
-    )
-
-
 def test_wf_list_help():
     """Test wf  list --help"""
     result = subprocess.run(CLI_COMMAND + ["wf", "list", "--help"], capture_output=True, text=True, timeout=10)
@@ -1071,45 +927,23 @@ def test_wf_list_no_args():
     )
 
 
-def test_wf_list_data_dir_valid_path():
-    """Test wf  list with valid --data-dir"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "list", "--data-dir", "/tmp"], capture_output=True, text=True, timeout=10)
+def test_wf_list_output_json_flag():
+    """Test wf  list with --output-json flag"""
+    result = subprocess.run(CLI_COMMAND + ["wf", "list", "--output-json"], capture_output=True, text=True, timeout=10)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
-        f"Command: wf list --data-dir /tmp\n"
+        f"Command: wf list --output-json\n"
         f"stdout: {result.stdout[:500]}\n"
         f"stderr: {result.stderr[:500]}"
     )
 
 
-def test_wf_list_format_table():
-    """Test wf  list with --format=table"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "list", "--table"], capture_output=True, text=True, timeout=10)
+def test_wf_list_output_table_flag():
+    """Test wf  list with --output-table flag"""
+    result = subprocess.run(CLI_COMMAND + ["wf", "list", "--output-table"], capture_output=True, text=True, timeout=10)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
-        f"Command: wf list --format table\n"
-        f"stdout: {result.stdout[:500]}\n"
-        f"stderr: {result.stderr[:500]}"
-    )
-
-
-def test_wf_list_format_json():
-    """Test wf  list with --format=json"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "list", "--json"], capture_output=True, text=True, timeout=10)
-    assert result.returncode in [0, 1, 2], (
-        f"Command failed with exit code {result.returncode}\n"
-        f"Command: wf list --format json\n"
-        f"stdout: {result.stdout[:500]}\n"
-        f"stderr: {result.stderr[:500]}"
-    )
-
-
-def test_wf_list_only_flag():
-    """Test wf  list with --only flag"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "list", "--only"], capture_output=True, text=True, timeout=10)
-    assert result.returncode in [0, 1, 2], (
-        f"Command failed with exit code {result.returncode}\n"
-        f"Command: wf list --only\n"
+        f"Command: wf list --output-table\n"
         f"stdout: {result.stdout[:500]}\n"
         f"stderr: {result.stderr[:500]}"
     )
@@ -1298,69 +1132,6 @@ def test_wf_remove_missing_required_args():
     )
 
 
-def test_wf_restore_help():
-    """Test wf  restore --help"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "restore", "--help"], capture_output=True, text=True, timeout=10)
-    assert result.returncode in [0], (
-        f"Command failed with exit code {result.returncode}\n"
-        f"Command: wf restore --help\n"
-        f"stdout: {result.stdout[:500]}\n"
-        f"stderr: {result.stderr[:500]}"
-    )
-    assert "Usage:" in result.stdout or "Usage:" in result.stderr, (
-        f"Expected 'Usage:' in output\n" f"stdout: {result.stdout[:500]}\n" f"stderr: {result.stderr[:500]}"
-    )
-
-
-def test_wf_restore_backup_dir_valid_path():
-    """Test wf  restore with valid --backup-dir"""
-    result = subprocess.run(
-        CLI_COMMAND + ["wf", "restore", "--backup-dir", "/tmp"], capture_output=True, text=True, timeout=10
-    )
-    assert result.returncode in [0, 1, 2], (
-        f"Command failed with exit code {result.returncode}\n"
-        f"Command: wf restore --backup-dir /tmp\n"
-        f"stdout: {result.stdout[:500]}\n"
-        f"stderr: {result.stderr[:500]}"
-    )
-
-
-def test_wf_restore_data_dir_valid_path():
-    """Test wf  restore with valid --data-dir"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "restore", "--data-dir", "/tmp"], capture_output=True, text=True, timeout=10)
-    assert result.returncode in [0, 1, 2], (
-        f"Command failed with exit code {result.returncode}\n"
-        f"Command: wf restore --data-dir /tmp\n"
-        f"stdout: {result.stdout[:500]}\n"
-        f"stderr: {result.stderr[:500]}"
-    )
-
-
-def test_wf_restore_with_positional_args():
-    """Test wf  restore with positional arguments"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "restore", "test_backup_file"], capture_output=True, text=True, timeout=10)
-    assert result.returncode in [0, 1, 2], (
-        f"Command failed with exit code {result.returncode}\n"
-        f"Command: wf restore test_backup_file\n"
-        f"stdout: {result.stdout[:500]}\n"
-        f"stderr: {result.stderr[:500]}"
-    )
-
-
-def test_wf_restore_missing_required_args():
-    """Test wf  restore with missing required arguments"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "restore"], capture_output=True, text=True, timeout=10)
-    assert result.returncode in [2], (
-        f"Command failed with exit code {result.returncode}\n"
-        f"Command: wf restore\n"
-        f"stdout: {result.stdout[:500]}\n"
-        f"stderr: {result.stderr[:500]}"
-    )
-    assert "Error:" in result.stdout or "Error:" in result.stderr, (
-        f"Expected 'Error:' in output\n" f"stdout: {result.stdout[:500]}\n" f"stderr: {result.stderr[:500]}"
-    )
-
-
 def test_wf_search_help():
     """Test wf  search --help"""
     result = subprocess.run(CLI_COMMAND + ["wf", "search", "--help"], capture_output=True, text=True, timeout=10)
@@ -1386,23 +1157,23 @@ def test_wf_search_data_dir_valid_path():
     )
 
 
-def test_wf_search_format_table():
-    """Test wf  search with --format=table"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "search", "--table"], capture_output=True, text=True, timeout=10)
+def test_wf_search_output_json_flag():
+    """Test wf  search with --output-json flag"""
+    result = subprocess.run(CLI_COMMAND + ["wf", "search", "--output-json"], capture_output=True, text=True, timeout=10)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
-        f"Command: wf search --format table\n"
+        f"Command: wf search --output-json\n"
         f"stdout: {result.stdout[:500]}\n"
         f"stderr: {result.stderr[:500]}"
     )
 
 
-def test_wf_search_format_json():
-    """Test wf  search with --format=json"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "search", "--json"], capture_output=True, text=True, timeout=10)
+def test_wf_search_output_table_flag():
+    """Test wf  search with --output-table flag"""
+    result = subprocess.run(CLI_COMMAND + ["wf", "search", "--output-table"], capture_output=True, text=True, timeout=10)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
-        f"Command: wf search --format json\n"
+        f"Command: wf search --output-table\n"
         f"stdout: {result.stdout[:500]}\n"
         f"stderr: {result.stderr[:500]}"
     )
@@ -1480,23 +1251,23 @@ def test_wf_server_data_dir_valid_path():
     )
 
 
-def test_wf_server_format_table():
-    """Test wf  server with --format=table"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "server", "--table"], capture_output=True, text=True, timeout=10)
+def test_wf_server_output_json_flag():
+    """Test wf  server with --output-json flag"""
+    result = subprocess.run(CLI_COMMAND + ["wf", "server", "--output-json"], capture_output=True, text=True, timeout=10)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
-        f"Command: wf server --format table\n"
+        f"Command: wf server --output-json\n"
         f"stdout: {result.stdout[:500]}\n"
         f"stderr: {result.stderr[:500]}"
     )
 
 
-def test_wf_server_format_json():
-    """Test wf  server with --format=json"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "server", "--json"], capture_output=True, text=True, timeout=10)
+def test_wf_server_output_table_flag():
+    """Test wf  server with --output-table flag"""
+    result = subprocess.run(CLI_COMMAND + ["wf", "server", "--output-table"], capture_output=True, text=True, timeout=10)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
-        f"Command: wf server --format json\n"
+        f"Command: wf server --output-table\n"
         f"stdout: {result.stdout[:500]}\n"
         f"stderr: {result.stderr[:500]}"
     )
@@ -1527,23 +1298,23 @@ def test_wf_stats_data_dir_valid_path():
     )
 
 
-def test_wf_stats_format_table():
-    """Test wf  stats with --format=table"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "stats", "--table"], capture_output=True, text=True, timeout=10)
+def test_wf_stats_output_json_flag():
+    """Test wf  stats with --output-json flag"""
+    result = subprocess.run(CLI_COMMAND + ["wf", "stats", "--output-json"], capture_output=True, text=True, timeout=10)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
-        f"Command: wf stats --format table\n"
+        f"Command: wf stats --output-json\n"
         f"stdout: {result.stdout[:500]}\n"
         f"stderr: {result.stderr[:500]}"
     )
 
 
-def test_wf_stats_format_json():
-    """Test wf  stats with --format=json"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "stats", "--json"], capture_output=True, text=True, timeout=10)
+def test_wf_stats_output_table_flag():
+    """Test wf  stats with --output-table flag"""
+    result = subprocess.run(CLI_COMMAND + ["wf", "stats", "--output-table"], capture_output=True, text=True, timeout=10)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
-        f"Command: wf stats --format json\n"
+        f"Command: wf stats --output-table\n"
         f"stdout: {result.stdout[:500]}\n"
         f"stderr: {result.stderr[:500]}"
     )
@@ -1557,54 +1328,4 @@ def test_wf_stats_with_positional_args():
         f"Command: wf stats test_workflow_id\n"
         f"stdout: {result.stdout[:500]}\n"
         f"stderr: {result.stderr[:500]}"
-    )
-
-
-def test_wf_verify_help():
-    """Test wf  verify --help"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "verify", "--help"], capture_output=True, text=True, timeout=10)
-    assert result.returncode in [0], (
-        f"Command failed with exit code {result.returncode}\n"
-        f"Command: wf verify --help\n"
-        f"stdout: {result.stdout[:500]}\n"
-        f"stderr: {result.stderr[:500]}"
-    )
-    assert "Usage:" in result.stdout or "Usage:" in result.stderr, (
-        f"Expected 'Usage:' in output\n" f"stdout: {result.stdout[:500]}\n" f"stderr: {result.stderr[:500]}"
-    )
-
-
-def test_wf_verify_backup_dir_valid_path():
-    """Test wf  verify with valid --backup-dir"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "verify", "--backup-dir", "/tmp"], capture_output=True, text=True, timeout=10)
-    assert result.returncode in [0, 1, 2], (
-        f"Command failed with exit code {result.returncode}\n"
-        f"Command: wf verify --backup-dir /tmp\n"
-        f"stdout: {result.stdout[:500]}\n"
-        f"stderr: {result.stderr[:500]}"
-    )
-
-
-def test_wf_verify_with_positional_args():
-    """Test wf  verify with positional arguments"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "verify", "test_backup_file"], capture_output=True, text=True, timeout=10)
-    assert result.returncode in [0, 1, 2], (
-        f"Command failed with exit code {result.returncode}\n"
-        f"Command: wf verify test_backup_file\n"
-        f"stdout: {result.stdout[:500]}\n"
-        f"stderr: {result.stderr[:500]}"
-    )
-
-
-def test_wf_verify_missing_required_args():
-    """Test wf  verify with missing required arguments"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "verify"], capture_output=True, text=True, timeout=10)
-    assert result.returncode in [2], (
-        f"Command failed with exit code {result.returncode}\n"
-        f"Command: wf verify\n"
-        f"stdout: {result.stdout[:500]}\n"
-        f"stderr: {result.stderr[:500]}"
-    )
-    assert "Error:" in result.stdout or "Error:" in result.stderr, (
-        f"Expected 'Error:' in output\n" f"stdout: {result.stdout[:500]}\n" f"stderr: {result.stderr[:500]}"
     )
