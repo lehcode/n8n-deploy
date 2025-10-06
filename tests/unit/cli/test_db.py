@@ -131,8 +131,8 @@ class TestDatabaseCommands:
         assert result.exit_code == 0
         assert "Initialize n8n-deploy database" in result.output
         assert "--data-dir" in result.output
+        assert "--filename" in result.output
         assert "--no-emoji" in result.output
-        assert "--import" in result.output
 
     def test_status_command_help(self):
         """Test status command help"""
@@ -157,50 +157,46 @@ class TestDatabaseCommands:
         assert "Create database backup" in result.output
         assert "--data-dir" in result.output
 
-    @patch("api.cli.db.DBApi")
-    @patch("api.config.AppConfig")
-    def test_init_command_new_database(self, mock_config, mock_db):
-        """Test init command with new database"""
-        # Mock config
-        mock_config_instance = MagicMock()
-        mock_config_instance.base_folder = Path(self.temp_dir)
-        mock_config.return_value = mock_config_instance
-
-        # Mock database path doesn't exist
-        db_path = Path(self.temp_dir) / "n8n-deploy.db"
-
-        result = self.runner.invoke(db, ["init", "--data-dir", self.temp_dir, "--no-emoji"])
+    def test_init_custom_filename_new_database(self):
+        """Test --filename with new database (should create it)"""
+        result = self.runner.invoke(db, ["init", "--data-dir", self.temp_dir, "--filename", "custom.db", "--no-emoji"])
 
         assert result.exit_code == 0
         assert "Database initialized" in result.output
-        mock_db.assert_called_once()
-
-    def test_init_import_flag_new_database(self):
-        """Test --import flag with new database (should create it)"""
-        result = self.runner.invoke(db, ["init", "--data-dir", self.temp_dir, "--import", "--no-emoji"])
-
-        assert result.exit_code == 0
-        assert "Database initialized" in result.output
-        db_path = Path(self.temp_dir) / "n8n-deploy.db"
+        db_path = Path(self.temp_dir) / "custom.db"
         assert db_path.exists()
 
-    def test_init_import_flag_existing_database(self):
-        """Test --import flag with existing database (should accept without prompt)"""
+    def test_init_custom_filename_auto_import(self):
+        """Test --filename with existing database (should auto-import)"""
         # First create the database
-        result1 = self.runner.invoke(db, ["init", "--data-dir", self.temp_dir, "--import", "--no-emoji"])
+        result1 = self.runner.invoke(db, ["init", "--data-dir", self.temp_dir, "--filename", "import-test.db", "--no-emoji"])
         assert result1.exit_code == 0
 
-        # Run again with --import flag
-        result2 = self.runner.invoke(db, ["init", "--data-dir", self.temp_dir, "--import", "--no-emoji"])
+        # Run again with same custom filename (should auto-import)
+        result2 = self.runner.invoke(db, ["init", "--data-dir", self.temp_dir, "--filename", "import-test.db", "--no-emoji"])
 
         assert result2.exit_code == 0
         assert "Using existing database" in result2.output
         assert "Database already exists" in result2.output
 
-    def test_init_import_flag_json_format(self):
-        """Test --import flag with JSON format output"""
+    def test_init_default_filename_prompts_interactively(self):
+        """Test default filename with existing database (should prompt)"""
+        # Create database with default filename
+        result1 = self.runner.invoke(db, ["init", "--data-dir", self.temp_dir, "--no-emoji"], input="1\n")
+        assert result1.exit_code == 0
+
+        # Run again with default filename (should prompt)
+        result2 = self.runner.invoke(db, ["init", "--data-dir", self.temp_dir, "--no-emoji"], input="1\n")
+
+        assert result2.exit_code == 0
+        # Should show options
+        assert "Options:" in result2.output
+        assert "Use existing database" in result2.output
+
+    def test_init_custom_filename_json_format(self):
+        """Test --filename with JSON format output"""
         # Create database
-        result1 = self.runner.invoke(db, ["init", "--data-dir", self.temp_dir, "--import", "--json"])
+        result1 = self.runner.invoke(db, ["init", "--data-dir", self.temp_dir, "--filename", "test-json.db", "--json"])
         assert result1.exit_code == 0
 
         # Parse JSON output
@@ -210,11 +206,10 @@ class TestDatabaseCommands:
         assert output1["success"] is True
         assert output1["message"] == "Database initialized"
         assert "database_path" in output1
-        # New database should not have already_exists field or it should be False
-        assert output1.get("already_exists", False) is False
+        assert "test-json.db" in output1["database_path"]
 
-        # Run again with existing database
-        result2 = self.runner.invoke(db, ["init", "--data-dir", self.temp_dir, "--import", "--json"])
+        # Run again with existing database (should auto-import)
+        result2 = self.runner.invoke(db, ["init", "--data-dir", self.temp_dir, "--filename", "test-json.db", "--json"])
         assert result2.exit_code == 0
 
         # Parse second JSON output
@@ -223,20 +218,20 @@ class TestDatabaseCommands:
         assert output2["message"] == "Using existing database"
         assert output2["already_exists"] is True
 
-    def test_init_import_flag_with_no_emoji(self):
-        """Test --import flag combined with --no-emoji"""
-        result = self.runner.invoke(db, ["init", "--data-dir", self.temp_dir, "--import", "--no-emoji"])
+    def test_init_no_emoji_option(self):
+        """Test --no-emoji option"""
+        result = self.runner.invoke(db, ["init", "--data-dir", self.temp_dir, "--no-emoji"])
 
         assert result.exit_code == 0
         assert "Database initialized" in result.output
         # Verify no emoji in output
         assert "✅" not in result.output
-        assert "🗄️" not in result.output
+        assert "🎬" not in result.output
         assert "⚠️" not in result.output
 
     def test_init_json_format_implies_no_emoji(self):
         """Test that JSON format automatically disables emoji"""
-        result = self.runner.invoke(db, ["init", "--data-dir", self.temp_dir, "--import", "--json"])
+        result = self.runner.invoke(db, ["init", "--data-dir", self.temp_dir, "--json"])
 
         assert result.exit_code == 0
         # JSON output should not contain emoji
