@@ -111,12 +111,13 @@ def db() -> None:
 @click.option("--filename", type=str, default="n8n-deploy.db", help="Database filename (default: n8n-deploy.db)")
 @click.option("--json", "output_json", is_flag=True, help=HELP_JSON)
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
-@click.option("--import", "import_db", is_flag=True, help="Import existing database without prompting")
-def init(data_dir: Optional[str], filename: str, output_json: bool, no_emoji: bool, import_db: bool) -> None:
+def init(data_dir: Optional[str], filename: str, output_json: bool, no_emoji: bool) -> None:
     """🎬 Initialize n8n-deploy database
 
     Create the SQLite database with the required schema.
-    Will prompt if database already exists unless --import is used.
+    Will prompt if database already exists.
+
+    If --filename is specified with an existing file, it will be imported automatically.
 
     NOTE: Database must be initialized before using other commands.
     """
@@ -130,10 +131,14 @@ def init(data_dir: Optional[str], filename: str, output_json: bool, no_emoji: bo
     config = AppConfig(base_folder=base_path, db_filename=filename)
     db_path = config.database_path
 
+    # If --filename was explicitly provided (not default) and file exists, auto-import
+    custom_filename_provided = filename != "n8n-deploy.db"
+    auto_import = custom_filename_provided and db_path.exists()
+
     # Check if database already exists
     if db_path.exists():
-        # If import flag is set or running in non-interactive mode, use existing database
-        if import_db or not is_interactive_mode():
+        # Auto-import if custom filename provided with existing file
+        if auto_import:
             import os
 
             # Check if database is actually initialized
