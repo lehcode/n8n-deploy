@@ -258,7 +258,8 @@ def init(data_dir: Optional[str], filename: str, auto_import: bool, output_json:
             "flow_dir_configured": bool(flow_dir),
             "flow_dir": flow_dir if flow_dir else None,
         }
-        console.print(json.dumps(result, indent=2))
+        # Use print() instead of console.print() to avoid Rich wrapping JSON
+        print(json.dumps(result, indent=2, ensure_ascii=False))
     else:
         if no_emoji:
             console.print("Database initialized")
