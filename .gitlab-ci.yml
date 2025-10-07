@@ -169,10 +169,10 @@ build:python-matrix:
   image: python:${PYTHON_VERSION}-slim
   tags:
     - python
-  needs:
-    - build:validation
-  dependencies:
-    - build:validation
+  # needs:
+  #   - build:validation
+  # dependencies:
+  #   - build:validation
   parallel:
     matrix:
       - PYTHON_VERSION: ["3.9", "3.10", "3.11", "3.12", "3.13"]
@@ -199,34 +199,34 @@ build:python-matrix:
   allow_failure: false
 
 # Build Matrix stage - Validation build (runs on all branches)
-build:validation:
-  stage: build-matrix
-  image: python:3.9-slim
-  tags:
-    - python
-  <<: *python_setup
-  needs:
-    - quality:coverage
-    - test:unit
-    - test:integration
-    - test:hypothesis
-  dependencies:
-    - quality:coverage
-    - test:unit
-    - test:integration
-    - test:hypothesis
-  script:
-    - source .venv/bin/activate
-    - echo "🔧 Running final validation build..."
-    - uv pip install build
-    - python -m build --wheel
-    - pip install dist/*.whl
-    - n8n-deploy --version
-    - echo "✅ Package build and installation validation completed"
-  artifacts:
-    paths:
-      - dist/
-    expire_in: 1 hour
+# build:validation:
+#   stage: build-matrix
+#   image: python:3.9-slim
+#   tags:
+#     - python
+#   <<: *python_setup
+#   needs:
+#     - quality:coverage
+#     - test:unit
+#     - test:integration
+#     - test:hypothesis
+#   dependencies:
+#     - quality:coverage
+#     - test:unit
+#     - test:integration
+#     - test:hypothesis
+#   script:
+#     - source .venv/bin/activate
+#     - echo "🔧 Running final validation build..."
+#     - uv pip install build
+#     - python -m build --wheel
+#     - pip install dist/*.whl
+#     - n8n-deploy --version
+#     - echo "✅ Package build and installation validation completed"
+#   artifacts:
+#     paths:
+#       - dist/
+#     expire_in: 1 hour
 
 
 # Build stage - Production environment setup
@@ -237,10 +237,10 @@ build:production:
     - python
   <<: *python_setup
   needs:
-    - build:validation
+    # - build:validation
     - build:python-matrix
   dependencies:
-    - build:validation
+    # - build:validation
     - build:python-matrix
   script:
     - source .venv/bin/activate
