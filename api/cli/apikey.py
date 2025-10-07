@@ -247,7 +247,7 @@ def list_apikeys(unmask: bool, output_json: bool, no_emoji: bool) -> None:
                 # Determine status based on is_active with graphical indicators
                 is_active = key.get("is_active", True)
                 if no_emoji:
-                    status = "✓" if is_active else "✗"
+                    status = "Active" if is_active else "Inactive"
                 else:
                     status = "✅" if is_active else "❌"
 
@@ -269,6 +269,27 @@ def list_apikeys(unmask: bool, output_json: bool, no_emoji: bool) -> None:
             console.print(table)
     except Exception as e:
         raise click.ClickException(f"Failed to list API keys: {e}")
+
+
+@apikey.command("activate", cls=CustomCommand)
+@click.argument("key_name")
+@click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
+def activate_apikey(key_name: str, no_emoji: bool) -> None:
+    """✅ Activate API key (restore from deactivation)"""
+    try:
+        # Use default config from environment variables
+        config = get_config()
+        db_api = DBApi(config=config)
+        key_api = KeyApi(db=db_api, config=config)
+        success = key_api.activate_api_key(key_name)
+        if not success:
+            raise click.ClickException("Failed to activate API key")
+    except Exception as e:
+        if no_emoji:
+            console.print(f"Error: Failed to activate API key: {e}")
+        else:
+            console.print(f"❌ Error: Failed to activate API key: {e}")
+        raise click.Abort()
 
 
 @apikey.command("deactivate", cls=CustomCommand)
@@ -294,31 +315,73 @@ def deactivate_apikey(key_name: str, no_emoji: bool) -> None:
 
 @apikey.command("delete", cls=CustomCommand)
 @click.argument("key_name")
-@click.option("--confirm", is_flag=True, help="Confirm permanent deletion")
-def delete_apikey(key_name: str, confirm: bool) -> None:
-    """🗑️ Permanently delete an API key"""
+@click.option("--force", is_flag=True, help="Force permanent deletion without confirmation")
+@click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
+def delete_apikey(key_name: str, force: bool, no_emoji: bool) -> None:
+    """🗑️ Permanently delete an API key
+
+    Without --force flag, prompts for confirmation (type 'yes' to confirm).
+
+    \b
+    Examples:
+      n8n-deploy apikey delete my_key --force        # Skip confirmation
+      echo "yes" | n8n-deploy apikey delete my_key   # Confirm via stdin
+    """
     try:
         # Use default config from environment variables
         config = get_config()
         db_api = DBApi(config=config)
         key_api = KeyApi(db=db_api, config=config)
-        success = key_api.delete_api_key(key_name, confirm=confirm)
+
+        # If not forced, ask for confirmation
+        if not force:
+            if no_emoji:
+                console.print(f"About to permanently delete API key: {key_name}")
+                console.print("Type 'yes' to confirm: ", end="")
+            else:
+                console.print(f"⚠️  About to permanently delete API key: {key_name}")
+                console.print("   Type 'yes' to confirm: ", end="")
+
+            confirmation = input().strip().lower()
+            if confirmation != "yes":
+                if no_emoji:
+                    console.print("Deletion cancelled")
+                else:
+                    console.print("❌ Deletion cancelled")
+                raise click.Abort()
+            force = True  # User confirmed, proceed with deletion
+
+        success = key_api.delete_api_key(key_name, force=force, no_emoji=no_emoji)
         if not success:
             raise click.ClickException("Failed to delete API key")
+    except click.Abort:
+        raise
     except Exception as e:
         raise click.ClickException(f"Failed to delete API key: {e}")
 
 
 @apikey.command("test", cls=CustomCommand)
 @click.argument("key_name")
-def test_apikey(key_name: str) -> None:
-    """🧪 Test API key validity"""
+@click.option("--server-url", help="Server URL to test against (uses N8N_SERVER_URL if not specified)")
+@click.option("--skip-ssl-verify", is_flag=True, help="Skip SSL certificate verification (for self-signed certificates)")
+@click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
+def test_apikey(key_name: str, server_url: Optional[str], skip_ssl_verify: bool, no_emoji: bool) -> None:
+    """🧪 Test API key validity against n8n server
+
+    Test if the API key can authenticate successfully with an n8n server.
+
+    \b
+    Examples:
+      n8n-deploy apikey test my_key --server-url http://n8n.local:5678
+      N8N_SERVER_URL=http://n8n.local n8n-deploy apikey test my_key
+      n8n-deploy apikey test my_key --server-url https://n8n.local --skip-ssl-verify
+    """
     try:
         # Use default config from environment variables
         config = get_config()
         db_api = DBApi(config=config)
         key_api = KeyApi(db=db_api, config=config)
-        success = key_api.test_api_key(key_name)
+        success = key_api.test_api_key(key_name, server_url=server_url, skip_ssl_verify=skip_ssl_verify, no_emoji=no_emoji)
         if not success:
             raise click.ClickException("API key test failed")
     except Exception as e:

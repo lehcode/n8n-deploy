@@ -173,7 +173,7 @@ class TestApiKeyLifecycle:
 
         assert_that(test_api_key_manager.get_api_key(test_api_key_data["name"])).is_not_none()
 
-        result = test_api_key_manager.delete_api_key(test_api_key_data["name"], confirm=True)
+        result = test_api_key_manager.delete_api_key(test_api_key_data["name"], force=True)
         assert_that(result).is_true()
 
         assert_that(test_api_key_manager.get_api_key(test_api_key_data["name"])).is_none()

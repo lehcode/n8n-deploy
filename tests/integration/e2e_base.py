@@ -60,7 +60,7 @@ class E2ETestBase:
             if args[i] in ["--data-dir", "--flow-dir", "--remote"] and i + 1 < len(args):
                 global_options.extend([args[i], args[i + 1]])
                 i += 2
-            elif args[i] in ["--no-emoji", "--confirm", "--unmask", "--only"]:
+            elif args[i] in ["--no-emoji", "--force", "--unmask", "--only"]:
                 global_options.append(args[i])
                 i += 1
             else:
