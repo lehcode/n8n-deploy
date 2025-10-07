@@ -83,7 +83,7 @@ EXPOSE 4000
 CMD ["bundle", "exec", "jekyll", "serve", "--host", "0.0.0.0", "--livereload", "--force_polling"]
 ```
 
-## Testing Script (`test-ghpages.sh`)
+## Testing Script (`docs/test-ghpages.sh`)
 
 ```bash
 #!/bin/bash
@@ -114,7 +114,7 @@ docker compose -f docker-compose.ghpages.yml up -d
 2. **Build and Start the Container**
    ```bash
    # Run the test script
-   ./test-ghpages.sh
+   ./docs/test-ghpages.sh
 
    # Or manually
    docker compose -f docker-compose.ghpages.yml up -d
@@ -164,7 +164,7 @@ docker compose -f docker-compose.ghpages.yml up -d
 
 ```mermaid
 graph TD
-    A[Start Local Testing] --> B[Run test-ghpages.sh]
+    A[Start Local Testing] --> B[Run docs/test-ghpages.sh]
     B --> C{Docker Running?}
     C -->|Yes| D[Build Container]
     C -->|No| E[Start Docker]

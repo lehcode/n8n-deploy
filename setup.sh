@@ -35,25 +35,22 @@ python3 "${SCRIPT_DIR}/install.py"
 
 # Verify installation
 echo "🧪 Quick verification..."
-if command -v elek-n8n &> /dev/null; then
-    echo -e "  ✅ 'elek-n8n' command available"
+if command -v n8n-deploy &> /dev/null; then
+    echo -e "  ✅ 'n8n-deploy' command available"
 else
-    echo -e "  ${YELLOW}⚠️  'elek-n8n' command not found in PATH${NC}"
+    echo -e "  ${YELLOW}⚠️  'n8n-deploy' command not found in PATH${NC}"
     echo "     You may need to restart your shell or add ~/.local/bin to PATH"
 fi
-
-# Create quick-start aliases for current session
-echo "📝 Setting up temporary aliases for current session..."
-alias elek-n8n="python3 ${SCRIPT_DIR}/api/cli.py"
-alias elek-n8n-db="python3 ${SCRIPT_DIR}/api/cli.py db"
 
 echo -e "${GREEN}✅ Setup completed!${NC}"
 echo ""
 echo "Quick start commands:"
-echo "  elek-n8n --help        # Show help"
-echo "  elek-n8n-db-init       # Initialize database"
-echo "  elek-n8n-list          # List workflows"
-echo "  elek-n8n-db-status     # Database statistics"
+echo "  n8n-deploy --help          # Show help"
+echo "  n8n-deploy db init         # Initialize database"
+echo "  n8n-deploy wf list         # List workflows"
+echo "  n8n-deploy db status       # Database statistics"
+echo "  n8n-deploy apikey list     # List API keys"
 echo ""
-echo "To make aliases permanent, restart your shell or run:"
-echo "  source ~/.bashrc   # or ~/.zshrc"
+echo "For more information:"
+echo "  n8n-deploy --help"
+echo "  cat README.md"
