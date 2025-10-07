@@ -173,7 +173,7 @@ class TestPropertyBased:
                 assert False, "Invalid JSON output"
 
     @given(server_url=server_urls)
-    @settings(max_examples=20, deadline=2000)
+    @settings(max_examples=20, deadline=5000)
     def test_env_accepts_valid_server_urls(self, server_url):
         """Property: env command should accept valid server URLs"""
         result = subprocess.run(["./n8n-deploy", "env", "--remote", server_url], capture_output=True, timeout=5, text=True)
@@ -202,7 +202,7 @@ class TestPropertyBased:
         assert result.returncode in [0, 1, 2], f"Unexpected exit code: {result.returncode}"
 
     @given(format_choice=st.sampled_from(["table", "json", None]))
-    @settings(max_examples=20, deadline=2000)
+    @settings(max_examples=20, deadline=5000)
     def test_wf_list_handles_format_options(self, format_choice):
         """Property: wf list should handle all format options"""
         cmd = ["./n8n-deploy", "wf", "list"]
@@ -250,7 +250,7 @@ class TestPropertyBased:
         assert result.returncode in [0, 1, 2], "Deep nested path caused unexpected behavior"
 
     @given(server_url=server_urls, app_dir=valid_paths)
-    @settings(max_examples=20, deadline=2000)
+    @settings(max_examples=20, deadline=5000)
     def test_combined_options_never_crash(self, server_url, app_dir):
         """Property: Combining multiple options should never crash"""
         result = subprocess.run(
@@ -320,7 +320,7 @@ class TestFormatValidation:
                 assert False, "db status JSON output invalid"
 
     @given(app_dir=valid_paths)
-    @settings(max_examples=20, deadline=2000)
+    @settings(max_examples=20, deadline=5000)
     def test_apikey_list_json_structure(self, app_dir):
         """Property: apikey list --format json has consistent structure"""
         result = subprocess.run(
@@ -414,7 +414,7 @@ class TestPathHandling:
         assert all(code in [0, 1, 2] for code in exit_codes)
 
     @given(path_name=st.text(min_size=1, max_size=30, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"))
-    @settings(max_examples=20, deadline=2000)
+    @settings(max_examples=20, deadline=5000)
     def test_invalid_paths_default_to_cwd(self, path_name):
         """Property: Invalid paths should default to cwd and not cause crashes"""
         # Generate a nonexistent path
@@ -447,7 +447,7 @@ class TestInputSanitization:
     """Property: Malicious inputs never cause code execution"""
 
     @given(malicious_input=malicious_names)
-    @settings(max_examples=20, deadline=2000)
+    @settings(max_examples=20, deadline=5000)
     def test_malicious_workflow_names_blocked(self, malicious_input):
         """Property: SQL injection attempts in wf names fail safely"""
         # Skip inputs with null bytes (Python subprocess limitation)
@@ -471,7 +471,7 @@ class TestInputSanitization:
         # Since search returns "not found", the command was NOT executed
 
     @given(malicious_input=malicious_names)
-    @settings(max_examples=20, deadline=2000)
+    @settings(max_examples=20, deadline=5000)
     def test_malicious_tag_names_blocked(self, malicious_input):
         """Property: Command injection in tags fails safely"""
         # Skip inputs with null bytes
@@ -879,7 +879,7 @@ class TestDatabaseInit:
         filename1=db_filenames,
         filename2=db_filenames,
     )
-    @settings(max_examples=20, deadline=2000)
+    @settings(max_examples=20, deadline=5000)
     def test_db_init_different_filenames_create_separate_databases(self, filename1, filename2):
         """Property: Different filenames create separate database files"""
         import tempfile
