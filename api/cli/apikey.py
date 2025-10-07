@@ -201,9 +201,8 @@ def add_apikey(
 @apikey.command("list", cls=CustomCommand)
 @click.option("--unmask", is_flag=True, help="Display actual credentials (SECURITY WARNING: use with extreme caution)")
 @click.option("--json", "output_json", is_flag=True, help=HELP_JSON)
-@click.option("--table", "output_table", is_flag=True, help=HELP_TABLE)
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
-def list_apikeys(unmask: bool, output_json: bool, output_table: bool, no_emoji: bool) -> None:
+def list_apikeys(unmask: bool, output_json: bool, no_emoji: bool) -> None:
     """📋 List all stored API keys
 
     Display all stored API keys with metadata (credentials are masked by default).
@@ -237,31 +236,34 @@ def list_apikeys(unmask: bool, output_json: bool, output_table: bool, no_emoji: 
             table.add_column("Name", style="cyan")
             table.add_column("ID", style="dim")
             table.add_column("Created", style="blue")
-            table.add_column("Status", style="magenta")
-            table.add_column("Description", style="dim")
-            if unmask:
-                table.add_column("API Key", style="red")
+            table.add_column("Status", style="magenta", justify="center")
+            table.add_column("Key", style="dim" if not unmask else "red")
 
             for key in keys:
                 created = key["created_at"]
                 if isinstance(created, str):
                     created = created[:16]  # Truncate datetime
 
-                # Determine status based on is_active
-                status = "Active" if key.get("is_active", True) else "Inactive"
+                # Determine status based on is_active with graphical indicators
+                is_active = key.get("is_active", True)
+                if no_emoji:
+                    status = "✓" if is_active else "✗"
+                else:
+                    status = "✅" if is_active else "❌"
+
+                # Show API key if unmask is True, otherwise show masked
+                if unmask:
+                    key_display = key.get("api_key", "***")
+                else:
+                    key_display = "***"
 
                 row_data = [
                     key["name"],
                     str(key["id"]),
                     str(created),
                     status,
-                    key["description"] or "",
+                    key_display,
                 ]
-                if unmask:
-                    row_data.append(key.get("api_key", "***"))
-                else:
-                    # Mask credentials by default
-                    pass  # Don't add API key column at all
                 table.add_row(*row_data)
 
             console.print(table)
