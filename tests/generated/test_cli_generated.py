@@ -55,6 +55,56 @@ def test_apikey_add_with_positional_args():
     )
 
 
+def test_apikey_activate_help():
+    """Test apikey activate --help"""
+    result = subprocess.run(CLI_COMMAND + ["apikey", "activate", "--help"], capture_output=True, text=True, timeout=10)
+    assert result.returncode in [0], (
+        f"Command failed with exit code {result.returncode}\n"
+        f"Command: apikey activate --help\n"
+        f"stdout: {result.stdout[:500]}\n"
+        f"stderr: {result.stderr[:500]}"
+    )
+    assert "Usage:" in result.stdout or "Usage:" in result.stderr, (
+        f"Expected 'Usage:' in output\n" f"stdout: {result.stdout[:500]}\n" f"stderr: {result.stderr[:500]}"
+    )
+
+
+def test_apikey_activate_data_dir_valid_path():
+    """Test apikey activate command"""
+    result = subprocess.run(CLI_COMMAND + ["apikey", "activate"], capture_output=True, text=True, timeout=10)
+    assert result.returncode in [0, 1, 2], (
+        f"Command failed with exit code {result.returncode}\n"
+        f"Command: apikey activate\n"
+        f"stdout: {result.stdout[:500]}\n"
+        f"stderr: {result.stderr[:500]}"
+    )
+
+
+def test_apikey_activate_with_positional_args():
+    """Test apikey activate with positional arguments"""
+    result = subprocess.run(CLI_COMMAND + ["apikey", "activate", "test_key_name"], capture_output=True, text=True, timeout=10)
+    assert result.returncode in [0, 1, 2], (
+        f"Command failed with exit code {result.returncode}\n"
+        f"Command: apikey activate test_key_name\n"
+        f"stdout: {result.stdout[:500]}\n"
+        f"stderr: {result.stderr[:500]}"
+    )
+
+
+def test_apikey_activate_missing_required_args():
+    """Test apikey activate with missing required arguments"""
+    result = subprocess.run(CLI_COMMAND + ["apikey", "activate"], capture_output=True, text=True, timeout=10)
+    assert result.returncode in [2], (
+        f"Command failed with exit code {result.returncode}\n"
+        f"Command: apikey activate\n"
+        f"stdout: {result.stdout[:500]}\n"
+        f"stderr: {result.stderr[:500]}"
+    )
+    assert "Error:" in result.stdout or "Error:" in result.stderr, (
+        f"Expected 'Error:' in output\n" f"stdout: {result.stdout[:500]}\n" f"stderr: {result.stderr[:500]}"
+    )
+
+
 def test_apikey_deactivate_help():
     """Test apikey  deactivate --help"""
     result = subprocess.run(CLI_COMMAND + ["apikey", "deactivate", "--help"], capture_output=True, text=True, timeout=10)

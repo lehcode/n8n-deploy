@@ -55,7 +55,7 @@ class ApikeyTestHelpers(E2ETestBase):
         args = ["apikey", "delete", name]
 
         if confirm:
-            args.append("--confirm")
+            args.append("--force")
 
         return self.run_cli_command(args)
 

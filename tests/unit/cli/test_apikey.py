@@ -2,7 +2,7 @@
 """
 Unit tests for API key CLI commands module
 
-Tests the modular API key commands: add, list, get, deactivate, delete, test
+Tests the modular API key commands: add, list, activate, deactivate, delete, test
 """
 
 import os
@@ -60,6 +60,13 @@ class TestAPIKeyCommands:
         assert "List all stored API keys" in result.output
         assert "--unmask" in result.output
 
+    def test_activate_command_help(self):
+        """Test activate command help"""
+        result = self.runner.invoke(apikey, ["activate", "--help"])
+        assert result.exit_code == 0
+        assert "Activate API key" in result.output
+        assert "KEY_NAME" in result.output
+
     def test_deactivate_command_help(self):
         """Test deactivate command help"""
         result = self.runner.invoke(apikey, ["deactivate", "--help"])
@@ -72,7 +79,7 @@ class TestAPIKeyCommands:
         result = self.runner.invoke(apikey, ["delete", "--help"])
         assert result.exit_code == 0
         assert "Permanently delete an API key" in result.output
-        assert "--confirm" in result.output
+        assert "--force" in result.output
 
     def test_test_command_help(self):
         """Test test command help"""
@@ -123,6 +130,65 @@ class TestAPIKeyCommands:
 
     @patch("api.cli.apikey.KeyApi")
     @patch("api.config.AppConfig")
+    def test_activate_command_functionality(self, mock_config, mock_api_manager):
+        """Test activate command functionality"""
+        # Mock config
+        mock_config_instance = MagicMock()
+        mock_config_instance.base_folder = Path(self.temp_dir)
+        mock_config.return_value = mock_config_instance
+
+        # Mock API manager
+        mock_manager_instance = MagicMock()
+        mock_api_manager.return_value = mock_manager_instance
+        mock_manager_instance.activate_api_key.return_value = True
+
+        result = self.runner.invoke(apikey, ["activate", "test_key"])
+
+        assert result.exit_code == 0
+        mock_manager_instance.activate_api_key.assert_called_once_with("test_key")
+
+    @patch("api.cli.apikey.KeyApi")
+    @patch("api.config.AppConfig")
+    def test_deactivate_command_functionality(self, mock_config, mock_api_manager):
+        """Test deactivate command functionality"""
+        # Mock config
+        mock_config_instance = MagicMock()
+        mock_config_instance.base_folder = Path(self.temp_dir)
+        mock_config.return_value = mock_config_instance
+
+        # Mock API manager
+        mock_manager_instance = MagicMock()
+        mock_api_manager.return_value = mock_manager_instance
+        mock_manager_instance.deactivate_api_key.return_value = True
+
+        result = self.runner.invoke(apikey, ["deactivate", "test_key"])
+
+        assert result.exit_code == 0
+        mock_manager_instance.deactivate_api_key.assert_called_once_with("test_key")
+
+    @patch("api.cli.apikey.KeyApi")
+    @patch("api.config.AppConfig")
+    def test_test_command_functionality(self, mock_config, mock_api_manager):
+        """Test test command functionality"""
+        # Mock config
+        mock_config_instance = MagicMock()
+        mock_config_instance.base_folder = Path(self.temp_dir)
+        mock_config.return_value = mock_config_instance
+
+        # Mock API manager
+        mock_manager_instance = MagicMock()
+        mock_api_manager.return_value = mock_manager_instance
+        mock_manager_instance.test_api_key.return_value = True
+
+        result = self.runner.invoke(apikey, ["test", "test_key"])
+
+        assert result.exit_code == 0
+        mock_manager_instance.test_api_key.assert_called_once_with(
+            "test_key", server_url=None, skip_ssl_verify=False, no_emoji=False
+        )
+
+    @patch("api.cli.apikey.KeyApi")
+    @patch("api.config.AppConfig")
     def test_delete_command_with_confirmation(self, mock_config, mock_api_manager):
         """Test delete command with confirmation"""
         # Mock config
@@ -135,7 +201,7 @@ class TestAPIKeyCommands:
         mock_api_manager.return_value = mock_manager_instance
         mock_manager_instance.delete_api_key.return_value = True
 
-        result = self.runner.invoke(apikey, ["delete", "test_key", "--confirm"])
+        result = self.runner.invoke(apikey, ["delete", "test_key", "--force"])
 
         assert result.exit_code == 0
-        mock_manager_instance.delete_api_key.assert_called_once_with("test_key", confirm=True)
+        mock_manager_instance.delete_api_key.assert_called_once_with("test_key", force=True, no_emoji=False)

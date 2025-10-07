@@ -82,7 +82,7 @@ class TestApikeyOperations(ApikeyTestHelpers):
                 assert test_key in unmask_stdout or "eyJhbGci" in unmask_stdout
 
             # Step 4: Delete API key
-            delete_returncode, delete_stdout, delete_stderr = self.run_cli_command(["apikey", "delete", key_name, "--confirm"])
+            delete_returncode, delete_stdout, delete_stderr = self.run_cli_command(["apikey", "delete", key_name, "--force"])
             # Should succeed or ask for confirmation
             assert delete_returncode in [0, 1]
 
@@ -95,7 +95,7 @@ class TestApikeyOperations(ApikeyTestHelpers):
                 "apikey",
                 "delete",
                 "nonexistent_key",
-                "--confirm",
+                "--force",
             ]
         )
 
@@ -312,18 +312,18 @@ class TestApikeyOperations(ApikeyTestHelpers):
         )
 
         if add_returncode == 0:
-            # Try to delete without --confirm
+            # Try to delete without --force
             delete_no_confirm_returncode, _, _ = self.run_cli_command(["apikey", "delete", "deletion_test"])
 
             # Should require confirmation
             if delete_no_confirm_returncode != 0:
-                # Try with --confirm
+                # Try with --force
                 delete_confirm_returncode, _, _ = self.run_cli_command(
                     [
                         "apikey",
                         "delete",
                         "deletion_test",
-                        "--confirm",
+                        "--force",
                     ]
                 )
                 assert delete_confirm_returncode in [0, 1]
@@ -449,6 +449,41 @@ class TestApikeyOperations(ApikeyTestHelpers):
         data = json.loads(stdout)
         assert isinstance(data, list) or isinstance(data, str)  # May be list or JSON string
 
+    def test_apikey_activate_deactivate_cycle(self) -> None:
+        """Test apikey activate and deactivate cycle"""
+        self.setup_database()
+        test_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dGVzdA.c2lnbmF0dXJl"
+        key_name = "activate_test"
+
+        # Add key
+        add_returncode, _, _ = self.run_cli_command(["apikey", "add", test_key, "--name", key_name])
+        assert add_returncode == 0
+
+        # Verify it's active
+        list_returncode, list_stdout, _ = self.run_cli_command(["apikey", "list"])
+        assert list_returncode == 0
+        assert key_name in list_stdout
+
+        # Deactivate
+        deactivate_returncode, deactivate_stdout, _ = self.run_cli_command(["apikey", "deactivate", key_name])
+        assert deactivate_returncode == 0
+        assert "deactivated" in deactivate_stdout.lower()
+
+        # Verify it shows as inactive
+        list_returncode, list_stdout, _ = self.run_cli_command(["apikey", "list"])
+        assert list_returncode == 0
+        assert key_name in list_stdout
+
+        # Activate
+        activate_returncode, activate_stdout, _ = self.run_cli_command(["apikey", "activate", key_name])
+        assert activate_returncode == 0
+        assert "activated" in activate_stdout.lower()
+
+        # Verify it's active again
+        list_returncode, list_stdout, _ = self.run_cli_command(["apikey", "list"])
+        assert list_returncode == 0
+        assert key_name in list_stdout
+
     def test_apikey_deactivate_soft_delete(self) -> None:
         """Test apikey deactivate performs soft delete"""
         self.setup_database()
@@ -466,7 +501,7 @@ class TestApikeyOperations(ApikeyTestHelpers):
                 assert list_result[0] == 0
 
     def test_apikey_delete_with_confirm(self) -> None:
-        """Test apikey delete <name> --confirm permanently deletes"""
+        """Test apikey delete <name> --force permanently deletes"""
         self.setup_database()
         test_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dGVzdA.c2lnbmF0dXJl"
 
@@ -478,7 +513,7 @@ class TestApikeyOperations(ApikeyTestHelpers):
                     "apikey",
                     "delete",
                     "delete_confirm_test",
-                    "--confirm",
+                    "--force",
                 ]
             )
 
@@ -488,6 +523,52 @@ class TestApikeyOperations(ApikeyTestHelpers):
                 list_result = self.run_cli_command(["apikey", "list"])
                 # Key should not appear in the list
                 assert "delete_confirm_test" not in list_result[1]
+
+    def test_apikey_delete_with_stdin_confirmation(self) -> None:
+        """Test apikey delete accepts 'yes' confirmation via stdin"""
+        self.setup_database()
+        test_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dGVzdA.c2lnbmF0dXJl"
+        key_name = "stdin_confirm_test"
+
+        # Add key
+        add_returncode, _, _ = self.run_cli_command(["apikey", "add", test_key, "--name", key_name])
+        assert add_returncode == 0
+
+        # Delete with 'yes' confirmation via stdin
+        delete_returncode, delete_stdout, _ = self.run_cli_command(["apikey", "delete", key_name], stdin_input="yes\n")
+
+        assert delete_returncode == 0
+        assert "deleted" in delete_stdout.lower()
+
+        # Verify key is gone
+        list_returncode, list_stdout, _ = self.run_cli_command(["apikey", "list"])
+        assert list_returncode == 0
+        assert key_name not in list_stdout
+
+    def test_apikey_delete_cancellation_with_stdin(self) -> None:
+        """Test apikey delete cancels when user types anything other than 'yes'"""
+        self.setup_database()
+        test_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dGVzdA.c2lnbmF0dXJl"
+        key_name = "cancel_test"
+
+        # Add key
+        add_returncode, _, _ = self.run_cli_command(["apikey", "add", test_key, "--name", key_name])
+        assert add_returncode == 0
+
+        # Try to delete with 'no' confirmation via stdin
+        delete_returncode, delete_stdout, _ = self.run_cli_command(["apikey", "delete", key_name], stdin_input="no\n")
+
+        # Should be aborted
+        assert delete_returncode != 0
+        assert "cancelled" in delete_stdout.lower()
+
+        # Verify key still exists
+        list_returncode, list_stdout, _ = self.run_cli_command(["apikey", "list"])
+        assert list_returncode == 0
+        assert key_name in list_stdout
+
+        # Clean up
+        self.run_cli_command(["apikey", "delete", key_name, "--force"])
 
     def test_apikey_test_validates_key(self) -> None:
         """Test apikey test <name> validates API key"""
@@ -501,6 +582,26 @@ class TestApikeyOperations(ApikeyTestHelpers):
 
             # Test command should validate the key exists
             assert returncode in [0, 1]
+
+    def test_apikey_test_with_server_option(self) -> None:
+        """Test apikey test <name> --server-url <url> tests against specified server"""
+        self.setup_database()
+        test_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkNGEyODkxMy04ODQxLTRhMTAtODIzNC1iODQ2OTE1MmJhZTYiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzU4NzY3MDI4LCJleHAiOjE3NjEyNzg0MDB9.d9u2SovTMfUGZ8EzD4SDLYNUTBarHpdwhv96pO-5imE"
+        key_name = "server_test_key"
+
+        # Add key
+        add_returncode, _, _ = self.run_cli_command(["apikey", "add", test_key, "--name", key_name])
+        assert add_returncode == 0
+
+        # Test with --server-url option (expect failure due to connection issues, but command should execute)
+        test_returncode, test_stdout, _ = self.run_cli_command(
+            ["apikey", "test", key_name, "--server-url", "http://n8n.pirouter.dev:5678"]
+        )
+
+        # Command should run (exit code 0 or 1 depending on server availability)
+        assert test_returncode in [0, 1]
+        # Output should mention the server being tested
+        assert "n8n.pirouter.dev" in test_stdout or "server" in test_stdout.lower()
 
     def test_apikey_invalid_name_validation(self) -> None:
         """Test apikey add validates key name format"""

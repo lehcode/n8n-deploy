@@ -138,6 +138,27 @@ class ApiKeyCrud(BaseDB):
 
             return keys
 
+    def activate_api_key(self, key_name: str) -> bool:
+        """Activate an API key (restore from soft delete)
+
+        Args:
+            key_name: Name of the API key to activate
+
+        Returns:
+            True if activation succeeded, False if key not found or already active
+        """
+        with self.get_connection() as conn:
+            cursor = conn.execute(
+                """
+                UPDATE api_keys SET is_active = 1
+                WHERE name = ? AND is_active = 0
+            """,
+                (key_name,),
+            )
+            conn.commit()
+
+            return cursor.rowcount > 0
+
     def deactivate_api_key(self, key_name: str) -> bool:
         """Deactivate an API key (soft delete)
 

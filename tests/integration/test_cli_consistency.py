@@ -50,6 +50,7 @@ def get_all_commands() -> List[List[str]]:
         ["apikey"],
         ["apikey", "add"],
         ["apikey", "list"],
+        ["apikey", "activate"],
         ["apikey", "deactivate"],
         ["apikey", "delete"],
         ["apikey", "test"],
@@ -127,10 +128,11 @@ class TestCLIHelpConsistency:
         """
         commands = get_all_commands()
 
-        # Should test at least 27 commands (main + subcommands)
+        # Should test at least 28 commands (main + subcommands)
         # Note: Was 30+ before workflow backup removal (createbackup, restore, backups, verify)
-        # Was 28 before apikey get removal (security enhancement)
-        assert len(commands) >= 27, f"Only testing {len(commands)} commands, expected at least 27"
+        # Was 27 after apikey get removal (security enhancement)
+        # Was 28 after apikey activate addition
+        assert len(commands) >= 28, f"Only testing {len(commands)} commands, expected at least 28"
 
         # Should include main groups
         command_groups = [cmd[0] for cmd in commands if len(cmd) > 0]
