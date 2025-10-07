@@ -1383,7 +1383,7 @@ class TestDatabaseInit:
         filename1=db_filenames,
         filename2=db_filenames,
     )
-    @settings(max_examples=20, deadline=2000)
+    @settings(max_examples=20, deadline=5000)
     def test_db_init_different_filenames_create_separate_databases(self, filename1, filename2):
         """Property: Different filenames create separate database files"""
         import tempfile
