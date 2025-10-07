@@ -43,7 +43,7 @@ n8n-deploy db init --import
 n8n-deploy db status
 
 # Specify custom app directory
-n8n-deploy --app-dir /custom/path db init
+n8n-deploy --data-dir /custom/path db init
 ```
 
 ### 3. Workflow Pull/Push Failures

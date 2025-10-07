@@ -20,7 +20,7 @@ from rich.table import Table
 from ..api_keys import KeyApi
 from ..config import get_config
 from ..db import DBApi
-from .app import HELP_APP_DIR, HELP_JSON, HELP_NO_EMOJI, HELP_TABLE, CustomCommand, CustomGroup
+from .app import cli_data_dir_help, HELP_JSON, HELP_NO_EMOJI, HELP_TABLE, CustomCommand, CustomGroup
 from .output import cli_error
 
 console = Console()

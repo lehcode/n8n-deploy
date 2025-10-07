@@ -11,7 +11,7 @@ This module provides modular CLI commands organized by functional areas:
 """
 
 from .app import (
-    HELP_APP_DIR,
+    cli_data_dir_help,
     HELP_FLOW_DIR,
     HELP_FORMAT,
     HELP_NO_EMOJI,
@@ -32,7 +32,7 @@ __all__ = [
     "cli",
     "main",
     "PROG_NAME",
-    "HELP_APP_DIR",
+    "cli_data_dir_help",
     "HELP_FLOW_DIR",
     "HELP_SERVER_URL",
     "HELP_NO_EMOJI",
