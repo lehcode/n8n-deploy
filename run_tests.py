@@ -87,6 +87,10 @@ def run_unit_tests(quiet=False, coverage=False, test_class=None):
 
     if code == 0:
         print("✅ Unit tests passed")
+        if coverage:
+            print("📊 Coverage report generated:")
+            print("   - HTML report: htmlcov/index.html")
+            print("   - Terminal report displayed above")
     else:
         print("❌ Unit tests failed")
         if quiet and stdout:
@@ -493,7 +497,9 @@ Note: You must specify a test type (--unit, --integration, --e2e, --hypothesis, 
         help="Run all tests including E2E manual tests",
     )
 
-    parser.add_argument("--coverage", action="store_true", help="Run tests with coverage reporting")
+    parser.add_argument(
+        "--coverage", action="store_true", help="Run all tests with coverage reporting (or combine with --unit)"
+    )
 
     parser.add_argument("--quality", action="store_true", help="Run code quality checks (black, mypy)")
 
@@ -580,6 +586,10 @@ Note: You must specify a test type (--unit, --integration, --e2e, --hypothesis, 
     elif args.report_e2e:
         success &= generate_test_report(include_e2e=True)
 
+    elif args.coverage:
+        # If --coverage is specified alone, run all tests with coverage
+        success &= run_all_tests(args.quiet, coverage=True, include_e2e=False)
+
     elif not args.quality and not args.specific:
         # No test type specified - show help and exit
         print("❌ No test type specified!")
@@ -590,6 +600,7 @@ Note: You must specify a test type (--unit, --integration, --e2e, --hypothesis, 
         print("  --fast         Run fast tests only")
         print("  --all          Run all tests (unit + integration, excluding E2E)")
         print("  --all-e2e      Run all tests including E2E manual tests")
+        print("  --coverage     Run all tests with coverage reporting")
         print("  --report       Generate comprehensive test report (excluding E2E)")
         print("  --report-e2e   Generate comprehensive test report including E2E")
         print("  --quality      Run code quality checks")
