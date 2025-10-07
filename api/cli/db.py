@@ -23,7 +23,7 @@ from rich.table import Table
 
 from ..config import get_config
 from ..db import DBApi
-from .app import HELP_APP_DIR, HELP_JSON, HELP_NO_EMOJI, CustomCommand, CustomGroup
+from .app import cli_data_dir_help, HELP_JSON, HELP_NO_EMOJI, CustomCommand, CustomGroup
 
 console = Console()
 
@@ -107,7 +107,7 @@ def db() -> None:
 
 
 @db.command(cls=CustomCommand)
-@click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
+@click.option("--data-dir", type=click.Path(), help=cli_data_dir_help)
 @click.option("--filename", type=str, default="n8n-deploy.db", help="Database filename (default: n8n-deploy.db)")
 @click.option("--import", "auto_import", is_flag=True, help="Accept existing database without prompting")
 @click.option("--json", "output_json", is_flag=True, help=HELP_JSON)
@@ -281,7 +281,7 @@ def init(data_dir: Optional[str], filename: str, auto_import: bool, output_json:
 
 
 @db.command(cls=CustomCommand)
-@click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
+@click.option("--data-dir", type=click.Path(), help=cli_data_dir_help)
 @click.option("--json", "output_json", is_flag=True, help=HELP_JSON)
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
 def status(data_dir: Optional[str], output_json: bool, no_emoji: bool) -> None:
@@ -367,7 +367,7 @@ def status(data_dir: Optional[str], output_json: bool, no_emoji: bool) -> None:
 
 
 @db.command(cls=CustomCommand)
-@click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
+@click.option("--data-dir", type=click.Path(), help=cli_data_dir_help)
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
 def compact(data_dir: Optional[str], no_emoji: bool) -> None:
     """🗜️ Compact database to optimize storage"""
@@ -395,7 +395,7 @@ def compact(data_dir: Optional[str], no_emoji: bool) -> None:
 
 @db.command(cls=CustomCommand)
 @click.argument("backup_path", required=False)
-@click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
+@click.option("--data-dir", type=click.Path(), help=cli_data_dir_help)
 def backup(
     backup_path: Optional[str],
     data_dir: Optional[str],

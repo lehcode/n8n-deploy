@@ -17,7 +17,7 @@ from rich.table import Table
 from ..config import get_config
 from ..workflow import WorkflowApi
 from .app import (
-    HELP_APP_DIR,
+    cli_data_dir_help,
     HELP_FLOW_DIR,
     HELP_JSON,
     HELP_NO_EMOJI,
@@ -188,7 +188,7 @@ def list(
 
 
 @wf.command(cls=CustomCommand)
-@click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
+@click.option("--data-dir", type=click.Path(), help=cli_data_dir_help)
 @click.option("--flow-dir", type=click.Path(), help=HELP_FLOW_DIR)
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
 @click.option("--yes", is_flag=True, help="Skip confirmation prompt")
@@ -254,7 +254,7 @@ def remove(
 
 @wf.command(cls=CustomCommand)
 @click.argument("query")
-@click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
+@click.option("--data-dir", type=click.Path(), help=cli_data_dir_help)
 @click.option("--flow-dir", type=click.Path(), help=HELP_FLOW_DIR)
 @click.option("--json", "output_json", is_flag=True, help=HELP_JSON)
 @click.option("--table", "output_table", is_flag=True, help=HELP_TABLE)
@@ -305,7 +305,7 @@ def search(
 
 
 @wf.command(cls=CustomCommand)
-@click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
+@click.option("--data-dir", type=click.Path(), help=cli_data_dir_help)
 @click.option("--flow-dir", type=click.Path(), help=HELP_FLOW_DIR)
 @click.option("--json", "output_json", is_flag=True, help=HELP_JSON)
 @click.option("--table", "output_table", is_flag=True, help=HELP_TABLE)
@@ -379,7 +379,7 @@ def stats(
 @wf.command(cls=CustomCommand)
 @click.option("--remote", help="n8n server (name or URL) - uses linked API key if name provided")
 @click.option("--skip-ssl-verify", is_flag=True, help="Skip SSL certificate verification for self-signed certificates")
-@click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
+@click.option("--data-dir", type=click.Path(), help=cli_data_dir_help)
 @click.option("--flow-dir", type=click.Path(), help=HELP_FLOW_DIR)
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
 @click.argument("workflow_id", metavar="wf-id")
@@ -435,7 +435,7 @@ def pull(
 @wf.command(cls=CustomCommand)
 @click.option("--remote", help="n8n server (name or URL) - uses linked API key if name provided")
 @click.option("--skip-ssl-verify", is_flag=True, help="Skip SSL certificate verification for self-signed certificates")
-@click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
+@click.option("--data-dir", type=click.Path(), help=cli_data_dir_help)
 @click.option("--flow-dir", type=click.Path(), help=HELP_FLOW_DIR)
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
 @click.argument("workflow_id", metavar="wf-id")
@@ -491,7 +491,7 @@ def push(
 @wf.command("server", cls=CustomCommand)
 @click.option("--remote", help=HELP_SERVER_URL)
 @click.option("--skip-ssl-verify", is_flag=True, help="Skip SSL certificate verification for self-signed certificates")
-@click.option("--data-dir", type=click.Path(), help=HELP_APP_DIR)
+@click.option("--data-dir", type=click.Path(), help=cli_data_dir_help)
 @click.option("--flow-dir", type=click.Path(), help=HELP_FLOW_DIR)
 @click.option("--json", "output_json", is_flag=True, help=HELP_JSON)
 @click.option("--table", "output_table", is_flag=True, help=HELP_TABLE)
