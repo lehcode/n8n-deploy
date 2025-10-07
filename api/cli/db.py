@@ -271,12 +271,12 @@ def init(data_dir: Optional[str], filename: str, auto_import: bool, output_json:
                 console.print()
                 console.print("NOTE: Workflow directory not configured.")
                 console.print("Set N8N_DEPLOY_FLOWS_DIR environment variable or use --flow-dir option")
-                console.print("for wf operations (add, push, pull, etc.)")
+                console.print("for workflow operations ('wf add', 'wf push', 'wf pull', etc.)")
             else:
                 console.print()
                 console.print("⚠️ NOTE: Workflow directory not configured.")
                 console.print("Set N8N_DEPLOY_FLOWS_DIR environment variable or use --flow-dir option")
-                console.print("for wf operations (add, push, pull, etc.)")
+                console.print("for workflow operations ('wf add', 'wf push', 'wf pull', etc.)")
 
 
 @db.command(cls=CustomCommand)
