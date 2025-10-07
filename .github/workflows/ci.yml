@@ -327,6 +327,7 @@ jobs:
         name: hypothesis-database
         path: .hypothesis/
         retention-days: 7
+        if-no-files-found: ignore
 
   # Build-matrix stage
   # build-validation:
