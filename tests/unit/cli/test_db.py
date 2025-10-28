@@ -131,7 +131,7 @@ class TestDatabaseCommands:
         assert result.exit_code == 0
         assert "Initialize n8n-deploy database" in result.output
         assert "--data-dir" in result.output
-        assert "--filename" in result.output
+        assert "--db-filename" in result.output
         assert "--no-emoji" in result.output
 
     def test_status_command_help(self):
@@ -158,8 +158,8 @@ class TestDatabaseCommands:
         assert "--data-dir" in result.output
 
     def test_init_custom_filename_new_database(self):
-        """Test --filename with new database (should create it)"""
-        result = self.runner.invoke(db, ["init", "--data-dir", self.temp_dir, "--filename", "custom.db", "--no-emoji"])
+        """Test --db-filename with new database (should create it)"""
+        result = self.runner.invoke(db, ["init", "--data-dir", self.temp_dir, "--db-filename", "custom.db", "--no-emoji"])
 
         assert result.exit_code == 0
         assert "Database initialized" in result.output
@@ -167,13 +167,17 @@ class TestDatabaseCommands:
         assert db_path.exists()
 
     def test_init_custom_filename_auto_import(self):
-        """Test --filename with existing database (should auto-import)"""
+        """Test --db-filename with existing database (should auto-import)"""
         # First create the database
-        result1 = self.runner.invoke(db, ["init", "--data-dir", self.temp_dir, "--filename", "import-test.db", "--no-emoji"])
+        result1 = self.runner.invoke(
+            db, ["init", "--data-dir", self.temp_dir, "--db-filename", "import-test.db", "--no-emoji"]
+        )
         assert result1.exit_code == 0
 
         # Run again with same custom filename (should auto-import)
-        result2 = self.runner.invoke(db, ["init", "--data-dir", self.temp_dir, "--filename", "import-test.db", "--no-emoji"])
+        result2 = self.runner.invoke(
+            db, ["init", "--data-dir", self.temp_dir, "--db-filename", "import-test.db", "--no-emoji"]
+        )
 
         assert result2.exit_code == 0
         assert "Using existing database" in result2.output
@@ -194,9 +198,9 @@ class TestDatabaseCommands:
         assert "Use existing database" in result2.output
 
     def test_init_custom_filename_json_format(self):
-        """Test --filename with JSON format output"""
+        """Test --db-filename with JSON format output"""
         # Create database
-        result1 = self.runner.invoke(db, ["init", "--data-dir", self.temp_dir, "--filename", "test-json.db", "--json"])
+        result1 = self.runner.invoke(db, ["init", "--data-dir", self.temp_dir, "--db-filename", "test-json.db", "--json"])
         assert result1.exit_code == 0
 
         # Parse JSON output
@@ -209,7 +213,7 @@ class TestDatabaseCommands:
         assert "test-json.db" in output1["database_path"]
 
         # Run again with existing database (should auto-import)
-        result2 = self.runner.invoke(db, ["init", "--data-dir", self.temp_dir, "--filename", "test-json.db", "--json"])
+        result2 = self.runner.invoke(db, ["init", "--data-dir", self.temp_dir, "--db-filename", "test-json.db", "--json"])
         assert result2.exit_code == 0
 
         # Parse second JSON output
