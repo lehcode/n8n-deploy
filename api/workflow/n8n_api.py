@@ -6,10 +6,12 @@ Handles: pull, push, server operations
 """
 
 import json
+import warnings
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 import requests
+from urllib3.exceptions import InsecureRequestWarning
 
 from ..api_keys import KeyApi
 from ..config import AppConfig
@@ -32,6 +34,10 @@ class N8nAPI:
         self.base_path = config.workflows_path
         self._server_url: Optional[str] = None
         self._server_api_key: Optional[str] = None
+
+        # Suppress InsecureRequestWarning when SSL verification is disabled
+        if skip_ssl_verify:
+            warnings.filterwarnings("ignore", category=InsecureRequestWarning)
 
     def _resolve_remote(self) -> Tuple[Optional[str], Optional[str]]:
         """
