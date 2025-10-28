@@ -18,7 +18,7 @@ n8n-deploy db init
 n8n-deploy --data-dir /opt/n8n-deploy db init
 
 # Custom filename
-n8n-deploy db init --filename my-workflows.db
+n8n-deploy db init --db-filename my-workflows.db
 
 # Script mode
 n8n-deploy db init --json --no-emoji
