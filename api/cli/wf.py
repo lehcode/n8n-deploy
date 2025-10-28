@@ -130,7 +130,7 @@ def add(
         # Update config with resolved server URL
         config.n8n_url = server_url
 
-        manager = WorkflowApi(config=config, skip_ssl_verify=skip_ssl_verify)
+        manager = WorkflowApi(config=config, skip_ssl_verify=skip_ssl_verify, remote=server_url)
 
         # Try to pull wf from server
         success = manager.pull_workflow(name)
