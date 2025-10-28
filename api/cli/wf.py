@@ -150,13 +150,13 @@ def add(
 
 
 @wf.command("list", cls=CustomCommand)
-@click.option("--flow-dir", type=click.Path(), help=HELP_FLOW_DIR)
+@click.option("--data-dir", type=click.Path(), help=cli_data_dir_help)
 @click.option("--db-filename", type=str, help=HELP_DB_FILENAME)
 @click.option("--json", "output_json", is_flag=True, help=HELP_JSON)
 @click.option("--table", "output_table", is_flag=True, help=HELP_TABLE)
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
 def list(
-    flow_dir: Optional[str],
+    data_dir: Optional[str],
     db_filename: Optional[str],
     output_json: bool,
     output_table: bool,
@@ -164,14 +164,14 @@ def list(
 ) -> None:
     """📋 List all workflows
 
-    Displays all workflows with backupable status in metadata.
+    Displays all workflows from database with their metadata.
     """
     # JSON output implies no emoji
     if output_json:
         no_emoji = True
 
     try:
-        config = get_config(flow_folder=flow_dir, db_filename=db_filename)
+        config = get_config(base_folder=data_dir, db_filename=db_filename)
     except ValueError as e:
         console.print(f"[red]{e}[/red]")
         raise click.Abort()
@@ -446,6 +446,9 @@ def pull(
                 console.print(f"[red]{error_msg}[/red]")
             raise click.Abort()
 
+    except click.Abort:
+        # Re-raise Abort without additional message
+        raise
     except Exception as e:
         error_msg = f"Failed to pull wf: {e}"
         if no_emoji:

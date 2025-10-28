@@ -17,6 +17,7 @@ from ..api_keys import KeyApi
 from ..config import AppConfig
 from ..db import DBApi
 from ..db.servers import ServerCrud
+from ..jwt_utils import check_jwt_expiration
 from ..models import Workflow
 
 
@@ -39,6 +40,17 @@ class N8nAPI:
         if skip_ssl_verify:
             warnings.filterwarnings("ignore", category=InsecureRequestWarning)
 
+    def _check_api_key_expiration(self, api_key: Optional[str]) -> None:
+        """Check if API key is expired and print warning"""
+        if not api_key:
+            return
+
+        is_expired, exp_datetime, warning = check_jwt_expiration(api_key)
+        if warning:
+            print(f"{warning}")
+            if is_expired:
+                print("Generate a new API key from your n8n server settings")
+
     def _resolve_remote(self) -> Tuple[Optional[str], Optional[str]]:
         """
         Resolve remote to server URL and API key
@@ -55,9 +67,11 @@ class N8nAPI:
             keys = self.api_manager.list_api_keys()
             if keys:
                 api_key = self.api_manager.get_api_key(keys[0]["name"])
+                self._check_api_key_expiration(api_key)
                 return (server_url, api_key)
             # Fallback to environment variable
             env_api_key = os.getenv("N8N_DEPLOY_SERVER_KEY")
+            self._check_api_key_expiration(env_api_key)
             return (server_url, env_api_key)
 
         # Remote specified - check if it's a server name or URL
@@ -72,6 +86,7 @@ class N8nAPI:
                 print(f"⚠️  No API key linked to server '{self.remote}'")
                 print(f"   Use: n8n-deploy server link {self.remote} <key_name>")
                 return (None, None)
+            self._check_api_key_expiration(api_key)
             return (server["url"], api_key)
 
         # Try as URL (check if it looks like a URL)
@@ -79,13 +94,16 @@ class N8nAPI:
             server = server_api.get_server_by_url(self.remote)
             if server:
                 api_key = server_api.get_api_key_for_server(server["name"])
+                self._check_api_key_expiration(api_key)
                 return (self.remote, api_key)
             # URL not in database - try first available API key or environment
             keys = self.api_manager.list_api_keys()
             if keys:
                 api_key = self.api_manager.get_api_key(keys[0]["name"])
+                self._check_api_key_expiration(api_key)
                 return (self.remote, api_key)
             env_api_key = os.getenv("N8N_DEPLOY_SERVER_KEY")
+            self._check_api_key_expiration(env_api_key)
             return (self.remote, env_api_key)
 
         print(f"❌ Server '{self.remote}' not found")
@@ -254,7 +272,8 @@ class N8nAPI:
             return True
 
         except Exception as e:
-            print(f"❌ Failed to pull wf {workflow_id}: {e}")
+            # Print specific error details, but let CLI handle the summary message
+            print(f"❌ Error: {e}")
             return False
 
     def push_workflow(self, workflow_id: str) -> bool:
