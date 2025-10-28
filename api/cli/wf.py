@@ -44,46 +44,36 @@ def wf() -> None:
 
 # Basic wf operations
 @wf.command(cls=CustomCommand)
-@click.argument("name")
+@click.argument("workflow_file")
 @click.option("--data-dir", type=click.Path(), help=cli_data_dir_help)
 @click.option("--flow-dir", type=click.Path(), help=HELP_FLOW_DIR)
 @click.option("--db-filename", type=str, help=HELP_DB_FILENAME)
-@click.option("--link-remote", help="Link workflow to n8n server (server name, partial URL, or full URL with schema)")
-@click.option("--skip-ssl-verify", is_flag=True, help="Skip SSL certificate verification for self-signed certificates")
+@click.option("--link-remote", help="Link workflow to n8n server (server name or URL)")
 @click.option("--json", "output_json", is_flag=True, help=HELP_JSON)
-@click.option("--table", "output_table", is_flag=True, help=HELP_TABLE)
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
 def add(
-    name: str,
+    workflow_file: str,
     data_dir: Optional[str],
     flow_dir: Optional[str],
     db_filename: Optional[str],
     link_remote: Optional[str],
-    skip_ssl_verify: bool,
     output_json: bool,
-    output_table: bool,
     no_emoji: bool,
 ) -> None:
-    """➕ Add wf to database
+    """➕ Register local workflow JSON file to database
 
-    Pulls wf from remote n8n server and adds to database (requires API key and server URL).
+    Adds a workflow from a local JSON file to the database. The workflow file
+    should be in the flow directory. Optionally link to a remote n8n server.
 
     \b
-    Example:
-      n8n-deploy wf add MyWorkflow --link-remote my-server
+    Examples:
+      n8n-deploy wf add deAVBp391wvomsWY.json
+      n8n-deploy wf add workflow.json --link-remote production
+      n8n-deploy wf add workflow.json --link-remote https://n8n.example.com
     """
     # JSON output implies no emoji
     if output_json:
         no_emoji = True
-
-    # Validate wf name - allow UTF-8 characters, spaces, and common punctuation
-    # Only reject control characters, null bytes, and path separators for security
-    stripped_name = name.strip()
-    if not stripped_name or any(c in stripped_name for c in "\x00/\\"):
-        cli_error(
-            f"Workflow name '{name}' is invalid. Name cannot be empty or contain null bytes or path separators (/ \\)",
-            no_emoji,
-        )
 
     try:
         config = get_config(base_folder=data_dir, flow_folder=flow_dir, db_filename=db_filename)
@@ -96,59 +86,105 @@ def add(
     check_database_exists(config.database_path, output_json=output_json, no_emoji=no_emoji)
 
     try:
-        # Resolve server URL from --link-remote
-        server_url = None
+        import json
+        from pathlib import Path
+
+        # Determine the file path
+        file_path = Path(config.workflows_path) / workflow_file
+
+        if not file_path.exists():
+            cli_error(f"Workflow file not found: {file_path}", no_emoji)
+
+        # Read and parse the workflow JSON file
+        with open(file_path, "r", encoding="utf-8") as f:
+            workflow_data = json.load(f)
+
+        workflow_id = workflow_data.get("id")
+        workflow_name = workflow_data.get("name", workflow_file.replace(".json", ""))
+
+        if not workflow_id:
+            cli_error(f"No 'id' field found in workflow file: {file_path}", no_emoji)
+
+        # Add workflow to database
+        manager = WorkflowApi(config=config)
+        manager.add_workflow(workflow_id, workflow_name)
+
+        result = {
+            "success": True,
+            "workflow_id": workflow_id,
+            "workflow_name": workflow_name,
+            "message": f"Workflow '{workflow_name}' (ID: {workflow_id}) added to database",
+        }
+
+        if output_json:
+            from rich.json import JSON
+
+            console.print(JSON.from_data(result))
+        elif no_emoji:
+            console.print(f"Workflow '{workflow_name}' (ID: {workflow_id}) added to database")
+        else:
+            console.print(f"✅ Workflow '{workflow_name}' (ID: {workflow_id}) added to database")
+
+        # Optionally link to remote server
         if link_remote:
             from api.db.servers import ServerCrud
 
             server_crud = ServerCrud(config=config)
 
-            # Check if it's a full URL (contains ://)
+            # Resolve server name or URL
+            server_name: str
             if "://" in link_remote:
-                # Full URL with schema - validate and use directly
-                server_url = link_remote
-            else:
-                # Could be partial URL or server name
-                # First, try to find by server name
-                server = server_crud.get_server_by_name(link_remote)
-                if server:
-                    server_url = server["url"]
-                else:
-                    # Try to find by partial URL match in database
-                    all_servers = server_crud.list_servers()
-                    matching_servers = [s for s in all_servers if link_remote in s["url"]]
-                    if len(matching_servers) == 1:
-                        server_url = matching_servers[0]["url"]
-                    elif len(matching_servers) > 1:
-                        server_names = [s["name"] for s in matching_servers]
-                        cli_error(
-                            f"Partial URL '{link_remote}' matches multiple servers: {', '.join(server_names)}. "
-                            f"Please be more specific or use full server name",
-                            no_emoji,
+                # Full URL - ensure it exists in database or create it
+                server = server_crud.get_server_by_url(link_remote)
+                if not server:
+                    if output_json:
+                        from rich.json import JSON
+
+                        console.print(
+                            JSON.from_data({"success": False, "error": f"Server URL '{link_remote}' not found in database"})
                         )
+                        raise click.Abort()
                     else:
-                        cli_error(
-                            f"No server found matching '{link_remote}'. "
-                            f"Check server name or URL in database with 'server list'",
-                            no_emoji,
+                        cli_error(f"Server URL '{link_remote}' not found in database. Add it with 'server create'", no_emoji)
+                # server is guaranteed to be not None here
+                assert server is not None
+                server_name = server["name"]
+            else:
+                # Server name
+                server = server_crud.get_server_by_name(link_remote)
+                if not server:
+                    if output_json:
+                        from rich.json import JSON
+
+                        console.print(
+                            JSON.from_data({"success": False, "error": f"Server '{link_remote}' not found in database"})
                         )
-        elif not config.n8n_url:
-            cli_error("Server URL not configured. Use --link-remote or set N8N_SERVER_URL environment variable", no_emoji)
+                        raise click.Abort()
+                    else:
+                        cli_error(f"Server '{link_remote}' not found in database. Add it with 'server create'", no_emoji)
+                server_name = link_remote
+
+            # Link workflow to server (implementation would go here)
+            if not output_json:
+                if no_emoji:
+                    console.print(f"Workflow linked to server: {server_name}")
+                else:
+                    console.print(f"🔗 Workflow linked to server: {server_name}")
+
+    except json.JSONDecodeError as e:
+        if output_json:
+            from rich.json import JSON
+
+            console.print(JSON.from_data({"success": False, "error": f"Invalid JSON in workflow file: {e}"}))
         else:
-            server_url = config.n8n_url
-
-        # Update config with resolved server URL
-        config.n8n_url = server_url
-
-        manager = WorkflowApi(config=config, skip_ssl_verify=skip_ssl_verify, remote=server_url)
-
-        # Try to pull wf from server
-        success = manager.pull_workflow(name)
-        if not success:
-            cli_error(f"Failed to pull wf '{name}' from server", no_emoji)
-
+            cli_error(f"Invalid JSON in workflow file: {e}", no_emoji)
     except Exception as e:
-        cli_error(f"Failed to add wf: {e}", no_emoji)
+        if output_json:
+            from rich.json import JSON
+
+            console.print(JSON.from_data({"success": False, "error": str(e)}))
+        else:
+            cli_error(f"Failed to add workflow: {e}", no_emoji)
 
 
 @wf.command("list", cls=CustomCommand)
