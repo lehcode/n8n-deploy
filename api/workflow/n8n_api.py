@@ -123,7 +123,7 @@ class N8nAPI:
             return None
 
         # Use server_url from credentials (resolved from remote)
-        base_url = credentials.get("server_url", "")
+        base_url = credentials.get("server_url", "").rstrip("/")
         url = f"{base_url}/{endpoint.lstrip('/')}"
 
         try:
