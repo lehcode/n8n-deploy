@@ -85,6 +85,11 @@ def add(
     except ValueError as e:
         cli_error(str(e), no_emoji)
 
+    # Check if database exists and is initialized
+    from .db import check_database_exists
+
+    check_database_exists(config.database_path, output_json=output_json, no_emoji=no_emoji)
+
     try:
         # Resolve server URL from --link-remote
         server_url = None
@@ -404,6 +409,11 @@ def pull(
     except ValueError as e:
         console.print(f"[red]{e}[/red]")
         raise click.Abort()
+
+    # Check if database exists and is initialized
+    from .db import check_database_exists
+
+    check_database_exists(config.database_path, output_json=False, no_emoji=no_emoji)
 
     try:
         manager = WorkflowApi(config=config, skip_ssl_verify=skip_ssl_verify, remote=remote)

@@ -68,7 +68,7 @@ def is_interactive_mode() -> bool:
 
 
 def check_database_exists(db_path: Path, output_json: bool = False, no_emoji: bool = False) -> None:
-    """Check if database exists and abort with appropriate error message if not.
+    """Check if database exists and is initialized, abort with error message if not.
 
     Args:
         db_path: Path to the database file
@@ -76,7 +76,7 @@ def check_database_exists(db_path: Path, output_json: bool = False, no_emoji: bo
         no_emoji: Whether to suppress emoji in error messages
 
     Raises:
-        click.Abort: If database does not exist
+        click.Abort: If database does not exist or is not initialized
     """
     if not db_path.exists():
         if output_json:
@@ -89,6 +89,47 @@ def check_database_exists(db_path: Path, output_json: bool = False, no_emoji: bo
             console.print(json.dumps(error_data, indent=2))
         else:
             error_msg = f"Database does not exist at {db_path}. Run 'n8n-deploy db init' to create it."
+            if no_emoji:
+                console.print(error_msg)
+            else:
+                console.print(f"[red]❌ {error_msg}[/red]")
+        raise click.Abort()
+
+    # Check if database is initialized by checking for schema_info table
+    import sqlite3
+
+    try:
+        conn = sqlite3.connect(db_path)
+        cursor = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='schema_info'")
+        has_schema = cursor.fetchone() is not None
+        conn.close()
+
+        if not has_schema:
+            if output_json:
+                error_data = {
+                    "success": False,
+                    "error": "database_not_initialized",
+                    "message": f"Database file exists at {db_path} but is not initialized",
+                    "suggestion": "Run 'n8n-deploy db init --import' to initialize",
+                }
+                console.print(json.dumps(error_data, indent=2))
+            else:
+                error_msg = f"Database file exists at {db_path} but is not initialized. Run 'n8n-deploy db init --import' to initialize."
+                if no_emoji:
+                    console.print(error_msg)
+                else:
+                    console.print(f"[red]❌ {error_msg}[/red]")
+            raise click.Abort()
+    except sqlite3.Error as e:
+        if output_json:
+            error_data = {
+                "success": False,
+                "error": "database_error",
+                "message": f"Failed to check database: {e}",
+            }
+            console.print(json.dumps(error_data, indent=2))
+        else:
+            error_msg = f"Failed to check database: {e}"
             if no_emoji:
                 console.print(error_msg)
             else:
