@@ -188,6 +188,7 @@ def print_workflow_table(workflows: List[Dict[str, Any]], no_emoji: bool = False
     table = Table()
     table.add_column("n8n ID", style="cyan", no_wrap=True)
     table.add_column("Name", style="magenta")
+    table.add_column("File Path", style="blue")
     table.add_column("File Exists", justify="center")
     table.add_column("Status", justify="center")
     table.add_column("Created", justify="center")
@@ -196,6 +197,10 @@ def print_workflow_table(workflows: List[Dict[str, Any]], no_emoji: bool = False
     table.add_column("Pull", justify="right")
 
     for wf in workflows:
+        # Construct full file path from flow_folder and workflow ID
+        flow_folder = wf.get("flow_folder", "")
+        file_path = f"{flow_folder}/{wf['id']}.json" if flow_folder else f"{wf['id']}.json"
+
         # File existence indicator with color
         file_exists = wf.get("file_exists", False)
         if no_emoji:
@@ -206,6 +211,7 @@ def print_workflow_table(workflows: List[Dict[str, Any]], no_emoji: bool = False
         table.add_row(
             wf["id"],
             wf["name"],
+            file_path,
             file_status,
             str(wf["status"]),
             str(wf["created_at"])[:10] if wf["created_at"] else "-",
