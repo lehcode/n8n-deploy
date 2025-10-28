@@ -1293,23 +1293,23 @@ class TestServerManagement:
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# Database Init Tests (--filename option)
+# Database Init Tests (--db-filename option)
 # ═══════════════════════════════════════════════════════════════════════════
 
 
 class TestDatabaseInit:
-    """Property: Database init with --filename option behaves correctly"""
+    """Property: Database init with --db-filename option behaves correctly"""
 
     @given(filename=db_filenames, data_dir=valid_paths)
     @settings(max_examples=30, deadline=5000)
     def test_db_init_filename_creates_database(self, filename, data_dir):
-        """Property: db init --filename creates database with specified name"""
+        """Property: db init --db-filename creates database with specified name"""
         import tempfile
         from pathlib import Path
 
         with tempfile.TemporaryDirectory() as temp_dir:
             result = subprocess.run(
-                ["./n8n-deploy", "db", "init", "--data-dir", temp_dir, "--filename", filename, "--no-emoji"],
+                ["./n8n-deploy", "db", "init", "--data-dir", temp_dir, "--db-filename", filename, "--no-emoji"],
                 capture_output=True,
                 timeout=5,
                 text=True,
@@ -1337,7 +1337,7 @@ class TestDatabaseInit:
         with tempfile.TemporaryDirectory() as temp_dir:
             # First init
             result1 = subprocess.run(
-                ["./n8n-deploy", "db", "init", "--data-dir", temp_dir, "--filename", filename, "--no-emoji"],
+                ["./n8n-deploy", "db", "init", "--data-dir", temp_dir, "--db-filename", filename, "--no-emoji"],
                 capture_output=True,
                 timeout=5,
                 text=True,
@@ -1346,7 +1346,7 @@ class TestDatabaseInit:
 
             # Second init with same filename should auto-import
             result2 = subprocess.run(
-                ["./n8n-deploy", "db", "init", "--data-dir", temp_dir, "--filename", filename, "--no-emoji"],
+                ["./n8n-deploy", "db", "init", "--data-dir", temp_dir, "--db-filename", filename, "--no-emoji"],
                 capture_output=True,
                 timeout=5,
                 text=True,
@@ -1358,12 +1358,12 @@ class TestDatabaseInit:
     @given(filename=db_filenames)
     @settings(max_examples=15, deadline=5000)
     def test_db_init_filename_json_output(self, filename):
-        """Property: db init --filename with --json produces valid JSON"""
+        """Property: db init --db-filename with --json produces valid JSON"""
         import tempfile
 
         with tempfile.TemporaryDirectory() as temp_dir:
             result = subprocess.run(
-                ["./n8n-deploy", "db", "init", "--data-dir", temp_dir, "--filename", filename, "--json"],
+                ["./n8n-deploy", "db", "init", "--data-dir", temp_dir, "--db-filename", filename, "--json"],
                 capture_output=True,
                 timeout=5,
                 text=True,
@@ -1395,7 +1395,7 @@ class TestDatabaseInit:
         with tempfile.TemporaryDirectory() as temp_dir:
             # Create first database
             result1 = subprocess.run(
-                ["./n8n-deploy", "db", "init", "--data-dir", temp_dir, "--filename", filename1, "--no-emoji"],
+                ["./n8n-deploy", "db", "init", "--data-dir", temp_dir, "--db-filename", filename1, "--no-emoji"],
                 capture_output=True,
                 timeout=5,
                 text=True,
@@ -1403,7 +1403,7 @@ class TestDatabaseInit:
 
             # Create second database
             result2 = subprocess.run(
-                ["./n8n-deploy", "db", "init", "--data-dir", temp_dir, "--filename", filename2, "--no-emoji"],
+                ["./n8n-deploy", "db", "init", "--data-dir", temp_dir, "--db-filename", filename2, "--no-emoji"],
                 capture_output=True,
                 timeout=5,
                 text=True,
