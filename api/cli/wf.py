@@ -45,6 +45,7 @@ def wf() -> None:
 # Basic wf operations
 @wf.command(cls=CustomCommand)
 @click.argument("name")
+@click.option("--data-dir", type=click.Path(), help=cli_data_dir_help)
 @click.option("--flow-dir", type=click.Path(), help=HELP_FLOW_DIR)
 @click.option("--db-filename", type=str, help=HELP_DB_FILENAME)
 @click.option("--link-remote", help="Link workflow to n8n server (server name, partial URL, or full URL with schema)")
@@ -54,6 +55,7 @@ def wf() -> None:
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
 def add(
     name: str,
+    data_dir: Optional[str],
     flow_dir: Optional[str],
     db_filename: Optional[str],
     link_remote: Optional[str],
@@ -84,7 +86,7 @@ def add(
         )
 
     try:
-        config = get_config(flow_folder=flow_dir, db_filename=db_filename)
+        config = get_config(base_folder=data_dir, flow_folder=flow_dir, db_filename=db_filename)
     except ValueError as e:
         cli_error(str(e), no_emoji)
 
