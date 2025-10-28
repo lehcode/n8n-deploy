@@ -20,7 +20,7 @@ from rich.table import Table
 from ..api_keys import KeyApi
 from ..config import get_config
 from ..db import DBApi
-from .app import cli_data_dir_help, HELP_JSON, HELP_NO_EMOJI, HELP_TABLE, CustomCommand, CustomGroup
+from .app import cli_data_dir_help, HELP_DB_FILENAME, HELP_JSON, HELP_NO_EMOJI, HELP_TABLE, CustomCommand, CustomGroup
 from .output import cli_error
 
 console = Console()
@@ -42,12 +42,16 @@ def apikey() -> None:
 @click.option("--name", required=True, help="API key name (UTF-8 supported, no path separators)")
 @click.option("--server", help="Server name to link this API key to (uses N8N_SERVER_URL if not specified)")
 @click.option("--description", help="Description of the API key")
+@click.option("--data-dir", type=click.Path(), help=cli_data_dir_help)
+@click.option("--db-filename", type=str, help=HELP_DB_FILENAME)
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
 def add_apikey(
     key: Optional[str],
     name: str,
     server: Optional[str],
     description: Optional[str],
+    data_dir: Optional[str],
+    db_filename: Optional[str],
     no_emoji: bool,
 ) -> None:
     """🔑 Add new API key
@@ -110,7 +114,7 @@ def add_apikey(
         from ..db.servers import ServerCrud
 
         # Use default config from environment variables
-        config = get_config()
+        config = get_config(base_folder=data_dir, db_filename=db_filename)
         db_api = DBApi(config=config)
         key_api = KeyApi(db=db_api, config=config)
         key_id = key_api.add_api_key(
@@ -201,8 +205,10 @@ def add_apikey(
 @apikey.command("list", cls=CustomCommand)
 @click.option("--unmask", is_flag=True, help="Display actual credentials (SECURITY WARNING: use with extreme caution)")
 @click.option("--json", "output_json", is_flag=True, help=HELP_JSON)
+@click.option("--data-dir", type=click.Path(), help=cli_data_dir_help)
+@click.option("--db-filename", type=str, help=HELP_DB_FILENAME)
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
-def list_apikeys(unmask: bool, output_json: bool, no_emoji: bool) -> None:
+def list_apikeys(unmask: bool, output_json: bool, data_dir: Optional[str], db_filename: Optional[str], no_emoji: bool) -> None:
     """📋 List all stored API keys
 
     Display all stored API keys with metadata (credentials are masked by default).
@@ -214,7 +220,7 @@ def list_apikeys(unmask: bool, output_json: bool, no_emoji: bool) -> None:
 
     try:
         # Use default config from environment variables
-        config = get_config()
+        config = get_config(base_folder=data_dir, db_filename=db_filename)
         db_api = DBApi(config=config)
         key_api = KeyApi(db=db_api, config=config)
         keys = key_api.list_api_keys(unmask=unmask)
@@ -273,12 +279,14 @@ def list_apikeys(unmask: bool, output_json: bool, no_emoji: bool) -> None:
 
 @apikey.command("activate", cls=CustomCommand)
 @click.argument("key_name")
+@click.option("--data-dir", type=click.Path(), help=cli_data_dir_help)
+@click.option("--db-filename", type=str, help=HELP_DB_FILENAME)
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
-def activate_apikey(key_name: str, no_emoji: bool) -> None:
+def activate_apikey(key_name: str, data_dir: Optional[str], db_filename: Optional[str], no_emoji: bool) -> None:
     """✅ Activate API key (restore from deactivation)"""
     try:
         # Use default config from environment variables
-        config = get_config()
+        config = get_config(base_folder=data_dir, db_filename=db_filename)
         db_api = DBApi(config=config)
         key_api = KeyApi(db=db_api, config=config)
         success = key_api.activate_api_key(key_name)
@@ -294,12 +302,14 @@ def activate_apikey(key_name: str, no_emoji: bool) -> None:
 
 @apikey.command("deactivate", cls=CustomCommand)
 @click.argument("key_name")
+@click.option("--data-dir", type=click.Path(), help=cli_data_dir_help)
+@click.option("--db-filename", type=str, help=HELP_DB_FILENAME)
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
-def deactivate_apikey(key_name: str, no_emoji: bool) -> None:
+def deactivate_apikey(key_name: str, data_dir: Optional[str], db_filename: Optional[str], no_emoji: bool) -> None:
     """🚫 Deactivate API key (soft delete)"""
     try:
         # Use default config from environment variables
-        config = get_config()
+        config = get_config(base_folder=data_dir, db_filename=db_filename)
         db_api = DBApi(config=config)
         key_api = KeyApi(db=db_api, config=config)
         success = key_api.deactivate_api_key(key_name)
@@ -316,8 +326,10 @@ def deactivate_apikey(key_name: str, no_emoji: bool) -> None:
 @apikey.command("delete", cls=CustomCommand)
 @click.argument("key_name")
 @click.option("--force", is_flag=True, help="Force permanent deletion without confirmation")
+@click.option("--data-dir", type=click.Path(), help=cli_data_dir_help)
+@click.option("--db-filename", type=str, help=HELP_DB_FILENAME)
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
-def delete_apikey(key_name: str, force: bool, no_emoji: bool) -> None:
+def delete_apikey(key_name: str, force: bool, data_dir: Optional[str], db_filename: Optional[str], no_emoji: bool) -> None:
     """🗑️ Permanently delete an API key
 
     Without --force flag, prompts for confirmation (type 'yes' to confirm).
@@ -329,7 +341,7 @@ def delete_apikey(key_name: str, force: bool, no_emoji: bool) -> None:
     """
     try:
         # Use default config from environment variables
-        config = get_config()
+        config = get_config(base_folder=data_dir, db_filename=db_filename)
         db_api = DBApi(config=config)
         key_api = KeyApi(db=db_api, config=config)
 
@@ -364,8 +376,17 @@ def delete_apikey(key_name: str, force: bool, no_emoji: bool) -> None:
 @click.argument("key_name")
 @click.option("--server-url", help="Server URL to test against (uses N8N_SERVER_URL if not specified)")
 @click.option("--skip-ssl-verify", is_flag=True, help="Skip SSL certificate verification (for self-signed certificates)")
+@click.option("--data-dir", type=click.Path(), help=cli_data_dir_help)
+@click.option("--db-filename", type=str, help=HELP_DB_FILENAME)
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
-def test_apikey(key_name: str, server_url: Optional[str], skip_ssl_verify: bool, no_emoji: bool) -> None:
+def test_apikey(
+    key_name: str,
+    server_url: Optional[str],
+    skip_ssl_verify: bool,
+    data_dir: Optional[str],
+    db_filename: Optional[str],
+    no_emoji: bool,
+) -> None:
     """🧪 Test API key validity against n8n server
 
     Test if the API key can authenticate successfully with an n8n server.
@@ -378,7 +399,7 @@ def test_apikey(key_name: str, server_url: Optional[str], skip_ssl_verify: bool,
     """
     try:
         # Use default config from environment variables
-        config = get_config()
+        config = get_config(base_folder=data_dir, db_filename=db_filename)
         db_api = DBApi(config=config)
         key_api = KeyApi(db=db_api, config=config)
         success = key_api.test_api_key(key_name, server_url=server_url, skip_ssl_verify=skip_ssl_verify, no_emoji=no_emoji)
