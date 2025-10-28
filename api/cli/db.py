@@ -23,7 +23,7 @@ from rich.table import Table
 
 from ..config import get_config
 from ..db import DBApi
-from .app import cli_data_dir_help, HELP_JSON, HELP_NO_EMOJI, CustomCommand, CustomGroup
+from .app import cli_data_dir_help, HELP_DB_FILENAME, HELP_JSON, HELP_NO_EMOJI, CustomCommand, CustomGroup
 
 console = Console()
 
@@ -149,17 +149,17 @@ def db() -> None:
 
 @db.command(cls=CustomCommand)
 @click.option("--data-dir", type=click.Path(), help=cli_data_dir_help)
-@click.option("--filename", type=str, default="n8n-deploy.db", help="Database filename (default: n8n-deploy.db)")
+@click.option("--db-filename", type=str, default="n8n-deploy.db", help=HELP_DB_FILENAME)
 @click.option("--import", "auto_import", is_flag=True, help="Accept existing database without prompting")
 @click.option("--json", "output_json", is_flag=True, help=HELP_JSON)
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
-def init(data_dir: Optional[str], filename: str, auto_import: bool, output_json: bool, no_emoji: bool) -> None:
+def init(data_dir: Optional[str], db_filename: str, auto_import: bool, output_json: bool, no_emoji: bool) -> None:
     """🎬 Initialize n8n-deploy database
 
     Create the SQLite database with the required schema.
     Will prompt if database already exists.
 
-    If --filename is specified with an existing file, it will be imported automatically.
+    If --db-filename is specified with an existing file, it will be imported automatically.
 
     NOTE: Database must be initialized before using other commands.
     """
@@ -176,13 +176,13 @@ def init(data_dir: Optional[str], filename: str, auto_import: bool, output_json:
         env_app_dir = os.environ.get("N8N_DEPLOY_DATA_DIR")
         base_path = Path(env_app_dir) if env_app_dir else Path.cwd()
 
-    config = AppConfig(base_folder=base_path, db_filename=filename)
+    config = AppConfig(base_folder=base_path, db_filename=db_filename)
     db_path = config.database_path
 
     # Auto-import if:
     # 1. --import flag explicitly provided, OR
     # 2. Custom filename provided (not default) and file exists
-    custom_filename_provided = filename != "n8n-deploy.db"
+    custom_filename_provided = db_filename != "n8n-deploy.db"
     should_auto_import = auto_import or (custom_filename_provided and db_path.exists())
 
     # Check if database already exists
@@ -323,9 +323,10 @@ def init(data_dir: Optional[str], filename: str, auto_import: bool, output_json:
 
 @db.command(cls=CustomCommand)
 @click.option("--data-dir", type=click.Path(), help=cli_data_dir_help)
+@click.option("--db-filename", type=str, help=HELP_DB_FILENAME)
 @click.option("--json", "output_json", is_flag=True, help=HELP_JSON)
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
-def status(data_dir: Optional[str], output_json: bool, no_emoji: bool) -> None:
+def status(data_dir: Optional[str], db_filename: Optional[str], output_json: bool, no_emoji: bool) -> None:
     """📊 Show database status and statistics
 
     Use '--json' for machine-readable output.
@@ -334,7 +335,7 @@ def status(data_dir: Optional[str], output_json: bool, no_emoji: bool) -> None:
     if output_json:
         no_emoji = True
 
-    config = get_config(base_folder=data_dir)
+    config = get_config(base_folder=data_dir, db_filename=db_filename)
     db_path = config.database_path
 
     # Check if database exists
@@ -409,10 +410,11 @@ def status(data_dir: Optional[str], output_json: bool, no_emoji: bool) -> None:
 
 @db.command(cls=CustomCommand)
 @click.option("--data-dir", type=click.Path(), help=cli_data_dir_help)
+@click.option("--db-filename", type=str, help=HELP_DB_FILENAME)
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
-def compact(data_dir: Optional[str], no_emoji: bool) -> None:
+def compact(data_dir: Optional[str], db_filename: Optional[str], no_emoji: bool) -> None:
     """🗜️ Compact database to optimize storage"""
-    config = get_config(base_folder=data_dir)
+    config = get_config(base_folder=data_dir, db_filename=db_filename)
     db_path = config.database_path
 
     # Check if database exists
@@ -437,12 +439,14 @@ def compact(data_dir: Optional[str], no_emoji: bool) -> None:
 @db.command(cls=CustomCommand)
 @click.argument("backup_path", required=False)
 @click.option("--data-dir", type=click.Path(), help=cli_data_dir_help)
+@click.option("--db-filename", type=str, help=HELP_DB_FILENAME)
 def backup(
     backup_path: Optional[str],
     data_dir: Optional[str],
+    db_filename: Optional[str],
 ) -> None:
     """💾 Create database backup"""
-    config = get_config(base_folder=data_dir)
+    config = get_config(base_folder=data_dir, db_filename=db_filename)
     db_path = config.database_path
 
     # Check if database exists
