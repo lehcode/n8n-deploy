@@ -14,6 +14,7 @@ from rich.table import Table
 
 from ..api_keys import KeyApi
 from ..config import AppConfig, get_config
+from .app import cli_data_dir_help, HELP_DB_FILENAME
 from ..db.core import DBApi
 from ..db.servers import ServerCrud
 from .app import HELP_JSON, HELP_TABLE, CustomCommand, CustomGroup
@@ -31,15 +32,19 @@ def server() -> None:
 @server.command(name="create", cls=CustomCommand)
 @click.argument("name")
 @click.argument("url")
+@click.option("--data-dir", type=click.Path(), help=cli_data_dir_help)
+@click.option("--db-filename", type=str, help=HELP_DB_FILENAME)
 @click.option("--no-emoji", is_flag=True, help="Disable emoji in output")
 def create_server(
     name: str,
     url: str,
+    data_dir: Optional[str],
+    db_filename: Optional[str],
     no_emoji: bool,
 ) -> None:
     """Create a new n8n server (name supports UTF-8)"""
     try:
-        config = get_config()
+        config = get_config(base_folder=data_dir, db_filename=db_filename)
     except ValueError as e:
         console.print(f"[red]{e}[/red]")
         raise click.Abort()
@@ -69,12 +74,14 @@ def create_server(
 @click.option("--json", "output_json", is_flag=True, help=HELP_JSON)
 @click.option("--table", "output_table", is_flag=True, help=HELP_TABLE)
 @click.option("--data-dir", help="Application directory (overrides N8N_DEPLOY_DATA_DIR)")
+@click.option("--db-filename", type=str, help=HELP_DB_FILENAME)
 @click.option("--no-emoji", is_flag=True, help="Disable emoji in output")
 def list_servers(
     active: bool,
     output_json: bool,
     output_table: bool,
     data_dir: Optional[str],
+    db_filename: Optional[str],
     no_emoji: bool,
 ) -> None:
     """List all n8n servers"""
@@ -83,7 +90,7 @@ def list_servers(
         no_emoji = True
 
     try:
-        config = get_config(base_folder=data_dir)
+        config = get_config(base_folder=data_dir, db_filename=db_filename)
     except ValueError as e:
         console.print(f"[red]{e}[/red]")
         raise click.Abort()
@@ -189,17 +196,19 @@ def _delete_linked_api_keys(linked_keys: List[Dict[str, Any]], config: "AppConfi
     help="Delete API keys that are ONLY linked to this server",
 )
 @click.option("--data-dir", help="Application directory (overrides N8N_DEPLOY_DATA_DIR)")
+@click.option("--db-filename", type=str, help=HELP_DB_FILENAME)
 @click.option("--no-emoji", is_flag=True, help="Disable emoji in output")
 def remove_server(
     server_name: str,
     confirm: bool,
     key_action: Optional[str],
     data_dir: Optional[str],
+    db_filename: Optional[str],
     no_emoji: bool,
 ) -> None:
     """Remove (delete) an n8n server and optionally its API keys"""
     try:
-        config = get_config(base_folder=data_dir)
+        config = get_config(base_folder=data_dir, db_filename=db_filename)
     except ValueError as e:
         console.print(f"[red]{e}[/red]")
         raise click.Abort()
@@ -254,12 +263,14 @@ def remove_server(
 @click.option("--json", "output_json", is_flag=True, help=HELP_JSON)
 @click.option("--table", "output_table", is_flag=True, help=HELP_TABLE)
 @click.option("--data-dir", help="Application directory (overrides N8N_DEPLOY_DATA_DIR)")
+@click.option("--db-filename", type=str, help=HELP_DB_FILENAME)
 @click.option("--no-emoji", is_flag=True, help="Disable emoji in output")
 def show_keys(
     server_name: str,
     output_json: bool,
     output_table: bool,
     data_dir: Optional[str],
+    db_filename: Optional[str],
     no_emoji: bool,
 ) -> None:
     """Show API keys linked to a server"""
@@ -268,7 +279,7 @@ def show_keys(
         no_emoji = True
 
     try:
-        config = get_config(base_folder=data_dir)
+        config = get_config(base_folder=data_dir, db_filename=db_filename)
     except ValueError as e:
         console.print(f"[red]{e}[/red]")
         raise click.Abort()
