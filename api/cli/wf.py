@@ -212,6 +212,11 @@ def add(
 
     check_database_exists(config.database_path, output_json=output_json, no_emoji=no_emoji)
 
+    # Check if database exists and is initialized
+    from .db import check_database_exists
+
+    check_database_exists(config.database_path, output_json=output_json, no_emoji=no_emoji)
+
     try:
         result = _read_workflow_file(config, workflow_file, output_json, no_emoji)
         if result is None:
