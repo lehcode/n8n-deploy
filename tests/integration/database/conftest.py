@@ -32,7 +32,7 @@ class DatabaseTestHelpers(E2ETestBase):
         if data_dir:
             args.extend(["--data-dir", data_dir])
         if filename:
-            args.extend(["--filename", filename])
+            args.extend(["--db-filename", filename])
         if output_json:
             args.append("--json")
         if no_emoji:
