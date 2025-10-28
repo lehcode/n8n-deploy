@@ -77,6 +77,7 @@ def get_config(
     base_folder: Optional[Union[str, Path]] = None,
     flow_folder: Optional[Union[str, Path]] = None,
     n8n_url: Optional[str] = None,
+    db_filename: Optional[str] = None,
 ) -> AppConfig:
     """
     Get n8n_deploy_ configuration with priority order:
@@ -95,6 +96,11 @@ def get_config(
     1. Explicit --remote parameter (highest priority)
     2. N8N_SERVER_URL environment variable
     3. (none - must be specified)
+
+    Database filename priority:
+    1. Explicit --db-filename parameter (highest priority)
+    2. N8N_DEPLOY_DB_FILENAME environment variable
+    3. n8n-deploy.db (default)
     """
     # Load .env file if available, then check ENVIRONMENT variable
     if HAS_DOTENV:
@@ -135,7 +141,15 @@ def get_config(
     else:
         api_url = None
 
-    config = AppConfig(base_folder=base_path, flow_folder=flow_path, n8n_url=api_url)
+    # Database filename resolution
+    if db_filename is not None:
+        filename = db_filename
+    elif "N8N_DEPLOY_DB_FILENAME" in os.environ:
+        filename = os.environ["N8N_DEPLOY_DB_FILENAME"]
+    else:
+        filename = "n8n-deploy.db"
+
+    config = AppConfig(base_folder=base_path, flow_folder=flow_path, n8n_url=api_url, db_filename=filename)
 
     config.ensure_directories()
     config.validate_paths()

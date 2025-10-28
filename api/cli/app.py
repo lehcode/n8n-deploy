@@ -18,6 +18,7 @@ PROG_NAME = "n8n-deploy|./n8n-deploy"
 # Common CLI option help texts
 cli_data_dir_help = "Data directory for database and backups"
 HELP_FLOW_DIR = "Plain directory where wf JSON files are located"
+HELP_DB_FILENAME = "Database filename (default: n8n-deploy.db)"
 HELP_SERVER_URL = "n8n server URL (overrides N8N_SERVER_URL)"
 HELP_NO_EMOJI = "Disable emoji output for automation/scripting"
 HELP_JSON = "Output in JSON format for scripting/automation"
