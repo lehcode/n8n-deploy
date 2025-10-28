@@ -9,7 +9,6 @@ deactivation, deletion, and testing.
 import json
 import re
 import sys
-from pathlib import Path
 from typing import Optional
 
 import click
@@ -20,7 +19,8 @@ from rich.table import Table
 from ..api_keys import KeyApi
 from ..config import get_config
 from ..db import DBApi
-from .app import cli_data_dir_help, HELP_DB_FILENAME, HELP_JSON, HELP_NO_EMOJI, HELP_TABLE, CustomCommand, CustomGroup
+from ..jwt_utils import check_jwt_expiration, format_expiration_date, get_jwt_issued_at
+from .app import cli_data_dir_help, HELP_DB_FILENAME, HELP_JSON, HELP_NO_EMOJI, CustomCommand, CustomGroup
 from .output import cli_error
 
 console = Console()
@@ -242,13 +242,33 @@ def list_apikeys(unmask: bool, output_json: bool, data_dir: Optional[str], db_fi
             table.add_column("Name", style="cyan")
             table.add_column("ID", style="dim")
             table.add_column("Created", style="blue")
+            table.add_column("Added", style="green")
             table.add_column("Status", style="magenta", justify="center")
+            table.add_column("Expires", style="yellow")
             table.add_column("Key", style="dim" if not unmask else "red")
 
             for key in keys:
-                created = key["created_at"]
-                if isinstance(created, str):
-                    created = created[:16]  # Truncate datetime
+                # Extract issued-at from JWT token if available, fallback to database created_at
+                api_key_value = key.get("api_key")
+                if api_key_value:
+                    iat_datetime = get_jwt_issued_at(api_key_value)
+                    if iat_datetime:
+                        created = iat_datetime.strftime("%Y-%m-%d %H:%M")
+                    else:
+                        # Fallback to database created_at if JWT doesn't have iat
+                        created = key["created_at"]
+                        if isinstance(created, str):
+                            created = created[:16]
+                else:
+                    # No API key available, use database created_at
+                    created = key["created_at"]
+                    if isinstance(created, str):
+                        created = created[:16]
+
+                # Database added timestamp (always from database)
+                added = key["created_at"]
+                if isinstance(added, str):
+                    added = added[:16]  # Truncate datetime
 
                 # Determine status based on is_active with graphical indicators
                 is_active = key.get("is_active", True)
@@ -256,6 +276,21 @@ def list_apikeys(unmask: bool, output_json: bool, data_dir: Optional[str], db_fi
                     status = "Active" if is_active else "Inactive"
                 else:
                     status = "✅" if is_active else "❌"
+
+                # Check expiration if API key is available
+                expiry_display = "N/A"
+                if api_key_value:
+                    is_expired, exp_datetime, warning = check_jwt_expiration(api_key_value)
+                    if exp_datetime:
+                        expiry_display = format_expiration_date(exp_datetime)
+                        if is_expired:
+                            expiry_display = f"[red]{expiry_display}[/red]"
+                            if no_emoji:
+                                status = "Expired"
+                            else:
+                                status = "❌ Expired"
+                        elif warning:
+                            expiry_display = f"[yellow]{expiry_display}[/yellow]"
 
                 # Show API key if unmask is True, otherwise show masked
                 if unmask:
@@ -267,7 +302,9 @@ def list_apikeys(unmask: bool, output_json: bool, data_dir: Optional[str], db_fi
                     key["name"],
                     str(key["id"]),
                     str(created),
+                    str(added),
                     status,
+                    expiry_display,
                     key_display,
                 ]
                 table.add_row(*row_data)
