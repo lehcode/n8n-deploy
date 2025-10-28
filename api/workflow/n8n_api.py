@@ -122,8 +122,17 @@ class N8nAPI:
             print(f"❌ Failed to retrieve API key: {e}")
             return None
 
-    def _make_n8n_request(self, method: str, endpoint: str, data: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
-        """Make authenticated request to n8n API"""
+    def _make_n8n_request(
+        self, method: str, endpoint: str, data: Optional[Dict[str, Any]] = None, silent: bool = False
+    ) -> Optional[Dict[str, Any]]:
+        """Make authenticated request to n8n API
+
+        Args:
+            method: HTTP method (GET, POST, PUT, DELETE)
+            endpoint: API endpoint path
+            data: Optional request payload
+            silent: If True, suppress error messages for failed requests
+        """
         credentials = self._get_n8n_credentials()
         if not credentials:
             return None
@@ -154,17 +163,20 @@ class N8nAPI:
             elif method.upper() == "DELETE":
                 response = requests.delete(url, headers=credentials["headers"], verify=not self.skip_ssl_verify, timeout=10)
             else:
-                print(f"❌ Unsupported HTTP method: {method}")
+                if not silent:
+                    print(f"❌ Unsupported HTTP method: {method}")
                 return None
 
             response.raise_for_status()
             result = response.json()
             return result if isinstance(result, dict) else None
         except requests.exceptions.Timeout:
-            print("❌ n8n API request timed out after 10 seconds")
+            if not silent:
+                print("❌ n8n API request timed out after 10 seconds")
             return None
         except requests.exceptions.RequestException as e:
-            print(f"❌ n8n API request failed: {e}")
+            if not silent:
+                print(f"❌ n8n API request failed: {e}")
             return None
 
     def get_n8n_workflows(self) -> Optional[List[Dict[str, Any]]]:
@@ -300,10 +312,13 @@ class N8nAPI:
             return False
 
     def get_n8n_version(self) -> Optional[str]:
-        """Get n8n server version information"""
+        """Get n8n server version information
+
+        This is optional metadata - failures are silently handled.
+        """
         try:
             # The /settings endpoint typically contains version information
-            response = self._make_n8n_request("GET", "api/v1/settings")
+            response = self._make_n8n_request("GET", "api/v1/settings", silent=True)
             if response and "data" in response:
                 settings = response["data"]
                 # Look for version information in various possible fields
@@ -311,14 +326,14 @@ class N8nAPI:
                     if version_field in settings:
                         return str(settings[version_field])
 
-                # If version not in settings, try the health endpoint
-                health_response = self._make_n8n_request("GET", "healthz")
-                if health_response:
-                    return "healthy-{}".format(datetime.now().strftime("%Y%m%d"))
+            # If version not in settings, try the health endpoint
+            health_response = self._make_n8n_request("GET", "healthz", silent=True)
+            if health_response:
+                return "healthy-{}".format(datetime.now().strftime("%Y%m%d"))
 
             # Fallback to generic identifier
             return "unknown-{}".format(datetime.now().strftime("%Y%m%d"))
 
-        except Exception as e:
-            print(f"⚠️  Failed to get n8n version: {e}")
+        except Exception:
+            # Silent failure - version tracking is optional
             return None
