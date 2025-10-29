@@ -463,6 +463,7 @@ class N8nAPI:
     def push_workflow(self, workflow_id: str) -> bool:
         """Push wf to n8n server using REST API"""
         try:
+            from pathlib import Path
             from .crud import WorkflowCRUD
 
             crud = WorkflowCRUD(self.db, self.config)
