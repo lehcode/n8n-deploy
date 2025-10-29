@@ -385,6 +385,7 @@ test:unit:
   needs:
     - quality:mypy
     - quality:black
+    - quality:coverage
   script:
     - export N8N_DEPLOY_TESTING=1
     - ./run_tests.py --unit --no-deps-check -q
@@ -450,7 +451,6 @@ test:hypothesis:
     when: always
     paths:
       - .hypothesis/
-      - hypothesis-results.xml
     expire_in: 7 days
 
 # ============================================
