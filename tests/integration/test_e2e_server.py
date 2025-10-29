@@ -335,8 +335,8 @@ class TestE2EServer(E2ETestBase):
         )
 
         # Perform local operation immediately after
-        # Note: wf list uses --flow-dir, not --data-dir
-        local_returncode, local_stdout, _ = self.run_cli_command(["--flow-dir", self.temp_flow_dir, "wf", "list"])
+        # Note: wf list reads from database, so it uses --data-dir
+        local_returncode, local_stdout, _ = self.run_cli_command(["wf", "list", "--data-dir", self.temp_dir])
 
         # Local operation should work regardless of server operation result
         assert local_returncode == 0
@@ -460,10 +460,8 @@ class TestE2EServer(E2ETestBase):
         self.setup_database_with_api_key()
 
         # Commands that should support --skip-ssl-verify
-        # Test commands that support --skip-ssl-verify
-        # Note: wf add uses --link-remote, others use --remote
+        # Only commands that communicate with remote server support this option
         test_cases = [
-            (["wf", "add", "TestWorkflow", "--link-remote", "https://localhost:5678", "--skip-ssl-verify"], "wf add"),
             (["wf", "pull", "test123", "--remote", "https://localhost:5678", "--skip-ssl-verify"], "wf pull"),
             (["wf", "push", "test123", "--remote", "https://localhost:5678", "--skip-ssl-verify"], "wf push"),
             (["wf", "server", "--remote", "https://localhost:5678", "--skip-ssl-verify"], "wf server"),
