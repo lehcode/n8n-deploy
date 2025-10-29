@@ -244,12 +244,15 @@ build:production:
     - build:python-matrix
   script:
     - source .venv/bin/activate
+    - uv pip install --quiet build twine
+    - python -m build --wheel --sdist
+    - twine check dist/*
     - echo "🚀 Production environment build completed successfully"
     - echo "All pipeline stages have passed validation for production release"
   artifacts:
     paths:
-      - .venv/
-    expire_in: 1 hour
+      - dist/
+    expire_in: 7 days
 
 # Security scanning
 include:
