@@ -143,6 +143,7 @@ class DBApi(BaseDB):
                     name=row["name"],
                     file=row["file"] if "file" in row.keys() else None,
                     file_folder=row["file_folder"],
+                    server_id=row["server_id"] if "server_id" in row.keys() else None,
                     status=WorkflowStatus(row["status"]),
                     created_at=datetime.fromisoformat(row["created_at"]),
                     updated_at=datetime.fromisoformat(row["updated_at"]),
