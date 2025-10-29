@@ -76,10 +76,11 @@ class TestApikeyOperations(ApikeyTestHelpers):
             assert key_name in list_stdout
 
             # Step 3: List with --unmask flag (should show actual credentials)
-            unmask_returncode, unmask_stdout, unmask_stderr = self.run_cli_command(["apikey", "list", "--unmask"])
+            # Use JSON format to avoid table truncation
+            unmask_returncode, unmask_stdout, unmask_stderr = self.run_cli_command(["apikey", "list", "--unmask", "--json"])
             if unmask_returncode == 0:
-                # Should show the actual key (check for key prefix or full key)
-                assert test_key in unmask_stdout or "eyJhbGci" in unmask_stdout
+                # Should show the actual key in JSON output
+                assert test_key in unmask_stdout
 
             # Step 4: Delete API key
             delete_returncode, delete_stdout, delete_stderr = self.run_cli_command(["apikey", "delete", key_name, "--force"])

@@ -143,14 +143,18 @@ class TestE2ECLI(E2ETestBase):
         )
 
     def test_cli_option_precedence_over_env(self) -> None:
-        """Test CLI --flow-dir option takes precedence over environment"""
+        """Test CLI --data-dir option takes precedence over environment"""
 
-        env = {"N8N_DEPLOY_FLOWS_DIR": "/tmp/env-dir"}
-        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "db", "init"])
+        env = {"N8N_DEPLOY_DATA_DIR": "/tmp/env-dir"}
 
-        # Use CLI option for different directory (wf list only needs --flow-dir)
+        # Initialize database first
+        returncode, stdout, stderr = self.run_cli_command(["db", "init", "--data-dir", self.temp_dir])
+        assert returncode == 0
+
+        # Test that CLI --data-dir takes precedence over env variable
+        # This should succeed because we use the correct temp_dir via CLI option
         returncode, stdout, stderr = self.run_cli_command(
-            ["--flow-dir", self.temp_flow_dir, "wf", "list"],
+            ["db", "status", "--data-dir", self.temp_dir],
             env=env,
         )
 
@@ -159,7 +163,7 @@ class TestE2ECLI(E2ETestBase):
             stdout,
             stderr,
             0,
-            f"CLI option precedence test. ENV_DIR=/tmp/env-dir, CLI_DIR={self.temp_flow_dir}",
+            f"CLI option precedence test. ENV_DIR=/tmp/env-dir, CLI_DIR={self.temp_dir}",
         )
 
     def test_database_commands_consistency(self) -> None:
@@ -337,11 +341,11 @@ class TestE2ECLI(E2ETestBase):
         returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "db", "init"])
 
         # Test different command types
-        # Note: wf list uses --flow-dir, not --data-dir (workflow files vs database)
+        # Note: wf list reads from database, so it uses --data-dir
         test_cases = [
             (["--data-dir", self.temp_dir, "db", "status"], "db status with data-dir"),
-            (["--flow-dir", self.temp_flow_dir, "wf", "list"], "wf list with flow-dir"),
-            (["apikey", "list"], "apikey list"),
+            (["--data-dir", self.temp_dir, "wf", "list"], "wf list with data-dir"),
+            (["--data-dir", self.temp_dir, "apikey", "list"], "apikey list with data-dir"),
             (["--data-dir", self.temp_dir, "db", "status"], "db status repeat"),
         ]
 

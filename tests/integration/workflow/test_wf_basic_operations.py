@@ -28,11 +28,11 @@ from .conftest import WorkflowTestHelpers
 class TestWorkflowBasicOps(WorkflowTestHelpers):
     """Test Workflow Basic Operations tests"""
 
-    def test_workflow_add_requires_server(self) -> None:
-        """Test that wf add command requires server URL (pulls from remote)"""
+    def test_workflow_add_requires_file(self) -> None:
+        """Test that wf add command requires local workflow file"""
         self.setup_database()
 
-        # wf add now pulls from server, so without server URL it should fail gracefully
+        # wf add registers a local workflow file, so without the file it should fail
         returncode, stdout, stderr = self.run_cli_command(
             [
                 "wf",
@@ -41,9 +41,9 @@ class TestWorkflowBasicOps(WorkflowTestHelpers):
             ]
         )
 
-        # Should fail with meaningful error about missing server URL
+        # Should fail with meaningful error about missing file
         assert returncode != 0  # Non-zero exit code indicates failure
-        assert "server" in stderr.lower() or "server" in stdout.lower()
+        assert "not found" in stderr.lower() or "not found" in stdout.lower()
 
     def test_workflow_list_empty(self) -> None:
         """Test listing workflows when none exist"""
