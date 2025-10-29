@@ -69,7 +69,7 @@ backups/
 *.sqlite3
 
 # Workflow files
-workflows/
+./workflows/**/*.json
 
 # Python cache and compiled files
 **/__pycache__/
