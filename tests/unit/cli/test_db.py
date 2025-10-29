@@ -84,16 +84,31 @@ class TestDatabaseHelpers:
             check_database_exists(nonexistent_path, output_json=True, no_emoji=False)
 
     def test_check_database_exists_with_existing_db(self):
-        """Test check_database_exists with existing database (should not raise)"""
+        """Test check_database_exists with existing initialized database (should not raise)"""
         import tempfile
         from pathlib import Path
+        import sqlite3
 
         # Create a temporary file to simulate existing database
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp:
             tmp_path = Path(tmp.name)
 
         try:
-            # Should not raise
+            # Initialize the database with schema_info table
+            conn = sqlite3.connect(tmp_path)
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS schema_info (
+                    version INTEGER PRIMARY KEY,
+                    applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    description TEXT
+                )
+            """
+            )
+            conn.commit()
+            conn.close()
+
+            # Should not raise with initialized database
             check_database_exists(tmp_path, output_json=False, no_emoji=True)
         finally:
             # Clean up
@@ -245,13 +260,18 @@ class TestDatabaseCommands:
         assert isinstance(output, dict)
         assert "success" in output
 
+    @patch("api.cli.db.check_database_exists")
     @patch("api.cli.db.DBApi")
     @patch("api.cli.db.get_config")
-    def test_status_command_table_format(self, mock_get_config, mock_db):
+    def test_status_command_table_format(self, mock_get_config, mock_db, mock_check_db):
         """Test status command with table format"""
         # Mock config
         mock_config = MagicMock()
+        mock_config.database_path = Path(self.temp_dir) / "test.db"
         mock_get_config.return_value = mock_config
+
+        # Mock check_database_exists to not raise
+        mock_check_db.return_value = None
 
         # Mock database manager and stats
         mock_db_instance = MagicMock()
@@ -270,13 +290,18 @@ class TestDatabaseCommands:
         assert "Database Status" in result.output
         mock_db_instance.get_database_stats.assert_called_once()
 
+    @patch("api.cli.db.check_database_exists")
     @patch("api.cli.db.DBApi")
     @patch("api.cli.db.get_config")
-    def test_status_command_json_format(self, mock_get_config, mock_db):
+    def test_status_command_json_format(self, mock_get_config, mock_db, mock_check_db):
         """Test status command with JSON format"""
         # Mock config
         mock_config = MagicMock()
+        mock_config.database_path = Path(self.temp_dir) / "test.db"
         mock_get_config.return_value = mock_config
+
+        # Mock check_database_exists to not raise
+        mock_check_db.return_value = None
 
         # Mock database manager and stats
         mock_db_instance = MagicMock()
@@ -296,13 +321,18 @@ class TestDatabaseCommands:
         assert "database_size" in result.output
         mock_db_instance.get_database_stats.assert_called_once()
 
+    @patch("api.cli.db.check_database_exists")
     @patch("api.cli.db.DBApi")
     @patch("api.cli.db.get_config")
-    def test_compact_command(self, mock_get_config, mock_db):
+    def test_compact_command(self, mock_get_config, mock_db, mock_check_db):
         """Test compact command"""
         # Mock config
         mock_config = MagicMock()
+        mock_config.database_path = Path(self.temp_dir) / "test.db"
         mock_get_config.return_value = mock_config
+
+        # Mock check_database_exists to not raise
+        mock_check_db.return_value = None
 
         # Mock database manager
         mock_db_instance = MagicMock()
@@ -315,13 +345,18 @@ class TestDatabaseCommands:
         assert "Database optimization complete" in result.output
         mock_db_instance.compact.assert_called_once()
 
+    @patch("api.cli.db.check_database_exists")
     @patch("api.cli.db.DBApi")
     @patch("api.cli.db.get_config")
-    def test_backup_command_with_path(self, mock_get_config, mock_db):
+    def test_backup_command_with_path(self, mock_get_config, mock_db, mock_check_db):
         """Test backup command with specified path"""
         # Mock config
         mock_config = MagicMock()
+        mock_config.database_path = Path(self.temp_dir) / "test.db"
         mock_get_config.return_value = mock_config
+
+        # Mock check_database_exists to not raise
+        mock_check_db.return_value = None
 
         # Mock database manager
         mock_db_instance = MagicMock()
@@ -333,14 +368,19 @@ class TestDatabaseCommands:
         assert result.exit_code == 0
         mock_db_instance.backup.assert_called_once_with(backup_path)
 
+    @patch("api.cli.db.check_database_exists")
     @patch("api.cli.db.DBApi")
     @patch("api.cli.db.get_config")
-    def test_backup_command_auto_path(self, mock_get_config, mock_db):
+    def test_backup_command_auto_path(self, mock_get_config, mock_db, mock_check_db):
         """Test backup command with automatic path generation"""
         # Mock config
         mock_config = MagicMock()
+        mock_config.database_path = Path(self.temp_dir) / "test.db"
         mock_config.backups_path = Path(self.temp_dir) / "backups"
         mock_get_config.return_value = mock_config
+
+        # Mock check_database_exists to not raise
+        mock_check_db.return_value = None
 
         # Mock database manager
         mock_db_instance = MagicMock()

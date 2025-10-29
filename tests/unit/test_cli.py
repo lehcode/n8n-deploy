@@ -123,17 +123,22 @@ class TestCLIArgumentParsing:
         assert result.exit_code != 0  # Should fail
         assert "No such option: --no-emoji" in result.output
 
-    def test_app_dir_flag_position(self):
-        """Test --data-dir flag is not available at root level or on workflow commands"""
+    def test_data_dir_flag_position(self):
+        """Test --data-dir flag is only available on subcommands, not at root level"""
         # Should fail at root level
         result = self.runner.invoke(cli, ["--data-dir", "/tmp", "--help"])
         assert result.exit_code != 0
         assert "No such option" in result.output
 
-        # Should also fail on wf list command (--data-dir removed from workflow commands)
-        result = self.runner.invoke(cli, ["wf", "list", "--data-dir", "/tmp", "--help"])
-        assert result.exit_code != 0
-        assert "No such option" in result.output
+        # Should work on wf list command (--data-dir is available on workflow commands)
+        result = self.runner.invoke(cli, ["wf", "list", "--help"])
+        assert result.exit_code == 0
+        assert "--data-dir" in result.output
+
+        # Should work on db status command (--data-dir is available on database commands)
+        result = self.runner.invoke(cli, ["db", "status", "--help"])
+        assert result.exit_code == 0
+        assert "--data-dir" in result.output
 
 
 class TestCLIHelp:
