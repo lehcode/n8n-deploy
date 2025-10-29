@@ -279,21 +279,30 @@ class N8nAPI:
     def push_workflow(self, workflow_id: str) -> bool:
         """Push wf to n8n server using REST API"""
         try:
+            from pathlib import Path
             from .crud import WorkflowCRUD
 
             crud = WorkflowCRUD(self.db, self.config)
 
             info = crud.get_workflow_info(workflow_id)
+            wf = info["wf"]
 
-            if not info["full_path"].exists():
-                print(f"❌ Workflow file not found: {info['full_path']}")
+            # Construct file path from workflow data
+            flow_folder = Path(wf.file_folder) if wf.file_folder else self.base_path
+            if not flow_folder:
+                flow_folder = Path.cwd()
+
+            file_path = flow_folder / f"{workflow_id}.json"
+
+            if not file_path.exists():
+                print(f"❌ Workflow file not found: {file_path}")
                 return False
 
             print(f"🔄 Pushing wf {workflow_id} to n8n server...")
             print(f"📋 Workflow: {info['name']}")
-            print(f"📄 File: {info['file']}")
+            print(f"📄 File: {file_path}")
 
-            with open(info["full_path"], "r", encoding="utf-8") as f:
+            with open(file_path, "r", encoding="utf-8") as f:
                 workflow_data = json.load(f)
 
             # Check if wf exists on server
