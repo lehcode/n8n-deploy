@@ -545,6 +545,8 @@ def push(
                 console.print(f"[red]{error_msg}[/red]")
             raise click.Abort()
 
+    except click.Abort:
+        raise  # Re-raise without additional message
     except Exception as e:
         error_msg = f"Failed to push wf: {e}"
         if no_emoji:
