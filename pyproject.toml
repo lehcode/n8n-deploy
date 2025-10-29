@@ -182,5 +182,5 @@ ignore = "E501"
 
 [tool.setuptools_scm]
 # Version from git tags: v2.0.0 -> 2.0.0, v2.0.0-rc1 -> 2.0.0rc1
-version_scheme = "guess-next-dev"
+# Default version scheme produces stable versions for exact tags
 local_scheme = "no-local-version"
