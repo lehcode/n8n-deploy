@@ -119,7 +119,7 @@ class WorkflowCRUD:
         return workflows
 
     def get_workflow_info(self, id_or_alias: str) -> Dict[str, Any]:
-        """Get wf information by ID or alias from database"""
+        """Get wf information by ID, name, or alias from database"""
         if id_or_alias == "main":
             workflows = self.db.list_workflows()
             main_workflows = [w for w in workflows if "main" in w.name.lower()]
@@ -128,7 +128,7 @@ class WorkflowCRUD:
             else:
                 raise ValueError("No main wf found")
 
-        wf = self.db.get_workflow(id_or_alias)
+        wf = self.db.get_workflow_by_name_or_id(id_or_alias)
 
         if not wf:
             available = []
