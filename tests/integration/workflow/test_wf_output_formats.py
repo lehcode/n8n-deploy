@@ -31,9 +31,10 @@ class TestOutputFormats(WorkflowTestHelpers):
     def test_output_format_data_consistency(self) -> None:
         """Test output format is consistent between runs"""
         # Initialize database first
-        returncode, stdout, stderr = self.run_cli_command(["--data-dir", self.temp_dir, "db", "init"])
+        returncode, stdout, stderr = self.run_cli_command(["db", "init", "--data-dir", self.temp_dir])
 
-        cmd = ["--flow-dir", self.temp_flow_dir, "wf", "list"]
+        # Note: wf list reads from database, so it uses --data-dir
+        cmd = ["wf", "list", "--data-dir", self.temp_dir]
 
         returncode1, stdout1, stderr1 = self.run_cli_command(cmd)
         returncode2, stdout2, stderr2 = self.run_cli_command(cmd)
@@ -47,17 +48,17 @@ class TestOutputFormats(WorkflowTestHelpers):
         self.create_test_workflow("emoji_test")
 
         # Test 'wf list' with default emoji output
-        # Note: wf list uses --flow-dir only, not --data-dir
-        emoji_returncode, emoji_stdout, _ = self.run_cli_command(["--flow-dir", self.temp_flow_dir, "wf", "list"])
+        # Note: wf list reads from database, so it uses --data-dir
+        emoji_returncode, emoji_stdout, _ = self.run_cli_command(["wf", "list", "--data-dir", self.temp_dir])
 
         # Test 'wf list' with --no-emoji flag
         no_emoji_returncode, no_emoji_stdout, _ = self.run_cli_command(
             [
-                "--flow-dir",
-                self.temp_flow_dir,
                 "--no-emoji",
                 "wf",
                 "list",
+                "--data-dir",
+                self.temp_dir,
             ]
         )
 
