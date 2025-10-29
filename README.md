@@ -30,8 +30,9 @@
 
 - 🚀 **Seamless n8n Server Integration**
   - Push and pull workflows directly from remote n8n servers
-  - Support for multiple server configurations
-  - Secure API key handling
+  - Workflow-server linking for automatic server resolution
+  - Priority-based server configuration (linked server → ENV → --remote)
+  - Support for multiple server configurations with API key management
 
 - 💻 **Versatile CLI Interface**
   - Emoji-rich output for interactive use
@@ -54,23 +55,24 @@ uv pip install n8n-deploy
 
 ```bash
 # Initialize database
-n8n-deploy db init
+n8n-deploy db init --data-dir ~/.n8n-deploy
 
-# Add an API key for your n8n server
-echo "your-n8n-api-key" | n8n-deploy apikey add "My Server Key"
-n8n-deploy apikey add "your-n8n-api-key" --name "My Server Key"
-# Link to server, no need to specify key anymore for that server
-n8n-deploy apikey add "your-n8n-api-key" --name "My Server Key" --server "Production Server 🚀"
+# Create server and add API key
+n8n-deploy server create production https://n8n.example.com
+echo "your-n8n-api-key" | n8n-deploy apikey add - --name "prod-key"
 
-# List local workflows
-n8n-deploy wf list --flow-dir /path/to/workflows
+# Link workflow to server (automatic server resolution)
+n8n-deploy wf add workflow.json --link-remote production
 
-# List workflows from a remote n8n server
-n8n-deploy wf list --server https://n8n.example.com
-n8n-deploy wf list --server "Production Server 🚀"
+# Push/pull uses linked server automatically (no --remote needed!)
+n8n-deploy wf push workflow-name  # Uses production server
+n8n-deploy wf pull workflow-name  # Uses production server
 
-# Pull a specific workflow
-n8n-deploy --server-url http://n8n.example.com wf pull "My Workflow"
+# Override with --remote for ad-hoc operations
+n8n-deploy wf push workflow-name --remote staging
+
+# List workflows from server
+n8n-deploy wf server --remote production
 ```
 
 ### Configuration
