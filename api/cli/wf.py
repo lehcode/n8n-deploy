@@ -458,11 +458,19 @@ def pull(
 ) -> None:
     """📥 Download wf from n8n server
 
-    Downloads a wf using its n8n wf ID (e.g., 'deAVBp391wvomsWY').
-    This is the actual ID from the n8n server, not the user-friendly name.
+    Downloads a wf using its n8n wf ID (e.g., 'deAVBp391wvomsWY') or workflow name.
 
-    Use --remote to specify server by name (e.g., 'production') or URL.
+    Server Resolution Priority (lowest to highest):
+    1. Workflow's linked server (if workflow exists in database)
+    2. N8N_SERVER_URL environment variable
+    3. --remote option (overrides all)
+
+    Use --remote to override with server name (e.g., 'production') or URL.
     If server name is used, the linked API key will be used automatically.
+
+    Examples:
+      n8n-deploy wf pull workflow-name              # Uses linked server
+      n8n-deploy wf pull workflow-name --remote staging  # Override to staging
     """
     try:
         config = get_config(base_folder=data_dir, flow_folder=flow_dir, db_filename=db_filename)
@@ -524,11 +532,19 @@ def push(
 ) -> None:
     """📤 Upload wf to n8n server
 
-    Uploads a wf using its n8n wf ID (e.g., 'deAVBp391wvomsWY').
-    This is the actual ID stored in the wf JSON file.
+    Uploads a wf using its n8n wf ID (e.g., 'deAVBp391wvomsWY') or workflow name.
 
-    Use --remote to specify server by name (e.g., 'production') or URL.
+    Server Resolution Priority (lowest to highest):
+    1. Workflow's linked server (set via 'wf add --link-remote')
+    2. N8N_SERVER_URL environment variable
+    3. --remote option (overrides all)
+
+    Use --remote to override with server name (e.g., 'production') or URL.
     If server name is used, the linked API key will be used automatically.
+
+    Examples:
+      n8n-deploy wf push workflow-name              # Uses linked server
+      n8n-deploy wf push workflow-name --remote staging  # Override to staging
     """
     try:
         config = get_config(base_folder=data_dir, flow_folder=flow_dir, db_filename=db_filename)
