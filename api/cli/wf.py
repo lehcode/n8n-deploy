@@ -164,7 +164,16 @@ def add(
                         cli_error(f"Server '{link_remote}' not found in database. Add it with 'server create'", no_emoji)
                 server_name = link_remote
 
-            # Link workflow to server (implementation would go here)
+            # Link workflow to server
+            assert server is not None  # Type assertion for mypy
+            server_id = server["id"]
+
+            # Update workflow with server_id
+            workflow_obj = manager.db.get_workflow(workflow_id)
+            if workflow_obj:
+                workflow_obj.server_id = server_id
+                manager.db.update_workflow(workflow_obj)
+
             if not output_json:
                 if no_emoji:
                     console.print(f"Workflow linked to server: {server_name}")

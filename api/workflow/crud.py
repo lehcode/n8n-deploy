@@ -35,6 +35,7 @@ class WorkflowCRUD:
             name=name,
             file=None,
             file_folder=str(self.base_path) if self.base_path else None,
+            server_id=None,
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc),
             last_synced=None,

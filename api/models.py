@@ -23,6 +23,7 @@ class Workflow(BaseModel):
     name: str = Field(..., description="Human-readable wf name")
     file: Optional[str] = Field(None, description="Filename of the wf")
     file_folder: Optional[str] = Field(None, description="Directory where wf JSON file is located")
+    server_id: Optional[int] = Field(None, description="Linked server ID")
     status: WorkflowStatus = Field(default=WorkflowStatus.ACTIVE, description="Workflow status")
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="Creation timestamp")
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="Last update timestamp")
