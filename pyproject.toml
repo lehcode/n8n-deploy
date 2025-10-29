@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = ["setuptools>=61.0", "setuptools-scm>=8.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "n8n-deploy"
-version = "2.0.0"
+dynamic = ["version"]
 description = "n8n-deploy - a simple N8N Workflow Manager with SQLite metadata store"
 readme = "README.md"
 license = { text = "MIT" }
@@ -179,3 +179,8 @@ exclude_lines = [
 max-line-length = 120
 extend-ignore = "E203"
 ignore = "E501"
+
+[tool.setuptools_scm]
+# Version from git tags: v2.0.0 -> 2.0.0, v2.0.0-rc1 -> 2.0.0rc1
+version_scheme = "guess-next-dev"
+local_scheme = "no-local-version"
