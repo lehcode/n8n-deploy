@@ -110,10 +110,10 @@ class TestWorkflowBasicOps(WorkflowTestHelpers):
         assert returncode in [0, 1]
 
     def test_wf_add_with_json_format(self) -> None:
-        """Test wf add with --format json output"""
+        """Test wf add with --json output format"""
         self.setup_database()
 
-        # Note: wf add doesn't have --data-dir option
+        # Try to add non-existent workflow file with JSON output
         returncode, stdout, stderr = self.run_cli_command(
             [
                 "wf",
@@ -123,8 +123,10 @@ class TestWorkflowBasicOps(WorkflowTestHelpers):
             ]
         )
 
-        # Should fail with server URL error and output in JSON format if requested
-        assert returncode == 1
+        # With --json flag, command returns 0 but outputs JSON with success: false
+        assert returncode == 0
+        assert "success" in stdout.lower()
+        assert "false" in stdout.lower()
 
     def test_wf_list_shows_backupable_status(self) -> None:
         """Test wf list shows backupable status in workflow metadata"""

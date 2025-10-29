@@ -32,15 +32,17 @@ class TestWorkflowFileHandling(WorkflowTestHelpers):
         """Test accuracy of wf file existence checks"""
         self.setup_database()
         workflow_file = self.create_test_workflow("existence_test")
+        # Note: wf add uses both --data-dir (for database) and --flow-dir (to locate workflow file)
         add_returncode, _, _ = self.run_cli_command(
             [
+                "wf",
+                "add",
+                "existence_test.json",
+                "Existence-Test",
                 "--data-dir",
                 self.temp_dir,
                 "--flow-dir",
                 self.temp_flow_dir,
-                "add",
-                "existence_test.json",
-                "Existence-Test",
             ]
         )
 
@@ -101,9 +103,8 @@ class TestWorkflowFileHandling(WorkflowTestHelpers):
         subdir.mkdir()
 
         # Test that search command works with custom flow directory
-        returncode, stdout, stderr = self.run_cli_command(
-            ["--data-dir", self.temp_dir, "--flow-dir", str(subdir), "wf", "search", "TestWorkflow"]
-        )
+        # Note: wf search reads from database, so it uses --data-dir
+        returncode, stdout, stderr = self.run_cli_command(["wf", "search", "TestWorkflow", "--data-dir", self.temp_dir])
 
         # Should handle path resolution and return success (even if no results)
         assert returncode == 0
@@ -113,13 +114,13 @@ class TestWorkflowFileHandling(WorkflowTestHelpers):
         self.setup_database()
 
         # Test that list command handles database operations efficiently
-        # Note: wf list uses --flow-dir, not --data-dir
+        # Note: wf list reads from database, so it uses --data-dir
         returncode, stdout, stderr = self.run_cli_command(
             [
-                "--flow-dir",
-                self.temp_flow_dir,
                 "wf",
                 "list",
+                "--data-dir",
+                self.temp_dir,
             ]
         )
 
@@ -134,14 +135,14 @@ class TestWorkflowFileHandling(WorkflowTestHelpers):
 
         results = []
 
-        def list_workflows(thread_id) -> None:
-            # Note: wf list uses --flow-dir, not --data-dir
+        def list_workflows(thread_id: int) -> None:
+            # Note: wf list reads from database, so it uses --data-dir
             returncode, stdout, stderr = self.run_cli_command(
                 [
-                    "--flow-dir",
-                    self.temp_flow_dir,
                     "wf",
                     "list",
+                    "--data-dir",
+                    self.temp_dir,
                 ]
             )
             results.append((thread_id, returncode, stdout, stderr))
@@ -160,14 +161,13 @@ class TestWorkflowFileHandling(WorkflowTestHelpers):
             assert returncode == 0, f"Thread {thread_id} failed with returncode {returncode}"
 
     def test_workflow_unicode_names(self) -> None:
-        """Test that wf add command handles Unicode wf names"""
+        """Test that wf add command handles Unicode workflow file names"""
         self.setup_database()
         unicode_names = ["测试工作流", "тест_поток", "workflow_émojis", "流程_テスト"]
 
         for name in unicode_names:
             try:
-                # Test that wf add accepts Unicode names (will fail due to no server, but validates name)
-                # Note: wf add doesn't have --data-dir option
+                # Test that wf add accepts Unicode names (will fail due to missing file)
                 returncode, stdout, stderr = self.run_cli_command(
                     [
                         "wf",
@@ -176,10 +176,10 @@ class TestWorkflowFileHandling(WorkflowTestHelpers):
                     ]
                 )
 
-                # Should handle Unicode names - will fail due to no server URL but validates name first
+                # Should handle Unicode names - will fail due to file not found
                 assert returncode == 1
-                # Should show server error, not encoding error
-                assert "server" in stderr.lower() or "server" in stdout.lower()
+                # Should show file not found error, not encoding error
+                assert "not found" in stderr.lower() or "not found" in stdout.lower()
 
             except UnicodeError:
                 # Skip if system doesn't support Unicode
