@@ -136,15 +136,19 @@ class N8nAPI:
         print(f"   Add it with: n8n-deploy server add {self.remote} <url>")
         return (None, None)
 
-    def _get_n8n_credentials(self) -> Optional[Dict[str, Any]]:
-        """Get n8n API credentials using remote-based resolution"""
+    def _get_n8n_credentials(self, workflow_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        """Get n8n API credentials using remote-based resolution
+
+        Args:
+            workflow_id: Optional workflow ID for linked server resolution
+        """
         try:
             # Use cached values if available
             if self._server_url and self._server_api_key:
                 server_url: str = self._server_url
                 api_key: str = self._server_api_key
             else:
-                resolved_url, resolved_key = self._resolve_remote()
+                resolved_url, resolved_key = self._resolve_remote(workflow_id=workflow_id)
                 if not resolved_url or not resolved_key:
                     print("⚠️  No API key available for the specified server")
                     return None
@@ -261,12 +265,12 @@ class N8nAPI:
                 # Workflow not in database, use provided ID directly
                 actual_id = workflow_id
 
-            # Resolve server URL for display (with workflow context for linked server)
-            try:
-                resolved_url, _ = self._resolve_remote(workflow_id=actual_id)
-                server_url = resolved_url if resolved_url else "unknown server"
-            except Exception:
-                server_url = "unknown server"
+            # Check credentials availability (resolves server URL with workflow context)
+            credentials = self._get_n8n_credentials(workflow_id=actual_id)
+            if not credentials:
+                return False
+
+            server_url = credentials.get("server_url", "unknown server")
 
             # Print pull message
             try:
@@ -274,11 +278,6 @@ class N8nAPI:
                 print(f"🔄 Pulling wf {actual_id} ({info['name']}) from {server_url}...")
             except ValueError:
                 print(f"🔄 Pulling wf {actual_id} from {server_url}...")
-
-            # Check credentials availability
-            credentials = self._get_n8n_credentials()
-            if not credentials:
-                return False
 
             workflow_data = self.get_n8n_workflow(actual_id)
 
@@ -359,21 +358,15 @@ class N8nAPI:
             with open(file_path, "r", encoding="utf-8") as f:
                 workflow_data = json.load(f)
 
-            # Resolve server URL for display (with workflow context for linked server)
-            try:
-                resolved_url, _ = self._resolve_remote(workflow_id=actual_id)
-                server_url = resolved_url if resolved_url else "unknown server"
-            except Exception:
-                server_url = "unknown server"
+            # Check credentials availability (resolves server URL with workflow context)
+            credentials = self._get_n8n_credentials(workflow_id=actual_id)
+            if not credentials:
+                return False
 
+            server_url = credentials.get("server_url", "unknown server")
             print(f"🔄 Pushing wf {actual_id} to {server_url}...")
             print(f"📋 Workflow: {info['name']}")
             print(f"📄 File: {file_path}")
-
-            # Check credentials availability
-            credentials = self._get_n8n_credentials()
-            if not credentials:
-                return False
 
             # Check if wf exists on server
             existing_workflow = self.get_n8n_workflow(actual_id)
