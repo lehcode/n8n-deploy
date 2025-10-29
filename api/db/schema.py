@@ -17,7 +17,7 @@ from .base import BaseDB
 class SchemaApi(BaseDB):
     """Manages database schema initialization and versioning"""
 
-    SCHEMA_VERSION = 2
+    SCHEMA_VERSION = 3
 
     def __init__(
         self,
@@ -49,6 +49,7 @@ class SchemaApi(BaseDB):
                     id TEXT PRIMARY KEY,
                     name TEXT NOT NULL,
                     file_folder TEXT,
+                    server_id INTEGER,
                     status TEXT DEFAULT 'ACTIVE',
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -56,7 +57,8 @@ class SchemaApi(BaseDB):
                     last_used TIMESTAMP,
                     n8n_version_id TEXT,
                     push_count INTEGER DEFAULT 0,
-                    pull_count INTEGER DEFAULT 0
+                    pull_count INTEGER DEFAULT 0,
+                    FOREIGN KEY (server_id) REFERENCES servers(id) ON DELETE SET NULL
                 )
             """
             )
@@ -150,7 +152,7 @@ class SchemaApi(BaseDB):
                 INSERT OR REPLACE INTO schema_info (version, applied_at, description)
                 VALUES (?, ?, ?)
             """,
-                (self.SCHEMA_VERSION, datetime.now(), "Server-based API key management"),
+                (self.SCHEMA_VERSION, datetime.now(), "Workflow-server linking"),
             )
 
             conn.commit()

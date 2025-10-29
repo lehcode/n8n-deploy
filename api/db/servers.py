@@ -86,6 +86,37 @@ class ServerCrud(BaseDB):
                 }
             return None
 
+    def get_server_by_id(self, server_id: int) -> Optional[Dict[str, Any]]:
+        """
+        Get server by ID
+
+        Args:
+            server_id: Server ID
+
+        Returns:
+            Server record as dict or None if not found
+        """
+        with self.get_connection() as conn:
+            cursor = conn.execute(
+                """
+                SELECT id, url, name, is_active, created_at, last_used
+                FROM servers
+                WHERE id = ?
+                """,
+                (server_id,),
+            )
+            row = cursor.fetchone()
+            if row:
+                return {
+                    "id": row[0],
+                    "url": row[1],
+                    "name": row[2],
+                    "is_active": bool(row[3]),
+                    "created_at": row[4],
+                    "last_used": row[5],
+                }
+            return None
+
     def get_server_by_url(self, url: str) -> Optional[Dict[str, Any]]:
         """
         Get first active server matching URL

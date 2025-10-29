@@ -31,13 +31,14 @@ class DBApi(BaseDB):
         with self.get_connection() as conn:
             conn.execute(
                 """
-                INSERT INTO workflows (id, name, file_folder, status, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO workflows (id, name, file_folder, server_id, status, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
                 (
                     wf.id,
                     wf.name,
                     wf.file_folder,
+                    wf.server_id,
                     wf.status,
                     wf.created_at,
                     wf.updated_at,
@@ -57,6 +58,7 @@ class DBApi(BaseDB):
                     name=row["name"],
                     file=row["file"] if "file" in row.keys() else None,
                     file_folder=row["file_folder"],
+                    server_id=row["server_id"] if "server_id" in row.keys() else None,
                     status=WorkflowStatus(row["status"]),
                     created_at=datetime.fromisoformat(row["created_at"]),
                     updated_at=datetime.fromisoformat(row["updated_at"]),
@@ -84,6 +86,7 @@ class DBApi(BaseDB):
                     name=row["name"],
                     file=row["file"] if "file" in row.keys() else None,
                     file_folder=row["file_folder"],
+                    server_id=row["server_id"] if "server_id" in row.keys() else None,
                     status=WorkflowStatus(row["status"]),
                     created_at=datetime.fromisoformat(row["created_at"]),
                     updated_at=datetime.fromisoformat(row["updated_at"]),
@@ -118,6 +121,7 @@ class DBApi(BaseDB):
                     name=row["name"],
                     file=row["file"] if "file" in row.keys() else None,
                     file_folder=row["file_folder"],
+                    server_id=row["server_id"] if "server_id" in row.keys() else None,
                     status=WorkflowStatus(row["status"]),
                     created_at=datetime.fromisoformat(row["created_at"]) if row["created_at"] else datetime.now(),
                     updated_at=datetime.fromisoformat(row["updated_at"]) if row["updated_at"] else datetime.now(),
@@ -136,13 +140,14 @@ class DBApi(BaseDB):
             cursor = conn.execute(
                 """
                 UPDATE workflows SET
-                    name = ?, status = ?, updated_at = ?,
+                    name = ?, server_id = ?, status = ?, updated_at = ?,
                     last_synced = ?, n8n_version_id = ?,
                     push_count = ?, pull_count = ?
                 WHERE id = ?
             """,
                 (
                     wf.name,
+                    wf.server_id,
                     wf.status,
                     wf.updated_at,
                     wf.last_synced,
@@ -185,6 +190,7 @@ class DBApi(BaseDB):
                     name=row["name"],
                     file=row["file"] if "file" in row.keys() else None,
                     file_folder=row["file_folder"],
+                    server_id=row["server_id"] if "server_id" in row.keys() else None,
                     status=WorkflowStatus(row["status"]),
                     created_at=datetime.fromisoformat(row["created_at"]) if row["created_at"] else datetime.now(),
                     updated_at=datetime.fromisoformat(row["updated_at"]) if row["updated_at"] else datetime.now(),

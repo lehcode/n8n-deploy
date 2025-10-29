@@ -51,9 +51,17 @@ class N8nAPI:
             if is_expired:
                 print("Generate a new API key from your n8n server settings")
 
-    def _resolve_remote(self) -> Tuple[Optional[str], Optional[str]]:
+    def _resolve_remote(self, workflow_id: Optional[str] = None) -> Tuple[Optional[str], Optional[str]]:
         """
         Resolve remote to server URL and API key
+
+        Priority order (lowest to highest):
+        1. ENV_VARIABLE (N8N_SERVER_URL)
+        2. linked_server (workflow's server_id)
+        3. --remote flag (self.remote)
+
+        Args:
+            workflow_id: Optional workflow ID to check for linked server
 
         Returns:
             tuple: (server_url, api_key) or (None, None) if resolution fails
@@ -61,7 +69,23 @@ class N8nAPI:
         import os
 
         if not self.remote:
-            # No remote specified - use config or environment
+            # Check if workflow has linked server (priority 2)
+            if workflow_id:
+                workflow = self.db.get_workflow(workflow_id)
+                if workflow and workflow.server_id:
+                    server_api = ServerCrud(config=self.config)
+                    server = server_api.get_server_by_id(workflow.server_id)
+                    if server:
+                        api_key = server_api.get_api_key_for_server(server["name"])
+                        if api_key:
+                            self._check_api_key_expiration(api_key)
+                            return (server["url"], api_key)
+                        # Linked server but no API key
+                        print(f"⚠️  No API key linked to server '{server['name']}'")
+                        print(f"   Use: n8n-deploy server link {server['name']} <key_name>")
+                        return (None, None)
+
+            # No remote specified and no linked server - use environment (priority 1)
             server_url = self.config.n8n_api_url if self.config else os.getenv("N8N_SERVER_URL", "")
             # Try to get first available API key
             keys = self.api_manager.list_api_keys()
@@ -231,11 +255,28 @@ class N8nAPI:
             try:
                 info = crud.get_workflow_info(workflow_id)
                 actual_id = info["wf"].id
-                print(f"🔄 Pulling wf {actual_id} ({info['name']}) from n8n server...")
             except ValueError:
                 # Workflow not in database, use provided ID directly
                 actual_id = workflow_id
-                print(f"🔄 Pulling wf {actual_id} from n8n server...")
+
+            # Resolve server URL for display (with workflow context for linked server)
+            try:
+                resolved_url, _ = self._resolve_remote(workflow_id=actual_id)
+                server_url = resolved_url if resolved_url else "unknown server"
+            except Exception:
+                server_url = "unknown server"
+
+            # Print pull message
+            try:
+                info = crud.get_workflow_info(actual_id)
+                print(f"🔄 Pulling wf {actual_id} ({info['name']}) from {server_url}...")
+            except ValueError:
+                print(f"🔄 Pulling wf {actual_id} from {server_url}...")
+
+            # Check credentials availability
+            credentials = self._get_n8n_credentials()
+            if not credentials:
+                return False
 
             workflow_data = self.get_n8n_workflow(actual_id)
 
@@ -265,6 +306,7 @@ class N8nAPI:
                     name=workflow_data.get("name", "Unknown"),
                     file=None,
                     file_folder=str(self.base_path),
+                    server_id=None,  # Will be set if workflow is linked to a server
                     n8n_version_id=n8n_version,
                     created_at=datetime.now(timezone.utc),
                     updated_at=datetime.now(timezone.utc),
@@ -312,15 +354,23 @@ class N8nAPI:
                 print(f"❌ Workflow file not found: {file_path}")
                 return False
 
-            print(f"🔄 Pushing wf {actual_id} to n8n server...")
-            print(f"📋 Workflow: {info['name']}")
-            print(f"📄 File: {file_path}")
-
             with open(file_path, "r", encoding="utf-8") as f:
                 workflow_data = json.load(f)
 
-            # Check credentials availability first
-            if not self._get_n8n_credentials():
+            # Resolve server URL for display (with workflow context for linked server)
+            try:
+                resolved_url, _ = self._resolve_remote(workflow_id=actual_id)
+                server_url = resolved_url if resolved_url else "unknown server"
+            except Exception:
+                server_url = "unknown server"
+
+            print(f"🔄 Pushing wf {actual_id} to {server_url}...")
+            print(f"📋 Workflow: {info['name']}")
+            print(f"📄 File: {file_path}")
+
+            # Check credentials availability
+            credentials = self._get_n8n_credentials()
+            if not credentials:
                 return False
 
             # Check if wf exists on server
