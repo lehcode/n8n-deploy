@@ -224,18 +224,30 @@ class N8nAPI:
     def pull_workflow(self, workflow_id: str) -> bool:
         """Pull wf from n8n server using REST API"""
         try:
-            print(f"🔄 Pulling wf {workflow_id} from n8n server...")
-            workflow_data = self.get_n8n_workflow(workflow_id)
+            from .crud import WorkflowCRUD
+
+            # Try to resolve workflow name to ID if it exists in database
+            crud = WorkflowCRUD(self.db, self.config)
+            try:
+                info = crud.get_workflow_info(workflow_id)
+                actual_id = info["wf"].id
+                print(f"🔄 Pulling wf {actual_id} ({info['name']}) from n8n server...")
+            except ValueError:
+                # Workflow not in database, use provided ID directly
+                actual_id = workflow_id
+                print(f"🔄 Pulling wf {actual_id} from n8n server...")
+
+            workflow_data = self.get_n8n_workflow(actual_id)
 
             if not workflow_data:
-                print(f"❌ Workflow {workflow_id} not found on server")
+                print(f"❌ Workflow {actual_id} not found on server")
                 return False
 
-            print(f"📋 Workflow: {workflow_data.get('name', 'Unknown')} ({workflow_data.get('id', workflow_id)})")
+            print(f"📋 Workflow: {workflow_data.get('name', 'Unknown')} ({workflow_data.get('id', actual_id)})")
             print(f"🎯 Active: {workflow_data.get('active', False)}")
             print(f"📊 Nodes: {len(workflow_data.get('nodes', []))}")
 
-            workflow_path = self.base_path / f"{workflow_id}.json"
+            workflow_path = self.base_path / f"{actual_id}.json"
             with open(workflow_path, "w", encoding="utf-8") as f:
                 json.dump(workflow_data, f, indent=2, ensure_ascii=False)
 
@@ -245,11 +257,11 @@ class N8nAPI:
             n8n_version = self.get_n8n_version()
 
             # Check if wf exists in database, if not add it
-            existing_workflow = self.db.get_workflow(workflow_id)
+            existing_workflow = self.db.get_workflow(actual_id)
             if not existing_workflow:
                 # Add new wf with n8n version
                 wf = Workflow(
-                    id=workflow_id,
+                    id=actual_id,
                     name=workflow_data.get("name", "Unknown"),
                     file=None,
                     file_folder=str(self.base_path),
@@ -267,7 +279,7 @@ class N8nAPI:
                 self.db.update_workflow(existing_workflow)
 
             # Increment pull counter
-            self.db.increment_pull_count(workflow_id)
+            self.db.increment_pull_count(actual_id)
             print("✅ Workflow pulled successfully")
             return True
 
@@ -286,19 +298,21 @@ class N8nAPI:
 
             info = crud.get_workflow_info(workflow_id)
             wf = info["wf"]
+            # Use actual workflow ID from database (workflow_id param might be a name)
+            actual_id = wf.id
 
             # Construct file path from workflow data
             flow_folder = Path(wf.file_folder) if wf.file_folder else self.base_path
             if not flow_folder:
                 flow_folder = Path.cwd()
 
-            file_path = flow_folder / f"{workflow_id}.json"
+            file_path = flow_folder / f"{actual_id}.json"
 
             if not file_path.exists():
                 print(f"❌ Workflow file not found: {file_path}")
                 return False
 
-            print(f"🔄 Pushing wf {workflow_id} to n8n server...")
+            print(f"🔄 Pushing wf {actual_id} to n8n server...")
             print(f"📋 Workflow: {info['name']}")
             print(f"📄 File: {file_path}")
 
@@ -310,12 +324,12 @@ class N8nAPI:
                 return False
 
             # Check if wf exists on server
-            existing_workflow = self.get_n8n_workflow(workflow_id)
+            existing_workflow = self.get_n8n_workflow(actual_id)
 
             if existing_workflow:
                 # Update existing wf
                 print("🔄 Updating existing wf on server...")
-                result = self.update_n8n_workflow(workflow_id, workflow_data)
+                result = self.update_n8n_workflow(actual_id, workflow_data)
             else:
                 # Create new wf
                 print("🆕 Creating new wf on server...")
@@ -325,14 +339,14 @@ class N8nAPI:
                 # Get n8n server version and update wf
                 n8n_version = self.get_n8n_version()
                 if n8n_version:
-                    db_workflow = self.db.get_workflow(workflow_id)
+                    db_workflow = self.db.get_workflow(actual_id)
                     if db_workflow:
                         db_workflow.n8n_version_id = n8n_version
                         db_workflow.updated_at = datetime.now(timezone.utc)
                         self.db.update_workflow(db_workflow)
 
                 # Increment push counter
-                self.db.increment_push_count(workflow_id)
+                self.db.increment_push_count(actual_id)
                 print("✅ Workflow pushed successfully")
                 return True
             else:
