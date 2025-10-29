@@ -305,6 +305,10 @@ class N8nAPI:
             with open(file_path, "r", encoding="utf-8") as f:
                 workflow_data = json.load(f)
 
+            # Check credentials availability first
+            if not self._get_n8n_credentials():
+                return False
+
             # Check if wf exists on server
             existing_workflow = self.get_n8n_workflow(workflow_id)
 
