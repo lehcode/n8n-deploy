@@ -57,9 +57,9 @@ class N8nAPI:
         Resolve remote to server URL and API key
 
         Priority order (lowest to highest):
-        1. ENV_VARIABLE (N8N_SERVER_URL)
-        2. linked_server (workflow's server_id)
-        3. --remote flag (self.remote)
+        1. linked_server (workflow's server_id) - workflow-specific default
+        2. ENV_VARIABLE (N8N_SERVER_URL) - system-wide default
+        3. --remote flag (self.remote) - explicit override
 
         Args:
             workflow_id: Optional workflow ID to check for linked server
@@ -70,7 +70,10 @@ class N8nAPI:
         import os
 
         if not self.remote:
-            # Check if workflow has linked server (priority 2)
+            # Start with environment variable (priority 2)
+            server_url = self.config.n8n_api_url if self.config else os.getenv("N8N_SERVER_URL", "")
+
+            # Check if workflow has linked server - this overrides ENV (priority 1)
             if workflow_id:
                 workflow = self.db.get_workflow(workflow_id)
                 if workflow and workflow.server_id:
@@ -86,8 +89,7 @@ class N8nAPI:
                         print(f"   Use: n8n-deploy server link {server['name']} <key_name>")
                         return (None, None)
 
-            # No remote specified and no linked server - use environment (priority 1)
-            server_url = self.config.n8n_api_url if self.config else os.getenv("N8N_SERVER_URL", "")
+            # Use environment variable (no workflow link or workflow not found)
             # Try to get first available API key
             keys = self.api_manager.list_api_keys()
             if keys:
