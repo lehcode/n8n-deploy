@@ -440,13 +440,17 @@ def stats(
 
 # Server operations
 @wf.command(cls=CustomCommand)
-@click.option("--remote", help="n8n server (name or URL) - uses linked API key if name provided")
+@click.option(
+    "--remote",
+    metavar="N8N_SERVER_NAME|N8N_SERVER_URL",
+    help="n8n server (name or URL) - uses linked API key if name provided",
+)
 @click.option("--skip-ssl-verify", is_flag=True, help="Skip SSL certificate verification for self-signed certificates")
 @click.option("--data-dir", type=click.Path(), help=cli_data_dir_help)
 @click.option("--flow-dir", type=click.Path(), help=HELP_FLOW_DIR)
 @click.option("--db-filename", type=str, help=HELP_DB_FILENAME)
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
-@click.argument("workflow_id", metavar="wf-id")
+@click.argument("workflow_id", metavar="WORKFLOW_ID|WORKFLOW_NAME")
 def pull(
     workflow_id: str,
     remote: Optional[str],
@@ -514,13 +518,17 @@ def pull(
 
 
 @wf.command(cls=CustomCommand)
-@click.option("--remote", help="n8n server (name or URL) - uses linked API key if name provided")
+@click.option(
+    "--remote",
+    metavar="N8N_SERVER_NAME|N8N_SERVER_URL",
+    help="n8n server (name or URL) - uses linked API key if name provided",
+)
 @click.option("--skip-ssl-verify", is_flag=True, help="Skip SSL certificate verification for self-signed certificates")
 @click.option("--data-dir", type=click.Path(), help=cli_data_dir_help)
 @click.option("--flow-dir", type=click.Path(), help=HELP_FLOW_DIR)
 @click.option("--db-filename", type=str, help=HELP_DB_FILENAME)
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
-@click.argument("workflow_id", metavar="wf-id")
+@click.argument("workflow_id", metavar="WORKFLOW_ID|WORKFLOW_NAME")
 def push(
     workflow_id: str,
     remote: Optional[str],
