@@ -84,7 +84,31 @@ cache:
 # SECURITY STAGE
 # ============================================
 
-# Secret detection with gitleaks
+# SAST security scanning
+sast:
+  stage: security
+  image: python:3.9-slim
+  tags:
+    - python
+  variables:
+    SAST_EXCLUDED_PATHS: "tests/, .venv/"
+  before_script:
+    - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy || true
+    - apt-get -q update && apt-get -qy install git
+    - python -m pip install --quiet --upgrade pip
+    - pip install --quiet safety bandit semgrep
+    - pip install -e .
+  script:
+    - echo "🔍 Running security audit of dependencies..."
+    - safety check --json || true
+    - echo "🔍 Running static security analysis with Bandit..."
+    - bandit -r api/ -f json --exclude tests/ || true
+    - echo "🔍 Running static security analysis with Semgrep..."
+    - python -m semgrep --config=auto api/ --json || true
+    - echo "✅ Security analysis completed"
+  allow_failure: true
+
+# Secret detection
 secret_detection:
   stage: security
   image: python:3.9-slim
