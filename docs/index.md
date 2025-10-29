@@ -27,21 +27,25 @@ Welcome to n8n-deploy, a powerful Python CLI tool for managing n8n workflows wit
 
 ## 🚀 Quick Start
 
-1. **Installation**
-   - Full details in the [Installation Guide](user-guide/installation/)
-   ```bash
-   pip install n8n-deploy
-   ```
+### Installation
 
-2. **Initialize Database**
-   ```bash
-   n8n-deploy db init
-   ```
+```bash
+pip install n8n-deploy
+```
 
-3. **Add API Key**
-   ```bash
-   echo "your_n8n_api_key" | n8n-deploy apikey add my_server
-   ```
+Full details in the [Installation Guide](user-guide/installation/)
+
+### Initialize Database
+
+```bash
+n8n-deploy db init
+```
+
+### Add API Key
+
+```bash
+echo "your_n8n_api_key" | n8n-deploy apikey add my_server
+```
 
 ## 📖 Documentation
 
