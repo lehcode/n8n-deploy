@@ -42,10 +42,15 @@ class CustomCommand(click.Command):
         # Build usage line showing the full command path
         command_path = " ".join(pieces[1:]) if len(pieces) > 1 else ""
 
-        # Collect arguments for this command
+        # Collect arguments for this command, preferring metavar over name
         args_str = ""
         if hasattr(self, "params"):
-            args = [p.name.upper() for p in self.params if isinstance(p, click.Argument) and p.name]
+            args = []
+            for p in self.params:
+                if isinstance(p, click.Argument) and p.name:
+                    # Use metavar if available, otherwise uppercase name
+                    arg_display = p.metavar if hasattr(p, "metavar") and p.metavar else p.name.upper()
+                    args.append(arg_display)
             if args:
                 args_str = " " + " ".join(args)
 

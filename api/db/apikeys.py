@@ -103,23 +103,40 @@ class ApiKeyCrud(BaseDB):
             unmask: If True, include actual API key values (security warning!)
 
         Returns:
-            List of dictionaries containing API key metadata
+            List of dictionaries containing API key metadata with linked server names
         """
         with self.get_connection() as conn:
             if unmask:
                 cursor = conn.execute(
                     """
-                    SELECT id, name, created_at, description, is_active, api_key
-                    FROM api_keys
-                    ORDER BY created_at DESC
+                    SELECT
+                        ak.id,
+                        ak.name,
+                        ak.created_at,
+                        ak.description,
+                        ak.is_active,
+                        ak.api_key,
+                        s.url as server_url
+                    FROM api_keys ak
+                    LEFT JOIN server_api_keys sak ON ak.id = sak.api_key_id
+                    LEFT JOIN servers s ON sak.server_id = s.id
+                    ORDER BY ak.created_at DESC
                 """
                 )
             else:
                 cursor = conn.execute(
                     """
-                    SELECT id, name, created_at, description, is_active
-                    FROM api_keys
-                    ORDER BY created_at DESC
+                    SELECT
+                        ak.id,
+                        ak.name,
+                        ak.created_at,
+                        ak.description,
+                        ak.is_active,
+                        s.url as server_url
+                    FROM api_keys ak
+                    LEFT JOIN server_api_keys sak ON ak.id = sak.api_key_id
+                    LEFT JOIN servers s ON sak.server_id = s.id
+                    ORDER BY ak.created_at DESC
                 """
                 )
 
@@ -134,6 +151,9 @@ class ApiKeyCrud(BaseDB):
                 }
                 if unmask:
                     key_data["api_key"] = row[5]
+                    key_data["server_url"] = row[6] if row[6] else None
+                else:
+                    key_data["server_url"] = row[5] if row[5] else None
                 keys.append(key_data)
 
             return keys

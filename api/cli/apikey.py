@@ -239,8 +239,9 @@ def list_apikeys(unmask: bool, output_json: bool, data_dir: Optional[str], db_fi
                 table = Table(title="API Keys")
             else:
                 table = Table(title="🔐 API Keys")
-            table.add_column("Name", style="cyan")
+            table.add_column("Name", style="cyan", no_wrap=True)
             table.add_column("ID", style="dim")
+            table.add_column("Server", style="blue", overflow="fold")
             table.add_column("Created", style="blue")
             table.add_column("Added", style="green")
             table.add_column("Status", style="magenta", justify="center")
@@ -298,9 +299,14 @@ def list_apikeys(unmask: bool, output_json: bool, data_dir: Optional[str], db_fi
                 else:
                     key_display = "***"
 
+                # Get server URL, display "N/A" if none
+                server_url = key.get("server_url")
+                server_display = server_url if server_url else "N/A"
+
                 row_data = [
                     key["name"],
                     str(key["id"]),
+                    server_display,
                     str(created),
                     str(added),
                     status,
