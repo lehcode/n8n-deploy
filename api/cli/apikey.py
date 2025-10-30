@@ -110,7 +110,6 @@ def add_apikey(
             cli_error(f"Invalid characters in JWT token part {i + 1}", no_emoji)
 
     try:
-        import os
         from ..db.servers import ServerCrud
 
         # Use default config from environment variables
@@ -130,69 +129,24 @@ def add_apikey(
             console.print(f"✅ API key '{name}' added successfully")
             console.print(f"   ID: {key_id}")
 
-        # Link to server if --server specified or N8N_SERVER_URL is set
-        server_name = server
-        server_url = os.getenv("N8N_SERVER_URL")
-
-        if server_name or server_url:
+        # Link to server if --server specified
+        if server:
             server_api = ServerCrud(config=config)
-
-            # If --server specified, link to that server
-            if server_name:
-                try:
-                    server_api.link_api_key(server_name, name)
-                    if no_emoji:
-                        console.print(f"API key '{name}' linked to server '{server_name}'")
-                    else:
-                        console.print(f"🔗 API key '{name}' linked to server '{server_name}'")
-                except ValueError as e:
-                    if no_emoji:
-                        console.print(f"Warning: {e}")
-                        console.print(f"Server '{server_name}' not found. Create it with:")
-                        console.print(f"  n8n-deploy server create {server_name} <url>")
-                    else:
-                        console.print(f"⚠️  {e}")
-                        console.print(f"   Server '{server_name}' not found. Create it with:")
-                        console.print(f"   n8n-deploy server create {server_name} <url>")
-
-            # If N8N_SERVER_URL is set but --server not specified, create/use server from URL
-            elif server_url:
-                # Check if server with this URL already exists
-                existing_server = server_api.get_server_by_url(server_url)
-                if existing_server:
-                    existing_server_name = str(existing_server["name"])
-                    try:
-                        server_api.link_api_key(existing_server_name, name)
-                        if no_emoji:
-                            console.print(
-                                f"API key '{name}' linked to existing server '{existing_server_name}' ({server_url})"
-                            )
-                        else:
-                            console.print(
-                                f"🔗 API key '{name}' linked to existing server '{existing_server_name}' ({server_url})"
-                            )
-                    except ValueError as e:
-                        if no_emoji:
-                            console.print(f"Warning: Failed to link to server: {e}")
-                        else:
-                            console.print(f"⚠️  Failed to link to server: {e}")
+            try:
+                server_api.link_api_key(server, name)
+                if no_emoji:
+                    console.print(f"API key '{name}' linked to server '{server}'")
                 else:
-                    # Create new server from URL
-                    auto_server_name = f"Auto server {key_id}"
-                    try:
-                        server_api.add_server(url=server_url, name=auto_server_name)
-                        server_api.link_api_key(auto_server_name, name)
-                        if no_emoji:
-                            console.print(f"Server '{auto_server_name}' created from N8N_SERVER_URL ({server_url})")
-                            console.print(f"API key '{name}' linked to server '{auto_server_name}'")
-                        else:
-                            console.print(f"✨ Server '{auto_server_name}' created from N8N_SERVER_URL ({server_url})")
-                            console.print(f"🔗 API key '{name}' linked to server '{auto_server_name}'")
-                    except Exception as e:
-                        if no_emoji:
-                            console.print(f"Warning: Failed to create/link server: {e}")
-                        else:
-                            console.print(f"⚠️  Failed to create/link server: {e}")
+                    console.print(f"🔗 API key '{name}' linked to server '{server}'")
+            except ValueError as e:
+                if no_emoji:
+                    console.print(f"Warning: {e}")
+                    console.print(f"Server '{server}' not found. Create it with:")
+                    console.print(f"  n8n-deploy server create {server} <url>")
+                else:
+                    console.print(f"⚠️  {e}")
+                    console.print(f"   Server '{server}' not found. Create it with:")
+                    console.print(f"   n8n-deploy server create {server} <url>")
 
     except Exception as e:
         if no_emoji:
