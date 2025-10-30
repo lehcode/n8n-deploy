@@ -10,8 +10,6 @@ on:
     tags: [ 'v*' ]
   pull_request:
     branches: [ master, main, develop ]
-  release:
-    types: [ published ]
   workflow_dispatch:
 
 env:
