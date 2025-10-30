@@ -74,6 +74,20 @@ n8n-deploy wf push workflow-name --remote staging
 n8n-deploy wf server --remote production
 ```
 
+### Community & Support
+
+💬 **Get Help & Connect**:
+- **[Discussions](https://github.com/lehcode/n8n-deploy/discussions)** - Ask questions, share ideas, showcase workflows
+- **[Issues](https://github.com/lehcode/n8n-deploy/issues)** - Report bugs or request features
+- **[Documentation](https://lehcode.github.io/n8n-deploy)** - Complete guides and API reference
+
+**Discussion Categories**:
+- 📣 **Announcements** - Project updates and releases
+- 🙏 **Q&A** - Get help from the community
+- 💡 **Ideas** - Suggest new features
+- 🎯 **Show and Tell** - Share your workflows
+- #️⃣ **General** - Everything else
+
 ### Configuration
 
 `n8n-deploy` supports multiple configuration methods:
@@ -117,11 +131,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Python 3.8+
 - n8n server (local or remote)
 - Basic understanding of workflow management
-
-### Support and Community
-
-- GitHub Issues: Report bugs or request features
-- Discord/Slack: Community support channels (links to be added)
 
 ### Performance Note
 
