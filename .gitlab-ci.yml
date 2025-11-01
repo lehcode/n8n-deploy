@@ -233,7 +233,7 @@ dependency_scanning:
   cache:
     <<: *cache_pull
   before_script:
-    - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy
+    - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy || true
     - apt-get -q update && apt-get -qy install git
     - python -m pip install --quiet --upgrade pip
     - pip install --quiet uv
