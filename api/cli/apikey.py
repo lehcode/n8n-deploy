@@ -180,7 +180,8 @@ def list_apikeys(unmask: bool, output_json: bool, data_dir: Optional[str], db_fi
         keys = key_api.list_api_keys(unmask=unmask)
 
         if output_json:
-            console.print(JSON(json.dumps(keys, indent=2, default=str)))
+            # Print raw JSON for machine parsing (not Rich formatted)
+            print(json.dumps(keys, indent=2, default=str))
         else:
             if not keys:
                 if no_emoji:

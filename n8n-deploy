@@ -7,7 +7,7 @@ cd "$SCRIPT_DIR"
 
 # Create virtual environment if it doesn't exist or uses conda
 if [ ! -d ".venv" ] || [[ "$(cd .venv && source bin/activate && which python)" == *"conda"* ]]; then
-    echo "Setting up virtual environment..."
+    echo "Setting up virtual environment..." >&2
     if command -v uv &> /dev/null; then
         uv venv --python /usr/bin/python3 .venv >/dev/null 2>&1
         source .venv/bin/activate
