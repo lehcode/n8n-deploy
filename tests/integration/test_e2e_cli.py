@@ -25,7 +25,8 @@ class TestE2ECLI(E2ETestBase):
 
         assert "n8n-deploy, version" in stdout, f"Version string not found in output: '{stdout}'"
         assert "2.0.0" in stdout, f"Version number 2.0.0 not found in output: '{stdout}'"
-        assert stderr == "", f"Unexpected stderr output: '{stderr}'"
+        # Wrapper script may output setup message to stderr
+        assert stderr == "" or "Setting up virtual environment" in stderr, f"Unexpected stderr output: '{stderr}'"
 
     def test_help_command_basic(self) -> None:
         """Test --help shows main help"""
