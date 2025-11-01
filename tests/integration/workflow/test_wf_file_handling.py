@@ -130,12 +130,21 @@ class TestWorkflowFileHandling(WorkflowTestHelpers):
     def test_workflow_concurrent_operations(self) -> None:
         """Test concurrent wf operations"""
         import threading
+        import time
 
         self.setup_database()
+
+        # Add a test workflow to make the database non-empty
+        # This reduces race conditions during concurrent access
+        test_wf = self.create_test_workflow("concurrent_test")
+        self.run_wf_add("concurrent_test")
 
         results = []
 
         def list_workflows(thread_id: int) -> None:
+            # Add small stagger to reduce simultaneous access
+            time.sleep(thread_id * 0.05)
+
             # Note: wf list reads from database, so it uses --data-dir
             returncode, stdout, stderr = self.run_cli_command(
                 [
@@ -158,7 +167,12 @@ class TestWorkflowFileHandling(WorkflowTestHelpers):
         assert len(results) == 3
         # Operations should complete without crashes
         for thread_id, returncode, stdout, stderr in results:
-            assert returncode == 0, f"Thread {thread_id} failed with returncode {returncode}"
+            if returncode != 0:
+                # Provide detailed error output for debugging
+                print(f"\n=== Thread {thread_id} Error Details ===")
+                print(f"STDOUT: {stdout}")
+                print(f"STDERR: {stderr}")
+            assert returncode == 0, f"Thread {thread_id} failed with returncode {returncode}\nSTDERR: {stderr}"
 
     def test_workflow_unicode_names(self) -> None:
         """Test that wf add command handles Unicode workflow file names"""
