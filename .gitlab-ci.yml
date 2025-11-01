@@ -27,7 +27,7 @@ variables:
   DOCKER_TLS_CERTDIR: "/certs"
   DOCKER_BUILDKIT: 1
   # Docker Registry Configuration:
-  # - pull_policy: if-not-present (configured in 'default' section below)
+  # - pull_policy: if-not-present (configure in GitLab Runner config.toml)
   # - MTU: 1300 for DinD (see services comment above)
   # - Registry mirror: http://registry-mirror.pirouter.dev:5000 (when deployed)
   # APT proxy for faster package installation
@@ -35,10 +35,6 @@ variables:
   # PyPI deployment configuration (set in CI/CD variables)
   # PYPI_TOKEN: <set in GitLab CI/CD settings>
   # TEST_PYPI_TOKEN: <set in GitLab CI/CD settings>
-
-# Default pull policy - use cached images when available
-default:
-  pull_policy: if-not-present
 
 # Workflow rules - define when pipeline runs
 workflow:
