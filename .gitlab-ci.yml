@@ -50,10 +50,6 @@ default:
       - scheduler_failure
   interruptible: true
 
-# Default pull policy - use cached images when available
-default:
-  pull_policy: if-not-present
-
 # Workflow rules - define when pipeline runs
 # Push to protected branches (master/develop): full pipeline
 # MR targeting protected branches: full pipeline
