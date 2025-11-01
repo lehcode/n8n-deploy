@@ -11,8 +11,13 @@ stages:
   - deploy
 
 # Docker services for caching (only used by Docker-specific jobs)
+# Uncomment and configure for jobs that need Docker-in-Docker:
 # services:
-#   - docker:20.10.16-dind
+#   - name: docker:20.10.16-dind
+#     command: [
+#       "--mtu=1300",  # Fix TLS handshake timeout issues
+#       "--registry-mirror", "http://registry-mirror.pirouter.dev:5000"  # Use local mirror (when available)
+#     ]
 
 variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
@@ -21,6 +26,10 @@ variables:
   DOCKER_DRIVER: overlay2
   DOCKER_TLS_CERTDIR: "/certs"
   DOCKER_BUILDKIT: 1
+  # Docker Registry Configuration:
+  # - pull_policy: if-not-present (configured in 'default' section below)
+  # - MTU: 1300 for DinD (see services comment above)
+  # - Registry mirror: http://registry-mirror.pirouter.dev:5000 (when deployed)
   # APT proxy for faster package installation
   APT_PROXY: "192.168.76.5:3142"
   # PyPI deployment configuration (set in CI/CD variables)
