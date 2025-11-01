@@ -27,6 +27,11 @@ variables:
   # PYPI_TOKEN: <set in GitLab CI/CD settings>
   # TEST_PYPI_TOKEN: <set in GitLab CI/CD settings>
 
+# Default image pull policy - use cached images when available
+default:
+  image:
+    pull_policy: if-not-present
+
 # Workflow rules - define when pipeline runs
 workflow:
   rules:
