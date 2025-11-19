@@ -87,7 +87,7 @@ cache:
 # SAST security scanning
 sast:
   stage: security
-  image: python:3.9-slim
+  image: python:3.9-bookworm
   tags:
     - python
   variables:
@@ -111,7 +111,7 @@ sast:
 # Secret detection
 secret_detection:
   stage: security
-  image: python:3.9-slim
+  image: python:3.9-bookworm
   tags:
     - python
   cache:
@@ -130,7 +130,7 @@ secret_detection:
 # Dependency vulnerability scanning
 dependency_scanning:
   stage: security
-  image: python:3.9-slim
+  image: python:3.9-bookworm
   tags:
     - python
   cache:
@@ -194,7 +194,7 @@ security:semgrep:
 # Type checking with mypy
 quality:mypy:
   stage: quality
-  image: python:3.9-slim
+  image: python:3.9-bookworm
   tags:
     - python
   <<: *python_setup
@@ -212,7 +212,7 @@ quality:mypy:
 # Code formatting check with black
 quality:black:
   stage: quality
-  image: python:3.9-slim
+  image: python:3.9-bookworm
   tags:
     - python
   <<: *python_setup
@@ -226,6 +226,34 @@ quality:black:
     - black --check api/
     - echo "✅ Code formatting check passed"
 
+# Comprehensive test coverage report
+quality:coverage:
+  stage: quality
+  image: python:3.9-bookworm
+  tags:
+    - python
+  <<: *python_setup
+  needs:
+    - sast
+    - secret_detection
+    - dependency_scanning
+  script:
+    - source .venv/bin/activate
+    - export N8N_DEPLOY_TESTING=1
+    - python run_tests.py --report --no-deps-check --quiet
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+      junit: test-results.xml
+    paths:
+      - htmlcov/
+      - coverage.xml
+      - test-results.xml
+    expire_in: 30 days
+  coverage: '/TOTAL.*\s+(\d+%)$/'
+
 # ============================================
 # TEST STAGE
 # ============================================
@@ -233,7 +261,7 @@ quality:black:
 # Unit tests
 test:unit:
   stage: test
-  image: python:3.9-slim
+  image: python:3.9-bookworm
   tags:
     - python
   <<: *python_setup
@@ -259,7 +287,7 @@ test:unit:
 # Integration tests
 test:integration:
   stage: test
-  image: python:3.9-slim
+  image: python:3.9-bookworm
   tags:
     - python
   <<: *python_setup
@@ -284,7 +312,7 @@ test:integration:
 # Property-based tests with Hypothesis
 test:hypothesis:
   stage: test
-  image: python:3.9-slim
+  image: python:3.9-bookworm
   tags:
     - python
   <<: *python_setup
@@ -351,7 +379,7 @@ coverage:report:
 # Multi-version package builds (Python 3.9-3.13)
 build:python-matrix:
   stage: build-matrix
-  image: python:${PYTHON_VERSION}-slim
+  image: python:${PYTHON_VERSION}-bookworm
   tags:
     - python
   cache:
@@ -401,7 +429,7 @@ build:python-matrix:
 # Production build (runs on master, main, or tags)
 build:production:
   stage: build
-  image: python:3.9-slim
+  image: python:3.9-bookworm
   tags:
     - python
   <<: *python_setup
@@ -442,7 +470,7 @@ build:production:
 # Deploy to TestPyPI (DISABLED)
 # deploy:test-pypi:
 #   stage: deploy
-#   image: python:3.9-slim
+#   image: python:3.9-bookworm
 #   tags:
 #     - python
 #   needs:
@@ -479,7 +507,7 @@ build:production:
 # Deploy to PyPI (DISABLED)
 # deploy:pypi:
 #   stage: deploy
-#   image: python:3.9-slim
+#   image: python:3.9-bookworm
 #   tags:
 #     - python
 #   needs:
