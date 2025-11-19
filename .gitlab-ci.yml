@@ -156,7 +156,7 @@ warm-cache:
 # SAST security scanning
 sast:
   stage: security
-  image: python:3.9-slim
+  image: python:3.9-bookworm
   tags:
     - python
   variables:
@@ -379,6 +379,34 @@ quality:black:
   script:
     - black --check api/
     - echo "Code formatting check passed"
+
+# Comprehensive test coverage report
+quality:coverage:
+  stage: quality
+  image: python:3.9-bookworm
+  tags:
+    - python
+  <<: *python_setup
+  needs:
+    - sast
+    - secret_detection
+    - dependency_scanning
+  script:
+    - source .venv/bin/activate
+    - export N8N_DEPLOY_TESTING=1
+    - python run_tests.py --report --no-deps-check --quiet
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+      junit: test-results.xml
+    paths:
+      - htmlcov/
+      - coverage.xml
+      - test-results.xml
+    expire_in: 30 days
+  coverage: '/TOTAL.*\s+(\d+%)$/'
 
 # ============================================
 # TEST STAGE (runs on merge/push to protected branches)
