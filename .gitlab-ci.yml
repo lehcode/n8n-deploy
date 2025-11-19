@@ -80,7 +80,7 @@ cache:
 # SAST security scanning
 sast:
   stage: security
-  image: python:3.9-slim
+  image: python:3.9-bookworm
   tags:
     - python
   variables:
@@ -104,7 +104,7 @@ sast:
 # Secret detection
 secret_detection:
   stage: security
-  image: python:3.9-slim
+  image: python:3.9-bookworm
   tags:
     - python
   variables:
@@ -117,7 +117,7 @@ secret_detection:
 # Dependency vulnerability scanning
 dependency_scanning:
   stage: security
-  image: python:3.9-slim
+  image: python:3.9-bookworm
   tags:
     - python
   before_script:
@@ -138,7 +138,7 @@ dependency_scanning:
 # Type checking with mypy
 quality:mypy:
   stage: quality
-  image: python:3.9-slim
+  image: python:3.9-bookworm
   tags:
     - python
   <<: *python_setup
@@ -156,7 +156,7 @@ quality:mypy:
 # Code formatting check with black
 quality:black:
   stage: quality
-  image: python:3.9-slim
+  image: python:3.9-bookworm
   tags:
     - python
   <<: *python_setup
@@ -172,7 +172,7 @@ quality:black:
 # Comprehensive test coverage report
 quality:coverage:
   stage: quality
-  image: python:3.9-slim
+  image: python:3.9-bookworm
   tags:
     - python
   <<: *python_setup
@@ -204,7 +204,7 @@ quality:coverage:
 # Unit tests
 test:unit:
   stage: test
-  image: python:3.9-slim
+  image: python:3.9-bookworm
   tags:
     - python
   <<: *python_setup
@@ -220,7 +220,7 @@ test:unit:
 # Integration tests
 test:integration:
   stage: test
-  image: python:3.9-slim
+  image: python:3.9-bookworm
   tags:
     - python
   <<: *python_setup
@@ -237,7 +237,7 @@ test:integration:
 # Property-based tests with Hypothesis
 test:hypothesis:
   stage: test
-  image: python:3.9-slim
+  image: python:3.9-bookworm
   tags:
     - python
   <<: *python_setup
@@ -264,7 +264,7 @@ test:hypothesis:
 # Multi-version package builds (Python 3.9-3.13)
 build:python-matrix:
   stage: build-matrix
-  image: python:${PYTHON_VERSION}-slim
+  image: python:${PYTHON_VERSION}-bookworm
   tags:
     - python
   needs:
@@ -301,7 +301,7 @@ build:python-matrix:
 # Production build (runs on master, main, or tags)
 build:production:
   stage: build
-  image: python:3.9-slim
+  image: python:3.9-bookworm
   tags:
     - python
   <<: *python_setup
@@ -342,7 +342,7 @@ build:production:
 # Deploy to TestPyPI (DISABLED)
 # deploy:test-pypi:
 #   stage: deploy
-#   image: python:3.9-slim
+#   image: python:3.9-bookworm
 #   tags:
 #     - python
 #   needs:
@@ -379,7 +379,7 @@ build:production:
 # Deploy to PyPI (DISABLED)
 # deploy:pypi:
 #   stage: deploy
-#   image: python:3.9-slim
+#   image: python:3.9-bookworm
 #   tags:
 #     - python
 #   needs:
