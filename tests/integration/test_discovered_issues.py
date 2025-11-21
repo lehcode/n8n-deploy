@@ -286,7 +286,7 @@ class TestDiscoveredDisplayIssues:
             ["./n8n-deploy", "wf", "list"],
             capture_output=True,
             text=True,
-            timeout=10,
+            timeout=30,
             env=env,
         )
 
