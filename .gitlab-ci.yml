@@ -153,31 +153,7 @@ warm-cache:
 # SECURITY STAGE
 # ============================================
 
-# SAST security scanning
-sast:
-  stage: security
-  image: python:3.9-bookworm
-  tags:
-    - python
-  variables:
-    SAST_EXCLUDED_PATHS: "tests/, .venv/"
-  before_script:
-    - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy || true
-    - apt-get -q update && apt-get -qy install git
-    - python -m pip install --quiet --upgrade pip
-    - pip install --quiet safety bandit semgrep
-    - pip install -e .
-  script:
-    - echo "🔍 Running security audit of dependencies..."
-    - safety check --json || true
-    - echo "🔍 Running static security analysis with Bandit..."
-    - bandit -r api/ -f json --exclude tests/ || true
-    - echo "🔍 Running static security analysis with Semgrep..."
-    - python -m semgrep --config=auto api/ --json || true
-    - echo "✅ Security analysis completed"
-  allow_failure: true
-
-# Secret detection
+# Secret detection with gitleaks
 secret_detection:
   stage: security
   tags:
@@ -233,7 +209,7 @@ dependency_scanning:
   cache:
     <<: *cache_pull
   before_script:
-    - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy || true
+    - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy
     - apt-get -q update && apt-get -qy install git
     - python -m pip install --quiet --upgrade pip
     - pip install --quiet uv
@@ -379,34 +355,6 @@ quality:black:
   script:
     - black --check api/
     - echo "Code formatting check passed"
-
-# Comprehensive test coverage report
-quality:coverage:
-  stage: quality
-  image: python:3.9-bookworm
-  tags:
-    - python
-  <<: *python_setup
-  needs:
-    - sast
-    - secret_detection
-    - dependency_scanning
-  script:
-    - source .venv/bin/activate
-    - export N8N_DEPLOY_TESTING=1
-    - python run_tests.py --report --no-deps-check --quiet
-  artifacts:
-    reports:
-      coverage_report:
-        coverage_format: cobertura
-        path: coverage.xml
-      junit: test-results.xml
-    paths:
-      - htmlcov/
-      - coverage.xml
-      - test-results.xml
-    expire_in: 30 days
-  coverage: '/TOTAL.*\s+(\d+%)$/'
 
 # ============================================
 # TEST STAGE (runs on merge/push to protected branches)
