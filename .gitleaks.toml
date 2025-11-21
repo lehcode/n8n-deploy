@@ -1,0 +1,8 @@
+title = "n8n-deploy Gitleaks configuration"
+
+[extend]
+# Extend the default gitleaks config
+useDefault = true
+
+# Disable rules that flag test API keys and sample credentials
+disabledRules = ["generic-api-key", "jwt", "curl-auth-header"]

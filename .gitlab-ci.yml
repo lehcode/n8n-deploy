@@ -7,8 +7,6 @@ stages:
   - quality
   - test
   - build-matrix
-  - build
-  - deploy
 
 # Docker services for caching (only used by Docker-specific jobs)
 # Uncomment and configure for jobs that need Docker-in-Docker:
@@ -27,9 +25,9 @@ variables:
   DOCKER_TLS_CERTDIR: "/certs"
   DOCKER_BUILDKIT: 1
   # Docker Registry Configuration:
-  # - pull_policy: if-not-present (configure in GitLab Runner config.toml)
+  # - pull_policy: if-not-present (configured in GitLab Runner config.toml)
+  # - registry_mirror: http://registry-mirror.pirouter.dev:5000 (configured in GitLab Runner config.toml)
   # - MTU: 1300 for DinD (see services comment above)
-  # - Registry mirror: http://registry-mirror.pirouter.dev:5000 (when deployed)
   # APT proxy for faster package installation
   APT_PROXY: "192.168.76.5:3142"
   # PyPI deployment configuration (set in CI/CD variables)
@@ -56,16 +54,23 @@ workflow:
 
 # Cache for pip dependencies
 cache:
-  key: ${CI_COMMIT_REF_SLUG}
+  key:
+    files:
+      - requirements.txt
+    prefix: ${CI_COMMIT_REF_SLUG}
+  fallback_keys:
+    - develop
+    - master
   paths:
     - .cache/pip/
     - .venv/
+    - .mypy_cache/
 
 # Template for Python environment setup
 .python_setup: &python_setup
   before_script:
     # Configure APT proxy for faster package installation
-    - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy || true
+    - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy
     - apt-get -q update && apt-get -qy install git
     - python -m pip install --quiet --upgrade pip
     - pip install --quiet uv
@@ -77,42 +82,24 @@ cache:
 # SECURITY STAGE
 # ============================================
 
-# SAST security scanning
-sast:
-  stage: security
-  image: python:3.9-slim
-  tags:
-    - python
-  variables:
-    SAST_EXCLUDED_PATHS: "tests/, .venv/"
-  before_script:
-    - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy || true
-    - apt-get -q update && apt-get -qy install git
-    - python -m pip install --quiet --upgrade pip
-    - pip install --quiet safety bandit semgrep
-    - pip install -e .
-  script:
-    - echo "🔍 Running security audit of dependencies..."
-    - safety check --json || true
-    - echo "🔍 Running static security analysis with Bandit..."
-    - bandit -r api/ -f json --exclude tests/ || true
-    - echo "🔍 Running static security analysis with Semgrep..."
-    - python -m semgrep --config=auto api/ --json || true
-    - echo "✅ Security analysis completed"
-  allow_failure: true
-
-# Secret detection
+# Secret detection with gitleaks
 secret_detection:
   stage: security
   image: python:3.9-slim
   tags:
     - python
+  cache:
+    policy: pull
   variables:
     SECRET_DETECTION_EXCLUDED_PATHS: "tests/"
+  before_script:
+    - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy
+    - apt-get -q update && apt-get -qy install git wget
+    - wget -qO- https://github.com/gitleaks/gitleaks/releases/download/v8.29.1/gitleaks_8.29.1_linux_x64.tar.gz | tar xz -C /usr/local/bin
   script:
-    - echo "🔍 Secret detection would run here (GitLab Ultimate required)"
-    - echo "✅ Secret detection check completed"
-  allow_failure: true
+    - echo "🔍 Running secret detection with gitleaks..."
+    - gitleaks git . --verbose --redact --config .gitleaks.toml
+    - echo "✅ Secret detection completed"
 
 # Dependency vulnerability scanning
 dependency_scanning:
@@ -120,16 +107,59 @@ dependency_scanning:
   image: python:3.9-slim
   tags:
     - python
+  cache:
+    policy: pull
   before_script:
-    - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy || true
+    - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy
     - apt-get -q update && apt-get -qy install git
     - python -m pip install --quiet --upgrade pip
-    - pip install --quiet safety
+    - pip install --quiet pip-audit
   script:
     - echo "🔍 Running dependency vulnerability scanning..."
-    - safety check --json || true
+    - pip-audit -r requirements.txt
     - echo "✅ Dependency scanning completed"
-  allow_failure: true
+
+# Python security scanning with Bandit
+security:bandit:
+  stage: security
+  image: python:3.9-slim
+  tags:
+    - python
+  cache:
+    policy: pull
+  variables:
+    SAST_EXCLUDED_PATHS: "tests/, .venv/"
+  before_script:
+    - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy
+    - apt-get -q update && apt-get -qy install git
+    - python -m pip install --quiet --upgrade pip
+    - pip install --quiet bandit
+    - pip install -e .
+  script:
+    - echo "🔍 Running Python security analysis with Bandit..."
+    - bandit -r api/ -f json --exclude tests/
+    - echo "✅ Bandit analysis completed"
+
+# Pattern-based security scanning with Semgrep
+security:semgrep:
+  stage: security
+  image: python:3.9-slim
+  tags:
+    - python
+  cache:
+    policy: pull
+  variables:
+    SAST_EXCLUDED_PATHS: "tests/, .venv/"
+  before_script:
+    - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy
+    - apt-get -q update && apt-get -qy install git
+    - python -m pip install --quiet --upgrade pip
+    - pip install --quiet semgrep
+    - pip install -e .
+  script:
+    - echo "🔍 Running pattern-based security analysis with Semgrep..."
+    - semgrep --config=auto api/ --json --error
+    - echo "✅ Semgrep analysis completed"
 
 # ============================================
 # QUALITY STAGE
@@ -143,13 +173,13 @@ quality:mypy:
     - python
   <<: *python_setup
   needs:
-    - sast
+    - security:bandit
+    - security:semgrep
     - secret_detection
     - dependency_scanning
   script:
     - source .venv/bin/activate
     - uv pip install --quiet types-requests types-click
-    - rm -rf .mypy_cache/
     - mypy api/ --strict --show-error-codes
     - echo "✅ Type checking passed"
 
@@ -161,41 +191,14 @@ quality:black:
     - python
   <<: *python_setup
   needs:
-    - sast
+    - security:bandit
+    - security:semgrep
     - secret_detection
     - dependency_scanning
   script:
     - source .venv/bin/activate
     - black --check api/
     - echo "✅ Code formatting check passed"
-
-# Comprehensive test coverage report
-quality:coverage:
-  stage: quality
-  image: python:3.9-slim
-  tags:
-    - python
-  <<: *python_setup
-  needs:
-    - sast
-    - secret_detection
-    - dependency_scanning
-  script:
-    - source .venv/bin/activate
-    - export N8N_DEPLOY_TESTING=1
-    - python run_tests.py --report --no-deps-check --quiet
-  artifacts:
-    reports:
-      coverage_report:
-        coverage_format: cobertura
-        path: coverage.xml
-      junit: test-results.xml
-    paths:
-      - htmlcov/
-      - coverage.xml
-      - test-results.xml
-    expire_in: 30 days
-  coverage: '/TOTAL.*\s+(\d+%)$/'
 
 # ============================================
 # TEST STAGE
@@ -211,11 +214,21 @@ test:unit:
   needs:
     - quality:mypy
     - quality:black
-    - quality:coverage
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_COMMIT_TAG'
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_PIPELINE_SOURCE == "web"'
   script:
     - source .venv/bin/activate
+    - export N8N_DEPLOY_TESTING=1
+    #- python -m pytest tests/unit/ --cov=api --cov-report= -v
     - python run_tests.py --unit --no-deps-check --quiet
     - echo "✅ Unit tests passed"
+  artifacts:
+    paths:
+      - .coverage
+    expire_in: 1 hour
 
 # Integration tests
 test:integration:
@@ -227,12 +240,20 @@ test:integration:
   needs:
     - quality:mypy
     - quality:black
-    - quality:coverage
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_COMMIT_TAG'
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_PIPELINE_SOURCE == "web"'
   script:
     - source .venv/bin/activate
     - export N8N_DEPLOY_TESTING=1
     - python run_tests.py --integration --no-deps-check --quiet
     - echo "✅ Integration tests passed"
+  artifacts:
+    paths:
+      - .coverage
+    expire_in: 1 hour
 
 # Property-based tests with Hypothesis
 test:hypothesis:
@@ -244,12 +265,15 @@ test:hypothesis:
   needs:
     - quality:mypy
     - quality:black
-    - quality:coverage
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_COMMIT_TAG'
+    - if: '$CI_PIPELINE_SOURCE == "web"'
   script:
     - source .venv/bin/activate
     - export N8N_DEPLOY_TESTING=1
     - echo "Running property-based tests with Hypothesis..."
-    - pytest tests/generators/hypothesis_generator.py -v --tb=short --hypothesis-show-statistics
+    - python run_tests.py --hypothesis --no-deps-check
     - echo "✅ Property-based tests passed (755 generated examples)"
   artifacts:
     when: always
@@ -267,15 +291,28 @@ build:python-matrix:
   image: python:${PYTHON_VERSION}-slim
   tags:
     - python
+  cache:
+    key:
+      files:
+        - requirements.txt
+      prefix: py${PYTHON_VERSION}-${CI_COMMIT_REF_SLUG}
+    paths:
+      - .cache/pip/
+      - .venv/
   needs:
     - test:unit
     - test:integration
-    - test:hypothesis
+    # - test:hypothesis
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_COMMIT_TAG'
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_PIPELINE_SOURCE == "web"'
   parallel:
     matrix:
       - PYTHON_VERSION: ["3.9", "3.10", "3.11", "3.12", "3.13"]
   before_script:
-    - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy || true
+    - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy
     - apt-get -q update && apt-get -qy install git
     - python -m pip install --quiet --upgrade pip
     - pip install --quiet uv
@@ -293,119 +330,3 @@ build:python-matrix:
     paths:
       - dist/
     expire_in: 1 hour
-
-# ============================================
-# BUILD STAGE
-# ============================================
-
-# Production build (runs on master, main, or tags)
-build:production:
-  stage: build
-  image: python:3.9-slim
-  tags:
-    - python
-  <<: *python_setup
-  needs:
-    - build:python-matrix
-  dependencies:
-    - build:python-matrix
-  rules:
-    # Run on master/main branch pushes
-    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "main"'
-      when: on_success
-    # Run on all tags
-    - if: '$CI_COMMIT_TAG'
-      when: on_success
-    # Run on MRs targeting master/main
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && ($CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master" || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main")'
-      when: on_success
-    # Skip for all other cases
-    - when: never
-  script:
-    - source .venv/bin/activate
-    - uv pip install --quiet build twine
-    - python -m build --wheel --sdist
-    - twine check dist/*
-    - echo "🚀 Production environment build completed successfully"
-    - echo "All pipeline stages have passed validation for production release"
-  artifacts:
-    paths:
-      - dist/
-    expire_in: 7 days
-
-# ============================================
-# DEPLOY STAGE
-# ============================================
-# NOTE: PyPI deployments are disabled in GitLab CI
-# Use GitHub Actions for PyPI/TestPyPI deployments
-
-# Deploy to TestPyPI (DISABLED)
-# deploy:test-pypi:
-#   stage: deploy
-#   image: python:3.9-slim
-#   tags:
-#     - python
-#   needs:
-#     - build:production
-#   dependencies:
-#     - build:production
-#   rules:
-#     # Deploy on master/main branch pushes
-#     - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "main"'
-#       when: on_success
-#     # Deploy on pre-release tags (v*-rc, v*-beta, v*-alpha)
-#     - if: '$CI_COMMIT_TAG =~ /^v.*-(rc|beta|alpha).*$/'
-#       when: on_success
-#     # Skip for all other cases
-#     - when: never
-#   before_script:
-#     - python -m pip install --quiet --upgrade pip
-#     - pip install --quiet twine
-#   script:
-#     - echo "🚀 Deploying to TestPyPI..."
-#     - echo "Package version will be derived from git tag via setuptools-scm"
-#     - ls -lh dist/
-#     - |
-#       if [ -z "$TEST_PYPI_TOKEN" ]; then
-#         echo "❌ TEST_PYPI_TOKEN not set in CI/CD variables"
-#         exit 1
-#       fi
-#     - python -m twine upload --repository testpypi dist/* --username __token__ --password $TEST_PYPI_TOKEN --non-interactive
-#     - echo "✅ Deployed to TestPyPI successfully"
-#   environment:
-#     name: test-pypi
-#     url: https://test.pypi.org/project/n8n-deploy/
-
-# Deploy to PyPI (DISABLED)
-# deploy:pypi:
-#   stage: deploy
-#   image: python:3.9-slim
-#   tags:
-#     - python
-#   needs:
-#     - build:production
-#   dependencies:
-#     - build:production
-#   rules:
-#     # Deploy only on stable release tags (v* without -rc/-beta/-alpha)
-#     - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/'
-#       when: manual  # Require manual approval for production deployment
-#     # Skip for all other cases
-#     - when: never
-#   before_script:
-#     - python -m pip install --quiet --upgrade pip
-#     - pip install --quiet twine
-#   script:
-#     - echo "🚀 Deploying to PyPI Production..."
-#     - echo "Package version will be derived from git tag via setuptools-scm"
-#     - ls -lh dist/
-#     - |
-#       if [ -z "$PYPI_TOKEN" ]; then
-#         echo "❌ PYPI_TOKEN not set in CI/CD variables"
-#         exit 1
-#       fi
-#     - python -m twine upload dist/* --username __token__ --password $PYPI_TOKEN --non-interactive
-#     - echo "✅ Deployed to PyPI successfully"
-#   environment:
-#     name: pypi
-#     url: https://pypi.org/project/n8n-deploy/
