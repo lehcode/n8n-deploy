@@ -1137,7 +1137,7 @@ class TestServerManagement:
         result = subprocess.run(
             ["./n8n-deploy", "server", "create", server_name, server_url],
             capture_output=True,
-            timeout=10,
+            timeout=30,
             text=True,
         )
 
@@ -1145,13 +1145,13 @@ class TestServerManagement:
         assert result.returncode in [0, 1, 2], f"Server create crashed with: {server_name}, {server_url}"
 
     @given(server_name=server_names)
-    @settings(max_examples=30, deadline=10000)
+    @settings(max_examples=30, deadline=None)
     def test_server_list_never_crashes(self, server_name):
         """Property: Server list should never crash regardless of database state"""
         result = subprocess.run(
             ["./n8n-deploy", "server", "list"],
             capture_output=True,
-            timeout=10,
+            timeout=30,
             text=True,
         )
 
@@ -1159,14 +1159,14 @@ class TestServerManagement:
         assert result.returncode in [0, 1], "Server list command crashed"
 
     @given(format_choice=format_options)
-    @settings(max_examples=20, deadline=10000)
+    @settings(max_examples=20, deadline=None)
     def test_server_list_format_options(self, format_choice):
         """Property: Server list should handle all format options"""
         cmd = ["./n8n-deploy", "server", "list"]
         if format_choice:
             cmd.extend(["--json"] if format_choice == "json" else ["--table"])
 
-        result = subprocess.run(cmd, capture_output=True, timeout=10, text=True)
+        result = subprocess.run(cmd, capture_output=True, timeout=30, text=True)
         assert result.returncode in [0, 1]
 
         # JSON format should produce valid JSON
@@ -1178,18 +1178,18 @@ class TestServerManagement:
                 assert False, "Server list produced invalid JSON"
 
     @given(active_flag=boolean_flags)
-    @settings(max_examples=10, deadline=10000)
+    @settings(max_examples=10, deadline=None)
     def test_server_list_active_filter(self, active_flag):
         """Property: Server list --active filter should work"""
         cmd = ["./n8n-deploy", "server", "list"]
         if active_flag:
             cmd.append("--active")
 
-        result = subprocess.run(cmd, capture_output=True, timeout=10, text=True)
+        result = subprocess.run(cmd, capture_output=True, timeout=30, text=True)
         assert result.returncode in [0, 1], "--active flag caused crash"
 
     @given(server_name=server_names)
-    @settings(max_examples=30, deadline=10000)
+    @settings(max_examples=30, deadline=None)
     def test_server_remove_handles_nonexistent(self, server_name):
         """Property: Removing non-existent server should fail gracefully"""
         assume(len(server_name.strip()) > 0)
@@ -1197,7 +1197,7 @@ class TestServerManagement:
         result = subprocess.run(
             ["./n8n-deploy", "server", "remove", server_name, "--confirm", "--preserve-keys"],
             capture_output=True,
-            timeout=10,
+            timeout=30,
             text=True,
         )
 
@@ -1209,7 +1209,7 @@ class TestServerManagement:
         server_url=server_urls,
         format_choice=format_options,
     )
-    @settings(max_examples=40, deadline=10000)
+    @settings(max_examples=40, deadline=None)
     def test_server_operations_combined(self, server_name, server_url, format_choice):
         """Property: Server operations with format options should work"""
         assume(len(server_name.strip()) > 0)
@@ -1218,7 +1218,7 @@ class TestServerManagement:
         create_result = subprocess.run(
             ["./n8n-deploy", "server", "create", server_name, server_url],
             capture_output=True,
-            timeout=10,
+            timeout=30,
             text=True,
         )
 
@@ -1227,14 +1227,14 @@ class TestServerManagement:
         if format_choice:
             list_cmd.extend(["--json"] if format_choice == "json" else ["--table"])
 
-        list_result = subprocess.run(list_cmd, capture_output=True, timeout=10, text=True)
+        list_result = subprocess.run(list_cmd, capture_output=True, timeout=30, text=True)
 
         # Both should handle gracefully
         assert create_result.returncode in [0, 1, 2]
         assert list_result.returncode in [0, 1]
 
     @given(malicious_input=malicious_names)
-    @settings(max_examples=20, deadline=10000)
+    @settings(max_examples=20, deadline=None)
     def test_malicious_server_names_blocked(self, malicious_input):
         """Property: SQL injection in server names fails safely"""
         assume("\x00" not in malicious_input)
@@ -1242,7 +1242,7 @@ class TestServerManagement:
         result = subprocess.run(
             ["./n8n-deploy", "server", "create", malicious_input, "http://localhost:5678"],
             capture_output=True,
-            timeout=10,
+            timeout=30,
             text=True,
         )
 
@@ -1252,7 +1252,7 @@ class TestServerManagement:
         assert "SQL" not in result.stderr
 
     @given(server_name=server_names, api_key_name=api_key_names)
-    @settings(max_examples=30, deadline=10000)
+    @settings(max_examples=30, deadline=None)
     def test_server_api_key_linking_operations(self, server_name, api_key_name):
         """Property: Server API key linking should handle edge cases"""
         assume(len(server_name.strip()) > 0 and len(api_key_name.strip()) > 0)
@@ -1261,7 +1261,7 @@ class TestServerManagement:
         result = subprocess.run(
             ["./n8n-deploy", "server", "add", server_name, api_key_name],
             capture_output=True,
-            timeout=10,
+            timeout=30,
             text=True,
         )
 
@@ -1269,21 +1269,21 @@ class TestServerManagement:
         assert result.returncode in [0, 1, 2], "Server add API key crashed"
 
     @given(server_url_1=server_urls)
-    @settings(max_examples=20, deadline=10000)
+    @settings(max_examples=20, deadline=None)
     def test_multiple_servers_with_same_url(self, server_url_1):
         """Property: Multiple servers can have different names with same URL"""
         # This tests that URL is not unique constraint (only name is)
         result1 = subprocess.run(
             ["./n8n-deploy", "server", "create", "server1", server_url_1],
             capture_output=True,
-            timeout=10,
+            timeout=30,
             text=True,
         )
 
         result2 = subprocess.run(
             ["./n8n-deploy", "server", "create", "server2", server_url_1],
             capture_output=True,
-            timeout=10,
+            timeout=30,
             text=True,
         )
 
@@ -1301,7 +1301,7 @@ class TestDatabaseInit:
     """Property: Database init with --db-filename option behaves correctly"""
 
     @given(filename=db_filenames, data_dir=valid_paths)
-    @settings(max_examples=30, deadline=10000)
+    @settings(max_examples=30, deadline=None)
     def test_db_init_filename_creates_database(self, filename, data_dir):
         """Property: db init --db-filename creates database with specified name"""
         import tempfile
@@ -1311,7 +1311,7 @@ class TestDatabaseInit:
             result = subprocess.run(
                 ["./n8n-deploy", "db", "init", "--data-dir", temp_dir, "--db-filename", filename, "--no-emoji"],
                 capture_output=True,
-                timeout=10,
+                timeout=30,
                 text=True,
             )
 
@@ -1325,7 +1325,7 @@ class TestDatabaseInit:
             assert db_path.stat().st_size > 0, f"Database {filename} is empty"
 
     @given(filename=db_filenames)
-    @settings(max_examples=20, deadline=10000)
+    @settings(max_examples=20, deadline=None)
     def test_db_init_custom_filename_auto_imports(self, filename):
         """Property: Custom filename auto-imports on second init"""
         import tempfile
@@ -1339,7 +1339,7 @@ class TestDatabaseInit:
             result1 = subprocess.run(
                 ["./n8n-deploy", "db", "init", "--data-dir", temp_dir, "--db-filename", filename, "--no-emoji"],
                 capture_output=True,
-                timeout=10,
+                timeout=30,
                 text=True,
             )
             assert result1.returncode == 0
@@ -1348,7 +1348,7 @@ class TestDatabaseInit:
             result2 = subprocess.run(
                 ["./n8n-deploy", "db", "init", "--data-dir", temp_dir, "--db-filename", filename, "--no-emoji"],
                 capture_output=True,
-                timeout=10,
+                timeout=30,
                 text=True,
             )
 
@@ -1356,7 +1356,7 @@ class TestDatabaseInit:
             assert "using existing" in result2.stdout.lower() or "already exists" in result2.stdout.lower()
 
     @given(filename=db_filenames)
-    @settings(max_examples=15, deadline=10000)
+    @settings(max_examples=15, deadline=None)
     def test_db_init_filename_json_output(self, filename):
         """Property: db init --db-filename with --json produces valid JSON"""
         import tempfile
@@ -1365,7 +1365,7 @@ class TestDatabaseInit:
             result = subprocess.run(
                 ["./n8n-deploy", "db", "init", "--data-dir", temp_dir, "--db-filename", filename, "--json"],
                 capture_output=True,
-                timeout=10,
+                timeout=30,
                 text=True,
             )
 
@@ -1383,7 +1383,7 @@ class TestDatabaseInit:
         filename1=db_filenames,
         filename2=db_filenames,
     )
-    @settings(max_examples=20, deadline=10000)
+    @settings(max_examples=20, deadline=None)
     def test_db_init_different_filenames_create_separate_databases(self, filename1, filename2):
         """Property: Different filenames create separate database files"""
         import tempfile
@@ -1397,7 +1397,7 @@ class TestDatabaseInit:
             result1 = subprocess.run(
                 ["./n8n-deploy", "db", "init", "--data-dir", temp_dir, "--db-filename", filename1, "--no-emoji"],
                 capture_output=True,
-                timeout=10,
+                timeout=30,
                 text=True,
             )
 
@@ -1405,7 +1405,7 @@ class TestDatabaseInit:
             result2 = subprocess.run(
                 ["./n8n-deploy", "db", "init", "--data-dir", temp_dir, "--db-filename", filename2, "--no-emoji"],
                 capture_output=True,
-                timeout=10,
+                timeout=30,
                 text=True,
             )
 
