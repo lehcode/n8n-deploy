@@ -204,24 +204,18 @@ class ServerCrud(BaseDB):
         if not server:
             return False
 
-        updates: List[str] = []
-        params: List[Any] = []
-
-        if url is not None:
-            updates.append("url = ?")
-            params.append(url)
-        if is_active is not None:
-            updates.append("is_active = ?")
-            params.append(1 if is_active else 0)
-
-        if not updates:
+        if url is None and is_active is None:
             return True  # Nothing to update
 
-        params.append(name)
-        query = f"UPDATE servers SET {', '.join(updates)} WHERE name = ?"
-
         with self.get_connection() as conn:
-            conn.execute(query, params)
+            # Use separate UPDATE queries for each field (avoids dynamic SQL construction)
+            if url is not None:
+                conn.execute("UPDATE servers SET url = ? WHERE name = ?", (url, name))
+            if is_active is not None:
+                conn.execute(
+                    "UPDATE servers SET is_active = ? WHERE name = ?",
+                    (1 if is_active else 0, name),
+                )
             conn.commit()
             return True
 
@@ -328,11 +322,11 @@ class ServerCrud(BaseDB):
         with self.get_connection() as conn:
             cursor = conn.execute(
                 """
-                SELECT k.id, k.name, k.created_at, sk.created_at as linked_at
+                SELECT k.id, k.name, k.created_at, sk.created_at as linked_at, sk.is_primary
                 FROM api_keys k
                 JOIN server_api_keys sk ON k.id = sk.api_key_id
                 WHERE sk.server_id = ?
-                ORDER BY sk.created_at DESC
+                ORDER BY sk.is_primary DESC, sk.created_at DESC
                 """,
                 (server["id"],),
             )
@@ -343,13 +337,14 @@ class ServerCrud(BaseDB):
                     "name": row[1],
                     "created_at": row[2],
                     "linked_at": row[3],
+                    "is_primary": bool(row[4]) if row[4] is not None else False,
                 }
                 for row in rows
             ]
 
     def get_api_key_for_server(self, server_name: str) -> Optional[str]:
         """
-        Get the API key value for a server (most recently linked)
+        Get the API key value for a server (primary key first, then most recently linked)
 
         Args:
             server_name: Server name
@@ -367,8 +362,8 @@ class ServerCrud(BaseDB):
                 SELECT k.api_key
                 FROM api_keys k
                 JOIN server_api_keys sk ON k.id = sk.api_key_id
-                WHERE sk.server_id = ?
-                ORDER BY sk.created_at DESC
+                WHERE sk.server_id = ? AND k.is_active = TRUE
+                ORDER BY sk.is_primary DESC, sk.created_at DESC
                 LIMIT 1
                 """,
                 (server["id"],),
@@ -383,3 +378,81 @@ class ServerCrud(BaseDB):
                 conn.commit()
                 return str(row[0]) if row[0] else None
             return None
+
+    def set_primary_api_key(self, server_name: str, api_key_name: str) -> bool:
+        """
+        Set an API key as primary for a server
+
+        Args:
+            server_name: Server name
+            api_key_name: API key name to set as primary
+
+        Returns:
+            True if successful, False otherwise
+        """
+        server = self.get_server_by_name(server_name)
+        if not server:
+            return False
+
+        # Get API key ID
+        with self.get_connection() as conn:
+            cursor = conn.execute(
+                "SELECT id FROM api_keys WHERE name = ?",
+                (api_key_name,),
+            )
+            key_row = cursor.fetchone()
+            if not key_row:
+                return False
+
+            api_key_id = key_row[0]
+
+            # Check if key is linked to server
+            cursor = conn.execute(
+                "SELECT id FROM server_api_keys WHERE server_id = ? AND api_key_id = ?",
+                (server["id"], api_key_id),
+            )
+            if not cursor.fetchone():
+                return False
+
+            # Clear primary flag for all keys of this server
+            conn.execute(
+                "UPDATE server_api_keys SET is_primary = FALSE WHERE server_id = ?",
+                (server["id"],),
+            )
+
+            # Set primary flag for the specified key
+            conn.execute(
+                "UPDATE server_api_keys SET is_primary = TRUE WHERE server_id = ? AND api_key_id = ?",
+                (server["id"], api_key_id),
+            )
+
+            conn.commit()
+            return True
+
+    def get_primary_api_key_name(self, server_name: str) -> Optional[str]:
+        """
+        Get the name of the primary API key for a server
+
+        Args:
+            server_name: Server name
+
+        Returns:
+            API key name or None if no primary key set
+        """
+        server = self.get_server_by_name(server_name)
+        if not server:
+            return None
+
+        with self.get_connection() as conn:
+            cursor = conn.execute(
+                """
+                SELECT k.name
+                FROM api_keys k
+                JOIN server_api_keys sk ON k.id = sk.api_key_id
+                WHERE sk.server_id = ? AND sk.is_primary = TRUE
+                LIMIT 1
+                """,
+                (server["id"],),
+            )
+            row = cursor.fetchone()
+            return str(row[0]) if row else None
