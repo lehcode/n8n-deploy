@@ -147,7 +147,8 @@ def add(
                     else:
                         cli_error(f"Server URL '{link_remote}' not found in database. Add it with 'server create'", no_emoji)
                 # server is guaranteed to be not None here
-                assert server is not None
+                if server is None:
+                    raise ValueError("Server cannot be None")
                 server_name = server["name"]
             else:
                 # Server name
@@ -165,7 +166,8 @@ def add(
                 server_name = link_remote
 
             # Link workflow to server
-            assert server is not None  # Type assertion for mypy
+            if server is None:
+                raise ValueError("Server cannot be None")
             server_id = server["id"]
 
             # Update workflow with server_id
