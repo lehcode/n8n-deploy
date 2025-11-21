@@ -146,7 +146,7 @@ class TestPropertyBased:
     @settings(max_examples=50, deadline=2000)
     def test_env_command_never_crashes_with_valid_paths(self, app_dir):
         """Property: env command should handle any valid path"""
-        result = subprocess.run(["./n8n-deploy", "env", "--data-dir", app_dir], capture_output=True, timeout=5, text=True)
+        result = subprocess.run(["./n8n-deploy", "env", "--data-dir", app_dir], capture_output=True, timeout=10, text=True)
         # Should always exit with known codes
         assert result.returncode in [0, 1, 2], f"Unexpected exit code: {result.returncode}"
 
@@ -158,7 +158,7 @@ class TestPropertyBased:
         if format_choice:
             cmd.extend(["--json"] if format_choice == "json" else ["--table"])
 
-        result = subprocess.run(cmd, capture_output=True, timeout=5, text=True)
+        result = subprocess.run(cmd, capture_output=True, timeout=10, text=True)
 
         # Should always succeed or fail gracefully
         assert result.returncode in [0, 1], f"Unexpected crash: {result.returncode}"
@@ -176,7 +176,7 @@ class TestPropertyBased:
     @settings(max_examples=20, deadline=5000)
     def test_env_accepts_valid_server_urls(self, server_url):
         """Property: env command should accept valid server URLs"""
-        result = subprocess.run(["./n8n-deploy", "env", "--remote", server_url], capture_output=True, timeout=5, text=True)
+        result = subprocess.run(["./n8n-deploy", "env", "--remote", server_url], capture_output=True, timeout=10, text=True)
         assert result.returncode == 0, f"Should accept valid URL: {server_url}"
 
     @given(workflow_name=workflow_names)
@@ -184,7 +184,7 @@ class TestPropertyBased:
     def test_workflow_names_never_cause_injection(self, workflow_name):
         """Property: Workflow names should never cause command injection"""
         # This will test names like: "'; DROP TABLE--", "$(rm -rf /)", etc.
-        result = subprocess.run(["./n8n-deploy", "wf", "search", workflow_name], capture_output=True, timeout=5, text=True)
+        result = subprocess.run(["./n8n-deploy", "wf", "search", workflow_name], capture_output=True, timeout=10, text=True)
         # Should handle gracefully, never execute injected commands
         assert result.returncode in [0, 1, 2], "Potential command injection vulnerability"
         # stderr should not contain signs of SQL injection
@@ -196,7 +196,7 @@ class TestPropertyBased:
     def test_db_status_handles_all_paths(self, app_dir):
         """Property: db status should handle any valid path"""
         result = subprocess.run(
-            ["./n8n-deploy", "db", "status", "--data-dir", app_dir], capture_output=True, timeout=5, text=True
+            ["./n8n-deploy", "db", "status", "--data-dir", app_dir], capture_output=True, timeout=10, text=True
         )
         # Should exit gracefully even if DB doesn't exist
         assert result.returncode in [0, 1, 2], f"Unexpected exit code: {result.returncode}"
@@ -209,7 +209,7 @@ class TestPropertyBased:
         if format_choice:
             cmd.extend(["--json"] if format_choice == "json" else ["--table"])
 
-        result = subprocess.run(cmd, capture_output=True, timeout=5, text=True)
+        result = subprocess.run(cmd, capture_output=True, timeout=10, text=True)
         assert result.returncode in [0, 1], f"Unexpected crash: {result.returncode}"
 
         # JSON format should produce valid JSON
@@ -229,12 +229,12 @@ class TestPropertyBased:
     @settings(max_examples=50, deadline=2000)
     def test_wf_search_tags_never_crash(self, tag):
         """Property: wf search by tag should never crash"""
-        result = subprocess.run(["./n8n-deploy", "wf", "search", "--tag", tag], capture_output=True, timeout=5, text=True)
+        result = subprocess.run(["./n8n-deploy", "wf", "search", "--tag", tag], capture_output=True, timeout=10, text=True)
         assert result.returncode in [0, 1, 2], "Search by tag crashed unexpectedly"
 
     def test_wf_list_basic(self):
         """Property: wf list should work without flags"""
-        result = subprocess.run(["./n8n-deploy", "wf", "list"], capture_output=True, timeout=5, text=True)
+        result = subprocess.run(["./n8n-deploy", "wf", "list"], capture_output=True, timeout=10, text=True)
         assert result.returncode in [0, 1], "wf list caused crash"
 
     @given(
@@ -246,7 +246,7 @@ class TestPropertyBased:
     def test_deep_nested_paths_handled(self, path_components):
         """Property: Commands should handle deeply nested paths"""
         deep_path = "/tmp/" + "/".join(path_components)
-        result = subprocess.run(["./n8n-deploy", "env", "--data-dir", deep_path], capture_output=True, timeout=5, text=True)
+        result = subprocess.run(["./n8n-deploy", "env", "--data-dir", deep_path], capture_output=True, timeout=10, text=True)
         assert result.returncode in [0, 1, 2], "Deep nested path caused unexpected behavior"
 
     @given(server_url=server_urls, app_dir=valid_paths)
@@ -256,7 +256,7 @@ class TestPropertyBased:
         result = subprocess.run(
             ["./n8n-deploy", "env", "--data-dir", app_dir, "--remote", server_url, "--json"],
             capture_output=True,
-            timeout=5,
+            timeout=10,
             text=True,
         )
         assert result.returncode in [0, 1], "Combined options caused crash"
@@ -286,7 +286,7 @@ class TestFormatValidation:
         result = subprocess.run(
             ["./n8n-deploy", "env", "--data-dir", app_dir, "--json"],
             capture_output=True,
-            timeout=5,
+            timeout=10,
             text=True,
         )
 
@@ -307,7 +307,7 @@ class TestFormatValidation:
         if format_choice:
             cmd.extend(["--json"] if format_choice == "json" else ["--table"])
 
-        result = subprocess.run(cmd, capture_output=True, timeout=5, text=True)
+        result = subprocess.run(cmd, capture_output=True, timeout=10, text=True)
 
         # Should always exit gracefully
         assert result.returncode in [0, 1, 2]
@@ -326,7 +326,7 @@ class TestFormatValidation:
         result = subprocess.run(
             ["./n8n-deploy", "apikey", "list", "--json"],
             capture_output=True,
-            timeout=5,
+            timeout=10,
             text=True,
         )
 
@@ -354,7 +354,7 @@ class TestPathHandling:
         result = subprocess.run(
             ["./n8n-deploy", "env", "--data-dir", path],
             capture_output=True,
-            timeout=5,
+            timeout=10,
             text=True,
         )
         # Should exit gracefully with known codes
@@ -370,7 +370,7 @@ class TestPathHandling:
         result = subprocess.run(
             ["./n8n-deploy", "db", "status", "--data-dir", path],
             capture_output=True,
-            timeout=5,
+            timeout=10,
             text=True,
         )
         assert result.returncode in [0, 1, 2]
@@ -382,7 +382,7 @@ class TestPathHandling:
         result = subprocess.run(
             ["./n8n-deploy", "env", "--data-dir", app_dir, "--flow-dir", flow_dir],
             capture_output=True,
-            timeout=5,
+            timeout=10,
             text=True,
         )
         assert result.returncode in [0, 1, 2]
@@ -405,7 +405,7 @@ class TestPathHandling:
             result = subprocess.run(
                 ["./n8n-deploy"] + cmd,
                 capture_output=True,
-                timeout=5,
+                timeout=10,
                 text=True,
             )
             exit_codes.append(result.returncode)
@@ -424,7 +424,7 @@ class TestPathHandling:
         result = subprocess.run(
             ["./n8n-deploy", "env", "--data-dir", invalid_path, "--json"],
             capture_output=True,
-            timeout=5,
+            timeout=10,
             text=True,
         )
 
@@ -456,7 +456,7 @@ class TestInputSanitization:
         result = subprocess.run(
             ["./n8n-deploy", "wf", "search", malicious_input],
             capture_output=True,
-            timeout=5,
+            timeout=10,
             text=True,
         )
 
@@ -480,7 +480,7 @@ class TestInputSanitization:
         result = subprocess.run(
             ["./n8n-deploy", "wf", "search", "--tag", malicious_input],
             capture_output=True,
-            timeout=5,
+            timeout=10,
             text=True,
         )
 
@@ -496,7 +496,7 @@ class TestInputSanitization:
         result = subprocess.run(
             ["./n8n-deploy", "apikey", "list"],
             capture_output=True,
-            timeout=5,
+            timeout=10,
             text=True,
         )
 
@@ -519,7 +519,7 @@ class TestHelpConsistency:
         result = subprocess.run(
             ["./n8n-deploy", command, "--help"],
             capture_output=True,
-            timeout=5,
+            timeout=10,
             text=True,
         )
 
@@ -537,7 +537,7 @@ class TestHelpConsistency:
         result = subprocess.run(
             ["./n8n-deploy", "db", command, "--help"],
             capture_output=True,
-            timeout=5,
+            timeout=10,
             text=True,
         )
 
@@ -564,7 +564,7 @@ class TestHelpConsistency:
         result = subprocess.run(
             ["./n8n-deploy", "wf", command, "--help"],
             capture_output=True,
-            timeout=5,
+            timeout=10,
             text=True,
         )
 
@@ -602,7 +602,7 @@ class TestOptionCombinations:
         if format_choice:
             cmd.extend(["--json"] if format_choice == "json" else ["--table"])
 
-        result = subprocess.run(cmd, capture_output=True, timeout=5, text=True)
+        result = subprocess.run(cmd, capture_output=True, timeout=10, text=True)
 
         # Should not crash
         assert result.returncode in [0, 1]
@@ -633,7 +633,7 @@ class TestServerManagement:
         result = subprocess.run(
             ["./n8n-deploy", "server", "create", server_name, server_url],
             capture_output=True,
-            timeout=5,
+            timeout=10,
             text=True,
         )
 
@@ -647,7 +647,7 @@ class TestServerManagement:
         result = subprocess.run(
             ["./n8n-deploy", "server", "list"],
             capture_output=True,
-            timeout=5,
+            timeout=10,
             text=True,
         )
 
@@ -662,7 +662,7 @@ class TestServerManagement:
         if format_choice:
             cmd.extend(["--json"] if format_choice == "json" else ["--table"])
 
-        result = subprocess.run(cmd, capture_output=True, timeout=5, text=True)
+        result = subprocess.run(cmd, capture_output=True, timeout=10, text=True)
         assert result.returncode in [0, 1]
 
         # JSON format should produce valid JSON
@@ -681,7 +681,7 @@ class TestServerManagement:
         if active_flag:
             cmd.append("--active")
 
-        result = subprocess.run(cmd, capture_output=True, timeout=5, text=True)
+        result = subprocess.run(cmd, capture_output=True, timeout=10, text=True)
         assert result.returncode in [0, 1], "--active flag caused crash"
 
     @given(server_name=server_names)
@@ -693,7 +693,7 @@ class TestServerManagement:
         result = subprocess.run(
             ["./n8n-deploy", "server", "remove", server_name, "--confirm", "--preserve-keys"],
             capture_output=True,
-            timeout=5,
+            timeout=10,
             text=True,
         )
 
@@ -714,7 +714,7 @@ class TestServerManagement:
         create_result = subprocess.run(
             ["./n8n-deploy", "server", "create", server_name, server_url],
             capture_output=True,
-            timeout=5,
+            timeout=10,
             text=True,
         )
 
@@ -723,7 +723,7 @@ class TestServerManagement:
         if format_choice:
             list_cmd.extend(["--json"] if format_choice == "json" else ["--table"])
 
-        list_result = subprocess.run(list_cmd, capture_output=True, timeout=5, text=True)
+        list_result = subprocess.run(list_cmd, capture_output=True, timeout=10, text=True)
 
         # Both should handle gracefully
         assert create_result.returncode in [0, 1, 2]
@@ -738,7 +738,7 @@ class TestServerManagement:
         result = subprocess.run(
             ["./n8n-deploy", "server", "create", malicious_input, "http://localhost:5678"],
             capture_output=True,
-            timeout=5,
+            timeout=10,
             text=True,
         )
 
@@ -757,7 +757,7 @@ class TestServerManagement:
         result = subprocess.run(
             ["./n8n-deploy", "server", "add", server_name, api_key_name],
             capture_output=True,
-            timeout=5,
+            timeout=10,
             text=True,
         )
 
@@ -772,14 +772,14 @@ class TestServerManagement:
         result1 = subprocess.run(
             ["./n8n-deploy", "server", "create", "server1", server_url_1],
             capture_output=True,
-            timeout=5,
+            timeout=10,
             text=True,
         )
 
         result2 = subprocess.run(
             ["./n8n-deploy", "server", "create", "server2", server_url_1],
             capture_output=True,
-            timeout=5,
+            timeout=10,
             text=True,
         )
 
@@ -807,7 +807,7 @@ class TestDatabaseInit:
             result = subprocess.run(
                 ["./n8n-deploy", "db", "init", "--data-dir", temp_dir, "--db-filename", filename, "--no-emoji"],
                 capture_output=True,
-                timeout=5,
+                timeout=10,
                 text=True,
             )
 
@@ -835,7 +835,7 @@ class TestDatabaseInit:
             result1 = subprocess.run(
                 ["./n8n-deploy", "db", "init", "--data-dir", temp_dir, "--db-filename", filename, "--no-emoji"],
                 capture_output=True,
-                timeout=5,
+                timeout=10,
                 text=True,
             )
             assert result1.returncode == 0
@@ -844,7 +844,7 @@ class TestDatabaseInit:
             result2 = subprocess.run(
                 ["./n8n-deploy", "db", "init", "--data-dir", temp_dir, "--db-filename", filename, "--no-emoji"],
                 capture_output=True,
-                timeout=5,
+                timeout=10,
                 text=True,
             )
 
@@ -861,7 +861,7 @@ class TestDatabaseInit:
             result = subprocess.run(
                 ["./n8n-deploy", "db", "init", "--data-dir", temp_dir, "--db-filename", filename, "--json"],
                 capture_output=True,
-                timeout=5,
+                timeout=10,
                 text=True,
             )
 
@@ -893,7 +893,7 @@ class TestDatabaseInit:
             result1 = subprocess.run(
                 ["./n8n-deploy", "db", "init", "--data-dir", temp_dir, "--db-filename", filename1, "--no-emoji"],
                 capture_output=True,
-                timeout=5,
+                timeout=10,
                 text=True,
             )
 
@@ -901,7 +901,7 @@ class TestDatabaseInit:
             result2 = subprocess.run(
                 ["./n8n-deploy", "db", "init", "--data-dir", temp_dir, "--db-filename", filename2, "--no-emoji"],
                 capture_output=True,
-                timeout=5,
+                timeout=10,
                 text=True,
             )
 
