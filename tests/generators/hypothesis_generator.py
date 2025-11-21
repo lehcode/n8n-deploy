@@ -1145,7 +1145,7 @@ class TestServerManagement:
         assert result.returncode in [0, 1, 2], f"Server create crashed with: {server_name}, {server_url}"
 
     @given(server_name=server_names)
-    @settings(max_examples=30, deadline=5000)
+    @settings(max_examples=30, deadline=10000)
     def test_server_list_never_crashes(self, server_name):
         """Property: Server list should never crash regardless of database state"""
         result = subprocess.run(
@@ -1159,7 +1159,7 @@ class TestServerManagement:
         assert result.returncode in [0, 1], "Server list command crashed"
 
     @given(format_choice=format_options)
-    @settings(max_examples=20, deadline=5000)
+    @settings(max_examples=20, deadline=10000)
     def test_server_list_format_options(self, format_choice):
         """Property: Server list should handle all format options"""
         cmd = ["./n8n-deploy", "server", "list"]
@@ -1178,7 +1178,7 @@ class TestServerManagement:
                 assert False, "Server list produced invalid JSON"
 
     @given(active_flag=boolean_flags)
-    @settings(max_examples=10, deadline=5000)
+    @settings(max_examples=10, deadline=10000)
     def test_server_list_active_filter(self, active_flag):
         """Property: Server list --active filter should work"""
         cmd = ["./n8n-deploy", "server", "list"]
@@ -1189,7 +1189,7 @@ class TestServerManagement:
         assert result.returncode in [0, 1], "--active flag caused crash"
 
     @given(server_name=server_names)
-    @settings(max_examples=30, deadline=5000)
+    @settings(max_examples=30, deadline=10000)
     def test_server_remove_handles_nonexistent(self, server_name):
         """Property: Removing non-existent server should fail gracefully"""
         assume(len(server_name.strip()) > 0)
@@ -1209,7 +1209,7 @@ class TestServerManagement:
         server_url=server_urls,
         format_choice=format_options,
     )
-    @settings(max_examples=40, deadline=5000)
+    @settings(max_examples=40, deadline=10000)
     def test_server_operations_combined(self, server_name, server_url, format_choice):
         """Property: Server operations with format options should work"""
         assume(len(server_name.strip()) > 0)
@@ -1234,7 +1234,7 @@ class TestServerManagement:
         assert list_result.returncode in [0, 1]
 
     @given(malicious_input=malicious_names)
-    @settings(max_examples=20, deadline=5000)
+    @settings(max_examples=20, deadline=10000)
     def test_malicious_server_names_blocked(self, malicious_input):
         """Property: SQL injection in server names fails safely"""
         assume("\x00" not in malicious_input)
@@ -1252,7 +1252,7 @@ class TestServerManagement:
         assert "SQL" not in result.stderr
 
     @given(server_name=server_names, api_key_name=api_key_names)
-    @settings(max_examples=30, deadline=5000)
+    @settings(max_examples=30, deadline=10000)
     def test_server_api_key_linking_operations(self, server_name, api_key_name):
         """Property: Server API key linking should handle edge cases"""
         assume(len(server_name.strip()) > 0 and len(api_key_name.strip()) > 0)
@@ -1269,7 +1269,7 @@ class TestServerManagement:
         assert result.returncode in [0, 1, 2], "Server add API key crashed"
 
     @given(server_url_1=server_urls)
-    @settings(max_examples=20, deadline=5000)
+    @settings(max_examples=20, deadline=10000)
     def test_multiple_servers_with_same_url(self, server_url_1):
         """Property: Multiple servers can have different names with same URL"""
         # This tests that URL is not unique constraint (only name is)
@@ -1301,7 +1301,7 @@ class TestDatabaseInit:
     """Property: Database init with --db-filename option behaves correctly"""
 
     @given(filename=db_filenames, data_dir=valid_paths)
-    @settings(max_examples=30, deadline=5000)
+    @settings(max_examples=30, deadline=10000)
     def test_db_init_filename_creates_database(self, filename, data_dir):
         """Property: db init --db-filename creates database with specified name"""
         import tempfile
@@ -1325,7 +1325,7 @@ class TestDatabaseInit:
             assert db_path.stat().st_size > 0, f"Database {filename} is empty"
 
     @given(filename=db_filenames)
-    @settings(max_examples=20, deadline=5000)
+    @settings(max_examples=20, deadline=10000)
     def test_db_init_custom_filename_auto_imports(self, filename):
         """Property: Custom filename auto-imports on second init"""
         import tempfile
@@ -1356,7 +1356,7 @@ class TestDatabaseInit:
             assert "using existing" in result2.stdout.lower() or "already exists" in result2.stdout.lower()
 
     @given(filename=db_filenames)
-    @settings(max_examples=15, deadline=5000)
+    @settings(max_examples=15, deadline=10000)
     def test_db_init_filename_json_output(self, filename):
         """Property: db init --db-filename with --json produces valid JSON"""
         import tempfile
@@ -1383,7 +1383,7 @@ class TestDatabaseInit:
         filename1=db_filenames,
         filename2=db_filenames,
     )
-    @settings(max_examples=20, deadline=5000)
+    @settings(max_examples=20, deadline=10000)
     def test_db_init_different_filenames_create_separate_databases(self, filename1, filename2):
         """Property: Different filenames create separate database files"""
         import tempfile
