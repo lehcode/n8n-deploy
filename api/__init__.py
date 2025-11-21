@@ -7,7 +7,7 @@ from .models import Workflow
 from .db import DBApi
 from .workflow import WorkflowApi
 
-__version__ = "2.2.1"
+__version__ = "2.2.2"
 __author__ = "Lehcode"
 
 __all__ = [
