@@ -2,149 +2,95 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2025-10-06
+## [2.2.3] - 2024-11-22
 
-### Added
+- **Changed**: CI/CD pipelines now trigger deployments only on version tags, preventing accidental releases from branch pushes
+- **Changed**: Pre-release tags (`-rc`, `-beta`, `-alpha`) deploy to TestPyPI; stable tags deploy to PyPI
+- **Fixed**: Hypothesis test deadline increased to 10 seconds for CI environment stability
+- **Fixed**: CLI test assertions updated for consistent validation across execution contexts
 
-#### Testing Infrastructure
-- **Modular Manual Test Framework** - Complete rewrite of manual testing system
-  - Python test runner (`tests/manual/runner.py`) with streaming mode support
-  - Real-time output display with `-s/--stream` flag
-  - Fail-fast behavior: exits immediately on test failure
-  - Proper exit code propagation (0 for success, 1 for failure)
-  - 11 test categories with 107 total tests (57 implemented, 50 placeholders)
-  - Modular bash scripts with shared configuration and utility library
-  - Test categories: help, env, database, apikey, workflow, backup, server, formats, directories, errors, edge cases
+## [2.2.1] - 2024-11-20
 
-- **Property-Based Testing with Hypothesis**
-  - Automated hypothesis test generator (`tests/generators/hypothesis_generator.py`)
-  - 755 test examples across 25 properties
-  - Comprehensive CLI command and parameter validation
-  - Added to GitHub Actions and GitLab CI pipelines
+- **Added**: Primary API key selection for servers, simplifying authentication in multi-key setups
+- **Fixed**: `--flow-dir` option now properly respected during push operations
+- **Fixed**: Git installation added to SAST and dependency scanning jobs for setuptools-scm compatibility
+- **Changed**: CI pipeline optimized to run tests only on merge requests, master branch, and tags
+- **Changed**: Removed redundant build:production and deploy stages from pipeline
 
-- **Automated Test Generation**
-  - CLI introspection-based test generator (`tests/generators/test_generator.py`)
-  - 1,099 auto-generated tests from CLI structure (`tests/generated/test_cli_generated.py`)
-  - Automatic detection of commands, options, and parameters
+## [2.2.0] - 2024-11-15
 
-- **Testing Documentation**
-  - Comprehensive testing framework guide (`docs/TESTING_FRAMEWORK.md`)
-  - 763 lines of testing strategy, tools, and best practices documentation
+- **Added**: API key activate command for re-enabling deactivated keys
+- **Added**: Enhanced apikey test and delete commands with improved UX
+- **Added**: `--unmask` flag for displaying actual API key credentials (with security warning)
+- **Added**: Environment configuration display command (`env`) with JSON and table output
+- **Added**: Development environment support with `.env` file loading
+- **Added**: Interactive database initialization with `--import` flag
+- **Changed**: Standardized environment variable to `N8N_DEPLOY_DATA_DIR`
+- **Changed**: Improved apikey list table layout with better formatting
+- **Changed**: Extracted API key SQL operations to dedicated database CRUD layer
+- **Removed**: `apikey get` command removed for enhanced credential protection
+- **Removed**: `--data-dir` option removed from apikey commands (uses global config)
+- **Security**: Enhanced credential protection by removing direct key retrieval
 
-#### CLI Features
-- **UTF-8 Workflow Name Support**
-  - Allow full Unicode support in workflow names (emojis, international characters)
-  - Support for spaces and special characters in workflow names
-  - Examples: 'My Workflow 🚀', '日本語ワークフロー', 'Processus de données'
-  - Only reject null bytes and path separators for security
-  - Simplified validation from restrictive regex to minimal safety checks
+## [2.1.0] - 2024-11-10
 
-- **Environment Configuration Display Command**
-  - New `env` command to display all environment variables and their values
-  - Support for JSON (`--json`) and table (`--table`) output
-  - Shows configuration precedence and default values
+- **Added**: GitHub Pages deployment with Google Analytics support
+- **Added**: Font Awesome social icons in site footer
+- **Added**: SEO enhancements for search engines and social media
+- **Added**: Comprehensive testing framework documentation
+- **Changed**: Navigation structure reorganized for better discoverability
+- **Changed**: Documentation refactored into modular structure
 
-- **Development Environment Support**
-  - `.env.example` template file for local development
-  - Development-only `.env` file loading (requires `ENVIRONMENT=development`)
-  - Priority: CLI arguments > Environment variables > .env files
+## [2.0.2] - 2024-10-30
 
-- **Interactive Database Initialization**
-  - Interactive mode for database initialization with user prompts
-  - New `--import` flag to accept existing databases without prompting
-  - Replaces old `--force` flag for cleaner semantics
+- **Fixed**: Default setuptools-scm version scheme for stable releases
+- **Fixed**: Git history fetching for accurate version detection
+- **Fixed**: Hypothesis tests no longer pollute project database
+- **Fixed**: Deprecated `repository_url` updated to `repository-url` in PyPI publish action
+- **Fixed**: GitHub Pages workflow updated to latest action versions
+- **Changed**: GitLab CI/CD strategy aligned with GitHub Actions for consistency
+- **Changed**: Build artifacts changed from `.venv` to `dist` directory
+- **Changed**: CI/CD trigger strategy updated for branch-based workflows
 
-#### Test Coverage Improvements
-- **E2E Tests**
-  - Extended API key tests with 14 new comprehensive test cases
-  - Extended database tests with JSON format and custom path testing
-  - New environment command tests (`tests/integration/test_e2e_env.py`)
-  - Enhanced server and workflow tests with additional scenarios
+## [2.0.1] - 2024-10-28
 
-- **Integration Tests**
-  - Comprehensive parameter combination testing for all database commands
-  - All parameter variations for `db init`, `db status`, `db backup`, `db compact`
-  - Test class filtering with `--class` parameter in `run_tests.py`
+- **Fixed**: JSON output no longer contaminated by wrapper script stdout
+- **Fixed**: Auto-server creation removed from apikey add command
+- **Fixed**: Concurrent operations test stability improved
+- **Fixed**: Invalid pull_policy removed from GitLab CI default section
+- **Changed**: Docker MTU and registry mirror configuration added to CI
 
-### Changed
+## [2.0.0] - 2024-10-25
 
-#### Code Quality Improvements (October 2025)
-- **Environment Variable Standardization**
-  - Renamed `N8N_DEPLOY_DATA` → `N8N_DEPLOY_DATA_DIR` for consistency
-  - Renamed `N8N_DEPLOY_FLOWS` → `N8N_DEPLOY_FLOWS_DIR` for clarity
-  - Updated 39 files across codebase, tests, and documentation
-  - Consistent `_DIR` suffix for all directory-related environment variables
+- **Added**: Complete rewrite with modular architecture
+- **Added**: SQLite database as single source of truth for workflow metadata
+- **Added**: API key management with lifecycle support (create, deactivate, delete, test)
+- **Added**: Server management for multiple n8n instances
+- **Added**: Workflow push/pull operations with n8n server API integration
+- **Added**: Database backup and restore functionality with SHA256 verification
+- **Added**: Rich CLI output with emoji tables (optional `--no-emoji` for scripts)
+- **Added**: Flexible base folder configuration via CLI or environment variables
+- **Added**: Comprehensive type annotations with strict mypy compliance
+- **Added**: Property-based testing with Hypothesis framework
+- **Added**: Modular manual test framework with 107 tests across 11 categories
+- **Added**: UTF-8 workflow name support (emojis, international characters)
+- **Changed**: Migrated from JSON config files to SQLite database
+- **Changed**: Reorganized CLI into command groups (wf, db, apikey, server, env)
+- **Changed**: Configuration now requires explicit paths (no implicit defaults)
+- **Changed**: Environment variables standardized with `_DIR` suffix
+- **Changed**: Python 3.12+ compatibility with timezone-aware datetime handling
+- **Removed**: Legacy JSON-based configuration system
+- **Removed**: Implicit default directories
 
-- **Python 3.12+ Compatibility**
-  - Replaced deprecated `datetime.utcnow()` with `datetime.now(timezone.utc)`
-  - Updated timezone-aware datetime handling in 4 core modules
-  - Added timezone import to models, workflow CRUD, n8n API, and database core
-  - Used lambda wrappers for Pydantic `default_factory` fields
-
-- **Test Class Naming Standardization**
-  - Fixed 8 database test classes to follow PEP-8 conventions
-  - Changed lowercase naming (e.g., `Testdbedgecases`) to PascalCase (`TestDbEdgeCases`)
-  - Improved test discoverability and consistency
-
-- **Code Cleanup**
-  - Removed unused imports from CLI modules (output.py, wf.py, db.py)
-  - Eliminated unused variables identified by flake8 analysis
-  - Achieved zero flake8 violations with `--max-line-length=127`
-  - Maintained strict mypy compliance across all modules
-
-#### Code Quality Improvements
-- **Database Code Refactoring**
-  - Extracted base database class (`api/db/base.py`) to eliminate code duplication
-  - Centralized database existence checks into reusable helper methods
-  - Improved error handling with clean "Oops!" messages
-
-- **Install Script Modernization**
-  - Enhanced `install.py` with environment conflict detection
-  - Better handling of existing installations
-  - Improved user feedback and error messages
-
-- **Click Framework Improvements**
-  - Disabled Click prefix matching to prevent command routing conflicts
-  - Custom command group with exact name matching
-  - Fixed shadowing of Python `list()` builtin in workflow commands
-
-### Fixed
-
-- **Database Initialization**
-  - Added missing `main()` entry point in CLI modules
-  - Improved db status error handling for non-existent databases
-
-- **Test Infrastructure**
-  - Fixed E2E CLI tests to use correct commands and options
-  - Updated all tests for renamed commands and environment variables
-  - Increased deadline for multi-command hypothesis tests
-  - Fixed hypothesis test syntax errors
-
-- **JSON Output Validation**
-  - Ensured JSON output from `env` command handles Unicode paths correctly
-
-### CI/CD
-
-- **Pipeline Enhancements**
-  - Added Hypothesis property-based testing to GitHub Actions workflow
-  - Added Hypothesis testing to GitLab CI pipeline
-  - Enforce sequential test execution with `-x` flag (exit on first failure)
-  - APT proxy configuration for faster package installation
-
-### Documentation
-
-- **Updated Command Documentation**
-  - Updated all help text for renamed commands
-  - Clarified flow directory defaults to current directory
-  - Improved directory configuration priority documentation
 ---
 
-## [2.0.0] - Previous Release
-
-Initial modular architecture release with workflow management, database operations, and API key management.
-
-[Unreleased]: https://github.com/lehcode/n8n-deploy/compare/v2.0.0...HEAD
+[2.2.3]: https://github.com/lehcode/n8n-deploy/compare/v2.2.1...v2.2.3
+[2.2.1]: https://github.com/lehcode/n8n-deploy/compare/v2.2.0...v2.2.1
+[2.2.0]: https://github.com/lehcode/n8n-deploy/compare/v2.1.0...v2.2.0
+[2.1.0]: https://github.com/lehcode/n8n-deploy/compare/v2.0.2...v2.1.0
+[2.0.2]: https://github.com/lehcode/n8n-deploy/compare/v2.0.1...v2.0.2
+[2.0.1]: https://github.com/lehcode/n8n-deploy/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/lehcode/n8n-deploy/releases/tag/v2.0.0
