@@ -17,7 +17,7 @@ from .base import BaseDB
 class SchemaApi(BaseDB):
     """Manages database schema initialization and versioning"""
 
-    SCHEMA_VERSION = 3
+    SCHEMA_VERSION = 4
 
     def __init__(
         self,
@@ -99,6 +99,7 @@ class SchemaApi(BaseDB):
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     server_id INTEGER NOT NULL,
                     api_key_id INTEGER NOT NULL,
+                    is_primary BOOLEAN DEFAULT FALSE,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (server_id) REFERENCES servers (id) ON DELETE CASCADE,
                     FOREIGN KEY (api_key_id) REFERENCES api_keys (id) ON DELETE CASCADE,
@@ -152,10 +153,31 @@ class SchemaApi(BaseDB):
                 INSERT OR REPLACE INTO schema_info (version, applied_at, description)
                 VALUES (?, ?, ?)
             """,
-                (self.SCHEMA_VERSION, datetime.now(), "Workflow-server linking"),
+                (self.SCHEMA_VERSION, datetime.now(), "Primary API key selection"),
             )
 
             conn.commit()
+
+    def migrate_database(self) -> None:
+        """Apply migrations for existing databases"""
+        current_version = self.get_schema_version()
+
+        with self.get_connection() as conn:
+            # Migration from version 3 to 4: Add is_primary column
+            if current_version < 4:
+                try:
+                    conn.execute("ALTER TABLE server_api_keys ADD COLUMN is_primary BOOLEAN DEFAULT FALSE")
+                    conn.execute(
+                        """
+                        INSERT OR REPLACE INTO schema_info (version, applied_at, description)
+                        VALUES (?, ?, ?)
+                        """,
+                        (4, datetime.now(), "Primary API key selection"),
+                    )
+                    conn.commit()
+                except sqlite3.OperationalError:
+                    # Column already exists
+                    pass
 
     def get_schema_version(self) -> int:
         """Get current database schema version"""

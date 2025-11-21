@@ -432,8 +432,10 @@ def generate_test_report(include_e2e=False):
         print("📄 JUnit XML: test-results.xml")
     else:
         print("❌ Failed to generate test report")
+        if stdout:
+            print(f"Output:\n{stdout}")
         if stderr:
-            print(f"Error: {stderr}")
+            print(f"Error:\n{stderr}")
 
     return code == 0
 

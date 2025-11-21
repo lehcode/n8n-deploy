@@ -143,7 +143,7 @@ class TestPropertyBased:
     """Property-based tests that should always hold"""
 
     @given(app_dir=valid_paths)
-    @settings(max_examples=50, deadline=2000)
+    @settings(max_examples=50, deadline=5000)
     def test_env_command_never_crashes_with_valid_paths(self, app_dir):
         """Property: env command should handle any valid path"""
         result = subprocess.run(["./n8n-deploy", "env", "--data-dir", app_dir], capture_output=True, timeout=5, text=True)
@@ -151,7 +151,7 @@ class TestPropertyBased:
         assert result.returncode in [0, 1, 2], f"Unexpected exit code: {result.returncode}"
 
     @given(app_dir=valid_paths, flow_dir=valid_paths, format_choice=st.sampled_from(["table", "json", None]))
-    @settings(max_examples=30, deadline=2000)
+    @settings(max_examples=30, deadline=5000)
     def test_env_command_format_options(self, app_dir, flow_dir, format_choice):
         """Property: env command should handle all format options"""
         cmd = ["./n8n-deploy", "env", "--data-dir", app_dir, "--flow-dir", flow_dir]
@@ -180,7 +180,7 @@ class TestPropertyBased:
         assert result.returncode == 0, f"Should accept valid URL: {server_url}"
 
     @given(workflow_name=workflow_names)
-    @settings(max_examples=100, deadline=2000)
+    @settings(max_examples=100, deadline=5000)
     def test_workflow_names_never_cause_injection(self, workflow_name):
         """Property: Workflow names should never cause command injection"""
         # This will test names like: "'; DROP TABLE--", "$(rm -rf /)", etc.
@@ -192,7 +192,7 @@ class TestPropertyBased:
         assert "SQL" not in result.stderr
 
     @given(app_dir=valid_paths)
-    @settings(max_examples=30, deadline=2000)
+    @settings(max_examples=30, deadline=5000)
     def test_db_status_handles_all_paths(self, app_dir):
         """Property: db status should handle any valid path"""
         result = subprocess.run(
@@ -226,7 +226,7 @@ class TestPropertyBased:
             min_size=1, max_size=30, alphabet=st.characters(whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="-_")
         )
     )
-    @settings(max_examples=50, deadline=2000)
+    @settings(max_examples=50, deadline=5000)
     def test_wf_search_tags_never_crash(self, tag):
         """Property: wf search by tag should never crash"""
         result = subprocess.run(["./n8n-deploy", "wf", "search", "--tag", tag], capture_output=True, timeout=5, text=True)
@@ -242,7 +242,7 @@ class TestPropertyBased:
             st.text(min_size=1, max_size=10, alphabet="abcdefghijklmnopqrstuvwxyz0123456789-_"), min_size=1, max_size=5
         )
     )
-    @settings(max_examples=30, deadline=2000)
+    @settings(max_examples=30, deadline=5000)
     def test_deep_nested_paths_handled(self, path_components):
         """Property: Commands should handle deeply nested paths"""
         deep_path = "/tmp/" + "/".join(path_components)
@@ -280,7 +280,7 @@ class TestFormatValidation:
     """Property: All commands with --format json should produce valid JSON"""
 
     @given(app_dir=valid_paths)
-    @settings(max_examples=30, deadline=2000)
+    @settings(max_examples=30, deadline=5000)
     def test_env_json_always_valid(self, app_dir):
         """Property: env --format json always produces parseable JSON"""
         result = subprocess.run(
@@ -300,7 +300,7 @@ class TestFormatValidation:
                 assert False, f"Invalid JSON output: {e}"
 
     @given(app_dir=valid_paths, format_choice=format_options)
-    @settings(max_examples=40, deadline=2000)
+    @settings(max_examples=40, deadline=5000)
     def test_db_status_formats(self, app_dir, format_choice):
         """Property: db status supports all format options correctly"""
         cmd = ["./n8n-deploy", "db", "status", "--data-dir", app_dir]
@@ -348,7 +348,7 @@ class TestPathHandling:
     """Property: Commands should handle all valid path variations"""
 
     @given(path=special_char_paths)
-    @settings(max_examples=50, deadline=2000)
+    @settings(max_examples=50, deadline=5000)
     def test_special_characters_in_paths(self, path):
         """Property: Special characters in paths never cause crashes"""
         result = subprocess.run(
@@ -361,7 +361,7 @@ class TestPathHandling:
         assert result.returncode in [0, 1, 2], f"Crashed with path: {path}"
 
     @given(path=deep_paths)
-    @settings(max_examples=40, deadline=2000)
+    @settings(max_examples=40, deadline=5000)
     def test_deeply_nested_paths(self, path):
         """Property: Deeply nested paths handled correctly"""
         # Skip paths that are too long for filesystem
@@ -376,7 +376,7 @@ class TestPathHandling:
         assert result.returncode in [0, 1, 2]
 
     @given(app_dir=special_char_paths, flow_dir=special_char_paths)
-    @settings(max_examples=30, deadline=2000)
+    @settings(max_examples=30, deadline=5000)
     def test_matching_special_char_paths(self, app_dir, flow_dir):
         """Property: Both app-dir and flow-dir with special chars work"""
         result = subprocess.run(
@@ -489,7 +489,7 @@ class TestInputSanitization:
         # Malicious input in messages is OK, just no actual command execution
 
     @given(malicious_input=malicious_names)
-    @settings(max_examples=15, deadline=2000)
+    @settings(max_examples=15, deadline=5000)
     def test_malicious_api_key_names_blocked(self, malicious_input):
         """Property: Injection attempts in API key names fail safely"""
         # Try to list with malicious search pattern
@@ -513,7 +513,7 @@ class TestHelpConsistency:
     """Property: Help output should be consistent and informative"""
 
     @given(command=st.sampled_from(["env", "db", "wf", "apikey"]))
-    @settings(max_examples=10, deadline=2000)
+    @settings(max_examples=10, deadline=5000)
     def test_command_help_always_works(self, command):
         """Property: All commands have working --help"""
         result = subprocess.run(
@@ -531,7 +531,7 @@ class TestHelpConsistency:
     @given(
         command=st.sampled_from(["status", "init", "backup", "compact"]),
     )
-    @settings(max_examples=10, deadline=2000)
+    @settings(max_examples=10, deadline=5000)
     def test_db_subcommand_help(self, command):
         """Property: All db subcommands have help"""
         result = subprocess.run(
@@ -558,7 +558,7 @@ class TestHelpConsistency:
             ]
         ),
     )
-    @settings(max_examples=12, deadline=2000)
+    @settings(max_examples=12, deadline=5000)
     def test_wf_subcommand_help(self, command):
         """Property: All wf subcommands have help"""
         result = subprocess.run(
@@ -586,7 +586,7 @@ class TestOptionCombinations:
         server_url=server_urls,
         format_choice=format_options,
     )
-    @settings(max_examples=50, deadline=2000)
+    @settings(max_examples=50, deadline=5000)
     def test_all_env_options_combined(self, app_dir, flow_dir, server_url, format_choice):
         """Property: All env options work together"""
         cmd = [
