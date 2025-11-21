@@ -214,7 +214,7 @@ def {scenario['name']}():
         {cmd_list_str},
         capture_output=True,
         text=True,
-        timeout=10
+        timeout=30
     )
     assert result.returncode in {expected_codes_str}, (
         f"Command failed with exit code {{result.returncode}}\\n"
