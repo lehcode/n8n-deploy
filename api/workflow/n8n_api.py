@@ -345,8 +345,12 @@ class N8nAPI:
             actual_id = wf.id
 
             # Construct file path from workflow data
-            flow_folder = Path(wf.file_folder) if wf.file_folder else self.base_path
-            if not flow_folder:
+            # Priority: current --flow-dir (self.base_path) > stored file_folder > cwd
+            if self.base_path:
+                flow_folder = self.base_path
+            elif wf.file_folder:
+                flow_folder = Path(wf.file_folder)
+            else:
                 flow_folder = Path.cwd()
 
             file_path = flow_folder / f"{actual_id}.json"

@@ -49,6 +49,7 @@ def server_api(temp_dir: Path) -> ServerCrud:
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 server_id INTEGER NOT NULL,
                 api_key_id INTEGER NOT NULL,
+                is_primary BOOLEAN DEFAULT FALSE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (server_id) REFERENCES servers (id) ON DELETE CASCADE,
                 FOREIGN KEY (api_key_id) REFERENCES api_keys (id) ON DELETE CASCADE,
@@ -268,3 +269,171 @@ class TestServerEdgeCases:
         # Update with no actual changes
         success = server_api.update_server(name="test")
         assert_that(success).is_true()
+
+
+class TestPrimaryApiKeySelection:
+    """Test primary API key selection feature"""
+
+    def test_set_primary_api_key(self, server_api: ServerCrud) -> None:
+        """Test setting a primary API key for a server"""
+        server_api.add_server(url="http://localhost:5678", name="test_server")
+
+        # Create two API keys
+        with server_api.get_connection() as conn:
+            conn.execute("INSERT INTO api_keys (name, api_key) VALUES (?, ?)", ("key1", "value1"))
+            conn.execute("INSERT INTO api_keys (name, api_key) VALUES (?, ?)", ("key2", "value2"))
+            conn.commit()
+
+        # Link both keys
+        server_api.link_api_key("test_server", "key1")
+        server_api.link_api_key("test_server", "key2")
+
+        # Set key1 as primary
+        success = server_api.set_primary_api_key("test_server", "key1")
+        assert_that(success).is_true()
+
+        # Verify key1 is primary
+        primary = server_api.get_primary_api_key_name("test_server")
+        assert_that(primary).is_equal_to("key1")
+
+    def test_set_primary_api_key_overrides_previous(self, server_api: ServerCrud) -> None:
+        """Test that setting a new primary key clears the previous primary"""
+        server_api.add_server(url="http://localhost:5678", name="test_server")
+
+        with server_api.get_connection() as conn:
+            conn.execute("INSERT INTO api_keys (name, api_key) VALUES (?, ?)", ("key1", "value1"))
+            conn.execute("INSERT INTO api_keys (name, api_key) VALUES (?, ?)", ("key2", "value2"))
+            conn.commit()
+
+        server_api.link_api_key("test_server", "key1")
+        server_api.link_api_key("test_server", "key2")
+
+        # Set key1 as primary first
+        server_api.set_primary_api_key("test_server", "key1")
+        assert_that(server_api.get_primary_api_key_name("test_server")).is_equal_to("key1")
+
+        # Now set key2 as primary
+        server_api.set_primary_api_key("test_server", "key2")
+        assert_that(server_api.get_primary_api_key_name("test_server")).is_equal_to("key2")
+
+    def test_set_primary_api_key_not_linked(self, server_api: ServerCrud) -> None:
+        """Test setting primary for unlinked key returns False"""
+        server_api.add_server(url="http://localhost:5678", name="test_server")
+
+        with server_api.get_connection() as conn:
+            conn.execute("INSERT INTO api_keys (name, api_key) VALUES (?, ?)", ("unlinked_key", "value"))
+            conn.commit()
+
+        # Try to set as primary without linking
+        success = server_api.set_primary_api_key("test_server", "unlinked_key")
+        assert_that(success).is_false()
+
+    def test_set_primary_api_key_nonexistent_server(self, server_api: ServerCrud) -> None:
+        """Test setting primary for non-existent server returns False"""
+        with server_api.get_connection() as conn:
+            conn.execute("INSERT INTO api_keys (name, api_key) VALUES (?, ?)", ("key1", "value1"))
+            conn.commit()
+
+        success = server_api.set_primary_api_key("nonexistent", "key1")
+        assert_that(success).is_false()
+
+    def test_get_api_key_for_server_prioritizes_primary(self, server_api: ServerCrud) -> None:
+        """Test that primary key is returned even when linked after others"""
+        server_api.add_server(url="http://localhost:5678", name="test_server")
+
+        with server_api.get_connection() as conn:
+            conn.execute("INSERT INTO api_keys (name, api_key) VALUES (?, ?)", ("key1", "first_value"))
+            conn.execute("INSERT INTO api_keys (name, api_key) VALUES (?, ?)", ("key2", "primary_value"))
+            conn.commit()
+
+        # Link key1 first, then key2
+        server_api.link_api_key("test_server", "key1")
+        server_api.link_api_key("test_server", "key2")
+
+        # Set key2 as primary
+        server_api.set_primary_api_key("test_server", "key2")
+
+        # Should return key2 (primary) not key1 (most recent)
+        key = server_api.get_api_key_for_server("test_server")
+        assert_that(key).is_equal_to("primary_value")
+
+    def test_get_api_key_for_server_falls_back_to_recent(self, server_api: ServerCrud) -> None:
+        """Test that most recent key is returned when no primary is set"""
+        server_api.add_server(url="http://localhost:5678", name="test_server")
+
+        with server_api.get_connection() as conn:
+            conn.execute("INSERT INTO api_keys (name, api_key) VALUES (?, ?)", ("key1", "first_value"))
+            conn.execute("INSERT INTO api_keys (name, api_key) VALUES (?, ?)", ("key2", "second_value"))
+            conn.commit()
+
+        server_api.link_api_key("test_server", "key1")
+        server_api.link_api_key("test_server", "key2")
+
+        # No primary set - should return most recently linked (key2)
+        key = server_api.get_api_key_for_server("test_server")
+        assert_that(key).is_equal_to("second_value")
+
+    def test_get_api_key_for_server_ignores_inactive(self, server_api: ServerCrud) -> None:
+        """Test that inactive API keys are not returned"""
+        server_api.add_server(url="http://localhost:5678", name="test_server")
+
+        with server_api.get_connection() as conn:
+            conn.execute(
+                "INSERT INTO api_keys (name, api_key, is_active) VALUES (?, ?, ?)", ("inactive", "inactive_value", False)
+            )
+            conn.execute("INSERT INTO api_keys (name, api_key, is_active) VALUES (?, ?, ?)", ("active", "active_value", True))
+            conn.commit()
+
+        server_api.link_api_key("test_server", "inactive")
+        server_api.link_api_key("test_server", "active")
+
+        # Set inactive as primary
+        server_api.set_primary_api_key("test_server", "inactive")
+
+        # Should return active key since inactive is filtered out
+        key = server_api.get_api_key_for_server("test_server")
+        assert_that(key).is_equal_to("active_value")
+
+    def test_get_server_api_keys_includes_primary_flag(self, server_api: ServerCrud) -> None:
+        """Test that get_server_api_keys returns is_primary field"""
+        server_api.add_server(url="http://localhost:5678", name="test_server")
+
+        with server_api.get_connection() as conn:
+            conn.execute("INSERT INTO api_keys (name, api_key) VALUES (?, ?)", ("key1", "value1"))
+            conn.execute("INSERT INTO api_keys (name, api_key) VALUES (?, ?)", ("key2", "value2"))
+            conn.commit()
+
+        server_api.link_api_key("test_server", "key1")
+        server_api.link_api_key("test_server", "key2")
+        server_api.set_primary_api_key("test_server", "key1")
+
+        keys = server_api.get_server_api_keys("test_server")
+        assert_that(keys).is_length(2)
+
+        # Find key1 and key2 in results
+        key1_data = next((k for k in keys if k["name"] == "key1"), None)
+        key2_data = next((k for k in keys if k["name"] == "key2"), None)
+
+        assert_that(key1_data).is_not_none()
+        assert_that(key2_data).is_not_none()
+        assert_that(key1_data["is_primary"]).is_true()
+        assert_that(key2_data["is_primary"]).is_false()
+
+    def test_get_primary_api_key_name_no_primary(self, server_api: ServerCrud) -> None:
+        """Test getting primary key name when none is set"""
+        server_api.add_server(url="http://localhost:5678", name="test_server")
+
+        with server_api.get_connection() as conn:
+            conn.execute("INSERT INTO api_keys (name, api_key) VALUES (?, ?)", ("key1", "value1"))
+            conn.commit()
+
+        server_api.link_api_key("test_server", "key1")
+
+        # No primary set
+        primary = server_api.get_primary_api_key_name("test_server")
+        assert_that(primary).is_none()
+
+    def test_get_primary_api_key_name_nonexistent_server(self, server_api: ServerCrud) -> None:
+        """Test getting primary key for non-existent server returns None"""
+        primary = server_api.get_primary_api_key_name("nonexistent")
+        assert_that(primary).is_none()

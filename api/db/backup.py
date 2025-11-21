@@ -142,14 +142,9 @@ class BackupApi(BaseDB):
             if not ids_to_delete:
                 return 0
 
-            # Delete old backup records
-            placeholders = ",".join("?" * len(ids_to_delete))
-            cursor = conn.execute(
-                f"""
-                DELETE FROM configurations WHERE id IN ({placeholders})
-            """,
-                ids_to_delete,
-            )
+            # Delete old backup records one by one (avoids dynamic SQL construction)
+            for id_to_delete in ids_to_delete:
+                conn.execute("DELETE FROM configurations WHERE id = ?", (id_to_delete,))
 
             conn.commit()
-            return cursor.rowcount
+            return len(ids_to_delete)
