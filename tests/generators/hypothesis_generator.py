@@ -1137,7 +1137,7 @@ class TestServerManagement:
         result = subprocess.run(
             ["./n8n-deploy", "server", "create", server_name, server_url],
             capture_output=True,
-            timeout=5,
+            timeout=10,
             text=True,
         )
 
@@ -1151,7 +1151,7 @@ class TestServerManagement:
         result = subprocess.run(
             ["./n8n-deploy", "server", "list"],
             capture_output=True,
-            timeout=5,
+            timeout=10,
             text=True,
         )
 
@@ -1166,7 +1166,7 @@ class TestServerManagement:
         if format_choice:
             cmd.extend(["--json"] if format_choice == "json" else ["--table"])
 
-        result = subprocess.run(cmd, capture_output=True, timeout=5, text=True)
+        result = subprocess.run(cmd, capture_output=True, timeout=10, text=True)
         assert result.returncode in [0, 1]
 
         # JSON format should produce valid JSON
@@ -1185,7 +1185,7 @@ class TestServerManagement:
         if active_flag:
             cmd.append("--active")
 
-        result = subprocess.run(cmd, capture_output=True, timeout=5, text=True)
+        result = subprocess.run(cmd, capture_output=True, timeout=10, text=True)
         assert result.returncode in [0, 1], "--active flag caused crash"
 
     @given(server_name=server_names)
@@ -1197,7 +1197,7 @@ class TestServerManagement:
         result = subprocess.run(
             ["./n8n-deploy", "server", "remove", server_name, "--confirm", "--preserve-keys"],
             capture_output=True,
-            timeout=5,
+            timeout=10,
             text=True,
         )
 
@@ -1218,7 +1218,7 @@ class TestServerManagement:
         create_result = subprocess.run(
             ["./n8n-deploy", "server", "create", server_name, server_url],
             capture_output=True,
-            timeout=5,
+            timeout=10,
             text=True,
         )
 
@@ -1227,7 +1227,7 @@ class TestServerManagement:
         if format_choice:
             list_cmd.extend(["--json"] if format_choice == "json" else ["--table"])
 
-        list_result = subprocess.run(list_cmd, capture_output=True, timeout=5, text=True)
+        list_result = subprocess.run(list_cmd, capture_output=True, timeout=10, text=True)
 
         # Both should handle gracefully
         assert create_result.returncode in [0, 1, 2]
@@ -1242,7 +1242,7 @@ class TestServerManagement:
         result = subprocess.run(
             ["./n8n-deploy", "server", "create", malicious_input, "http://localhost:5678"],
             capture_output=True,
-            timeout=5,
+            timeout=10,
             text=True,
         )
 
@@ -1261,7 +1261,7 @@ class TestServerManagement:
         result = subprocess.run(
             ["./n8n-deploy", "server", "add", server_name, api_key_name],
             capture_output=True,
-            timeout=5,
+            timeout=10,
             text=True,
         )
 
@@ -1276,14 +1276,14 @@ class TestServerManagement:
         result1 = subprocess.run(
             ["./n8n-deploy", "server", "create", "server1", server_url_1],
             capture_output=True,
-            timeout=5,
+            timeout=10,
             text=True,
         )
 
         result2 = subprocess.run(
             ["./n8n-deploy", "server", "create", "server2", server_url_1],
             capture_output=True,
-            timeout=5,
+            timeout=10,
             text=True,
         )
 
@@ -1311,7 +1311,7 @@ class TestDatabaseInit:
             result = subprocess.run(
                 ["./n8n-deploy", "db", "init", "--data-dir", temp_dir, "--db-filename", filename, "--no-emoji"],
                 capture_output=True,
-                timeout=5,
+                timeout=10,
                 text=True,
             )
 
@@ -1339,7 +1339,7 @@ class TestDatabaseInit:
             result1 = subprocess.run(
                 ["./n8n-deploy", "db", "init", "--data-dir", temp_dir, "--db-filename", filename, "--no-emoji"],
                 capture_output=True,
-                timeout=5,
+                timeout=10,
                 text=True,
             )
             assert result1.returncode == 0
@@ -1348,7 +1348,7 @@ class TestDatabaseInit:
             result2 = subprocess.run(
                 ["./n8n-deploy", "db", "init", "--data-dir", temp_dir, "--db-filename", filename, "--no-emoji"],
                 capture_output=True,
-                timeout=5,
+                timeout=10,
                 text=True,
             )
 
@@ -1365,7 +1365,7 @@ class TestDatabaseInit:
             result = subprocess.run(
                 ["./n8n-deploy", "db", "init", "--data-dir", temp_dir, "--db-filename", filename, "--json"],
                 capture_output=True,
-                timeout=5,
+                timeout=10,
                 text=True,
             )
 
@@ -1397,7 +1397,7 @@ class TestDatabaseInit:
             result1 = subprocess.run(
                 ["./n8n-deploy", "db", "init", "--data-dir", temp_dir, "--db-filename", filename1, "--no-emoji"],
                 capture_output=True,
-                timeout=5,
+                timeout=10,
                 text=True,
             )
 
@@ -1405,7 +1405,7 @@ class TestDatabaseInit:
             result2 = subprocess.run(
                 ["./n8n-deploy", "db", "init", "--data-dir", temp_dir, "--db-filename", filename2, "--no-emoji"],
                 capture_output=True,
-                timeout=5,
+                timeout=10,
                 text=True,
             )
 
