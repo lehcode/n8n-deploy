@@ -74,8 +74,11 @@ Changelog = "https://github.com/lehcode/n8n-deploy/releases"
 [project.scripts]
 n8n-deploy = "api.cli:main"
 
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["api", "api.*"]
+
 [tool.setuptools]
-packages = ["api"]
 include-package-data = true
 
 [tool.setuptools.package-data]

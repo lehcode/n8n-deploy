@@ -19,12 +19,17 @@ class TestE2ECLI(E2ETestBase):
 
     def test_version_command(self) -> None:
         """Test --version flag shows correct version"""
+        import re
+
         returncode, stdout, stderr = self.run_cli_command(["--version"])
 
         self.assert_command_details(returncode, stdout, stderr, 0, "Version command test")
 
         assert "n8n-deploy, version" in stdout, f"Version string not found in output: '{stdout}'"
-        assert "2.0.0" in stdout, f"Version number 2.0.0 not found in output: '{stdout}'"
+        # Check for semantic version pattern
+        # Supports: 2.0.3, 2.0.3.dev42, 2.3.0-rc1, 0.1.dev37 (CI fallback)
+        version_pattern = r"\d+\.\d+(\.\d+)?(\.dev\d+|-rc\d+)?"
+        assert re.search(version_pattern, stdout), f"Valid version number not found in output: '{stdout}'"
         # Wrapper script may output setup message to stderr
         assert stderr == "" or "Setting up virtual environment" in stderr, f"Unexpected stderr output: '{stderr}'"
 
@@ -62,10 +67,11 @@ class TestE2ECLI(E2ETestBase):
         self.assert_command_details(returncode, stdout, stderr, 0, "Version command test")
 
         assert "n8n-deploy, version" in stdout, f"Version string not found. STDOUT: {stdout[:200]}..."
-        # Should contain version number (format: "n8n-deploy, version X.Y.Z")
+        # Should contain version number
+        # Supports: 2.0.3, 2.0.3.dev42, 2.3.0-rc1, 0.1.dev37 (CI fallback)
         import re
 
-        version_pattern = r"n8n-deploy, version \d+\.\d+\.\d+"
+        version_pattern = r"n8n-deploy, version \d+\.\d+(\.\d+)?(\.dev\d+|-rc\d+)?"
         assert re.search(version_pattern, stdout), f"Version format incorrect. STDOUT: {stdout[:200]}..."
 
     def test_help_and_version_combination_behavior(self) -> None:

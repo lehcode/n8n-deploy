@@ -198,3 +198,52 @@ class TestWorkflowFileHandling(WorkflowTestHelpers):
             except UnicodeError:
                 # Skip if system doesn't support Unicode
                 pytest.skip(f"System doesn't support Unicode name: {name}")
+
+    def test_workflow_add_without_id(self) -> None:
+        """Test adding workflow without id field (new workflow scenario)"""
+        self.setup_database()
+
+        # Create workflow without ID (simulates new workflow before server upload)
+        workflow_data = {
+            "name": "New Workflow Without ID",
+            "nodes": [
+                {
+                    "id": "node1",
+                    "type": "n8n-nodes-base.start",
+                    "typeVersion": 1,
+                    "position": [240, 300],
+                    "parameters": {},
+                }
+            ],
+            "connections": {},
+            "active": False,
+            "settings": {},
+        }
+
+        workflow_file = self.create_test_workflow("no_id_test", workflow_data)
+
+        # Add should succeed and generate draft ID
+        returncode, stdout, stderr = self.run_cli_command(
+            [
+                "--data-dir",
+                self.temp_dir,
+                "--flow-dir",
+                self.temp_flow_dir,
+                "wf",
+                "add",
+                "no_id_test.json",
+            ]
+        )
+
+        assert returncode == 0, f"Failed to add workflow without ID: {stderr}"
+        # Should mention draft ID generation
+        assert "draft_" in stdout or "Draft" in stdout or "WARNING" in stdout
+
+        # Verify workflow was added to database
+        list_returncode, list_stdout, _ = self.run_cli_command(["--data-dir", self.temp_dir, "wf", "list", "--json"])
+
+        assert list_returncode == 0
+        workflows = self.assert_json_output_valid(list_stdout)
+        assert len(workflows) == 1
+        assert workflows[0]["name"] == "New Workflow Without ID"
+        assert workflows[0]["id"].startswith("draft_")

@@ -11,6 +11,33 @@ description: "Managing n8n workflows with n8n-deploy"
 
 n8n-deploy provides comprehensive workflow management capabilities, allowing you to interact with n8n workflows seamlessly.
 
+## 🆕 Adding New Workflows
+
+n8n-deploy supports adding workflows that don't have a server-assigned ID yet. This is common when:
+
+- Creating new workflows from scratch
+- Exporting workflows from the n8n UI (which may not include the server ID)
+
+### How It Works
+
+1. **Add workflow without ID** - Tool generates a temporary `draft_{uuid}` ID
+2. **Push to server** - Server assigns a permanent ID
+3. **Automatic update** - Draft ID replaced with server ID, file renamed
+
+```bash
+# Add workflow without ID (generates draft_xxx temporary ID)
+n8n-deploy wf add my-workflow.json --link-remote production
+# Output: WARNING: No ID found. Generated draft ID: draft_abc123...
+
+# Push to server (replaces draft ID with server-assigned ID)
+n8n-deploy wf push draft_abc123 --remote production
+# Output: Updating draft ID to server ID xYz789...
+# File renamed: my-workflow.json → xYz789.json
+```
+
+{: .note }
+> The draft ID is temporary. After your first push, the workflow file and database entry are updated with the permanent server-assigned ID.
+
 ## 🌟 Workflow Operations
 
 ### List Workflows
