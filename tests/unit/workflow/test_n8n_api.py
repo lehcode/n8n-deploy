@@ -1,4 +1,4 @@
-"""Unit tests for api/wf/n8n_api.py module
+"""Unit tests for api/workflow/n8n_api.py module
 
 Tests for N8nAPI class methods.
 """

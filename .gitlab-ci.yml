@@ -387,10 +387,19 @@ test:unit:
     - quality:mypy
     - quality:black
   rules:
-    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "main"'
+    # Always run on protected branches and tags
+    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "develop"'
     - if: '$CI_COMMIT_TAG'
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
     - if: '$CI_PIPELINE_SOURCE == "web"'
+    # On MRs, only run when code files change (skip for docs-only changes)
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      changes:
+        - api/**/*
+        - tests/**/*
+        - requirements.txt
+        - pyproject.toml
+        - run_tests.py
+        - .gitlab-ci.yml
   script:
     - export N8N_DEPLOY_TESTING=1
     - ./run_tests.py --unit --no-deps-check -q
