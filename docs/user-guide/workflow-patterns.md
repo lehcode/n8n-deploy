@@ -14,6 +14,45 @@ This guide demonstrates practical workflow management patterns using n8n-deploy.
 
 ## Basic Patterns
 
+### Create New Workflow from Scratch
+
+Create and deploy a brand new workflow that doesn't exist on any server yet:
+
+```bash
+# Create workflow JSON (no ID field needed)
+cat > my-workflow.json << 'EOF'
+{
+  "name": "My New Workflow",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.start",
+      "typeVersion": 1,
+      "position": [250, 300]
+    }
+  ],
+  "connections": {},
+  "active": false,
+  "settings": {}
+}
+EOF
+
+# Add to n8n-deploy (generates draft_xxx ID)
+n8n-deploy wf add my-workflow.json --link-remote production
+# Output: WARNING: No ID found. Generated draft ID: draft_abc123...
+
+# Push to server (draft ID replaced with server-assigned ID)
+n8n-deploy wf push draft_abc123
+# Output: Updating draft ID draft_abc123 to server ID xYz789...
+# File automatically renamed to xYz789.json
+
+# Verify the new workflow
+n8n-deploy wf list
+```
+
+{: .tip }
+> After the first push, your workflow file is renamed from `my-workflow.json` to `{server_id}.json` and the database is updated with the permanent server-assigned ID.
+
 ### Initialize New Project
 
 Set up n8n-deploy for a new workflow project:

@@ -34,7 +34,9 @@ class TestCLIMainModule:
             cwd=Path(__file__).parent.parent.parent.parent,
         )
         assert_that(result.returncode).is_equal_to(0)
-        assert_that(result.stdout).matches(r"\d+\.\d+\.\d+")
+        # Match semantic version with optional dev/rc suffix
+        # Supports: 2.0.3, 2.0.3.dev42, 2.3.0-rc1, 0.1.dev37 (CI fallback)
+        assert_that(result.stdout).matches(r"\d+\.\d+(\.\d+)?(\.dev\d+|-rc\d+)?")
 
     def test_main_module_no_args(self):
         """Test main module behavior with no arguments"""

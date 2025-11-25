@@ -102,8 +102,17 @@ def add(
         workflow_id = workflow_data.get("id")
         workflow_name = workflow_data.get("name", workflow_file.replace(".json", ""))
 
+        # Generate draft UUID for new workflows without server-assigned ID
         if not workflow_id:
-            cli_error(f"No 'id' field found in workflow file: {file_path}", no_emoji)
+            import uuid
+
+            workflow_id = f"draft_{uuid.uuid4()}"
+            if not output_json and not no_emoji:
+                console.print(f"[yellow]⚠️  No ID found in workflow file. Generated draft ID: {workflow_id}[/yellow]")
+                console.print(f"[yellow]    This will be replaced with server-assigned ID after first push.[/yellow]")
+            elif not output_json:
+                console.print(f"WARNING: No ID found in workflow file. Generated draft ID: {workflow_id}")
+                console.print("         This will be replaced with server-assigned ID after first push.")
 
         # Add workflow to database
         manager = WorkflowApi(config=config)

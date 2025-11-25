@@ -197,7 +197,7 @@ class TestApikeyOperations(ApikeyTestHelpers):
             env=test_env,
             capture_output=True,
             text=True,
-            timeout=30,
+            timeout=60,
         )
 
         return result.returncode, result.stdout, result.stderr

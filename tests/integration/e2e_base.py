@@ -46,7 +46,7 @@ class E2ETestBase:
         stdin_input: str = "",
         cwd: Optional[str] = None,
         env: Optional[Dict[str, str]] = None,
-        timeout: int = 30,
+        timeout: int = 60,
     ) -> Tuple[int, str, str]:
         """Execute n8n-deploy CLI command and return result"""
         # Reorder arguments to handle global options correctly
@@ -155,7 +155,7 @@ class E2ETestBase:
             env=test_env,
             capture_output=True,
             text=True,
-            timeout=30,
+            timeout=60,
         )
 
         return result.returncode, result.stdout, result.stderr

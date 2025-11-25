@@ -7,11 +7,19 @@ from .models import Workflow
 from .db import DBApi
 from .workflow import WorkflowApi
 
-__version__ = "2.2.3"
+# Dynamic version from package metadata (set by setuptools_scm from git tags)
+try:
+    from importlib.metadata import version as _get_version
+
+    __version__ = _get_version("n8n-deploy")
+except Exception:
+    __version__ = "0.0.0"  # Fallback for development without install
+
 __author__ = "Lehcode"
 
 __all__ = [
     "Workflow",
     "DBApi",
     "WorkflowApi",
+    "__version__",
 ]

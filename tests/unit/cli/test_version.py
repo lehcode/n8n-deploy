@@ -32,8 +32,9 @@ class TestCLIVersion:
         assert result.exit_code == 0
         assert "n8n-deploy, version" in result.output
 
-        # Validate version format (X.Y.Z)
-        version_pattern = r"n8n-deploy, version \d+\.\d+\.\d+"
+        # Validate version format
+        # Supports: 2.0.3, 2.0.3.dev42, 2.3.0-rc1, 0.1.dev37 (CI fallback)
+        version_pattern = r"n8n-deploy, version \d+\.\d+(\.\d+)?(\.dev\d+|-rc\d+)?"
         assert re.search(version_pattern, result.output), f"Invalid version format: {result.output}"
 
     def test_basic_version_command(self):
@@ -48,12 +49,13 @@ class TestCLIVersion:
         assert result.exit_code == 0
 
         # Extract version number and validate format
+        # Supports: 2.0.3, 2.0.3.dev42, 2.3.0-rc1, 0.1.dev37 (CI fallback)
         version_line = result.output.strip()
-        version_match = re.search(r"(\d+\.\d+\.\d+)", version_line)
+        version_match = re.search(r"(\d+\.\d+(?:\.\d+)?)", version_line)
         assert version_match, f"Version format invalid: {version_line}"
 
         version_parts = version_match.group(1).split(".")
-        assert len(version_parts) == 3, "Version should have 3 parts (major.minor.patch)"
+        assert len(version_parts) in [2, 3], "Version should have 2 or 3 parts (major.minor or major.minor.patch)"
 
         # All parts should be numeric
         for part in version_parts:

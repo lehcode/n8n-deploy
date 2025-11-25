@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Accept workflows without `id` field - auto-generates `draft_{uuid}` temporary ID (ND-47)
+- Automatic ID replacement with server-assigned ID after first successful push
+- Workflow file renaming from `draft_*.json` to `{server_id}.json` on push
+
+### Changed
+
+- Test subprocess timeouts increased from 30s to 60s for CI stability
+
 ## [2.2.3] - 2024-11-22
 
 - **Changed**: CI/CD pipelines now trigger deployments only on version tags, preventing accidental releases from branch pushes
