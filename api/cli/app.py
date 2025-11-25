@@ -131,8 +131,16 @@ def handle_version_help(ctx: click.Context, _param: click.Parameter, value: Any)
         # Silently ignore when both are used - exit with no output
         ctx.exit(0)
 
-    # Show version only if help is not present
-    click.echo("n8n-deploy, version 2.0.0")
+    # Show version from package metadata
+    try:
+        from importlib.metadata import version
+
+        pkg_version = version("n8n-deploy")
+    except Exception:
+        from api import __version__
+
+        pkg_version = __version__
+    click.echo(f"n8n-deploy, version {pkg_version}")
     ctx.exit()
 
 

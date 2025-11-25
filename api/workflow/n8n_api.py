@@ -385,6 +385,46 @@ class N8nAPI:
                 result = self.create_n8n_workflow(workflow_data)
 
             if result:
+                # Handle draft ID replacement for new workflows
+                if actual_id.startswith("draft_") and not existing_workflow:
+                    # Extract server-assigned ID from create response
+                    server_id = result.get("id")
+                    if server_id and server_id != actual_id:
+                        print(f"🔄 Updating draft ID {actual_id} to server ID {server_id}...")
+
+                        # Get the current workflow data
+                        db_workflow = self.db.get_workflow(actual_id)
+                        if db_workflow:
+                            # Create new database entry with server ID
+                            from api.models import Workflow
+
+                            new_wf = Workflow(
+                                id=server_id,
+                                name=db_workflow.name,
+                                file=f"{server_id}.json",
+                                file_folder=str(flow_folder),
+                                server_id=db_workflow.server_id,
+                                status=db_workflow.status,
+                                created_at=db_workflow.created_at,
+                                updated_at=datetime.now(timezone.utc),
+                                last_synced=datetime.now(timezone.utc),
+                                n8n_version_id=self.get_n8n_version(),
+                                push_count=1,
+                                pull_count=0,
+                            )
+
+                            # Rename workflow file
+                            new_file_path = flow_folder / f"{server_id}.json"
+                            if file_path.exists():
+                                file_path.rename(new_file_path)
+                                print(f"📄 Renamed file: {file_path.name} → {new_file_path.name}")
+
+                            # Update database: remove draft, add server ID
+                            self.db.delete_workflow(actual_id)
+                            self.db.add_workflow(new_wf)
+                            print(f"✅ Workflow ID updated: {actual_id} → {server_id}")
+                            return True
+
                 # Get n8n server version and update wf
                 n8n_version = self.get_n8n_version()
                 if n8n_version:
