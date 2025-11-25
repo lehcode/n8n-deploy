@@ -24,6 +24,7 @@
 
 - 🗂️ **Database-Driven Workflow Management**
   - SQLite metadata store for tracking workflows
+  - Support for new workflows without server ID (auto-generates draft ID)
   - Flexible base folder configuration
   - Plain text API key storage
 

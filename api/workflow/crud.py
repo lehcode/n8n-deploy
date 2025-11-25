@@ -61,10 +61,13 @@ class WorkflowCRUD:
             with open(file_path, "r", encoding="utf-8") as f:
                 workflow_data = json.load(f)
 
-            # Extract wf ID from JSON
+            # Extract wf ID from JSON, generate draft UUID for new workflows
             workflow_id = workflow_data.get("id")
             if not workflow_id:
-                raise ValueError(f"No 'id' field found in wf file: {file_path}")
+                import uuid
+
+                workflow_id = f"draft_{uuid.uuid4()}"
+                # Temporary ID will be replaced after first successful push to n8n server
 
             n8n_version_id = workflow_data.get("n8n_version_id")
 

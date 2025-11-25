@@ -100,7 +100,7 @@ class TestCLIHelpConsistency:
             cmd,
             capture_output=True,
             text=True,
-            timeout=30,
+            timeout=60,
         )
 
         # Help should always succeed

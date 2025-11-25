@@ -7,6 +7,7 @@ import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import click
 import pytest
 from click.testing import CliRunner
 
@@ -43,10 +44,11 @@ class TestCLICore:
         assert result.exit_code == 0
         assert "n8n-deploy, version" in result.output
 
-        # Validate version format (X.Y.Z)
+        # Validate version format
+        # Supports: 2.0.3, 2.0.3.dev42, 2.3.0-rc1, 0.1.dev37 (CI fallback)
         import re
 
-        version_pattern = r"n8n-deploy, version \d+\.\d+\.\d+"
+        version_pattern = r"n8n-deploy, version \d+\.\d+(\.\d+)?(\.dev\d+|-rc\d+)?"
         assert re.search(version_pattern, result.output), f"Invalid version format: {result.output}"
 
     def test_help_command_content(self):
@@ -203,7 +205,8 @@ class TestCLIVersion:
 
         import re
 
-        version_pattern = r"n8n-deploy, version \d+\.\d+\.\d+"
+        # Supports: 2.0.3, 2.0.3.dev42, 2.3.0-rc1, 0.1.dev37 (CI fallback)
+        version_pattern = r"n8n-deploy, version \d+\.\d+(\.\d+)?(\.dev\d+|-rc\d+)?"
         assert re.search(version_pattern, result.output), f"Invalid version format: {result.output}"
 
 
@@ -228,12 +231,92 @@ class TestCLIHelpVersionCombinations:
 
 
 class TestCustomGroupMethods:
-    """Tests for CustomGroup class methods (0% coverage)"""
+    """Tests for CustomGroup class methods"""
+
+    def setup_method(self):
+        """Set up test environment"""
+        self.runner = CliRunner()
 
     def test_get_command(self):
-        """TODO: Test CustomGroup.get_command method"""
-        pytest.skip("TODO: Implement test for CustomGroup.get_command (disables prefix matching)")
+        """Test CustomGroup.get_command disables prefix matching - requires exact names"""
+        from api.cli.app import CustomGroup
+
+        # Create a custom group with some commands
+        @click.group(cls=CustomGroup)
+        def test_group():
+            pass
+
+        @test_group.command(name="status")
+        def status_cmd():
+            click.echo("status called")
+
+        @test_group.command(name="statistics")
+        def statistics_cmd():
+            click.echo("statistics called")
+
+        # Test exact match works
+        result = self.runner.invoke(test_group, ["status"])
+        assert result.exit_code == 0
+        assert "status called" in result.output
+
+        # Test that prefix matching is DISABLED (stat should NOT match status)
+        result = self.runner.invoke(test_group, ["stat"])
+        assert result.exit_code != 0
+        assert "No such command 'stat'" in result.output
+
+        # Test another partial match fails
+        result = self.runner.invoke(test_group, ["statis"])
+        assert result.exit_code != 0
+        assert "No such command 'statis'" in result.output
+
+    def test_get_command_exact_match_required(self):
+        """Test that only exact command names work, not partial matches"""
+        # Use the real CLI for this test
+        # "wf" should work, but "w" should not
+        result = self.runner.invoke(cli, ["wf", "--help"])
+        assert result.exit_code == 0
+
+        result = self.runner.invoke(cli, ["w", "--help"])
+        assert result.exit_code != 0
+        assert "No such command 'w'" in result.output
 
     def test_format_usage(self):
-        """TODO: Test CustomGroup.format_usage method"""
-        pytest.skip("TODO: Implement test for CustomGroup.format_usage")
+        """Test CustomGroup.format_usage produces correct usage format"""
+        from io import StringIO
+
+        from api.cli.app import CustomGroup
+
+        # Create a custom group
+        @click.group(cls=CustomGroup)
+        def test_group():
+            """Test group"""
+            pass
+
+        @test_group.command(name="test")
+        def test_cmd():
+            """Test command"""
+            pass
+
+        # Test help output contains our custom format
+        result = self.runner.invoke(test_group, ["--help"])
+        assert result.exit_code == 0
+        # The format should be "n8n-deploy|./n8n-deploy COMMAND [OPTIONS]..."
+        assert "COMMAND [OPTIONS]..." in result.output
+
+    def test_format_usage_real_cli(self):
+        """Test format_usage on the real CLI produces expected output"""
+        result = self.runner.invoke(cli, ["--help"])
+        assert result.exit_code == 0
+        # Verify our custom usage line is present
+        assert "Usage: n8n-deploy|./n8n-deploy COMMAND [OPTIONS]..." in result.output
+
+    def test_custom_group_handles_version_help_mutual_exclusion(self):
+        """Test CustomGroup.parse_args handles --help --version mutual exclusion"""
+        # Both --help and --version should result in silent exit
+        result = self.runner.invoke(cli, ["--help", "--version"])
+        assert result.exit_code == 0
+        assert result.output == ""
+
+        result = self.runner.invoke(cli, ["--version", "--help"])
+        assert result.exit_code == 0
+        assert result.output == ""
