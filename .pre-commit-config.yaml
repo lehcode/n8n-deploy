@@ -38,18 +38,10 @@ repos:
         pass_filenames: false
 
 
-      - id: run-unit-tests
-        name: Run unit tests
-        entry: python
-        args: [run_tests.py, --unit, --no-deps-check]
-        language: system
+      - id: run-ci-simulation
+        name: Run CI simulation
+        entry: ./scripts/run-like-ci.sh
+        language: script
         stages: [pre-push]
         pass_filenames: false
-
-      - id: run-integration-tests
-        name: Run integration tests
-        entry: python
-        args: [run_tests.py, --integration, --no-deps-check]
-        language: system
-        stages: [pre-push]
-        pass_filenames: false
+        verbose: true
