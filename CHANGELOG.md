@@ -15,14 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Automatic ID replacement with server-assigned ID after first successful push
 - Workflow file renaming from `draft_*.json` to `{server_id}.json` on push
 
-### Changed
-
-- Test subprocess timeouts increased from 30s to 60s for CI stability
-- Version reset to 0.1.4 for fresh start
-- Development status changed to Beta
-- Tag format updated to PEP 440 compliant (v0.1.4rc1 instead of v0.1.4-rc1)
-
-## [0.1.4] - 2024-11-26
+## [0.1.5] - 2024-11-27
 
 ### Added
 
@@ -37,7 +30,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comprehensive type annotations with strict mypy compliance
 - Property-based testing with Hypothesis framework
 
+### Changed
+
+- Test subprocess timeouts increased from 30s to 60s for CI stability
+- Development status changed to Beta
+- Tag format updated to PEP 440 compliant (v0.1.5rc1 instead of v0.1.5-rc1)
+
+### Fixed
+
+- GitHub CI: use `github.ref_name` for PEP 440 tag detection (was matching "refs/tags/")
+
 ---
 
-[Unreleased]: https://github.com/lehcode/n8n-deploy/compare/v0.1.4...HEAD
-[0.1.4]: https://github.com/lehcode/n8n-deploy/releases/tag/v0.1.4
+[Unreleased]: https://github.com/lehcode/n8n-deploy/compare/v0.1.5...HEAD
+[0.1.5]: https://github.com/lehcode/n8n-deploy/releases/tag/v0.1.5
