@@ -376,9 +376,7 @@ def set_primary(
             if no_emoji:
                 console.print(f"Failed to set primary key. Key '{api_key_name}' may not be linked to server '{server_name}'")
             else:
-                console.print(
-                    f"❌ Failed to set primary key. Key '{api_key_name}' may not be linked to server '{server_name}'"
-                )
+                console.print(f"❌ Failed to set primary key. Key '{api_key_name}' may not be linked to server '{server_name}'")
             raise click.Abort()
 
     except click.Abort:
