@@ -228,6 +228,7 @@ test:unit:
   tags:
     - python
   interruptible: true
+  resource_group: test-runner  # Serialize test execution across pipelines
   <<: *python_setup
   needs:
     - quality:mypy
@@ -237,7 +238,9 @@ test:unit:
     - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "develop"'
     - if: '$CI_COMMIT_TAG'
     - if: '$CI_PIPELINE_SOURCE == "web"'
-    # On MRs, only run when code files change (skip for docs-only changes)
+    # Always run on MRs to protected branches (required for merge)
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && ($CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master" || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop")'
+    # On other MRs, only run when code files change (skip for docs-only changes)
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
       changes:
         - api/**/*
@@ -264,6 +267,7 @@ test:integration:
   tags:
     - python
   interruptible: true
+  resource_group: test-runner  # Serialize test execution across pipelines
   <<: *python_setup
   needs:
     - quality:mypy
@@ -273,7 +277,9 @@ test:integration:
     - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "develop"'
     - if: '$CI_COMMIT_TAG'
     - if: '$CI_PIPELINE_SOURCE == "web"'
-    # On MRs, only run when code files change (skip for docs-only changes)
+    # Always run on MRs to protected branches (required for merge)
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && ($CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master" || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop")'
+    # On other MRs, only run when code files change (skip for docs-only changes)
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
       changes:
         - api/**/*
