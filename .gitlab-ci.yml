@@ -100,6 +100,10 @@ secret_detection:
   tags:
     - python
   interruptible: true
+  rules:
+    - if: '$CI_COMMIT_TAG'
+      when: never
+    - when: on_success
   cache:
     policy: pull
   variables:
@@ -120,6 +124,10 @@ dependency_scanning:
   tags:
     - python
   interruptible: true
+  rules:
+    - if: '$CI_COMMIT_TAG'
+      when: never
+    - when: on_success
   cache:
     policy: pull
   before_script:
@@ -139,6 +147,10 @@ security:bandit:
   tags:
     - python
   interruptible: true
+  rules:
+    - if: '$CI_COMMIT_TAG'
+      when: never
+    - when: on_success
   cache:
     policy: pull
   variables:
@@ -161,6 +173,10 @@ security:semgrep:
   tags:
     - python
   interruptible: true
+  rules:
+    - if: '$CI_COMMIT_TAG'
+      when: never
+    - when: on_success
   cache:
     policy: pull
   variables:
@@ -187,6 +203,10 @@ quality:mypy:
   tags:
     - python
   interruptible: true
+  rules:
+    - if: '$CI_COMMIT_TAG'
+      when: never
+    - when: on_success
   <<: *python_setup
   needs:
     - security:bandit
@@ -206,6 +226,10 @@ quality:black:
   tags:
     - python
   interruptible: true
+  rules:
+    - if: '$CI_COMMIT_TAG'
+      when: never
+    - when: on_success
   <<: *python_setup
   needs:
     - security:bandit
@@ -234,9 +258,11 @@ test:unit:
     - quality:mypy
     - quality:black
   rules:
-    # Always run on protected branches and tags
-    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "develop"'
+    # Skip on tags - code was validated before tagging
     - if: '$CI_COMMIT_TAG'
+      when: never
+    # Always run on protected branches
+    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "develop"'
     - if: '$CI_PIPELINE_SOURCE == "web"'
     # Always run on MRs to protected branches (required for merge)
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && ($CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master" || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop")'
@@ -273,9 +299,11 @@ test:integration:
     - quality:mypy
     - quality:black
   rules:
-    # Always run on protected branches and tags
-    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "develop"'
+    # Skip on tags - code was validated before tagging
     - if: '$CI_COMMIT_TAG'
+      when: never
+    # Always run on protected branches
+    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "develop"'
     - if: '$CI_PIPELINE_SOURCE == "web"'
     # Always run on MRs to protected branches (required for merge)
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && ($CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master" || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop")'
@@ -310,12 +338,13 @@ test:hypothesis:
     - quality:mypy
     - quality:black
   rules:
+    # Skip on tags - code was validated before tagging
+    - if: '$CI_COMMIT_TAG'
+      when: never
     # Protected branches
     - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
     # MRs to protected branches
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-    # Tags
-    - if: '$CI_COMMIT_TAG'
     # Manual
     - if: '$CI_PIPELINE_SOURCE == "web"'
   script:
@@ -350,15 +379,17 @@ build:python-matrix:
       - .cache/pip/
       - .venv/
   needs:
-    - test:unit
-    - test:integration
+    - job: test:unit
+      optional: true  # Optional on tags where tests are skipped
+    - job: test:integration
+      optional: true  # Optional on tags where tests are skipped
     # - test:hypothesis
   rules:
     # Protected branches
     - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
     # MRs to protected branches
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-    # Tags
+    # Tags - build packages for release
     - if: '$CI_COMMIT_TAG'
     # Manual
     - if: '$CI_PIPELINE_SOURCE == "web"'
