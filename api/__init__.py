@@ -14,7 +14,7 @@ try:
 
     __version__ = _get_version("n8n-deploy")
 except Exception:
-    __version__ = "0.0.0"  # Fallback for development without install
+    __version__ = "0.1.4"  # Fallback for development without install
 
 __author__ = "Lehcode"
 

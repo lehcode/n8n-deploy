@@ -37,12 +37,12 @@ class TestVersionDetection:
         # Should be either a valid version or fallback
         assert __version__ is not None
         assert isinstance(__version__, str)
-        # Should match version pattern or be fallback "0.0.0"
-        version_pattern = r"(\d+\.\d+(\.\d+)?(\.dev\d+|-rc\d+)?|0\.0\.0)"
+        # Should match version pattern or be fallback "0.1.4"
+        version_pattern = r"(\d+\.\d+(\.\d+)?(\.dev\d+|-rc\d+)?|0\.1\.4)"
         assert re.match(version_pattern, __version__), f"Version '{__version__}' doesn't match expected pattern"
 
     def test_version_fallback_behavior(self):
-        """Test fallback to 0.0.0 when metadata unavailable"""
+        """Test fallback to 0.1.4 when metadata unavailable"""
         # Mock importlib.metadata.version to raise exception
         with patch("importlib.metadata.version", side_effect=Exception("Package not found")):
             # Re-import api module to trigger fallback logic
@@ -50,8 +50,8 @@ class TestVersionDetection:
                 del sys.modules["api"]
             from api import __version__
 
-            # Should fall back to "0.0.0" when metadata unavailable
-            assert __version__ == "0.0.0", f"Expected fallback version '0.0.0', got '{__version__}'"
+            # Should fall back to "0.1.4" when metadata unavailable
+            assert __version__ == "0.1.4", f"Expected fallback version '0.1.4', got '{__version__}'"
 
     def test_cli_version_command(self):
         """Test CLI --version command returns valid version"""
@@ -89,8 +89,8 @@ class TestVersionDetection:
         match = re.search(version_pattern, result.output)
         cli_version = match.group(1) if match else None
 
-        # Versions should match (unless api_version is fallback "0.0.0")
-        if api_version != "0.0.0":
+        # Versions should match (unless api_version is fallback "0.1.4")
+        if api_version != "0.1.4":
             assert api_version == cli_version, f"Version mismatch: api={api_version}, cli={cli_version}"
 
     def test_setuptools_scm_fallback_in_ci(self):
@@ -101,13 +101,13 @@ class TestVersionDetection:
         from api import __version__
 
         # Version should be one of:
-        # 1. Proper semantic version from git tags: 2.0.3, 2.0.3.dev42, 2.3.0-rc1
+        # 1. Proper semantic version from git tags: 0.1.4, 0.1.4.dev42, 0.1.4rc1
         # 2. CI fallback version: 0.1.dev37, 0.1
-        # 3. Development fallback: 0.0.0
+        # 3. Development fallback: 0.1.4
         valid_patterns = [
-            r"\d+\.\d+\.\d+(\.dev\d+|-rc\d+)?",  # Standard version
+            r"\d+\.\d+\.\d+(\.dev\d+|rc\d+)?",  # Standard version (PEP 440)
             r"\d+\.\d+(\.dev\d+)?",  # Fallback version
-            r"0\.0\.0",  # Development fallback
+            r"0\.1\.4",  # Development fallback
         ]
 
         is_valid = any(re.fullmatch(pattern, __version__) for pattern in valid_patterns)
@@ -116,17 +116,17 @@ class TestVersionDetection:
     def test_version_pattern_supports_rc_suffix(self):
         """Test that version patterns correctly support RC (release candidate) format"""
         test_versions = [
-            "2.0.3",  # Standard release
-            "2.0.3.dev42",  # Development version
-            "2.3.0-rc1",  # Release candidate (hyphen format)
-            "2.3.0-rc10",  # RC with multi-digit number
+            "0.1.4",  # Standard release
+            "0.1.4.dev42",  # Development version
+            "0.1.4rc1",  # Release candidate (PEP 440 format)
+            "0.1.4rc10",  # RC with multi-digit number
             "0.1",  # Minimal version (CI fallback)
             "0.1.dev37",  # Minimal dev version
-            "0.0.0",  # Fallback version
+            "0.1.4",  # Fallback version
         ]
 
-        # Pattern used in tests
-        version_pattern = r"\d+\.\d+(\.\d+)?(\.dev\d+|-rc\d+)?"
+        # Pattern used in tests (supports both PEP 440 'rc' and legacy '-rc' formats)
+        version_pattern = r"\d+\.\d+(\.\d+)?(\.dev\d+|-?rc\d+)?"
 
         for version in test_versions:
             assert re.fullmatch(version_pattern, version), f"Version '{version}' should match pattern but doesn't"

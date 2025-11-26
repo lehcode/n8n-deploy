@@ -16,7 +16,7 @@ maintainers = [
 ]
 keywords = ["n8n", "wf", "automation", "cli", "sqlite", "deployment"]
 classifiers = [
-    "Development Status :: 5 - Production/Stable",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Intended Audience :: System Administrators",
     "Operating System :: OS Independent",
@@ -184,6 +184,6 @@ extend-ignore = "E203"
 ignore = "E501"
 
 [tool.setuptools_scm]
-# Version from git tags: v2.0.0 -> 2.0.0, v2.0.0-rc1 -> 2.0.0rc1
+# Version from git tags: v0.1.4 -> 0.1.4, v0.1.4rc1 -> 0.1.4rc1 (PEP 440)
 # Default version scheme produces stable versions for exact tags
 local_scheme = "no-local-version"
