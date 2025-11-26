@@ -123,17 +123,13 @@ mypy api/ --strict --show-error-codes || {
 }
 echo -e "${GREEN}✓ Type checking passed${NC}"
 
-echo -e "\n${GREEN}Running code formatting with black...${NC}"
-black api/
-# Check if black reformatted any files and commit them
-if ! git diff --quiet api/; then
-    echo -e "${YELLOW}⚠️  Black reformatted files, committing changes...${NC}"
-    git add api/
-    git commit -m "style: auto-format with black" --no-verify
-    echo -e "${GREEN}✓ Formatting changes committed${NC}"
-else
-    echo -e "${GREEN}✓ Code formatting done (no changes)${NC}"
+echo -e "\n${GREEN}Checking code formatting with black...${NC}"
+if ! black --check api/ >/dev/null 2>&1; then
+    echo -e "${RED}✗ Code not formatted. Run 'black api/' before pushing.${NC}"
+    echo -e "${YELLOW}   Tip: Pre-commit hook should auto-format on commit.${NC}"
+    exit 1
 fi
+echo -e "${GREEN}✓ Code formatting OK${NC}"
 
 echo ""
 echo -e "${YELLOW}════════════════════════════════════════${NC}"
