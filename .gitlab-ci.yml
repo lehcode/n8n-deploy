@@ -37,18 +37,14 @@ variables:
   GIT_DEPTH: 0  # Full clone with all tags for setuptools_scm version detection
 
 # Workflow rules - define when pipeline runs
-# Prevents duplicate pipelines: branch pipeline skipped when MR exists
+# Feature branch push + MR create: security+quality
+# MR merge (protected branch push): test+build-matrix
 workflow:
   rules:
-    # Run on master/develop (no MR check needed for protected branches)
+    # Run on master/develop (protected branches)
     - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
       when: always
-    # Skip branch pipeline if MR exists (prevents duplicate runs)
-    # Conventional Commits branch patterns: feat/, fix/, docs/, style/, refactor/, perf/, test/, build/, ci/, chore/, revert/
-    # Plus common aliases: bugfix/, hotfix/
-    - if: '$CI_COMMIT_BRANCH =~ /^(feat|fix|bugfix|hotfix|docs|style|refactor|perf|test|build|ci|chore|revert)\/.*/ && $CI_OPEN_MERGE_REQUESTS'
-      when: never
-    # Run on all Conventional Commits branch types only if no MR is open
+    # Run on Conventional Commits branch types (feature branches)
     - if: '$CI_COMMIT_BRANCH =~ /^(feat|fix|bugfix|hotfix|docs|style|refactor|perf|test|build|ci|chore|revert)\/.*/'
       when: always
     # Run on all tags
@@ -254,9 +250,7 @@ test:unit:
   interruptible: true
   resource_group: test-runner
   <<: *python_setup
-  needs:
-    - quality:mypy
-    - quality:black
+  needs: []  # Run in parallel with security+quality stages
   rules:
     - if: '$CI_COMMIT_TAG'
       when: never
@@ -283,9 +277,7 @@ test:integration:
   interruptible: true
   resource_group: test-runner
   <<: *python_setup
-  needs:
-    - quality:mypy
-    - quality:black
+  needs: []  # Run in parallel with security+quality stages
   rules:
     - if: '$CI_COMMIT_TAG'
       when: never
