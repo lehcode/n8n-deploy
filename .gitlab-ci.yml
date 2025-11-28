@@ -383,9 +383,7 @@ test:unit:
     # Run on feature branches for developer feedback
     - when: on_success
   <<: *python_setup
-  needs:
-    - quality:mypy
-    - quality:black
+  needs: []  # Run in parallel with security+quality stages
   rules:
     - if: '$CI_COMMIT_TAG'
       when: never
