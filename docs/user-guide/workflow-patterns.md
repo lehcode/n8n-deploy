@@ -84,8 +84,11 @@ echo "your-api-key" | n8n-deploy apikey add production
 # List available workflows on server
 n8n-deploy --server-url https://n8n.example.com wf list-server
 
-# Pull specific workflow
+# Pull specific workflow (prompted for filename if new)
 n8n-deploy --server-url https://n8n.example.com wf pull "Customer Onboarding"
+
+# Pull with custom filename (skip prompt)
+n8n-deploy wf pull "Customer Onboarding" --filename customer-onboarding.json
 
 # Pull all workflows
 for workflow in $(n8n-deploy wf list-server --no-emoji | grep -v "ID" | awk '{print $2}'); do

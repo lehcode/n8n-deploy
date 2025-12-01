@@ -32,11 +32,11 @@ n8n-deploy wf add my-workflow.json --link-remote production
 # Push to server (replaces draft ID with server-assigned ID)
 n8n-deploy wf push draft_abc123 --remote production
 # Output: Updating draft ID to server ID xYz789...
-# File renamed: my-workflow.json → xYz789.json
+# Filename preserved: my-workflow.json (not renamed)
 ```
 
 {: .note }
-> The draft ID is temporary. After your first push, the workflow file and database entry are updated with the permanent server-assigned ID.
+> The draft ID is temporary. After your first push, the database entry is updated with the permanent server-assigned ID. Your custom filename is preserved.
 
 ## 🌟 Workflow Operations
 
@@ -60,9 +60,15 @@ n8n-deploy --server-url http://n8n.example.com:5678 wf list-server
 # Pull specific workflow
 n8n-deploy --server-url http://n8n.example.com:5678 wf pull "Customer Onboarding"
 
+# Pull with custom filename (for new workflows)
+n8n-deploy wf pull "Customer Onboarding" --filename customer-onboarding.json
+
 # Pull with custom flow directory
 n8n-deploy --flow-dir /path/to/workflows wf pull "Customer Onboarding"
 ```
+
+{: .note }
+> When pulling a new workflow, you'll be prompted to enter a filename. Use `--filename` to specify it directly.
 
 ### Push Workflow to Remote Server
 
