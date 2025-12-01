@@ -114,9 +114,9 @@ def add(
                 console.print(f"WARNING: No ID found in workflow file. Generated draft ID: {workflow_id}")
                 console.print("         This will be replaced with server-assigned ID after first push.")
 
-        # Add workflow to database with actual filename
+        # Add workflow to database
         manager = WorkflowApi(config=config)
-        manager.add_workflow(workflow_id, workflow_name, filename=workflow_file)
+        manager.add_workflow(workflow_id, workflow_name)
 
         result = {
             "success": True,
@@ -460,7 +460,6 @@ def stats(
 @click.option("--data-dir", type=click.Path(), help=cli_data_dir_help)
 @click.option("--flow-dir", type=click.Path(), help=HELP_FLOW_DIR)
 @click.option("--db-filename", type=str, help=HELP_DB_FILENAME)
-@click.option("--filename", metavar="FILENAME", help="Custom filename for new workflows (e.g., 'my-workflow.json')")
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
 @click.argument("workflow_id", metavar="WORKFLOW_ID|WORKFLOW_NAME")
 def pull(
@@ -470,7 +469,6 @@ def pull(
     data_dir: Optional[str],
     flow_dir: Optional[str],
     db_filename: Optional[str],
-    filename: Optional[str],
     no_emoji: bool,
 ) -> None:
     """📥 Download wf from n8n server
@@ -485,13 +483,9 @@ def pull(
     Use --remote to override with server name (e.g., 'production') or URL.
     If server name is used, the linked API key will be used automatically.
 
-    For new workflows (not in database), use --filename to specify the local filename.
-    If not provided, you will be prompted to enter one.
-
     Examples:
       n8n-deploy wf pull workflow-name              # Uses linked server
       n8n-deploy wf pull workflow-name --remote staging  # Override to staging
-      n8n-deploy wf pull abc123 --filename my-workflow.json  # Custom filename
     """
     try:
         config = get_config(base_folder=data_dir, flow_folder=flow_dir, db_filename=db_filename)
@@ -506,30 +500,7 @@ def pull(
 
     try:
         manager = WorkflowApi(config=config, skip_ssl_verify=skip_ssl_verify, remote=remote)
-
-        # Check if workflow exists in database
-        # If not, and no filename provided, prompt user
-        target_filename = filename
-        try:
-            manager.get_workflow_info(workflow_id)
-            # Workflow exists - filename will be retrieved from database
-        except ValueError:
-            # Workflow not in database - this is a new pull
-            if not target_filename:
-                # Prompt user for filename
-                default_filename = f"{workflow_id}.json"
-                if no_emoji:
-                    console.print(f"New workflow detected. Enter filename (default: {default_filename}):")
-                else:
-                    console.print(f"📄 New workflow detected. Enter filename (default: [cyan]{default_filename}[/cyan]):")
-
-                target_filename = click.prompt("Filename", default=default_filename, show_default=False)
-
-                # Ensure .json extension
-                if target_filename and not target_filename.endswith(".json"):
-                    target_filename = f"{target_filename}.json"
-
-        success = manager.pull_workflow(workflow_id, filename=target_filename)
+        success = manager.pull_workflow(workflow_id)
 
         if success:
             success_msg = f"Pulled wf '{workflow_id}' from server"

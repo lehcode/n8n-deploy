@@ -17,7 +17,7 @@ from .base import BaseDB
 class SchemaApi(BaseDB):
     """Manages database schema initialization and versioning"""
 
-    SCHEMA_VERSION = 5
+    SCHEMA_VERSION = 4
 
     def __init__(
         self,
@@ -48,7 +48,6 @@ class SchemaApi(BaseDB):
                 CREATE TABLE IF NOT EXISTS workflows (
                     id TEXT PRIMARY KEY,
                     name TEXT NOT NULL,
-                    file TEXT,
                     file_folder TEXT,
                     server_id INTEGER,
                     status TEXT DEFAULT 'ACTIVE',
@@ -154,7 +153,7 @@ class SchemaApi(BaseDB):
                 INSERT OR REPLACE INTO schema_info (version, applied_at, description)
                 VALUES (?, ?, ?)
             """,
-                (self.SCHEMA_VERSION, datetime.now(), "Custom workflow filenames"),
+                (self.SCHEMA_VERSION, datetime.now(), "Primary API key selection"),
             )
 
             conn.commit()
@@ -174,22 +173,6 @@ class SchemaApi(BaseDB):
                         VALUES (?, ?, ?)
                         """,
                         (4, datetime.now(), "Primary API key selection"),
-                    )
-                    conn.commit()
-                except sqlite3.OperationalError:
-                    # Column already exists
-                    pass
-
-            # Migration from version 4 to 5: Add file column to workflows
-            if current_version < 5:
-                try:
-                    conn.execute("ALTER TABLE workflows ADD COLUMN file TEXT")
-                    conn.execute(
-                        """
-                        INSERT OR REPLACE INTO schema_info (version, applied_at, description)
-                        VALUES (?, ?, ?)
-                        """,
-                        (5, datetime.now(), "Custom workflow filenames"),
                     )
                     conn.commit()
                 except sqlite3.OperationalError:

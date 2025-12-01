@@ -221,8 +221,6 @@ class TestN8nAPI:
                                 "wf": mock_wf,
                                 "name": "Push Test Workflow",
                             }
-                            # Mock get_workflow_filename to return the actual filename
-                            mock_crud.get_workflow_filename.return_value = "test_wf_456.json"
                             mock_crud_class.return_value = mock_crud
 
                             # Mock db.get_workflow for n8n_version update
@@ -259,8 +257,6 @@ class TestN8nAPI:
                 "wf": mock_wf,
                 "name": "Nonexistent Workflow",
             }
-            # Mock get_workflow_filename to return a non-existent filename
-            mock_crud.get_workflow_filename.return_value = "nonexistent_wf.json"
             mock_crud_class.return_value = mock_crud
 
             result = api.push_workflow("nonexistent_wf")

@@ -42,15 +42,9 @@ class WorkflowApi:
         self.n8n_api = N8nAPI(self.db, self.config, self.key_api, skip_ssl_verify, remote)
 
     # Delegate to CRUD operations
-    def add_workflow(self, workflow_id: str, name: str, filename: Optional[str] = None) -> None:
-        """Add a new wf to database
-
-        Args:
-            workflow_id: The workflow ID
-            name: Human-readable workflow name
-            filename: Custom filename (e.g., 'my-workflow.json')
-        """
-        return self.crud.add_workflow(workflow_id, name, filename=filename)
+    def add_workflow(self, workflow_id: str, name: str) -> None:
+        """Add a new wf to database"""
+        return self.crud.add_workflow(workflow_id, name)
 
     def add_workflow_from_file(self, json_file_path: str, name: str) -> None:
         """Add wf from JSON file path"""
@@ -77,14 +71,9 @@ class WorkflowApi:
         return self.crud.get_workflow_stats(workflow_id)
 
     # Delegate to n8n API operations
-    def pull_workflow(self, workflow_id: str, filename: Optional[str] = None) -> bool:
-        """Pull wf from n8n server
-
-        Args:
-            workflow_id: Workflow ID or name to pull
-            filename: Optional filename for new workflows
-        """
-        return self.n8n_api.pull_workflow(workflow_id, filename=filename)
+    def pull_workflow(self, workflow_id: str) -> bool:
+        """Pull wf from n8n server"""
+        return self.n8n_api.pull_workflow(workflow_id)
 
     def push_workflow(self, workflow_id: str) -> bool:
         """Push wf to n8n server"""

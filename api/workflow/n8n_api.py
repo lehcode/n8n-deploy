@@ -251,14 +251,8 @@ class N8nAPI:
         """List all workflows from n8n server (alias for get_n8n_workflows)"""
         return self.get_n8n_workflows()
 
-    def pull_workflow(self, workflow_id: str, filename: Optional[str] = None) -> bool:
-        """Pull wf from n8n server using REST API
-
-        Args:
-            workflow_id: Workflow ID or name to pull
-            filename: Optional filename for new workflows. If not provided and
-                     workflow doesn't exist in database, uses {id}.json
-        """
+    def pull_workflow(self, workflow_id: str) -> bool:
+        """Pull wf from n8n server using REST API"""
         try:
             from .crud import WorkflowCRUD
 
@@ -295,20 +289,7 @@ class N8nAPI:
             print(f"🎯 Active: {workflow_data.get('active', False)}")
             print(f"📊 Nodes: {len(workflow_data.get('nodes', []))}")
 
-            # Determine filename for saving
-            # Priority: 1) existing workflow's stored filename, 2) --filename option, 3) {id}.json
-            existing_workflow = self.db.get_workflow(actual_id)
-            if existing_workflow and existing_workflow.file:
-                # Existing workflow - use stored filename
-                target_filename = existing_workflow.file
-            elif filename:
-                # New workflow with explicit filename
-                target_filename = filename
-            else:
-                # New workflow - use {id}.json as default
-                target_filename = f"{actual_id}.json"
-
-            workflow_path = self.base_path / target_filename
+            workflow_path = self.base_path / f"{actual_id}.json"
             with open(workflow_path, "w", encoding="utf-8") as f:
                 json.dump(workflow_data, f, indent=2, ensure_ascii=False)
 
@@ -318,12 +299,13 @@ class N8nAPI:
             n8n_version = self.get_n8n_version()
 
             # Check if wf exists in database, if not add it
+            existing_workflow = self.db.get_workflow(actual_id)
             if not existing_workflow:
                 # Add new wf with n8n version
                 wf = Workflow(
                     id=actual_id,
                     name=workflow_data.get("name", "Unknown"),
-                    file=target_filename,
+                    file=None,
                     file_folder=str(self.base_path),
                     server_id=None,  # Will be set if workflow is linked to a server
                     n8n_version_id=n8n_version,
@@ -362,7 +344,7 @@ class N8nAPI:
             # Use actual workflow ID from database (workflow_id param might be a name)
             actual_id = wf.id
 
-            # Construct file path from workflow data using stored filename
+            # Construct file path from workflow data
             # Priority: current --flow-dir (self.base_path) > stored file_folder > cwd
             if self.base_path:
                 flow_folder = self.base_path
@@ -371,9 +353,7 @@ class N8nAPI:
             else:
                 flow_folder = Path.cwd()
 
-            # Use stored filename or fallback to {id}.json
-            filename = crud.get_workflow_filename(wf)
-            file_path = flow_folder / filename
+            file_path = flow_folder / f"{actual_id}.json"
 
             if not file_path.exists():
                 print(f"❌ Workflow file not found: {file_path}")
@@ -416,13 +396,12 @@ class N8nAPI:
                         db_workflow = self.db.get_workflow(actual_id)
                         if db_workflow:
                             # Create new database entry with server ID
-                            # Keep original filename - don't rename to {server_id}.json
                             from api.models import Workflow
 
                             new_wf = Workflow(
                                 id=server_id,
                                 name=db_workflow.name,
-                                file=db_workflow.file,  # Keep original filename
+                                file=f"{server_id}.json",
                                 file_folder=str(flow_folder),
                                 server_id=db_workflow.server_id,
                                 status=db_workflow.status,
@@ -434,14 +413,11 @@ class N8nAPI:
                                 pull_count=0,
                             )
 
-                            # Update the JSON file with new server ID (keep same filename)
+                            # Rename workflow file
+                            new_file_path = flow_folder / f"{server_id}.json"
                             if file_path.exists():
-                                with open(file_path, "r", encoding="utf-8") as f:
-                                    workflow_content = json.load(f)
-                                workflow_content["id"] = server_id
-                                with open(file_path, "w", encoding="utf-8") as f:
-                                    json.dump(workflow_content, f, indent=2, ensure_ascii=False)
-                                print(f"📄 Updated workflow ID in file: {file_path.name}")
+                                file_path.rename(new_file_path)
+                                print(f"📄 Renamed file: {file_path.name} → {new_file_path.name}")
 
                             # Update database: remove draft, add server ID
                             self.db.delete_workflow(actual_id)
