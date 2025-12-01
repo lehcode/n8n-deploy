@@ -239,9 +239,25 @@ class N8nAPI:
         """Fetch specific wf from n8n server by ID"""
         return self._make_n8n_request("GET", f"api/v1/workflows/{workflow_id}")
 
+    def _strip_readonly_fields(self, workflow_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Strip read-only fields that n8n API rejects on create/update"""
+        readonly_fields = [
+            "id",
+            "active",
+            "triggerCount",
+            "updatedAt",
+            "createdAt",
+            "versionId",
+            "staticData",
+            "tags",
+            "meta",
+        ]
+        return {k: v for k, v in workflow_data.items() if k not in readonly_fields}
+
     def create_n8n_workflow(self, workflow_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Create new wf on n8n server"""
-        return self._make_n8n_request("POST", "api/v1/workflows", workflow_data)
+        clean_data = self._strip_readonly_fields(workflow_data)
+        return self._make_n8n_request("POST", "api/v1/workflows", clean_data)
 
     def update_n8n_workflow(self, workflow_id: str, workflow_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Update existing wf on n8n server"""
