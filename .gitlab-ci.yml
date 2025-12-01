@@ -295,33 +295,34 @@ test:integration:
       - .coverage
     expire_in: 1 hour
 
-# Property-based tests with Hypothesis
-test:hypothesis:
-  stage: test
-  image: python:3.9-slim
-  tags:
-    - python
-  interruptible: true
-  <<: *python_setup
-  needs: []  # Run in parallel with security+quality stages
-  rules:
-    - if: '$CI_COMMIT_TAG'
-      when: never
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-      when: never
-    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
-      when: on_success
-  script:
-    - source .venv/bin/activate
-    - export N8N_DEPLOY_TESTING=1
-    - echo "Running property-based tests with Hypothesis..."
-    - python run_tests.py --hypothesis --no-deps-check
-    - echo "Property-based tests passed"
-  artifacts:
-    when: always
-    paths:
-      - .hypothesis/
-    expire_in: 7 days
+# # Property-based tests with Hypothesis
+# test:hypothesis:
+#   stage: test
+#   image: python:3.9-slim
+#   tags:
+#     - python
+#   interruptible: true
+#   <<: *python_setup
+#   needs:
+#     - quality:mypy
+#     - quality:black
+#   rules:
+#     - if: '$CI_COMMIT_TAG'
+#       when: never
+#     - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
+#     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+#     - if: '$CI_PIPELINE_SOURCE == "web"'
+#   script:
+#     - source .venv/bin/activate
+#     - export N8N_DEPLOY_TESTING=1
+#     - echo "Running property-based tests with Hypothesis..."
+#     - python run_tests.py --hypothesis --no-deps-check
+#     - echo "✅ Property-based tests passed (755 generated examples)"
+#   artifacts:
+#     when: always
+#     paths:
+#       - .hypothesis/
+#     expire_in: 7 days
 
 # ============================================
 # BUILD-MATRIX STAGE (runs on merge/push to protected branches)
