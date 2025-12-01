@@ -125,15 +125,7 @@ echo -e "${GREEN}✓ Type checking passed${NC}"
 
 echo -e "\n${GREEN}Running code formatting with black...${NC}"
 black api/
-# Check if black reformatted any files and commit them
-if ! git diff --quiet api/; then
-    echo -e "${YELLOW}⚠️  Black reformatted files, committing changes...${NC}"
-    git add api/
-    git commit -m "style: auto-format with black" --no-verify
-    echo -e "${GREEN}✓ Formatting changes committed${NC}"
-else
-    echo -e "${GREEN}✓ Code formatting done (no changes)${NC}"
-fi
+echo -e "${GREEN}✓ Code formatting done${NC}"
 
 echo ""
 echo -e "${YELLOW}════════════════════════════════════════${NC}"
