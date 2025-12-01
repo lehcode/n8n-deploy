@@ -71,7 +71,7 @@ class DBApi(BaseDB):
             return None
 
     def get_workflow_by_name_or_id(self, name_or_id: str) -> Optional[Workflow]:
-        """Get a workflow by its name or ID"""
+        """Get a workflow by its name, ID, or filename"""
         # First try by ID
         wf = self.get_workflow(name_or_id)
         if wf:
@@ -80,6 +80,25 @@ class DBApi(BaseDB):
         # Then try by exact name match
         with self.get_connection() as conn:
             cursor = conn.execute("SELECT * FROM workflows WHERE name = ?", (name_or_id,))
+            row = cursor.fetchone()
+            if row:
+                return Workflow(
+                    id=row["id"],
+                    name=row["name"],
+                    file=row["file"] if "file" in row.keys() else None,
+                    file_folder=row["file_folder"],
+                    server_id=row["server_id"] if "server_id" in row.keys() else None,
+                    status=WorkflowStatus(row["status"]),
+                    created_at=datetime.fromisoformat(row["created_at"]),
+                    updated_at=datetime.fromisoformat(row["updated_at"]),
+                    last_synced=datetime.fromisoformat(row["last_synced"]) if row["last_synced"] else None,
+                    n8n_version_id=row["n8n_version_id"],
+                    push_count=row["push_count"] or 0,
+                    pull_count=row["pull_count"] or 0,
+                )
+
+            # Then try by filename
+            cursor = conn.execute("SELECT * FROM workflows WHERE file = ?", (name_or_id,))
             row = cursor.fetchone()
             if row:
                 return Workflow(
