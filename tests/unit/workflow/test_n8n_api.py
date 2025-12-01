@@ -397,9 +397,13 @@ class TestStripReadonlyFields:
         # Verify only allowed fields are kept (whitelist approach)
         # Allowed: name, nodes, connections, settings, staticData
         assert_that(result).does_not_contain_key("id")
+<<<<<<< HEAD
         # "active" is now preserved to maintain workflow state
         assert_that(result).contains_key("active")
         assert_that(result["active"]).is_true()
+=======
+        assert_that(result).does_not_contain_key("active")
+>>>>>>> 65629c4 (test(n8n-api): add unit tests for _strip_readonly_fields)
         assert_that(result).does_not_contain_key("triggerCount")
         assert_that(result).does_not_contain_key("updatedAt")
         assert_that(result).does_not_contain_key("createdAt")
@@ -457,6 +461,7 @@ class TestStripReadonlyFields:
 
         assert_that(result).is_empty()
 
+<<<<<<< HEAD
     def test_strip_readonly_fields_removes_additional_readonly(self, temp_dir: Path) -> None:
         """Test _strip_readonly_fields removes additional readonly fields (isArchived, pinData, etc)"""
         mock_db = MagicMock()
@@ -609,6 +614,8 @@ class TestStripReadonlyFields:
 
         assert_that(result["settings"]).is_empty()
 
+=======
+>>>>>>> 65629c4 (test(n8n-api): add unit tests for _strip_readonly_fields)
     def test_create_n8n_workflow_strips_fields(self, temp_dir: Path) -> None:
         """Test create_n8n_workflow strips readonly fields before POST"""
         mock_db = MagicMock()
@@ -675,6 +682,7 @@ class TestStripReadonlyFields:
             assert_that(sent_data).does_not_contain_key("versionId")
             assert_that(sent_data).contains_key("name")
             assert_that(sent_data).contains_key("nodes")
+<<<<<<< HEAD
 
 
 class TestDeleteN8nWorkflow:
@@ -1167,3 +1175,5 @@ class TestPushWorkflow404Handling:
         assert_that(result).is_false()
         mock_db.delete_workflow.assert_not_called()
         mock_db.add_workflow.assert_not_called()
+=======
+>>>>>>> 65629c4 (test(n8n-api): add unit tests for _strip_readonly_fields)
