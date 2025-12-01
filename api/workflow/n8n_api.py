@@ -261,7 +261,8 @@ class N8nAPI:
 
     def update_n8n_workflow(self, workflow_id: str, workflow_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Update existing wf on n8n server"""
-        return self._make_n8n_request("PUT", f"api/v1/workflows/{workflow_id}", workflow_data)
+        clean_data = self._strip_readonly_fields(workflow_data)
+        return self._make_n8n_request("PUT", f"api/v1/workflows/{workflow_id}", clean_data)
 
     def list_n8n_workflows(self) -> Optional[List[Dict[str, Any]]]:
         """List all workflows from n8n server (alias for get_n8n_workflows)"""
