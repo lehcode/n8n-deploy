@@ -145,6 +145,9 @@ n8n-deploy wf push my-descriptive-name.json --remote production
 - Ensure workflow names are exact
 - Use `--skip-ssl-verify` for self-signed certificates
 
+{: .note }
+> **Push operations**: Read-only fields are automatically stripped before sending to n8n server. See [Troubleshooting](/n8n-deploy/troubleshooting/) for details.
+
 ## 📖 Related Guides
 
 - [Configuration](/n8n-deploy/configuration/)

@@ -53,6 +53,9 @@ n8n-deploy --data-dir /custom/path db init
 {: .warning }
 > **Warning**: SSL verification issues? Use `--skip-ssl-verify` flag for self-signed certificates, but be aware of security implications.
 
+{: .note }
+> **Read-only fields**: n8n-deploy automatically strips read-only fields (`id`, `triggerCount`, `updatedAt`, `createdAt`, `versionId`, `staticData`, `tags`, `meta`) before push operations. If you encounter 400 errors with manually edited workflow files, ensure you're using the latest version.
+
 **Solutions**:
 
 ```bash
