@@ -152,6 +152,25 @@ class DBApi(BaseDB):
                     push_count=row["push_count"] or 0,
                     pull_count=row["pull_count"] or 0,
                 )
+
+            # Then try by filename
+            cursor = conn.execute("SELECT * FROM workflows WHERE file = ?", (name_or_id,))
+            row = cursor.fetchone()
+            if row:
+                return Workflow(
+                    id=row["id"],
+                    name=row["name"],
+                    file=row["file"] if "file" in row.keys() else None,
+                    file_folder=row["file_folder"],
+                    server_id=row["server_id"] if "server_id" in row.keys() else None,
+                    status=WorkflowStatus(row["status"]),
+                    created_at=datetime.fromisoformat(row["created_at"]),
+                    updated_at=datetime.fromisoformat(row["updated_at"]),
+                    last_synced=datetime.fromisoformat(row["last_synced"]) if row["last_synced"] else None,
+                    n8n_version_id=row["n8n_version_id"],
+                    push_count=row["push_count"] or 0,
+                    pull_count=row["pull_count"] or 0,
+                )
             return None
 
     def list_workflows(self, workflow_type: Optional[str] = None) -> List[Workflow]:
