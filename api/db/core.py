@@ -31,12 +31,13 @@ class DBApi(BaseDB):
         with self.get_connection() as conn:
             conn.execute(
                 """
-                INSERT INTO workflows (id, name, file_folder, server_id, status, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO workflows (id, name, file, file_folder, server_id, status, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
                 (
                     wf.id,
                     wf.name,
+                    wf.file,
                     wf.file_folder,
                     wf.server_id,
                     wf.status,
@@ -140,13 +141,15 @@ class DBApi(BaseDB):
             cursor = conn.execute(
                 """
                 UPDATE workflows SET
-                    name = ?, server_id = ?, status = ?, updated_at = ?,
+                    name = ?, file = ?, file_folder = ?, server_id = ?, status = ?, updated_at = ?,
                     last_synced = ?, n8n_version_id = ?,
                     push_count = ?, pull_count = ?
                 WHERE id = ?
             """,
                 (
                     wf.name,
+                    wf.file,
+                    wf.file_folder,
                     wf.server_id,
                     wf.status,
                     wf.updated_at,
