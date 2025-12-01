@@ -18,7 +18,7 @@ The database consists of 7 tables organized into 3 functional groups:
 2. **Server & API Key Management** (3 tables)
 3. **Configuration & Schema** (2 tables)
 
-**Current Schema Version**: 2.0
+**Current Schema Version**: 5
 
 ---
 
@@ -32,13 +32,16 @@ Stores workflow metadata and file references.
 |--------|------|-------------|-------------|
 | id | TEXT | PRIMARY KEY | n8n workflow ID (unique identifier) |
 | name | TEXT | NOT NULL | Workflow display name (UTF-8 supported) |
-| file_path | TEXT | NOT NULL | Relative path to workflow JSON file |
+| file | TEXT | | Custom filename (e.g., 'my-workflow.json') |
+| file_folder | TEXT | NOT NULL | Directory containing workflow JSON file |
+| server_id | INTEGER | FOREIGN KEY | Linked n8n server reference |
 | status | TEXT | DEFAULT 'active' | Workflow status (active/inactive/archived) |
-| tags | TEXT | | Comma-separated tags |
 | created_at | TIMESTAMP | NOT NULL | Creation timestamp |
 | updated_at | TIMESTAMP | | Last modification timestamp |
 | last_synced | TIMESTAMP | | Last sync with n8n server |
-| n8n_version_id | INTEGER | FOREIGN KEY | n8n version reference |
+| n8n_version_id | INTEGER | | n8n version identifier |
+| push_count | INTEGER | DEFAULT 0 | Number of times pushed to server |
+| pull_count | INTEGER | DEFAULT 0 | Number of times pulled from server |
 
 **Indexes:**
 - `idx_workflows_name` on `name` (for search operations)
@@ -151,7 +154,7 @@ Tracks database schema version for migrations.
 | migration_script | TEXT | | SQL migration script |
 | applied_at | TIMESTAMP | | Migration application timestamp |
 
-**Current Version:** 2 (as of October 2025)
+**Current Version:** 5 (as of December 2025)
 
 ---
 
