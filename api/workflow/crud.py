@@ -23,8 +23,17 @@ class WorkflowCRUD:
         self.config = config
         self.base_path = config.workflows_path
 
-    def add_workflow(self, workflow_id: str, name: str, n8n_version_id: Optional[str] = None) -> None:
-        """Add a new wf to database"""
+    def add_workflow(
+        self, workflow_id: str, name: str, filename: Optional[str] = None, n8n_version_id: Optional[str] = None
+    ) -> None:
+        """Add a new wf to database
+
+        Args:
+            workflow_id: The workflow ID (from n8n or draft_*)
+            name: Human-readable workflow name
+            filename: Custom filename (e.g., 'my-workflow.json'). If None, defaults to '{id}.json'
+            n8n_version_id: Optional n8n version ID
+        """
         # Check if wf already exists
         existing = self.db.get_workflow(workflow_id)
         if existing:
@@ -33,7 +42,7 @@ class WorkflowCRUD:
         wf = Workflow(
             id=workflow_id,
             name=name,
-            file=None,
+            file=filename,
             file_folder=str(self.base_path) if self.base_path else None,
             server_id=None,
             created_at=datetime.now(timezone.utc),
@@ -45,7 +54,10 @@ class WorkflowCRUD:
         self.db.add_workflow(wf)
 
     def add_workflow_from_file(self, json_file_path: str, name: str) -> None:
-        """Add wf from JSON file path"""
+        """Add wf from JSON file path
+
+        Stores the actual filename (not derived from ID) for custom filename support.
+        """
         # Resolve the file path relative to flow directory
         if self.base_path:
             file_path = Path(self.base_path) / json_file_path
@@ -55,6 +67,9 @@ class WorkflowCRUD:
         # Check if file exists
         if not file_path.exists():
             raise FileNotFoundError(f"Workflow file not found: {file_path}")
+
+        # Capture the actual filename for storage
+        actual_filename = file_path.name
 
         # Read and parse JSON file to get wf ID
         try:
@@ -71,8 +86,8 @@ class WorkflowCRUD:
 
             n8n_version_id = workflow_data.get("n8n_version_id")
 
-            # Add wf using the extracted ID
-            self.add_workflow(workflow_id, name, n8n_version_id=n8n_version_id)
+            # Add wf using the extracted ID and actual filename
+            self.add_workflow(workflow_id, name, filename=actual_filename, n8n_version_id=n8n_version_id)
 
         except json.JSONDecodeError as e:
             raise ValueError(f"Invalid JSON in wf file {file_path}: {e}")
@@ -86,6 +101,25 @@ class WorkflowCRUD:
             raise ValueError(f"Workflow {workflow_id} not found")
 
         self.db.delete_workflow(workflow_id)
+
+    def get_workflow_filename(self, wf: Workflow) -> str:
+        """Get the filename for a workflow
+
+        Uses stored filename if available, otherwise defaults to {id}.json
+        """
+        return wf.file if wf.file else f"{wf.id}.json"
+
+    def get_workflow_filepath(self, wf: Workflow) -> Path:
+        """Get the full file path for a workflow
+
+        Resolves the complete path using stored filename and folder.
+        """
+        flow_folder = Path(wf.file_folder) if wf.file_folder else self.base_path
+        if not flow_folder:
+            flow_folder = Path.cwd()
+
+        filename = self.get_workflow_filename(wf)
+        return flow_folder / filename
 
     def list_workflows(self, only_backupable: bool = False) -> List[Dict[str, Any]]:
         """List all available workflows from database
@@ -102,13 +136,15 @@ class WorkflowCRUD:
             if not flow_folder:
                 flow_folder = Path.cwd()  # Default to current directory
 
-            # Check if wf file exists: {workflow_id}.json in flow folder
-            workflow_file = flow_folder / f"{wf.id}.json"
+            # Use stored filename or fallback to {id}.json
+            filename = self.get_workflow_filename(wf)
+            workflow_file = flow_folder / filename
             file_exists = workflow_file.exists()
 
             workflow_info = {
                 "id": wf.id,
                 "name": wf.name,
+                "file": filename,
                 "last_synced": wf.last_synced.isoformat() if wf.last_synced else None,
                 "status": wf.status,
                 "created_at": wf.created_at.isoformat() if wf.created_at else None,
