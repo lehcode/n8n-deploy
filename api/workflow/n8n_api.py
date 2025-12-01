@@ -264,6 +264,47 @@ class N8nAPI:
         clean_data = self._strip_readonly_fields(workflow_data)
         return self._make_n8n_request("PUT", f"api/v1/workflows/{workflow_id}", clean_data)
 
+    def delete_n8n_workflow(self, workflow_id: str) -> bool:
+        """Delete workflow from n8n server
+
+        Args:
+            workflow_id: The workflow ID to delete
+
+        Returns:
+            bool: True if deletion successful, False otherwise
+        """
+        credentials = self._get_n8n_credentials(workflow_id=workflow_id)
+        if not credentials:
+            return False
+
+        server_url = credentials.get("server_url", "unknown")
+        print(f"🗑️  Deleting workflow {workflow_id} from {server_url}...")
+
+        try:
+            # Make DELETE request directly (don't use _make_n8n_request because
+            # DELETE may return 204 No Content which has no JSON body)
+            base_url = server_url.rstrip("/")
+            url = f"{base_url}/api/v1/workflows/{workflow_id}"
+
+            response = requests.delete(
+                url,
+                headers=credentials["headers"],
+                verify=not self.skip_ssl_verify,
+                timeout=10,
+            )
+            response.raise_for_status()
+            return True
+
+        except requests.exceptions.HTTPError as e:
+            if e.response is not None and e.response.status_code == 404:
+                print(f"⚠️  Workflow {workflow_id} not found on server (may already be deleted)")
+                return True  # Consider this success - workflow is gone
+            print(f"❌ Failed to delete workflow: {e}")
+            return False
+        except requests.exceptions.RequestException as e:
+            print(f"❌ Failed to delete workflow: {e}")
+            return False
+
     def list_n8n_workflows(self) -> Optional[List[Dict[str, Any]]]:
         """List all workflows from n8n server (alias for get_n8n_workflows)"""
         return self.get_n8n_workflows()
