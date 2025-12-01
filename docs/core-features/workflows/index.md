@@ -67,14 +67,21 @@ n8n-deploy --flow-dir /path/to/workflows wf pull "Customer Onboarding"
 ### Push Workflow to Remote Server
 
 ```bash
-# Push specific workflow
-n8n-deploy --server-url http://n8n.example.com:5678 wf push "Deployment Pipeline"
+# Push by workflow name
+n8n-deploy wf push "Deployment Pipeline" --remote production
 
-# Push with custom flow directory
-n8n-deploy --flow-dir /path/to/workflows wf push "Deployment Pipeline"
+# Push by workflow ID
+n8n-deploy wf push deAVBp391wvomsWY --remote production
+
+# Push by filename
+n8n-deploy wf push my-workflow.json --remote production
 ```
 
-> **Note**: Workflow files should be managed with version control (git). Use `db backup` for database metadata, API keys, and server configurations.
+{: .tip }
+> **Workflow Resolution**: The push command accepts workflow ID, name, or filename. Resolution priority: ID → Name → Filename.
+
+{: .note }
+> Workflow files should be managed with version control (git). Use `db backup` for database metadata, API keys, and server configurations.
 
 ## 🔍 Advanced Workflow Management
 
@@ -100,20 +107,30 @@ n8n-deploy wf stats
 
 ## 🧩 Workflow File Management
 
-### Workflow File Location
+### Custom Filenames
 
-- Stored as JSON files
-- Named by n8n workflow ID
-- Can be stored in custom directories
+Workflows can use any filename you choose:
+
+```bash
+# Add workflow with custom filename (preserved)
+n8n-deploy wf add my-descriptive-name.json
+
+# Push using the filename
+n8n-deploy wf push my-descriptive-name.json --remote production
+```
+
+{: .note }
+> Filenames are preserved - `my-workflow.json` stays `my-workflow.json`, not renamed to `{id}.json`.
 
 ### Workflow Status Tracking
 
 - Workflows tracked in SQLite database
 - Metadata includes:
   - Workflow name
-  - File path
+  - Custom filename (`file` column)
+  - File folder location
   - Timestamps
-  - Tags
+  - Server linkage
 
 ## 🆘 Troubleshooting
 
