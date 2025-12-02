@@ -10,9 +10,12 @@ This module provides modular wf operations:
 from .crud import WorkflowCRUD
 from .n8n_api import N8nAPI
 from .main import WorkflowApi
+from .types import N8nApiErrorType, N8nApiResult
 
 __all__ = [
     "WorkflowCRUD",
     "N8nAPI",
     "WorkflowApi",
+    "N8nApiErrorType",
+    "N8nApiResult",
 ]
