@@ -55,14 +55,14 @@ class WorkflowTestHelpers(E2ETestBase):
 
         return self.run_cli_command(args)
 
-    def run_wf_remove(
+    def run_wf_delete(
         self,
         name: str,
         yes_flag: bool = True,
         flow_dir: Optional[str] = None,
     ) -> Tuple[int, str, str]:
-        """Execute 'wf remove' command with common parameters"""
-        args = ["wf", "remove", name]
+        """Execute 'wf delete' command with common parameters"""
+        args = ["wf", "delete", name]
 
         if yes_flag:
             args.append("--yes")
