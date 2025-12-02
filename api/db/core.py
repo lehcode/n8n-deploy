@@ -156,6 +156,15 @@ class DBApi(BaseDB):
             # Then try by filename
             cursor = conn.execute("SELECT * FROM workflows WHERE file = ?", (name_or_id,))
             row = cursor.fetchone()
+
+            # If no exact match, try basename match (for paths like 'subdir/workflow.json')
+            if not row:
+                cursor = conn.execute(
+                    "SELECT * FROM workflows WHERE file LIKE ? OR file LIKE ?",
+                    (f"%/{name_or_id}", f"%\\{name_or_id}"),  # Unix and Windows paths
+                )
+                row = cursor.fetchone()
+
             if row:
                 return Workflow(
                     id=row["id"],
