@@ -44,14 +44,14 @@ n8n-deploy wf add my-workflow.json --link-remote production
 # Push to server (draft ID replaced with server-assigned ID)
 n8n-deploy wf push draft_abc123
 # Output: Updating draft ID draft_abc123 to server ID xYz789...
-# File automatically renamed to xYz789.json
+# Filename preserved (my-workflow.json stays my-workflow.json)
 
 # Verify the new workflow
 n8n-deploy wf list
 ```
 
 {: .tip }
-> After the first push, your workflow file is renamed from `my-workflow.json` to `{server_id}.json` and the database is updated with the permanent server-assigned ID.
+> After the first push, the database is updated with the permanent server-assigned ID. Your custom filename is preserved.
 
 ### Initialize New Project
 
@@ -84,8 +84,11 @@ echo "your-api-key" | n8n-deploy apikey add production
 # List available workflows on server
 n8n-deploy --server-url https://n8n.example.com wf list-server
 
-# Pull specific workflow
+# Pull specific workflow (prompted for filename if new)
 n8n-deploy --server-url https://n8n.example.com wf pull "Customer Onboarding"
+
+# Pull with custom filename (skip prompt)
+n8n-deploy wf pull "Customer Onboarding" --filename customer-onboarding.json
 
 # Pull all workflows
 for workflow in $(n8n-deploy wf list-server --no-emoji | grep -v "ID" | awk '{print $2}'); do

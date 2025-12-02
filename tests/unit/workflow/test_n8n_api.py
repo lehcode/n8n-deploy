@@ -221,6 +221,8 @@ class TestN8nAPI:
                                 "wf": mock_wf,
                                 "name": "Push Test Workflow",
                             }
+                            # Mock get_workflow_filename to return the actual filename
+                            mock_crud.get_workflow_filename.return_value = "test_wf_456.json"
                             mock_crud_class.return_value = mock_crud
 
                             # Mock db.get_workflow for n8n_version update
@@ -257,6 +259,8 @@ class TestN8nAPI:
                 "wf": mock_wf,
                 "name": "Nonexistent Workflow",
             }
+            # Mock get_workflow_filename to return a non-existent filename
+            mock_crud.get_workflow_filename.return_value = "nonexistent_wf.json"
             mock_crud_class.return_value = mock_crud
 
             result = api.push_workflow("nonexistent_wf")
@@ -353,3 +357,163 @@ class TestN8nAPI:
             version = api.get_n8n_version()
 
         assert_that(version).is_none()
+
+
+class TestStripReadonlyFields:
+    """Tests for _strip_readonly_fields method"""
+
+    def test_strip_readonly_fields_removes_all_readonly(self, temp_dir: Path) -> None:
+        """Test _strip_readonly_fields removes all read-only fields"""
+        mock_db = MagicMock()
+        mock_config = MagicMock()
+        mock_config.workflows_path = temp_dir / "workflows"
+        mock_api_manager = MagicMock()
+
+        api = N8nAPI(
+            db=mock_db,
+            config=mock_config,
+            api_manager=mock_api_manager,
+        )
+
+        workflow_data: Dict[str, Any] = {
+            "id": "test_123",
+            "name": "Test Workflow",
+            "active": True,
+            "triggerCount": 5,
+            "updatedAt": "2025-01-01T00:00:00Z",
+            "createdAt": "2025-01-01T00:00:00Z",
+            "versionId": "abc123",
+            "staticData": {"key": "value"},
+            "tags": [{"id": "1", "name": "test"}],
+            "meta": {"instanceId": "xyz"},
+            "nodes": [{"id": "node1"}],
+            "connections": {},
+        }
+
+        result = api._strip_readonly_fields(workflow_data)
+
+        # Verify readonly fields are removed
+        assert_that(result).does_not_contain_key("id")
+        assert_that(result).does_not_contain_key("active")
+        assert_that(result).does_not_contain_key("triggerCount")
+        assert_that(result).does_not_contain_key("updatedAt")
+        assert_that(result).does_not_contain_key("createdAt")
+        assert_that(result).does_not_contain_key("versionId")
+        assert_that(result).does_not_contain_key("staticData")
+        assert_that(result).does_not_contain_key("tags")
+        assert_that(result).does_not_contain_key("meta")
+
+    def test_strip_readonly_fields_preserves_other_fields(self, temp_dir: Path) -> None:
+        """Test _strip_readonly_fields preserves non-readonly fields"""
+        mock_db = MagicMock()
+        mock_config = MagicMock()
+        mock_config.workflows_path = temp_dir / "workflows"
+        mock_api_manager = MagicMock()
+
+        api = N8nAPI(
+            db=mock_db,
+            config=mock_config,
+            api_manager=mock_api_manager,
+        )
+
+        workflow_data: Dict[str, Any] = {
+            "id": "test_123",
+            "name": "Test Workflow",
+            "nodes": [{"id": "node1", "type": "start"}],
+            "connections": {"node1": []},
+            "settings": {"executionOrder": "v1"},
+        }
+
+        result = api._strip_readonly_fields(workflow_data)
+
+        # Verify non-readonly fields are preserved
+        assert_that(result).contains_key("name")
+        assert_that(result).contains_key("nodes")
+        assert_that(result).contains_key("connections")
+        assert_that(result).contains_key("settings")
+        assert_that(result["name"]).is_equal_to("Test Workflow")
+        assert_that(result["nodes"]).is_length(1)
+
+    def test_strip_readonly_fields_empty_input(self, temp_dir: Path) -> None:
+        """Test _strip_readonly_fields handles empty input"""
+        mock_db = MagicMock()
+        mock_config = MagicMock()
+        mock_config.workflows_path = temp_dir / "workflows"
+        mock_api_manager = MagicMock()
+
+        api = N8nAPI(
+            db=mock_db,
+            config=mock_config,
+            api_manager=mock_api_manager,
+        )
+
+        result = api._strip_readonly_fields({})
+
+        assert_that(result).is_empty()
+
+    def test_create_n8n_workflow_strips_fields(self, temp_dir: Path) -> None:
+        """Test create_n8n_workflow strips readonly fields before POST"""
+        mock_db = MagicMock()
+        mock_config = MagicMock()
+        mock_config.workflows_path = temp_dir / "workflows"
+        mock_api_manager = MagicMock()
+
+        api = N8nAPI(
+            db=mock_db,
+            config=mock_config,
+            api_manager=mock_api_manager,
+        )
+
+        workflow_data: Dict[str, Any] = {
+            "id": "should_be_stripped",
+            "name": "New Workflow",
+            "triggerCount": 0,
+            "nodes": [],
+            "connections": {},
+        }
+
+        with patch.object(api, "_make_n8n_request") as mock_request:
+            mock_request.return_value = {"id": "server_assigned_id", "name": "New Workflow"}
+            api.create_n8n_workflow(workflow_data)
+
+            # Verify _make_n8n_request was called with stripped data
+            call_args = mock_request.call_args
+            sent_data = call_args[0][2]  # Third positional argument is data
+            assert_that(sent_data).does_not_contain_key("id")
+            assert_that(sent_data).does_not_contain_key("triggerCount")
+            assert_that(sent_data).contains_key("name")
+
+    def test_update_n8n_workflow_strips_fields(self, temp_dir: Path) -> None:
+        """Test update_n8n_workflow strips readonly fields before PUT"""
+        mock_db = MagicMock()
+        mock_config = MagicMock()
+        mock_config.workflows_path = temp_dir / "workflows"
+        mock_api_manager = MagicMock()
+
+        api = N8nAPI(
+            db=mock_db,
+            config=mock_config,
+            api_manager=mock_api_manager,
+        )
+
+        workflow_data: Dict[str, Any] = {
+            "id": "existing_id",
+            "name": "Updated Workflow",
+            "updatedAt": "2025-01-01T00:00:00Z",
+            "versionId": "old_version",
+            "nodes": [{"id": "node1"}],
+            "connections": {},
+        }
+
+        with patch.object(api, "_make_n8n_request") as mock_request:
+            mock_request.return_value = {"id": "existing_id", "name": "Updated Workflow"}
+            api.update_n8n_workflow("existing_id", workflow_data)
+
+            # Verify _make_n8n_request was called with stripped data
+            call_args = mock_request.call_args
+            sent_data = call_args[0][2]  # Third positional argument is data
+            assert_that(sent_data).does_not_contain_key("id")
+            assert_that(sent_data).does_not_contain_key("updatedAt")
+            assert_that(sent_data).does_not_contain_key("versionId")
+            assert_that(sent_data).contains_key("name")
+            assert_that(sent_data).contains_key("nodes")
