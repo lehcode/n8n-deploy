@@ -90,6 +90,17 @@ class WorkflowApi:
         """Push wf to n8n server"""
         return self.n8n_api.push_workflow(workflow_id)
 
+    def delete_n8n_workflow(self, workflow_id: str) -> bool:
+        """Delete workflow from n8n server
+
+        Args:
+            workflow_id: Workflow ID to delete from server
+
+        Returns:
+            bool: True if deletion successful
+        """
+        return self.n8n_api.delete_n8n_workflow(workflow_id)
+
     def list_n8n_workflows(self) -> Optional[List[Dict[str, Any]]]:
         """List workflows from n8n server"""
         return self.n8n_api.list_n8n_workflows()

@@ -366,10 +366,10 @@ done < workflows.txt
 ### Reduce Database Size
 
 ```bash
-# Remove inactive workflows
+# Delete inactive workflows from server and database
 n8n-deploy wf list --filter-status inactive --no-emoji | \
     awk '{print $1}' | \
-    xargs -I {} n8n-deploy wf remove {}
+    xargs -I {} n8n-deploy wf delete {} --yes
 
 # Compact after bulk deletions
 n8n-deploy db compact

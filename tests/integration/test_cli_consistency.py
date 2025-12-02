@@ -34,7 +34,7 @@ def get_all_commands() -> List[List[str]]:
         ["wf"],
         ["wf", "add"],
         ["wf", "list"],
-        ["wf", "remove"],
+        ["wf", "delete"],
         ["wf", "search"],
         ["wf", "stats"],
         ["wf", "pull"],
