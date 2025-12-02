@@ -89,6 +89,36 @@ n8n-deploy wf push my-workflow.json --remote production
 {: .note }
 > Workflow files should be managed with version control (git). Use `db backup` for database metadata, API keys, and server configurations.
 
+### Delete Workflow
+
+Remove a workflow from both the n8n server and the local database:
+
+```bash
+# Delete by workflow name
+n8n-deploy wf delete "Customer Onboarding"
+
+# Delete by workflow ID
+n8n-deploy wf delete deAVBp391wvomsWY
+
+# Delete by filename
+n8n-deploy wf delete my-workflow.json
+
+# Skip confirmation prompt
+n8n-deploy wf delete "Customer Onboarding" --yes
+
+# Override server
+n8n-deploy wf delete workflow-name --remote staging
+
+# Self-signed certificates
+n8n-deploy wf delete workflow-name --skip-ssl-verify
+```
+
+{: .warning }
+> The `wf delete` command removes the workflow from the n8n server first, then from the local database. The JSON file is NOT deleted - you manage files yourself (via git).
+
+{: .note }
+> **Draft workflows**: Workflows with draft IDs (`draft_*`) are only removed from the database since they don't exist on any server yet.
+
 ## 🔍 Advanced Workflow Management
 
 ### Search Workflows
