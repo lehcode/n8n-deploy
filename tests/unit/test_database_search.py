@@ -252,3 +252,118 @@ class TestDatabaseSearch:
         # Search that should match fewer results
         results = temp_db.search_workflows("010")
         assert len(results) >= 1  # At least perf_test_010_020
+
+
+class TestGetWorkflowByNameOrId:
+    """Test get_workflow_by_name_or_id with various lookup strategies"""
+
+    @pytest.fixture
+    def temp_db(self, tmp_path: Path) -> DBApi:
+        """Create a temporary database for testing"""
+        db_path = tmp_path / "test_lookup.db"
+        config = AppConfig(base_folder=tmp_path, flow_folder=tmp_path)
+        db = DBApi(config=config, db_path=db_path)
+        db.schema_api.initialize_database()
+        return db
+
+    @pytest.fixture
+    def workflows_with_paths(self, temp_db: DBApi) -> List[Workflow]:
+        """Create workflows with different file path patterns"""
+        workflows = [
+            # Simple filename
+            Workflow(
+                id="wf001",
+                name="simple-workflow",
+                file="simple-workflow.json",
+                status=WorkflowStatus.ACTIVE,
+            ),
+            # Filename with subdirectory path
+            Workflow(
+                id="wf002",
+                name="nested-workflow",
+                file="subdir/nested-workflow.json",
+                status=WorkflowStatus.ACTIVE,
+            ),
+            # Filename with deep path
+            Workflow(
+                id="wf003",
+                name="deep-workflow",
+                file="n8n-workflows/research/deep-workflow.json",
+                status=WorkflowStatus.ACTIVE,
+            ),
+            # Workflow without file
+            Workflow(
+                id="wf004",
+                name="no-file-workflow",
+                file=None,
+                status=WorkflowStatus.ACTIVE,
+            ),
+        ]
+
+        for wf in workflows:
+            temp_db.add_workflow(wf)
+
+        return workflows
+
+    def test_lookup_by_id(self, temp_db: DBApi, workflows_with_paths: List[Workflow]):
+        """Test lookup by workflow ID"""
+        result = temp_db.get_workflow_by_name_or_id("wf001")
+        assert result is not None
+        assert result.id == "wf001"
+        assert result.name == "simple-workflow"
+
+    def test_lookup_by_name(self, temp_db: DBApi, workflows_with_paths: List[Workflow]):
+        """Test lookup by workflow name"""
+        result = temp_db.get_workflow_by_name_or_id("nested-workflow")
+        assert result is not None
+        assert result.id == "wf002"
+        assert result.name == "nested-workflow"
+
+    def test_lookup_by_exact_filename(self, temp_db: DBApi, workflows_with_paths: List[Workflow]):
+        """Test lookup by exact filename (simple case)"""
+        result = temp_db.get_workflow_by_name_or_id("simple-workflow.json")
+        assert result is not None
+        assert result.id == "wf001"
+
+    def test_lookup_by_exact_path(self, temp_db: DBApi, workflows_with_paths: List[Workflow]):
+        """Test lookup by exact file path"""
+        result = temp_db.get_workflow_by_name_or_id("subdir/nested-workflow.json")
+        assert result is not None
+        assert result.id == "wf002"
+
+    def test_lookup_by_basename_from_path(self, temp_db: DBApi, workflows_with_paths: List[Workflow]):
+        """Test lookup by basename when file is stored with path (ND-50 fix)"""
+        # User provides just filename, but database has path
+        result = temp_db.get_workflow_by_name_or_id("nested-workflow.json")
+        assert result is not None
+        assert result.id == "wf002"
+        assert result.file == "subdir/nested-workflow.json"
+
+    def test_lookup_by_basename_from_deep_path(self, temp_db: DBApi, workflows_with_paths: List[Workflow]):
+        """Test lookup by basename from deep nested path (ND-50 fix)"""
+        # User provides just filename, but database has deep path
+        result = temp_db.get_workflow_by_name_or_id("deep-workflow.json")
+        assert result is not None
+        assert result.id == "wf003"
+        assert result.file == "n8n-workflows/research/deep-workflow.json"
+
+    def test_lookup_nonexistent(self, temp_db: DBApi, workflows_with_paths: List[Workflow]):
+        """Test lookup for non-existent workflow"""
+        result = temp_db.get_workflow_by_name_or_id("does-not-exist.json")
+        assert result is None
+
+    def test_lookup_priority_id_over_name(self, temp_db: DBApi, workflows_with_paths: List[Workflow]):
+        """Test that ID lookup takes priority over name"""
+        # Add workflow where name matches another workflow's ID pattern
+        conflict_wf = Workflow(
+            id="conflict-id",
+            name="wf001",  # Name matches existing workflow's ID
+            file="conflict.json",
+            status=WorkflowStatus.ACTIVE,
+        )
+        temp_db.add_workflow(conflict_wf)
+
+        # Should find by ID first
+        result = temp_db.get_workflow_by_name_or_id("wf001")
+        assert result is not None
+        assert result.id == "wf001"  # Got the one with matching ID, not name
