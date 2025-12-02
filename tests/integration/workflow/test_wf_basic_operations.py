@@ -77,10 +77,10 @@ class TestWorkflowBasicOps(WorkflowTestHelpers):
 
         assert returncode == 0
 
-    def test_wf_remove_with_yes_flag(self) -> None:
-        """Test wf remove --yes skips confirmation"""
+    def test_wf_delete_with_yes_flag(self) -> None:
+        """Test wf delete --yes skips confirmation"""
         self.setup_database()
-        self.create_test_workflow("remove_yes_test")
+        self.create_test_workflow("delete_yes_test")
         self.run_cli_command(
             [
                 "--data-dir",
@@ -89,18 +89,18 @@ class TestWorkflowBasicOps(WorkflowTestHelpers):
                 self.temp_flow_dir,
                 "wf",
                 "add",
-                "remove_yes_test.json",
-                "Remove Yes Test",
+                "delete_yes_test.json",
+                "Delete Yes Test",
             ]
         )
 
-        # Remove with --yes should skip confirmation
+        # Delete with --yes should skip confirmation
         returncode, stdout, stderr = self.run_cli_command(
             [
                 "--data-dir",
                 self.temp_dir,
                 "wf",
-                "remove",
+                "delete",
                 "test_workflow_id",
                 "--yes",
             ]

@@ -49,8 +49,8 @@ class WorkflowManager:
         """Add a new workflow to the database."""
         pass
 
-    def remove_workflow(self, workflow_id: str) -> bool:
-        """Remove a workflow from the database."""
+    def delete_n8n_workflow(self, workflow_id: str) -> bool:
+        """Delete workflow from n8n server and local database."""
         pass
 
     def sync_workflow(self, workflow_name: str) -> SyncResult:

@@ -1034,12 +1034,12 @@ def test_wf_push_missing_required_args():
     )
 
 
-def test_wf_remove_help():
-    """Test wf  remove --help"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "remove", "--help"], capture_output=True, text=True, timeout=60)
+def test_wf_delete_help():
+    """Test wf delete --help"""
+    result = subprocess.run(CLI_COMMAND + ["wf", "delete", "--help"], capture_output=True, text=True, timeout=60)
     assert result.returncode in [0], (
         f"Command failed with exit code {result.returncode}\n"
-        f"Command: wf remove --help\n"
+        f"Command: wf delete --help\n"
         f"stdout: {result.stdout[:500]}\n"
         f"stderr: {result.stderr[:500]}"
     )
@@ -1048,45 +1048,45 @@ def test_wf_remove_help():
     )
 
 
-def test_wf_remove_data_dir_valid_path():
-    """Test wf  remove with valid --data-dir"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "remove", "--data-dir", "/tmp"], capture_output=True, text=True, timeout=60)
+def test_wf_delete_data_dir_valid_path():
+    """Test wf delete with valid --data-dir"""
+    result = subprocess.run(CLI_COMMAND + ["wf", "delete", "--data-dir", "/tmp"], capture_output=True, text=True, timeout=60)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
-        f"Command: wf remove --data-dir /tmp\n"
+        f"Command: wf delete --data-dir /tmp\n"
         f"stdout: {result.stdout[:500]}\n"
         f"stderr: {result.stderr[:500]}"
     )
 
 
-def test_wf_remove_yes_flag():
-    """Test wf  remove with --yes flag"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "remove", "--yes"], capture_output=True, text=True, timeout=60)
+def test_wf_delete_yes_flag():
+    """Test wf delete with --yes flag"""
+    result = subprocess.run(CLI_COMMAND + ["wf", "delete", "--yes"], capture_output=True, text=True, timeout=60)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
-        f"Command: wf remove --yes\n"
+        f"Command: wf delete --yes\n"
         f"stdout: {result.stdout[:500]}\n"
         f"stderr: {result.stderr[:500]}"
     )
 
 
-def test_wf_remove_with_positional_args():
-    """Test wf  remove with positional arguments"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "remove", "test_workflow_id"], capture_output=True, text=True, timeout=60)
+def test_wf_delete_with_positional_args():
+    """Test wf delete with positional arguments"""
+    result = subprocess.run(CLI_COMMAND + ["wf", "delete", "test_workflow_id"], capture_output=True, text=True, timeout=60)
     assert result.returncode in [0, 1, 2], (
         f"Command failed with exit code {result.returncode}\n"
-        f"Command: wf remove test_workflow_id\n"
+        f"Command: wf delete test_workflow_id\n"
         f"stdout: {result.stdout[:500]}\n"
         f"stderr: {result.stderr[:500]}"
     )
 
 
-def test_wf_remove_missing_required_args():
-    """Test wf  remove with missing required arguments"""
-    result = subprocess.run(CLI_COMMAND + ["wf", "remove"], capture_output=True, text=True, timeout=60)
+def test_wf_delete_missing_required_args():
+    """Test wf delete with missing required arguments"""
+    result = subprocess.run(CLI_COMMAND + ["wf", "delete"], capture_output=True, text=True, timeout=60)
     assert result.returncode in [2], (
         f"Command failed with exit code {result.returncode}\n"
-        f"Command: wf remove\n"
+        f"Command: wf delete\n"
         f"stdout: {result.stdout[:500]}\n"
         f"stderr: {result.stderr[:500]}"
     )
