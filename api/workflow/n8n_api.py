@@ -142,26 +142,19 @@ class N8nAPI:
     def _strip_readonly_fields(self, workflow_data: Dict[str, Any]) -> Dict[str, Any]:
         """Strip read-only fields that n8n API rejects on create/update.
 
-        Filters both root-level readonly fields and invalid fields within
-        the settings object. Uses a whitelist approach for settings to
-        ensure only n8n-accepted fields are sent.
+        Uses a whitelist approach to ensure only n8n-accepted fields are sent.
+        Based on n8n API v1 documentation and GitHub issue #19587.
+
+        Allowed root fields: name, nodes, connections, settings, staticData
         """
-        readonly_fields = [
-            "id",
-            # "active" - preserved to maintain workflow state from JSON
-            "triggerCount",
-            "updatedAt",
-            "createdAt",
-            "versionId",
+        # Whitelist of fields accepted by n8n API for create/update
+        allowed_root_fields = {
+            "name",
+            "nodes",
+            "connections",
+            "settings",
             "staticData",
-            "tags",
-            "meta",
-            # Additional fields returned by GET but rejected by PUT
-            "isArchived",
-            "pinData",
-            "versionCounter",
-            "shared",
-        ]
+        }
 
         # Valid settings fields accepted by n8n API (whitelist)
         valid_settings_fields = {
@@ -176,7 +169,8 @@ class N8nAPI:
             "timezone",
         }
 
-        result = {k: v for k, v in workflow_data.items() if k not in readonly_fields}
+        # Only keep allowed root fields
+        result = {k: v for k, v in workflow_data.items() if k in allowed_root_fields}
 
         # Filter settings object to only include valid fields
         if "settings" in result and isinstance(result["settings"], dict):
