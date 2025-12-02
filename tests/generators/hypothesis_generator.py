@@ -549,7 +549,7 @@ class TestHelpConsistency:
             [
                 "list",
                 "add",
-                "remove",
+                "delete",
                 "search",
                 "stats",
                 "pull",

@@ -4,7 +4,7 @@ CLI module for n8n-deploy wf management
 
 This module provides modular CLI commands organized by functional areas:
 - main: Base CLI application with version/help handling
-- wf: Workflow operations (add, remove, list, sync, search, stats)
+- wf: Workflow operations (add, delete, list, sync, search, stats)
 - db: Database management (init, status, backup, compact)
 - backup: Backup/restore operations for workflows
 - apikey: API key lifecycle management
