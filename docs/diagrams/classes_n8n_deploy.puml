@@ -1,0 +1,227 @@
+@startuml classes_n8n_deploy
+set namespaceSeparator none
+class "ApiKey" as api.api_keys.ApiKey {
+  created_at : datetime
+  description : Optional[str]
+  id : int
+  is_active : bool
+  name : str
+  plain_key : str
+}
+class "ApiKeyCrud" as api.db.apikeys.ApiKeyCrud {
+  activate_api_key(key_name: str) -> bool
+  add_api_key(name: str, api_key: str, description: Optional[str]) -> int
+  api_key_exists(key_name: str) -> bool
+  deactivate_api_key(key_name: str) -> bool
+  delete_api_key(key_name: str) -> bool
+  get_api_key(key_name: str) -> Optional[str]
+  list_api_keys(unmask: bool) -> List[Dict[str, Any]]
+}
+class "AppConfig" as api.config.AppConfig {
+  backup_dir : Optional[Path]
+  backups_path
+  base_folder : Path
+  database_path
+  db_filename : str
+  flow_folder : Optional[Path]
+  n8n_api_url
+  n8n_url : Optional[str]
+  workflows_path
+  ensure_directories() -> None
+  validate_paths() -> None
+}
+class "BackupApi" as api.db.backup.BackupApi {
+  schema
+  cleanup_old_backups(keep_count: int) -> int
+  create_backup_record(backup_metadata: Dict[str, Any]) -> bool
+  delete_backup_record(backup_id: int) -> bool
+  get_backup_by_filename(filename: str) -> Optional[Dict[str, Any]]
+  get_backup_history() -> List[Dict[str, Any]]
+  update_backup_status(backup_id: int, is_active: bool) -> bool
+}
+class "BaseDB" as api.db.base.BaseDB {
+  db_path : Path
+  execute_query(query: str, params: Sequence[Any], commit: bool) -> sqlite3.Cursor
+  get_connection() -> Iterator[sqlite3.Connection]
+}
+class "Config" as api.models.Workflow.Config {
+  json_encoders : dict
+  use_enum_values : bool
+}
+class "Config" as api.models.WorkflowConfiguration.Config {
+  json_encoders : dict
+  use_enum_values : bool
+}
+class "Config" as api.models.DatabaseStats.Config {
+  json_encoders : dict
+}
+class "CustomCommand" as api.cli.app.CustomCommand {
+  format_usage(ctx: click.Context, formatter: click.HelpFormatter) -> None
+}
+class "CustomGroup" as api.cli.app.CustomGroup {
+  collect_usage_pieces(ctx: click.Context) -> List[str]
+  format_usage(ctx: click.Context, formatter: click.HelpFormatter) -> None
+  get_command(ctx: click.Context, cmd_name: str) -> Optional[click.Command]
+  parse_args(ctx: click.Context, args: List[str]) -> List[str]
+}
+class "DBApi" as api.db.core.DBApi {
+  schema_api
+  add_workflow(wf: Workflow) -> str
+  backup(backup_path: Union[str, Path]) -> None
+  compact() -> None
+  create_backup_record(backup_metadata: Dict[str, Any]) -> bool
+  delete_workflow(workflow_id: str) -> bool
+  get_backup_by_filename(filename: str) -> Optional[Dict[str, Any]]
+  get_backup_history() -> List[Dict[str, Any]]
+  get_database_stats() -> DatabaseStats
+  get_workflow(workflow_id: str) -> Optional[Workflow]
+  get_workflow_by_name_or_id(name_or_id: str) -> Optional[Workflow]
+  increment_pull_count(workflow_id: str) -> bool
+  increment_push_count(workflow_id: str) -> bool
+  list_backups() -> List[Dict[str, Any]]
+  list_workflows(workflow_type: Optional[str]) -> List[Workflow]
+  search_workflows(query: str) -> List[Workflow]
+  update_workflow(wf: Workflow) -> bool
+}
+class "DatabaseStats" as api.models.DatabaseStats {
+  database_path : str
+  database_size : int
+  last_updated : datetime
+  schema_version : int
+  tables : Dict[str, int]
+}
+class "KeyApi" as api.api_keys.KeyApi {
+  config : Optional[AppConfig]
+  crud
+  db
+  activate_api_key(key_name: str) -> bool
+  add_api_key(name: str, api_key: str, description: Optional[str]) -> int
+  deactivate_api_key(key_name: str) -> bool
+  delete_api_key(key_name: str, force: bool, no_emoji: bool) -> bool
+  get_api_key(key_name: str) -> Optional[str]
+  list_api_keys(unmask: bool) -> List[Dict[str, Any]]
+  test_api_key(key_name: str, server_url: Optional[str], skip_ssl_verify: bool, no_emoji: bool) -> bool
+}
+class "N8nAPI" as api.workflow.n8n_api.N8nAPI {
+  api_manager
+  base_path
+  config
+  db : str
+  remote : Optional[str]
+  skip_ssl_verify : bool
+  create_n8n_workflow(workflow_data: Dict[str, Any]) -> Optional[Dict[str, Any]]
+  delete_n8n_workflow(workflow_id: str) -> bool
+  get_n8n_version() -> Optional[str]
+  get_n8n_workflow(workflow_id: str) -> Optional[Dict[str, Any]]
+  get_n8n_workflows() -> Optional[List[Dict[str, Any]]]
+  list_n8n_workflows() -> Optional[List[Dict[str, Any]]]
+  pull_workflow(workflow_id: str) -> bool
+  push_workflow(workflow_id: str) -> bool
+  update_n8n_workflow(workflow_id: str, workflow_data: Dict[str, Any]) -> Optional[Dict[str, Any]]
+}
+class "OutputFormatter" as api.cli.output.OutputFormatter {
+  no_emoji : bool
+  abort(msg: str) -> None
+  confirm(prompt: str, default: bool) -> bool
+  error(msg: str) -> None
+  format(msg: str, emoji: str) -> str
+  info(msg: str) -> None
+  success(msg: str) -> None
+  warning(msg: str) -> None
+}
+class "SchemaApi" as api.db.schema.SchemaApi {
+  SCHEMA_VERSION : int
+  get_schema_version() -> int
+  initialize_database() -> None
+  migrate_database() -> None
+}
+class "ServerCrud" as api.db.servers.ServerCrud {
+  add_server(url: str, name: str, is_active: bool) -> int
+  delete_server(name: str) -> bool
+  get_api_key_for_server(server_name: str) -> Optional[str]
+  get_primary_api_key_name(server_name: str) -> Optional[str]
+  get_server_api_keys(server_name: str) -> List[Dict[str, Any]]
+  get_server_by_id(server_id: int) -> Optional[Dict[str, Any]]
+  get_server_by_name(name: str) -> Optional[Dict[str, Any]]
+  get_server_by_url(url: str) -> Optional[Dict[str, Any]]
+  link_api_key(server_name: str, api_key_name: str) -> bool
+  list_servers(active_only: bool) -> List[Dict[str, Any]]
+  set_primary_api_key(server_name: str, api_key_name: str) -> bool
+  unlink_api_key(server_name: str, api_key_name: str) -> bool
+  update_server(name: str, url: Optional[str], is_active: Optional[bool]) -> bool
+}
+class "Workflow" as api.models.Workflow {
+  created_at : Optional[datetime]
+  file : Optional[str]
+  file_folder : Optional[str]
+  id : Optional[str]
+  last_synced : Optional[datetime]
+  n8n_version_id : Optional[str]
+  name : Optional[str]
+  pull_count : Optional[int]
+  push_count : Optional[int]
+  server_id : Optional[int]
+  status : Optional[WorkflowStatus]
+  updated_at : Optional[datetime]
+}
+class "WorkflowApi" as api.workflow.main.WorkflowApi {
+  config : Optional[AppConfig]
+  crud
+  db
+  key_api
+  n8n_api
+  add_workflow(workflow_id: str, name: str) -> None
+  add_workflow_from_file(json_file_path: str, name: str) -> None
+  delete_n8n_workflow(workflow_id: str) -> bool
+  get_n8n_workflows() -> Optional[List[Dict[str, Any]]]
+  get_workflow_info(id_or_alias: str) -> Dict[str, Any]
+  get_workflow_stats(workflow_id: Optional[str]) -> Dict[str, Any]
+  list_n8n_workflows() -> Optional[List[Dict[str, Any]]]
+  list_workflows(only_backupable: bool) -> List[Dict[str, Any]]
+  pull_workflow(workflow_id: str) -> bool
+  push_workflow(workflow_id: str) -> bool
+  search_workflows(query: str) -> List[Workflow]
+}
+class "WorkflowCRUD" as api.workflow.crud.WorkflowCRUD {
+  base_path
+  config
+  db
+  add_workflow(workflow_id: str, name: str, n8n_version_id: Optional[str]) -> None
+  add_workflow_from_file(json_file_path: str, name: str) -> None
+  get_workflow_info(id_or_alias: str) -> Dict[str, Any]
+  get_workflow_stats(workflow_id: Optional[str]) -> Dict[str, Any]
+  list_workflows(only_backupable: bool) -> List[Dict[str, Any]]
+  remove_workflow(workflow_id: str) -> None
+  search_workflows(query: str) -> List[Workflow]
+}
+class "WorkflowConfiguration" as api.models.WorkflowConfiguration {
+  config_data : Optional[Dict[str, Any]]
+  config_type : Optional[str]
+  created_at : Optional[datetime]
+  id : Optional[int]
+  is_active : Optional[bool]
+  workflow_id : Optional[str]
+}
+class "WorkflowStatus" as api.models.WorkflowStatus {
+  name
+}
+api.db.apikeys.ApiKeyCrud --|> api.db.base.BaseDB
+api.db.backup.BackupApi --|> api.db.base.BaseDB
+api.db.core.DBApi --|> api.db.base.BaseDB
+api.db.schema.SchemaApi --|> api.db.base.BaseDB
+api.db.servers.ServerCrud --|> api.db.base.BaseDB
+api.api_keys.KeyApi --* api.workflow.main.WorkflowApi : key_api
+api.config.AppConfig --* api.workflow.main.WorkflowApi : config
+api.config.AppConfig --* api.workflow.main.WorkflowApi : config
+api.db.apikeys.ApiKeyCrud --* api.api_keys.KeyApi : crud
+api.db.core.DBApi --* api.workflow.main.WorkflowApi : db
+api.db.schema.SchemaApi --* api.db.backup.BackupApi : schema
+api.db.schema.SchemaApi --* api.db.core.DBApi : schema_api
+api.workflow.crud.WorkflowCRUD --* api.workflow.main.WorkflowApi : crud
+api.workflow.n8n_api.N8nAPI --* api.workflow.main.WorkflowApi : n8n_api
+api.api_keys.KeyApi --o api.workflow.n8n_api.N8nAPI : api_manager
+api.config.AppConfig --o api.workflow.crud.WorkflowCRUD : config
+api.config.AppConfig --o api.workflow.n8n_api.N8nAPI : config
+api.db.core.DBApi --o api.api_keys.KeyApi : db
+api.db.core.DBApi --o api.workflow.crud.WorkflowCRUD : db
+@enduml
