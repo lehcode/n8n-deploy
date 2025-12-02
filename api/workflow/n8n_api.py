@@ -111,6 +111,111 @@ class N8nAPI:
             silent=silent,
         )
 
+    def _make_n8n_request_typed(
+        self, method: str, endpoint: str, data: Optional[Dict[str, Any]] = None, silent: bool = False
+    ) -> N8nApiResult:
+        """Make authenticated request to n8n API with typed result
+
+        Returns N8nApiResult with detailed error information instead of None.
+        This allows callers to distinguish between different error types,
+        particularly 404 (workflow not found) vs network errors.
+
+        Args:
+            method: HTTP method (GET, POST, PUT, DELETE)
+            endpoint: API endpoint path
+            data: Optional request payload
+            silent: If True, suppress error messages for failed requests
+        """
+        credentials = self._get_n8n_credentials()
+        if not credentials:
+            return N8nApiResult(
+                success=False,
+                error_type=N8nApiErrorType.AUTH_FAILURE,
+                error_message="No API credentials available",
+            )
+
+        base_url = credentials.get("server_url", "").rstrip("/")
+        url = f"{base_url}/{endpoint.lstrip('/')}"
+
+        try:
+            response: requests.Response
+            if method.upper() == "GET":
+                response = requests.get(url, headers=credentials["headers"], verify=not self.skip_ssl_verify, timeout=10)
+            elif method.upper() == "POST":
+                response = requests.post(
+                    url, headers=credentials["headers"], json=data, verify=not self.skip_ssl_verify, timeout=10
+                )
+            elif method.upper() == "PUT":
+                response = requests.put(
+                    url, headers=credentials["headers"], json=data, verify=not self.skip_ssl_verify, timeout=10
+                )
+            elif method.upper() == "DELETE":
+                response = requests.delete(url, headers=credentials["headers"], verify=not self.skip_ssl_verify, timeout=10)
+            else:
+                return N8nApiResult(
+                    success=False,
+                    error_type=N8nApiErrorType.UNKNOWN,
+                    error_message=f"Unsupported HTTP method: {method}",
+                )
+
+            # Handle specific status codes BEFORE raise_for_status()
+            if response.status_code == 404:
+                return N8nApiResult(
+                    success=False,
+                    error_type=N8nApiErrorType.NOT_FOUND,
+                    error_message="Resource not found on server",
+                    status_code=404,
+                )
+
+            if response.status_code in (401, 403):
+                return N8nApiResult(
+                    success=False,
+                    error_type=N8nApiErrorType.AUTH_FAILURE,
+                    error_message="Authentication/authorization failed",
+                    status_code=response.status_code,
+                )
+
+            if response.status_code >= 500:
+                return N8nApiResult(
+                    success=False,
+                    error_type=N8nApiErrorType.SERVER_ERROR,
+                    error_message=f"Server error: {response.status_code}",
+                    status_code=response.status_code,
+                )
+
+            response.raise_for_status()
+            result = response.json()
+            return N8nApiResult(
+                success=True,
+                data=result if isinstance(result, dict) else None,
+                status_code=response.status_code,
+            )
+
+        except requests.exceptions.Timeout:
+            if not silent:
+                print("❌ n8n API request timed out after 10 seconds")
+            return N8nApiResult(
+                success=False,
+                error_type=N8nApiErrorType.TIMEOUT,
+                error_message="Request timed out after 10 seconds",
+            )
+        except requests.exceptions.ConnectionError as e:
+            if not silent:
+                print(f"❌ n8n API connection error: {e}")
+            return N8nApiResult(
+                success=False,
+                error_type=N8nApiErrorType.NETWORK_ERROR,
+                error_message=str(e),
+            )
+        except requests.exceptions.RequestException as e:
+            if not silent:
+                print(f"❌ n8n API request failed: {e}")
+            return N8nApiResult(
+                success=False,
+                error_type=N8nApiErrorType.UNKNOWN,
+                error_message=str(e),
+            )
+
     def get_n8n_workflows(self) -> Optional[List[Dict[str, Any]]]:
         """Fetch all workflows from n8n server"""
         result = self._make_n8n_request("GET", "api/v1/workflows")
