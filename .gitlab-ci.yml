@@ -37,18 +37,14 @@ variables:
   GIT_DEPTH: 0  # Full clone with all tags for setuptools_scm version detection
 
 # Workflow rules - define when pipeline runs
-# Prevents duplicate pipelines: branch pipeline skipped when MR exists
+# Feature branch push + MR create: security+quality
+# MR merge (protected branch push): test+build-matrix
 workflow:
   rules:
-    # Run on master/develop (no MR check needed for protected branches)
+    # Run on master/develop (protected branches)
     - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
       when: always
-    # Skip branch pipeline if MR exists (prevents duplicate runs)
-    # Conventional Commits branch patterns: feat/, fix/, docs/, style/, refactor/, perf/, test/, build/, ci/, chore/, revert/
-    # Plus common aliases: bugfix/, hotfix/
-    - if: '$CI_COMMIT_BRANCH =~ /^(feat|fix|bugfix|hotfix|docs|style|refactor|perf|test|build|ci|chore|revert)\/.*/ && $CI_OPEN_MERGE_REQUESTS'
-      when: never
-    # Run on all Conventional Commits branch types only if no MR is open
+    # Run on Conventional Commits branch types (feature branches)
     - if: '$CI_COMMIT_BRANCH =~ /^(feat|fix|bugfix|hotfix|docs|style|refactor|perf|test|build|ci|chore|revert)\/.*/'
       when: always
     # Run on all tags
@@ -242,7 +238,7 @@ quality:black:
     - echo "✅ Code formatting check passed"
 
 # ============================================
-# TEST STAGE
+# TEST STAGE (runs on merge/push to protected branches)
 # ============================================
 
 # Unit tests
@@ -252,35 +248,21 @@ test:unit:
   tags:
     - python
   interruptible: true
-  resource_group: test-runner  # Serialize test execution across pipelines
+  resource_group: test-runner
   <<: *python_setup
-  needs:
-    - quality:mypy
-    - quality:black
+  needs: []  # Run in parallel with security+quality stages
   rules:
-    # Skip on tags - code was validated before tagging
     - if: '$CI_COMMIT_TAG'
       when: never
-    # Always run on protected branches
-    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "develop"'
-    - if: '$CI_PIPELINE_SOURCE == "web"'
-    # Always run on MRs to protected branches (required for merge)
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && ($CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master" || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop")'
-    # On other MRs, only run when code files change (skip for docs-only changes)
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-      changes:
-        - api/**/*
-        - tests/**/*
-        - requirements.txt
-        - pyproject.toml
-        - run_tests.py
-        - .gitlab-ci.yml
+      when: never
+    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
+      when: on_success
   script:
     - source .venv/bin/activate
     - export N8N_DEPLOY_TESTING=1
-    #- python -m pytest tests/unit/ --cov=api --cov-report= -v
     - python -m pytest tests/unit/ -rs --tb=short -q
-    - echo "✅ Unit tests passed"
+    - echo "Unit tests passed"
   artifacts:
     paths:
       - .coverage
@@ -293,34 +275,21 @@ test:integration:
   tags:
     - python
   interruptible: true
-  resource_group: test-runner  # Serialize test execution across pipelines
+  resource_group: test-runner
   <<: *python_setup
-  needs:
-    - quality:mypy
-    - quality:black
+  needs: []  # Run in parallel with security+quality stages
   rules:
-    # Skip on tags - code was validated before tagging
     - if: '$CI_COMMIT_TAG'
       when: never
-    # Always run on protected branches
-    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "develop"'
-    - if: '$CI_PIPELINE_SOURCE == "web"'
-    # Always run on MRs to protected branches (required for merge)
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && ($CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master" || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop")'
-    # On other MRs, only run when code files change (skip for docs-only changes)
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-      changes:
-        - api/**/*
-        - tests/**/*
-        - requirements.txt
-        - pyproject.toml
-        - run_tests.py
-        - .gitlab-ci.yml
+      when: never
+    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
+      when: on_success
   script:
     - source .venv/bin/activate
     - export N8N_DEPLOY_TESTING=1
     - python -m pytest tests/integration/ -rs --tb=short -q
-    - echo "✅ Integration tests passed"
+    - echo "Integration tests passed"
   artifacts:
     paths:
       - .coverage
@@ -334,25 +303,20 @@ test:hypothesis:
     - python
   interruptible: true
   <<: *python_setup
-  needs:
-    - quality:mypy
-    - quality:black
+  needs: []  # Run in parallel with security+quality stages
   rules:
-    # Skip on tags - code was validated before tagging
     - if: '$CI_COMMIT_TAG'
       when: never
-    # Protected branches
-    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
-    # MRs to protected branches
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-    # Manual
-    - if: '$CI_PIPELINE_SOURCE == "web"'
+      when: never
+    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
+      when: on_success
   script:
     - source .venv/bin/activate
     - export N8N_DEPLOY_TESTING=1
     - echo "Running property-based tests with Hypothesis..."
     - python run_tests.py --hypothesis --no-deps-check
-    - echo "✅ Property-based tests passed (755 generated examples)"
+    - echo "Property-based tests passed"
   artifacts:
     when: always
     paths:
@@ -360,7 +324,7 @@ test:hypothesis:
     expire_in: 7 days
 
 # ============================================
-# BUILD-MATRIX STAGE
+# BUILD-MATRIX STAGE (runs on merge/push to protected branches)
 # ============================================
 
 # Multi-version package builds (Python 3.9-3.13)
@@ -380,19 +344,16 @@ build:python-matrix:
       - .venv/
   needs:
     - job: test:unit
-      optional: true  # Optional on tags where tests are skipped
+      optional: true
     - job: test:integration
-      optional: true  # Optional on tags where tests are skipped
-    # - test:hypothesis
+      optional: true
   rules:
-    # Protected branches
-    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
-    # MRs to protected branches
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-    # Tags - build packages for release
     - if: '$CI_COMMIT_TAG'
-    # Manual
-    - if: '$CI_PIPELINE_SOURCE == "web"'
+      when: on_success
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: never
+    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
+      when: on_success
   parallel:
     matrix:
       - PYTHON_VERSION: ["3.9", "3.10", "3.11", "3.12", "3.13"]
@@ -406,11 +367,11 @@ build:python-matrix:
     - source .venv/bin/activate
     - uv pip install --quiet -e ".[test,dev]"
     - uv pip install --quiet build
-    - echo "🔧 Building package for Python ${PYTHON_VERSION}..."
+    - echo "Building package for Python ${PYTHON_VERSION}..."
     - python -m build --wheel --sdist
     - pip install dist/*.whl
     - n8n-deploy --version
-    - echo "✅ Build successful for Python ${PYTHON_VERSION}"
+    - echo "Build successful for Python ${PYTHON_VERSION}"
   artifacts:
     paths:
       - dist/
