@@ -8,6 +8,8 @@ from typing import Dict, Any, List, Optional
 from pathlib import Path
 import json
 
+import pytest
+
 from api.models import Workflow
 from api.config import AppConfig
 
@@ -252,3 +254,24 @@ def generate_test_api_keys(count: int = 3) -> List[Dict[str, Any]]:
             )
         )
     return api_keys
+
+
+def assert_json_output_valid(stdout: str) -> Dict[str, Any]:
+    """Assert stdout contains valid JSON and return parsed data.
+
+    Centralized from multiple conftest.py files.
+
+    Args:
+        stdout: The string output to parse as JSON
+
+    Returns:
+        Parsed JSON data as dictionary
+
+    Raises:
+        pytest.fail: If stdout is not valid JSON
+    """
+    try:
+        data = json.loads(stdout)
+        return data
+    except json.JSONDecodeError as e:
+        pytest.fail(f"Output is not valid JSON: {e}\nOutput: {stdout}")

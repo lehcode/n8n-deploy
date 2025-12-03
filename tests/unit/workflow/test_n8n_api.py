@@ -39,8 +39,9 @@ class TestN8nAPI:
         assert_that(api.skip_ssl_verify).is_false()
         assert_that(api.remote).is_none()
         assert_that(api.base_path).is_equal_to(temp_dir / "workflows")
-        assert_that(api._server_url).is_none()
-        assert_that(api._server_api_key).is_none()
+        # Server URL and API key are now cached in ServerResolver
+        assert_that(api._server_resolver._cached_url).is_none()
+        assert_that(api._server_resolver._cached_api_key).is_none()
 
     def test_init_with_ssl_skip(self, temp_dir: Path) -> None:
         """Test N8nAPI initialization with skip_ssl_verify=True"""
@@ -704,7 +705,7 @@ class TestDeleteN8nWorkflow:
             mock_response = Mock()
             mock_response.raise_for_status = Mock()
 
-            with patch("api.workflow.n8n_api.requests.delete", return_value=mock_response) as mock_delete:
+            with patch("api.workflow.http_client.requests.delete", return_value=mock_response) as mock_delete:
                 result = api.delete_n8n_workflow("test_wf_123")
 
                 assert_that(result).is_true()
@@ -764,7 +765,7 @@ class TestDeleteN8nWorkflow:
             mock_response.status_code = 404
             http_error = requests.exceptions.HTTPError(response=mock_response)
 
-            with patch("api.workflow.n8n_api.requests.delete") as mock_delete:
+            with patch("api.workflow.http_client.requests.delete") as mock_delete:
                 mock_delete.return_value.raise_for_status.side_effect = http_error
                 mock_delete.return_value = mock_response
                 mock_response.raise_for_status = Mock(side_effect=http_error)
@@ -803,7 +804,7 @@ class TestDeleteN8nWorkflow:
             mock_response.status_code = 500
             http_error = requests.exceptions.HTTPError(response=mock_response)
 
-            with patch("api.workflow.n8n_api.requests.delete") as mock_delete:
+            with patch("api.workflow.http_client.requests.delete") as mock_delete:
                 mock_response.raise_for_status = Mock(side_effect=http_error)
                 mock_delete.return_value = mock_response
 
@@ -837,7 +838,7 @@ class TestDeleteN8nWorkflow:
             },
         ):
             # Mock requests.delete to raise ConnectionError
-            with patch("api.workflow.n8n_api.requests.delete") as mock_delete:
+            with patch("api.workflow.http_client.requests.delete") as mock_delete:
                 mock_delete.side_effect = requests.exceptions.ConnectionError("Network unreachable")
 
                 result = api.delete_n8n_workflow("test_wf_123")
@@ -871,7 +872,7 @@ class TestDeleteN8nWorkflow:
             mock_response = Mock()
             mock_response.raise_for_status = Mock()
 
-            with patch("api.workflow.n8n_api.requests.delete", return_value=mock_response) as mock_delete:
+            with patch("api.workflow.http_client.requests.delete", return_value=mock_response) as mock_delete:
                 result = api.delete_n8n_workflow("test_wf_123")
 
                 assert_that(result).is_true()
