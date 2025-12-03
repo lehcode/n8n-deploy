@@ -395,7 +395,9 @@ class TestStripReadonlyFields:
 
         # Verify readonly fields are removed
         assert_that(result).does_not_contain_key("id")
-        assert_that(result).does_not_contain_key("active")
+        # "active" is now preserved to maintain workflow state
+        assert_that(result).contains_key("active")
+        assert_that(result["active"]).is_true()
         assert_that(result).does_not_contain_key("triggerCount")
         assert_that(result).does_not_contain_key("updatedAt")
         assert_that(result).does_not_contain_key("createdAt")
@@ -451,6 +453,158 @@ class TestStripReadonlyFields:
         result = api._strip_readonly_fields({})
 
         assert_that(result).is_empty()
+
+    def test_strip_readonly_fields_removes_additional_readonly(self, temp_dir: Path) -> None:
+        """Test _strip_readonly_fields removes additional readonly fields (isArchived, pinData, etc)"""
+        mock_db = MagicMock()
+        mock_config = MagicMock()
+        mock_config.workflows_path = temp_dir / "workflows"
+        mock_api_manager = MagicMock()
+
+        api = N8nAPI(
+            db=mock_db,
+            config=mock_config,
+            api_manager=mock_api_manager,
+        )
+
+        workflow_data: Dict[str, Any] = {
+            "name": "Test Workflow",
+            "isArchived": False,
+            "pinData": {"node1": [{"data": "test"}]},
+            "versionCounter": 5,
+            "shared": [{"id": "user1"}],
+            "nodes": [],
+            "connections": {},
+        }
+
+        result = api._strip_readonly_fields(workflow_data)
+
+        # Verify additional readonly fields are removed
+        assert_that(result).does_not_contain_key("isArchived")
+        assert_that(result).does_not_contain_key("pinData")
+        assert_that(result).does_not_contain_key("versionCounter")
+        assert_that(result).does_not_contain_key("shared")
+        # Verify valid fields are preserved
+        assert_that(result).contains_key("name")
+        assert_that(result).contains_key("nodes")
+        assert_that(result).contains_key("connections")
+
+    def test_strip_readonly_fields_filters_invalid_settings(self, temp_dir: Path) -> None:
+        """Test _strip_readonly_fields filters invalid fields from settings object"""
+        mock_db = MagicMock()
+        mock_config = MagicMock()
+        mock_config.workflows_path = temp_dir / "workflows"
+        mock_api_manager = MagicMock()
+
+        api = N8nAPI(
+            db=mock_db,
+            config=mock_config,
+            api_manager=mock_api_manager,
+        )
+
+        workflow_data: Dict[str, Any] = {
+            "name": "Test Workflow",
+            "nodes": [],
+            "connections": {},
+            "settings": {
+                "executionOrder": "v1",
+                "callerPolicy": "workflowsFromSameOwner",
+                "availableInMCP": False,  # Invalid - should be filtered
+                "customField": "value",  # Invalid - should be filtered
+            },
+        }
+
+        result = api._strip_readonly_fields(workflow_data)
+
+        # Verify settings are filtered
+        assert_that(result).contains_key("settings")
+        assert_that(result["settings"]).contains_key("executionOrder")
+        assert_that(result["settings"]).contains_key("callerPolicy")
+        assert_that(result["settings"]).does_not_contain_key("availableInMCP")
+        assert_that(result["settings"]).does_not_contain_key("customField")
+
+    def test_strip_readonly_fields_preserves_valid_settings(self, temp_dir: Path) -> None:
+        """Test _strip_readonly_fields preserves all valid settings fields"""
+        mock_db = MagicMock()
+        mock_config = MagicMock()
+        mock_config.workflows_path = temp_dir / "workflows"
+        mock_api_manager = MagicMock()
+
+        api = N8nAPI(
+            db=mock_db,
+            config=mock_config,
+            api_manager=mock_api_manager,
+        )
+
+        workflow_data: Dict[str, Any] = {
+            "name": "Test Workflow",
+            "nodes": [],
+            "connections": {},
+            "settings": {
+                "executionOrder": "v1",
+                "callerPolicy": "workflowsFromSameOwner",
+                "saveDataErrorExecution": "all",
+                "saveDataSuccessExecution": "all",
+                "saveManualExecutions": True,
+                "saveExecutionProgress": True,
+                "executionTimeout": 3600,
+                "errorWorkflow": "error-handler-wf-id",
+                "timezone": "Europe/London",
+            },
+        }
+
+        result = api._strip_readonly_fields(workflow_data)
+
+        # All valid settings should be preserved
+        assert_that(result["settings"]).is_length(9)
+        assert_that(result["settings"]["executionOrder"]).is_equal_to("v1")
+        assert_that(result["settings"]["timezone"]).is_equal_to("Europe/London")
+
+    def test_strip_readonly_fields_handles_non_dict_settings(self, temp_dir: Path) -> None:
+        """Test _strip_readonly_fields handles non-dict settings gracefully"""
+        mock_db = MagicMock()
+        mock_config = MagicMock()
+        mock_config.workflows_path = temp_dir / "workflows"
+        mock_api_manager = MagicMock()
+
+        api = N8nAPI(
+            db=mock_db,
+            config=mock_config,
+            api_manager=mock_api_manager,
+        )
+
+        # Settings as None
+        workflow_data: Dict[str, Any] = {
+            "name": "Test Workflow",
+            "settings": None,
+        }
+
+        result = api._strip_readonly_fields(workflow_data)
+
+        # None settings should pass through unchanged
+        assert_that(result["settings"]).is_none()
+
+    def test_strip_readonly_fields_handles_empty_settings(self, temp_dir: Path) -> None:
+        """Test _strip_readonly_fields handles empty settings dict"""
+        mock_db = MagicMock()
+        mock_config = MagicMock()
+        mock_config.workflows_path = temp_dir / "workflows"
+        mock_api_manager = MagicMock()
+
+        api = N8nAPI(
+            db=mock_db,
+            config=mock_config,
+            api_manager=mock_api_manager,
+        )
+
+        workflow_data: Dict[str, Any] = {
+            "name": "Test Workflow",
+            "settings": {},
+        }
+
+        result = api._strip_readonly_fields(workflow_data)
+
+        assert_that(result["settings"]).is_empty()
 
     def test_create_n8n_workflow_strips_fields(self, temp_dir: Path) -> None:
         """Test create_n8n_workflow strips readonly fields before POST"""
