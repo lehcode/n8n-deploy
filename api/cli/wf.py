@@ -7,14 +7,17 @@ Provides a consistent 'wf' command group for all wf operations including:
 - Server operations: pull, push, server
 """
 
-from typing import Optional
+import json
+import uuid
+from pathlib import Path
+from typing import Any, Dict, Optional, Tuple
 
 import click
 from rich.console import Console
 from rich.json import JSON
 from rich.table import Table
 
-from ..config import get_config
+from ..config import get_config, AppConfig
 from ..workflow import WorkflowApi
 from .app import (
     cli_data_dir_help,
@@ -34,6 +37,127 @@ from .output import (
 )
 
 console = Console()
+
+
+def _read_workflow_file(
+    config: AppConfig, workflow_file: str, output_json: bool, no_emoji: bool
+) -> Optional[Tuple[Path, Dict[str, Any]]]:
+    """Read and parse workflow JSON file.
+
+    Returns:
+        Tuple of (file_path, workflow_data) on success, None on error (with JSON output)
+
+    Raises:
+        click.Abort: If file not found or invalid JSON (non-JSON mode only)
+    """
+    file_path = Path(config.workflows_path) / workflow_file
+
+    if not file_path.exists():
+        if output_json:
+            console.print(JSON.from_data({"success": False, "error": f"Workflow file not found: {file_path}"}))
+            return None
+        cli_error(f"Workflow file not found: {file_path}", no_emoji)
+        raise click.Abort()
+
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            workflow_data: Dict[str, Any] = json.load(f)
+        return file_path, workflow_data
+    except json.JSONDecodeError as e:
+        if output_json:
+            console.print(JSON.from_data({"success": False, "error": f"Invalid JSON in workflow file: {e}"}))
+            return None
+        cli_error(f"Invalid JSON in workflow file: {e}", no_emoji)
+        raise click.Abort()
+
+
+def _ensure_workflow_id(
+    workflow_data: Dict[str, Any], workflow_file: str, output_json: bool, no_emoji: bool
+) -> Tuple[str, str]:
+    """Ensure workflow has an ID, generating draft if needed.
+
+    Returns:
+        Tuple of (workflow_id, workflow_name)
+    """
+    workflow_id = workflow_data.get("id")
+    workflow_name = workflow_data.get("name", workflow_file.replace(".json", ""))
+
+    if not workflow_id:
+        workflow_id = f"draft_{uuid.uuid4()}"
+        if not output_json and not no_emoji:
+            console.print(f"[yellow]⚠️  No ID found in workflow file. Generated draft ID: {workflow_id}[/yellow]")
+            console.print("[yellow]    This will be replaced with server-assigned ID after first push.[/yellow]")
+        elif not output_json:
+            console.print(f"WARNING: No ID found in workflow file. Generated draft ID: {workflow_id}")
+            console.print("         This will be replaced with server-assigned ID after first push.")
+
+    return workflow_id, workflow_name
+
+
+def _resolve_server_for_linking(config: AppConfig, link_remote: str, output_json: bool, no_emoji: bool) -> Tuple[str, int]:
+    """Resolve server name or URL for workflow linking.
+
+    Returns:
+        Tuple of (server_name, server_id)
+
+    Raises:
+        click.Abort: If server not found
+    """
+    from api.db.servers import ServerCrud
+
+    server_crud = ServerCrud(config=config)
+
+    if "://" in link_remote:
+        server = server_crud.get_server_by_url(link_remote)
+        error_msg = f"Server URL '{link_remote}' not found in database"
+        suggestion = ". Add it with 'server create'"
+    else:
+        server = server_crud.get_server_by_name(link_remote)
+        error_msg = f"Server '{link_remote}' not found in database"
+        suggestion = ". Add it with 'server create'"
+
+    if not server:
+        if output_json:
+            console.print(JSON.from_data({"success": False, "error": error_msg}))
+        else:
+            cli_error(error_msg + suggestion, no_emoji)
+        raise click.Abort()
+
+    server_name = server["name"] if "://" in link_remote else link_remote
+    return server_name, server["id"]
+
+
+def _link_workflow_to_server(
+    manager: WorkflowApi, workflow_id: str, server_id: int, server_name: str, output_json: bool, no_emoji: bool
+) -> None:
+    """Link workflow to server in database."""
+    workflow_obj = manager.db.get_workflow(workflow_id)
+    if workflow_obj:
+        workflow_obj.server_id = server_id
+        manager.db.update_workflow(workflow_obj)
+
+    if not output_json:
+        if no_emoji:
+            console.print(f"Workflow linked to server: {server_name}")
+        else:
+            console.print(f"🔗 Workflow linked to server: {server_name}")
+
+
+def _output_add_success(workflow_id: str, workflow_name: str, output_json: bool, no_emoji: bool) -> None:
+    """Output success message for workflow add."""
+    result = {
+        "success": True,
+        "workflow_id": workflow_id,
+        "workflow_name": workflow_name,
+        "message": f"Workflow '{workflow_name}' (ID: {workflow_id}) added to database",
+    }
+
+    if output_json:
+        console.print(JSON.from_data(result))
+    elif no_emoji:
+        console.print(f"Workflow '{workflow_name}' (ID: {workflow_id}) added to database")
+    else:
+        console.print(f"✅ Workflow '{workflow_name}' (ID: {workflow_id}) added to database")
 
 
 @click.group(cls=CustomGroup)
@@ -71,7 +195,6 @@ def add(
       n8n-deploy wf add workflow.json --link-remote production
       n8n-deploy wf add workflow.json --link-remote https://n8n.example.com
     """
-    # JSON output implies no emoji
     if output_json:
         no_emoji = True
 
@@ -79,129 +202,33 @@ def add(
         config = get_config(base_folder=data_dir, flow_folder=flow_dir, db_filename=db_filename)
     except ValueError as e:
         cli_error(str(e), no_emoji)
+        raise click.Abort()
 
-    # Check if database exists and is initialized
     from .db import check_database_exists
 
     check_database_exists(config.database_path, output_json=output_json, no_emoji=no_emoji)
 
     try:
-        import json
-        from pathlib import Path
+        result = _read_workflow_file(config, workflow_file, output_json, no_emoji)
+        if result is None:
+            return  # JSON error already printed
+        _, workflow_data = result
 
-        # Determine the file path
-        file_path = Path(config.workflows_path) / workflow_file
+        workflow_id, workflow_name = _ensure_workflow_id(workflow_data, workflow_file, output_json, no_emoji)
 
-        if not file_path.exists():
-            cli_error(f"Workflow file not found: {file_path}", no_emoji)
-
-        # Read and parse the workflow JSON file
-        with open(file_path, "r", encoding="utf-8") as f:
-            workflow_data = json.load(f)
-
-        workflow_id = workflow_data.get("id")
-        workflow_name = workflow_data.get("name", workflow_file.replace(".json", ""))
-
-        # Generate draft UUID for new workflows without server-assigned ID
-        if not workflow_id:
-            import uuid
-
-            workflow_id = f"draft_{uuid.uuid4()}"
-            if not output_json and not no_emoji:
-                console.print(f"[yellow]⚠️  No ID found in workflow file. Generated draft ID: {workflow_id}[/yellow]")
-                console.print(f"[yellow]    This will be replaced with server-assigned ID after first push.[/yellow]")
-            elif not output_json:
-                console.print(f"WARNING: No ID found in workflow file. Generated draft ID: {workflow_id}")
-                console.print("         This will be replaced with server-assigned ID after first push.")
-
-        # Add workflow to database with actual filename
         manager = WorkflowApi(config=config)
         manager.add_workflow(workflow_id, workflow_name, filename=workflow_file)
 
-        result = {
-            "success": True,
-            "workflow_id": workflow_id,
-            "workflow_name": workflow_name,
-            "message": f"Workflow '{workflow_name}' (ID: {workflow_id}) added to database",
-        }
+        _output_add_success(workflow_id, workflow_name, output_json, no_emoji)
 
-        if output_json:
-            from rich.json import JSON
-
-            console.print(JSON.from_data(result))
-        elif no_emoji:
-            console.print(f"Workflow '{workflow_name}' (ID: {workflow_id}) added to database")
-        else:
-            console.print(f"✅ Workflow '{workflow_name}' (ID: {workflow_id}) added to database")
-
-        # Optionally link to remote server
         if link_remote:
-            from api.db.servers import ServerCrud
+            server_name, server_id = _resolve_server_for_linking(config, link_remote, output_json, no_emoji)
+            _link_workflow_to_server(manager, workflow_id, server_id, server_name, output_json, no_emoji)
 
-            server_crud = ServerCrud(config=config)
-
-            # Resolve server name or URL
-            server_name: str
-            if "://" in link_remote:
-                # Full URL - ensure it exists in database or create it
-                server = server_crud.get_server_by_url(link_remote)
-                if not server:
-                    if output_json:
-                        from rich.json import JSON
-
-                        console.print(
-                            JSON.from_data({"success": False, "error": f"Server URL '{link_remote}' not found in database"})
-                        )
-                        raise click.Abort()
-                    else:
-                        cli_error(f"Server URL '{link_remote}' not found in database. Add it with 'server create'", no_emoji)
-                # server is guaranteed to be not None here
-                if server is None:
-                    raise ValueError("Server cannot be None")
-                server_name = server["name"]
-            else:
-                # Server name
-                server = server_crud.get_server_by_name(link_remote)
-                if not server:
-                    if output_json:
-                        from rich.json import JSON
-
-                        console.print(
-                            JSON.from_data({"success": False, "error": f"Server '{link_remote}' not found in database"})
-                        )
-                        raise click.Abort()
-                    else:
-                        cli_error(f"Server '{link_remote}' not found in database. Add it with 'server create'", no_emoji)
-                server_name = link_remote
-
-            # Link workflow to server
-            if server is None:
-                raise ValueError("Server cannot be None")
-            server_id = server["id"]
-
-            # Update workflow with server_id
-            workflow_obj = manager.db.get_workflow(workflow_id)
-            if workflow_obj:
-                workflow_obj.server_id = server_id
-                manager.db.update_workflow(workflow_obj)
-
-            if not output_json:
-                if no_emoji:
-                    console.print(f"Workflow linked to server: {server_name}")
-                else:
-                    console.print(f"🔗 Workflow linked to server: {server_name}")
-
-    except json.JSONDecodeError as e:
-        if output_json:
-            from rich.json import JSON
-
-            console.print(JSON.from_data({"success": False, "error": f"Invalid JSON in workflow file: {e}"}))
-        else:
-            cli_error(f"Invalid JSON in workflow file: {e}", no_emoji)
+    except click.Abort:
+        raise
     except Exception as e:
         if output_json:
-            from rich.json import JSON
-
             console.print(JSON.from_data({"success": False, "error": str(e)}))
         else:
             cli_error(f"Failed to add workflow: {e}", no_emoji)
