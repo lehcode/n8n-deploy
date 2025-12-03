@@ -13,6 +13,7 @@ from typing import Optional, Tuple
 import pytest
 
 from ..e2e_base import E2ETestBase
+from tests.helpers import assert_json_output_valid as _assert_json_valid
 
 
 class DatabaseTestHelpers(E2ETestBase):
@@ -97,11 +98,7 @@ class DatabaseTestHelpers(E2ETestBase):
 
     def assert_json_output_valid(self, stdout: str) -> dict:
         """Assert stdout contains valid JSON and return parsed data"""
-        try:
-            data = json.loads(stdout)
-            return data
-        except json.JSONDecodeError as e:
-            pytest.fail(f"Output is not valid JSON: {e}\nOutput: {stdout}")
+        return _assert_json_valid(stdout)
 
     def assert_backup_exists(self, backup_path: str) -> None:
         """Assert backup file exists"""

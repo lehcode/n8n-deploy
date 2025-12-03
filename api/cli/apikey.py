@@ -9,7 +9,7 @@ deactivation, deletion, and testing.
 import json
 import re
 import sys
-from typing import Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import click
 from rich.console import Console
@@ -24,6 +24,104 @@ from .app import cli_data_dir_help, HELP_DB_FILENAME, HELP_JSON, HELP_NO_EMOJI, 
 from .output import cli_error
 
 console = Console()
+
+
+def _get_key_created_date(key: Dict[str, Any]) -> str:
+    """Extract created date from JWT or fallback to database timestamp."""
+    api_key_value = key.get("api_key")
+    if api_key_value:
+        iat_datetime = get_jwt_issued_at(api_key_value)
+        if iat_datetime:
+            return iat_datetime.strftime("%Y-%m-%d %H:%M")
+
+    created = key["created_at"]
+    if isinstance(created, str):
+        return created[:16]
+    return str(created)
+
+
+def _get_key_status(key: Dict[str, Any], no_emoji: bool) -> Tuple[str, bool]:
+    """Determine key status display.
+
+    Returns:
+        Tuple of (status_display, is_expired)
+    """
+    is_active = key.get("is_active", True)
+    api_key_value = key.get("api_key")
+
+    # Check if expired
+    is_expired = False
+    if api_key_value:
+        is_expired, _, _ = check_jwt_expiration(api_key_value)
+
+    if is_expired:
+        return ("Expired" if no_emoji else "❌ Expired"), True
+    if not is_active:
+        return ("Inactive" if no_emoji else "❌"), False
+    return ("Active" if no_emoji else "✅"), False
+
+
+def _get_key_expiry_display(key: Dict[str, Any]) -> str:
+    """Get expiry display string with formatting."""
+    api_key_value = key.get("api_key")
+    if not api_key_value:
+        return "N/A"
+
+    is_expired, exp_datetime, warning = check_jwt_expiration(api_key_value)
+    if not exp_datetime:
+        return "N/A"
+
+    expiry_display = format_expiration_date(exp_datetime)
+    if is_expired:
+        return f"[red]{expiry_display}[/red]"
+    if warning:
+        return f"[yellow]{expiry_display}[/yellow]"
+    return expiry_display
+
+
+def _build_apikey_table_row(key: Dict[str, Any], unmask: bool, no_emoji: bool) -> List[str]:
+    """Build a single table row for an API key."""
+    created = _get_key_created_date(key)
+
+    added = key["created_at"]
+    if isinstance(added, str):
+        added = added[:16]
+
+    status, _ = _get_key_status(key, no_emoji)
+    expiry_display = _get_key_expiry_display(key)
+    key_display = key.get("api_key", "***") if unmask else "***"
+    server_display = key.get("server_url") or "N/A"
+
+    return [
+        key["name"],
+        str(key["id"]),
+        server_display,
+        str(created),
+        str(added),
+        status,
+        expiry_display,
+        key_display,
+    ]
+
+
+def _output_apikey_table(keys: List[Dict[str, Any]], unmask: bool, no_emoji: bool) -> None:
+    """Build and output the API keys table."""
+    title = "API Keys" if no_emoji else "🔐 API Keys"
+    table = Table(title=title)
+    table.add_column("Name", style="cyan", no_wrap=True)
+    table.add_column("ID", style="dim")
+    table.add_column("Server", style="blue", overflow="fold")
+    table.add_column("Created", style="blue")
+    table.add_column("Added", style="green")
+    table.add_column("Status", style="magenta", justify="center")
+    table.add_column("Expires", style="yellow")
+    table.add_column("Key", style="dim" if not unmask else "red")
+
+    for key in keys:
+        row_data = _build_apikey_table_row(key, unmask, no_emoji)
+        table.add_row(*row_data)
+
+    console.print(table)
 
 
 @click.group(cls=CustomGroup)
@@ -168,109 +266,25 @@ def list_apikeys(unmask: bool, output_json: bool, data_dir: Optional[str], db_fi
     Display all stored API keys with metadata (credentials are masked by default).
     Use --json for machine-readable output.
     """
-    # JSON output implies no emoji
     if output_json:
         no_emoji = True
 
     try:
-        # Use default config from environment variables
         config = get_config(base_folder=data_dir, db_filename=db_filename)
         db_api = DBApi(config=config)
         key_api = KeyApi(db=db_api, config=config)
         keys = key_api.list_api_keys(unmask=unmask)
 
         if output_json:
-            # Print raw JSON for machine parsing (not Rich formatted)
             print(json.dumps(keys, indent=2, default=str))
-        else:
-            if not keys:
-                if no_emoji:
-                    console.print("No API keys found")
-                else:
-                    console.print("🔐 No API keys found")
-                return
+            return
 
-            if no_emoji:
-                table = Table(title="API Keys")
-            else:
-                table = Table(title="🔐 API Keys")
-            table.add_column("Name", style="cyan", no_wrap=True)
-            table.add_column("ID", style="dim")
-            table.add_column("Server", style="blue", overflow="fold")
-            table.add_column("Created", style="blue")
-            table.add_column("Added", style="green")
-            table.add_column("Status", style="magenta", justify="center")
-            table.add_column("Expires", style="yellow")
-            table.add_column("Key", style="dim" if not unmask else "red")
+        if not keys:
+            console.print("No API keys found" if no_emoji else "🔐 No API keys found")
+            return
 
-            for key in keys:
-                # Extract issued-at from JWT token if available, fallback to database created_at
-                api_key_value = key.get("api_key")
-                if api_key_value:
-                    iat_datetime = get_jwt_issued_at(api_key_value)
-                    if iat_datetime:
-                        created = iat_datetime.strftime("%Y-%m-%d %H:%M")
-                    else:
-                        # Fallback to database created_at if JWT doesn't have iat
-                        created = key["created_at"]
-                        if isinstance(created, str):
-                            created = created[:16]
-                else:
-                    # No API key available, use database created_at
-                    created = key["created_at"]
-                    if isinstance(created, str):
-                        created = created[:16]
+        _output_apikey_table(keys, unmask, no_emoji)
 
-                # Database added timestamp (always from database)
-                added = key["created_at"]
-                if isinstance(added, str):
-                    added = added[:16]  # Truncate datetime
-
-                # Determine status based on is_active with graphical indicators
-                is_active = key.get("is_active", True)
-                if no_emoji:
-                    status = "Active" if is_active else "Inactive"
-                else:
-                    status = "✅" if is_active else "❌"
-
-                # Check expiration if API key is available
-                expiry_display = "N/A"
-                if api_key_value:
-                    is_expired, exp_datetime, warning = check_jwt_expiration(api_key_value)
-                    if exp_datetime:
-                        expiry_display = format_expiration_date(exp_datetime)
-                        if is_expired:
-                            expiry_display = f"[red]{expiry_display}[/red]"
-                            if no_emoji:
-                                status = "Expired"
-                            else:
-                                status = "❌ Expired"
-                        elif warning:
-                            expiry_display = f"[yellow]{expiry_display}[/yellow]"
-
-                # Show API key if unmask is True, otherwise show masked
-                if unmask:
-                    key_display = key.get("api_key", "***")
-                else:
-                    key_display = "***"
-
-                # Get server URL, display "N/A" if none
-                server_url = key.get("server_url")
-                server_display = server_url if server_url else "N/A"
-
-                row_data = [
-                    key["name"],
-                    str(key["id"]),
-                    server_display,
-                    str(created),
-                    str(added),
-                    status,
-                    expiry_display,
-                    key_display,
-                ]
-                table.add_row(*row_data)
-
-            console.print(table)
     except Exception as e:
         raise click.ClickException(f"Failed to list API keys: {e}")
 
