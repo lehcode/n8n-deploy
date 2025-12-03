@@ -363,10 +363,15 @@ class N8nAPI:
         return self._make_n8n_request_typed("GET", f"api/v1/workflows/{workflow_id}")
 
     def _strip_readonly_fields(self, workflow_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Strip read-only fields that n8n API rejects on create/update"""
+        """Strip read-only fields that n8n API rejects on create/update.
+
+        Filters both root-level readonly fields and invalid fields within
+        the settings object. Uses a whitelist approach for settings to
+        ensure only n8n-accepted fields are sent.
+        """
         readonly_fields = [
             "id",
-            "active",
+            # "active" - preserved to maintain workflow state from JSON
             "triggerCount",
             "updatedAt",
             "createdAt",
@@ -374,8 +379,33 @@ class N8nAPI:
             "staticData",
             "tags",
             "meta",
+            # Additional fields returned by GET but rejected by PUT
+            "isArchived",
+            "pinData",
+            "versionCounter",
+            "shared",
         ]
-        return {k: v for k, v in workflow_data.items() if k not in readonly_fields}
+
+        # Valid settings fields accepted by n8n API (whitelist)
+        valid_settings_fields = {
+            "executionOrder",
+            "callerPolicy",
+            "saveDataErrorExecution",
+            "saveDataSuccessExecution",
+            "saveManualExecutions",
+            "saveExecutionProgress",
+            "executionTimeout",
+            "errorWorkflow",
+            "timezone",
+        }
+
+        result = {k: v for k, v in workflow_data.items() if k not in readonly_fields}
+
+        # Filter settings object to only include valid fields
+        if "settings" in result and isinstance(result["settings"], dict):
+            result["settings"] = {k: v for k, v in result["settings"].items() if k in valid_settings_fields}
+
+        return result
 
     def create_n8n_workflow(self, workflow_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Create new wf on n8n server"""
