@@ -397,7 +397,9 @@ class TestStripReadonlyFields:
         # Verify only allowed fields are kept (whitelist approach)
         # Allowed: name, nodes, connections, settings, staticData
         assert_that(result).does_not_contain_key("id")
-        assert_that(result).does_not_contain_key("active")
+        # "active" is now preserved to maintain workflow state
+        assert_that(result).contains_key("active")
+        assert_that(result["active"]).is_true()
         assert_that(result).does_not_contain_key("triggerCount")
         assert_that(result).does_not_contain_key("updatedAt")
         assert_that(result).does_not_contain_key("createdAt")
