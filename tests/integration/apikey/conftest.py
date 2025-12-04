@@ -12,6 +12,7 @@ from typing import Optional, Tuple
 import pytest
 
 from ..e2e_base import E2ETestBase
+from tests.helpers import assert_json_output_valid as _assert_json_valid
 
 
 class ApikeyTestHelpers(E2ETestBase):
@@ -77,11 +78,7 @@ class ApikeyTestHelpers(E2ETestBase):
 
     def assert_json_output_valid(self, stdout: str) -> dict:
         """Assert stdout contains valid JSON and return parsed data"""
-        try:
-            data = json.loads(stdout)
-            return data
-        except json.JSONDecodeError as e:
-            pytest.fail(f"Output is not valid JSON: {e}\nOutput: {stdout}")
+        return _assert_json_valid(stdout)
 
     def create_test_api_key(self, name: str = "test_key", api_key: str = "test-api-key-12345") -> Tuple[int, str, str]:
         """Helper to create a test API key"""

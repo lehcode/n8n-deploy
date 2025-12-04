@@ -390,3 +390,112 @@ def format_server_table(servers: List[Dict[str, Any]], no_emoji: bool = False) -
         )
 
     console.print(table)
+
+
+# JSON-aware output helpers
+
+
+def output_result(
+    result: Dict[str, Any],
+    success_msg: str,
+    output_json: bool = False,
+    no_emoji: bool = False,
+    emoji: str = "✅",
+) -> None:
+    """Output result in JSON or text format
+
+    Consolidates the common pattern of checking output_json/no_emoji flags.
+
+    Args:
+        result: Dict to output as JSON
+        success_msg: Message to show in text mode
+        output_json: If True, output JSON format
+        no_emoji: If True, omit emoji in text mode
+        emoji: Emoji to use in text mode (default: checkmark)
+    """
+    if output_json:
+        from rich.json import JSON
+
+        console.print(JSON.from_data(result))
+    elif no_emoji:
+        console.print(success_msg)
+    else:
+        console.print(f"{emoji} {success_msg}")
+
+
+def output_success(
+    result: Dict[str, Any],
+    success_msg: str,
+    output_json: bool = False,
+    no_emoji: bool = False,
+) -> None:
+    """Output success result in JSON or text format
+
+    Wrapper for output_result with green styling.
+
+    Args:
+        result: Dict to output as JSON
+        success_msg: Message to show in text mode
+        output_json: If True, output JSON format
+        no_emoji: If True, omit emoji in text mode
+    """
+    if output_json:
+        from rich.json import JSON
+
+        console.print(JSON.from_data(result))
+    elif no_emoji:
+        console.print(success_msg)
+    else:
+        console.print(f"[green]✅ {success_msg}[/green]")
+
+
+def output_error_result(
+    error_msg: str,
+    output_json: bool = False,
+    no_emoji: bool = False,
+    abort: bool = False,
+) -> None:
+    """Output error in JSON or text format
+
+    Consolidates error output handling with optional CLI abort.
+
+    Args:
+        error_msg: Error message
+        output_json: If True, output JSON format
+        no_emoji: If True, omit emoji in text mode
+        abort: If True, raise click.Abort after output
+
+    Raises:
+        click.Abort: If abort=True
+    """
+    if output_json:
+        from rich.json import JSON
+
+        console.print(JSON.from_data({"success": False, "error": error_msg}))
+    elif no_emoji:
+        console.print(f"ERROR: {error_msg}")
+    else:
+        console.print(f"[red]❌ {error_msg}[/red]")
+
+    if abort:
+        raise click.Abort()
+
+
+def output_warning_result(
+    warning_msg: str,
+    output_json: bool = False,
+    no_emoji: bool = False,
+) -> None:
+    """Output warning in text format (no JSON for warnings)
+
+    Args:
+        warning_msg: Warning message
+        output_json: If True, skip output (warnings not shown in JSON mode)
+        no_emoji: If True, omit emoji in text mode
+    """
+    if output_json:
+        return  # Warnings typically not shown in JSON mode
+    elif no_emoji:
+        console.print(f"WARNING: {warning_msg}")
+    else:
+        console.print(f"[yellow]⚠️  {warning_msg}[/yellow]")

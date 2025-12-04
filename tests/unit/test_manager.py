@@ -159,11 +159,12 @@ class TestN8nApiIntegration:
             credentials = test_manager.n8n_api._get_n8n_credentials()
             assert credentials is None
 
-    @patch("api.workflow.n8n_api.requests.get")
+    @patch("api.workflow.http_client.requests.get")
     def test_make_n8n_request_with_timeout(self, mock_get: Mock, test_manager: WorkflowApi) -> None:
         """Test that requests include proper timeout"""
         # Mock successful response
         mock_response = Mock()
+        mock_response.status_code = 200
         mock_response.json.return_value = {"data": []}
         mock_response.raise_for_status.return_value = None
         mock_get.return_value = mock_response
@@ -179,7 +180,7 @@ class TestN8nApiIntegration:
             call_kwargs = mock_get.call_args[1]
             assert call_kwargs["timeout"] == 10
 
-    @patch("api.workflow.n8n_api.requests.get")
+    @patch("api.workflow.http_client.requests.get")
     def test_make_n8n_request_handles_timeout_exception(self, mock_get: Mock, test_manager: WorkflowApi) -> None:
         """Test request timeout handling"""
         import requests
