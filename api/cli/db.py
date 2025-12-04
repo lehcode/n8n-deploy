@@ -15,13 +15,13 @@ import os
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Any, Dict, Optional, Tuple
 
 import click
 from rich.console import Console
 from rich.table import Table
 
-from ..config import get_config
+from ..config import get_config, AppConfig
 from ..db import DBApi
 from .app import cli_data_dir_help, HELP_DB_FILENAME, HELP_JSON, HELP_NO_EMOJI, CustomCommand, CustomGroup
 
@@ -137,6 +137,175 @@ def check_database_exists(db_path: Path, output_json: bool = False, no_emoji: bo
         raise click.Abort()
 
 
+def _setup_init_config(data_dir: Optional[str], db_filename: str) -> Tuple[AppConfig, Path, bool]:
+    """Setup configuration for init command.
+
+    Returns:
+        Tuple of (config, db_path, custom_filename_provided)
+    """
+    if data_dir:
+        base_path = Path(data_dir)
+    else:
+        env_app_dir = os.environ.get("N8N_DEPLOY_DATA_DIR")
+        base_path = Path(env_app_dir) if env_app_dir else Path.cwd()
+
+    config = AppConfig(base_folder=base_path, db_filename=db_filename)
+    db_path = config.database_path
+    custom_filename_provided = db_filename != "n8n-deploy.db"
+
+    return config, db_path, custom_filename_provided
+
+
+def _output_existing_db_message(db_path: Path, flow_dir: Optional[str], output_json: bool, no_emoji: bool) -> None:
+    """Output message for existing initialized database."""
+    if output_json:
+        result: Dict[str, Any] = {
+            "success": True,
+            "database_path": str(db_path),
+            "message": "Using existing database",
+            "already_exists": True,
+            "flow_dir_configured": bool(flow_dir),
+            "flow_dir": flow_dir if flow_dir else None,
+        }
+        console.print(json.dumps(result, indent=2))
+    elif no_emoji:
+        console.print(f"Database already exists: {db_path}")
+        console.print("Using existing database")
+    else:
+        console.print(f"🗄️ Database already exists: {db_path}")
+        console.print("✅ Using existing database")
+
+
+def _handle_existing_db_auto_import(db_path: Path, config: AppConfig, output_json: bool, no_emoji: bool) -> bool:
+    """Handle existing database with auto-import.
+
+    Returns:
+        True if should return early (db already initialized)
+        False if should continue to initialization
+    """
+    db_api_check = DBApi(config=config)
+    schema_version = db_api_check.schema_api.get_schema_version()
+
+    if schema_version > 0:
+        flow_dir = os.environ.get("N8N_DEPLOY_FLOWS_DIR")
+        _output_existing_db_message(db_path, flow_dir, output_json, no_emoji)
+        return True
+
+    # Database file exists but is not initialized
+    if no_emoji:
+        console.print(f"Database file exists at {db_path} but is not initialized. Initializing...")
+    else:
+        console.print(f"🔧 Database file exists at {db_path} but is not initialized. Initializing...")
+    return False
+
+
+def _show_existing_db_options(db_path: Path, no_emoji: bool) -> None:
+    """Display options for existing database."""
+    if no_emoji:
+        console.print(f"Database already exists: {db_path}")
+        console.print("Options:")
+        console.print("1. Use existing database (recommended)")
+        console.print("2. Delete and recreate")
+        console.print("3. Cancel")
+    else:
+        console.print(f"🗄️ Database already exists: {db_path}")
+        console.print("Options:")
+        console.print("1️⃣ Use existing database (recommended)")
+        console.print("2️⃣ Delete and recreate")
+        console.print("3️⃣ Cancel")
+
+
+def _get_user_choice() -> int:
+    """Get user choice for existing database handling."""
+    if not is_interactive_mode():
+        stdin_input = sys.stdin.read().strip()
+        if stdin_input:
+            try:
+                return int(stdin_input)
+            except ValueError:
+                return 1
+        return 1
+    result: int = click.prompt("Choose option", type=int, default="1")
+    return result
+
+
+def _handle_existing_db_interactive(db_path: Path, config: AppConfig, no_emoji: bool) -> bool:
+    """Handle existing database in interactive mode.
+
+    Returns:
+        True if should continue to initialization
+        False if should return early
+    """
+    _show_existing_db_options(db_path, no_emoji)
+    choice = _get_user_choice()
+
+    if choice == 1:
+        db_api = DBApi(config=config)
+        schema_version = db_api.schema_api.get_schema_version()
+
+        if schema_version > 0:
+            if no_emoji:
+                console.print("Using existing database")
+            else:
+                console.print("✅ Using existing database")
+            return False
+
+        if no_emoji:
+            console.print("Database file exists but is not initialized. Initializing...")
+        else:
+            console.print("🔧 Database file exists but is not initialized. Initializing...")
+        return True
+
+    if choice == 2:
+        db_path.unlink()
+        if no_emoji:
+            console.print("Deleted existing database")
+        else:
+            console.print("🗑️ Deleted existing database")
+        return True
+
+    # choice == 3 or other
+    if no_emoji:
+        console.print("Database initialization cancelled")
+    else:
+        console.print("❌ Database initialization cancelled")
+    return False
+
+
+def _perform_db_init(config: AppConfig, output_json: bool, no_emoji: bool) -> None:
+    """Perform database initialization and output results."""
+    db_api = DBApi(config=config)
+    db_api.schema_api.initialize_database()
+
+    flow_dir = os.environ.get("N8N_DEPLOY_FLOWS_DIR")
+    db_path = config.database_path
+
+    if output_json:
+        result: Dict[str, Any] = {
+            "success": True,
+            "database_path": str(db_path),
+            "message": "Database initialized",
+            "flow_dir_configured": bool(flow_dir),
+            "flow_dir": flow_dir if flow_dir else None,
+        }
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+        return
+
+    if no_emoji:
+        console.print("Database initialized")
+    else:
+        console.print("✅ Database initialized")
+
+    if not flow_dir:
+        console.print()
+        if no_emoji:
+            console.print("NOTE: Workflow directory not configured.")
+        else:
+            console.print("⚠️ NOTE: Workflow directory not configured.")
+        console.print("Set N8N_DEPLOY_FLOWS_DIR environment variable or use --flow-dir option")
+        console.print("for workflow operations ('wf add', 'wf push', 'wf pull', etc.)")
+
+
 @click.group(cls=CustomGroup)
 def db() -> None:
     """🎭 Database management commands
@@ -163,162 +332,21 @@ def init(data_dir: Optional[str], db_filename: str, auto_import: bool, output_js
 
     NOTE: Database must be initialized before using other commands.
     """
-    # JSON output implies no emoji
     if output_json:
         no_emoji = True
-    # Database init only needs base folder, not wf directories
-    from ..config import AppConfig
 
-    # Check environment variable if --data-dir not provided
-    if data_dir:
-        base_path = Path(data_dir)
-    else:
-        env_app_dir = os.environ.get("N8N_DEPLOY_DATA_DIR")
-        base_path = Path(env_app_dir) if env_app_dir else Path.cwd()
-
-    config = AppConfig(base_folder=base_path, db_filename=db_filename)
-    db_path = config.database_path
-
-    # Auto-import if:
-    # 1. --import flag explicitly provided, OR
-    # 2. Custom filename provided (not default) and file exists
-    custom_filename_provided = db_filename != "n8n-deploy.db"
+    config, db_path, custom_filename_provided = _setup_init_config(data_dir, db_filename)
     should_auto_import = auto_import or (custom_filename_provided and db_path.exists())
 
-    # Check if database already exists
     if db_path.exists():
-        # Auto-import if flag provided or custom filename with existing file
         if should_auto_import:
-            # Check if database is actually initialized
-            db_api_check = DBApi(config=config)
-            schema_version = db_api_check.schema_api.get_schema_version()
-
-            if schema_version > 0:
-                # Database is initialized, use it
-                flow_dir = os.environ.get("N8N_DEPLOY_FLOWS_DIR")
-
-                if output_json:
-                    result = {
-                        "success": True,
-                        "database_path": str(db_path),
-                        "message": "Using existing database",
-                        "already_exists": True,
-                        "flow_dir_configured": bool(flow_dir),
-                        "flow_dir": flow_dir if flow_dir else None,
-                    }
-                    console.print(json.dumps(result, indent=2))
-                elif no_emoji:
-                    console.print(f"Database already exists: {db_path}")
-                    console.print("Using existing database")
-                else:
-                    console.print(f"🗄️ Database already exists: {db_path}")
-                    console.print("✅ Using existing database")
+            if _handle_existing_db_auto_import(db_path, config, output_json, no_emoji):
                 return
-            else:
-                # Database file exists but is not initialized - initialize it
-                if no_emoji:
-                    console.print(f"Database file exists at {db_path} but is not initialized. Initializing...")
-                else:
-                    console.print(f"🔧 Database file exists at {db_path} but is not initialized. Initializing...")
-                # Continue to initialization below
         else:
-            # Interactive mode - show options
-            if no_emoji:
-                console.print(f"Database already exists: {db_path}")
-                console.print("Options:")
-                console.print("1. Use existing database (recommended)")
-                console.print("2. Delete and recreate")
-                console.print("3. Cancel")
-            else:
-                console.print(f"🗄️ Database already exists: {db_path}")
-                console.print("Options:")
-                console.print("1️⃣ Use existing database (recommended)")
-                console.print("2️⃣ Delete and recreate")
-                console.print("3️⃣ Cancel")
-
-            # Handle stdin input for automation
-            if not is_interactive_mode():
-                # Non-interactive mode - read choice from stdin or use default
-                stdin_input = sys.stdin.read().strip()
-                if stdin_input:
-                    try:
-                        choice = int(stdin_input)
-                    except ValueError:
-                        choice = 1  # Default to option 1
-                else:
-                    choice = 1  # Default to option 1
-            else:
-                # Interactive mode - prompt user
-                choice = click.prompt("Choose option", type=int, default="1")
-
-            if choice == 1:
-                # Check if database is actually initialized
-                db_api = DBApi(config=config)
-                schema_version = db_api.schema_api.get_schema_version()
-
-                if schema_version > 0:
-                    # Database is initialized, use it
-                    if no_emoji:
-                        console.print("Using existing database")
-                    else:
-                        console.print("✅ Using existing database")
-                    return
-                else:
-                    # Database file exists but is not initialized - initialize it
-                    if no_emoji:
-                        console.print("Database file exists but is not initialized. Initializing...")
-                    else:
-                        console.print("🔧 Database file exists but is not initialized. Initializing...")
-                    # Continue to initialization below
-            elif choice == 2:
-                db_path.unlink()
-                if no_emoji:
-                    console.print("Deleted existing database")
-                else:
-                    console.print("🗑️ Deleted existing database")
-            else:
-                if no_emoji:
-                    console.print("Database initialization cancelled")
-                else:
-                    console.print("❌ Database initialization cancelled")
+            if not _handle_existing_db_interactive(db_path, config, no_emoji):
                 return
 
-    # Initialize database
-    db_api = DBApi(config=config)
-    db_api.schema_api.initialize_database()
-
-    # Check flow directory configuration
-    flow_dir = os.environ.get("N8N_DEPLOY_FLOWS_DIR")
-
-    # Output based on output format
-    if output_json:
-        result = {
-            "success": True,
-            "database_path": str(db_path),
-            "message": "Database initialized",
-            "flow_dir_configured": bool(flow_dir),
-            "flow_dir": flow_dir if flow_dir else None,
-        }
-        # Use print() instead of console.print() to avoid Rich wrapping JSON
-        print(json.dumps(result, indent=2, ensure_ascii=False))
-    else:
-        if no_emoji:
-            console.print("Database initialized")
-        else:
-            console.print("✅ Database initialized")
-
-        # Issue helpful warnings for unspecified directories
-        if not flow_dir:
-            if no_emoji:
-                console.print()
-                console.print("NOTE: Workflow directory not configured.")
-                console.print("Set N8N_DEPLOY_FLOWS_DIR environment variable or use --flow-dir option")
-                console.print("for workflow operations ('wf add', 'wf push', 'wf pull', etc.)")
-            else:
-                console.print()
-                console.print("⚠️ NOTE: Workflow directory not configured.")
-                console.print("Set N8N_DEPLOY_FLOWS_DIR environment variable or use --flow-dir option")
-                console.print("for workflow operations ('wf add', 'wf push', 'wf pull', etc.)")
+    _perform_db_init(config, output_json, no_emoji)
 
 
 @db.command(cls=CustomCommand)
