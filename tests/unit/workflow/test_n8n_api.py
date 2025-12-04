@@ -12,6 +12,7 @@ import pytest
 from assertpy import assert_that
 
 from api.workflow.n8n_api import N8nAPI
+from api.workflow.types import N8nApiResult
 
 
 class TestN8nAPI:
@@ -38,8 +39,9 @@ class TestN8nAPI:
         assert_that(api.skip_ssl_verify).is_false()
         assert_that(api.remote).is_none()
         assert_that(api.base_path).is_equal_to(temp_dir / "workflows")
-        assert_that(api._server_url).is_none()
-        assert_that(api._server_api_key).is_none()
+        # Server URL and API key are now cached in ServerResolver
+        assert_that(api._server_resolver._cached_url).is_none()
+        assert_that(api._server_resolver._cached_api_key).is_none()
 
     def test_init_with_ssl_skip(self, temp_dir: Path) -> None:
         """Test N8nAPI initialization with skip_ssl_verify=True"""
@@ -206,8 +208,8 @@ class TestN8nAPI:
                 "headers": {"X-N8N-API-KEY": "test_key"},
             },
         ):
-            # Mock get_n8n_workflow to return existing (update case)
-            with patch.object(api, "get_n8n_workflow", return_value=workflow_data):
+            # Mock get_n8n_workflow_typed to return existing workflow (update case)
+            with patch.object(api, "get_n8n_workflow_typed", return_value=N8nApiResult(success=True, data=workflow_data)):
                 # Mock update_n8n_workflow
                 with patch.object(
                     api, "update_n8n_workflow", return_value={"id": "test_wf_456", "name": "Push Test Workflow"}
@@ -394,7 +396,9 @@ class TestStripReadonlyFields:
 
         # Verify readonly fields are removed
         assert_that(result).does_not_contain_key("id")
-        assert_that(result).does_not_contain_key("active")
+        # "active" is now preserved to maintain workflow state
+        assert_that(result).contains_key("active")
+        assert_that(result["active"]).is_true()
         assert_that(result).does_not_contain_key("triggerCount")
         assert_that(result).does_not_contain_key("updatedAt")
         assert_that(result).does_not_contain_key("createdAt")
@@ -450,6 +454,158 @@ class TestStripReadonlyFields:
         result = api._strip_readonly_fields({})
 
         assert_that(result).is_empty()
+
+    def test_strip_readonly_fields_removes_additional_readonly(self, temp_dir: Path) -> None:
+        """Test _strip_readonly_fields removes additional readonly fields (isArchived, pinData, etc)"""
+        mock_db = MagicMock()
+        mock_config = MagicMock()
+        mock_config.workflows_path = temp_dir / "workflows"
+        mock_api_manager = MagicMock()
+
+        api = N8nAPI(
+            db=mock_db,
+            config=mock_config,
+            api_manager=mock_api_manager,
+        )
+
+        workflow_data: Dict[str, Any] = {
+            "name": "Test Workflow",
+            "isArchived": False,
+            "pinData": {"node1": [{"data": "test"}]},
+            "versionCounter": 5,
+            "shared": [{"id": "user1"}],
+            "nodes": [],
+            "connections": {},
+        }
+
+        result = api._strip_readonly_fields(workflow_data)
+
+        # Verify additional readonly fields are removed
+        assert_that(result).does_not_contain_key("isArchived")
+        assert_that(result).does_not_contain_key("pinData")
+        assert_that(result).does_not_contain_key("versionCounter")
+        assert_that(result).does_not_contain_key("shared")
+        # Verify valid fields are preserved
+        assert_that(result).contains_key("name")
+        assert_that(result).contains_key("nodes")
+        assert_that(result).contains_key("connections")
+
+    def test_strip_readonly_fields_filters_invalid_settings(self, temp_dir: Path) -> None:
+        """Test _strip_readonly_fields filters invalid fields from settings object"""
+        mock_db = MagicMock()
+        mock_config = MagicMock()
+        mock_config.workflows_path = temp_dir / "workflows"
+        mock_api_manager = MagicMock()
+
+        api = N8nAPI(
+            db=mock_db,
+            config=mock_config,
+            api_manager=mock_api_manager,
+        )
+
+        workflow_data: Dict[str, Any] = {
+            "name": "Test Workflow",
+            "nodes": [],
+            "connections": {},
+            "settings": {
+                "executionOrder": "v1",
+                "callerPolicy": "workflowsFromSameOwner",
+                "availableInMCP": False,  # Invalid - should be filtered
+                "customField": "value",  # Invalid - should be filtered
+            },
+        }
+
+        result = api._strip_readonly_fields(workflow_data)
+
+        # Verify settings are filtered
+        assert_that(result).contains_key("settings")
+        assert_that(result["settings"]).contains_key("executionOrder")
+        assert_that(result["settings"]).contains_key("callerPolicy")
+        assert_that(result["settings"]).does_not_contain_key("availableInMCP")
+        assert_that(result["settings"]).does_not_contain_key("customField")
+
+    def test_strip_readonly_fields_preserves_valid_settings(self, temp_dir: Path) -> None:
+        """Test _strip_readonly_fields preserves all valid settings fields"""
+        mock_db = MagicMock()
+        mock_config = MagicMock()
+        mock_config.workflows_path = temp_dir / "workflows"
+        mock_api_manager = MagicMock()
+
+        api = N8nAPI(
+            db=mock_db,
+            config=mock_config,
+            api_manager=mock_api_manager,
+        )
+
+        workflow_data: Dict[str, Any] = {
+            "name": "Test Workflow",
+            "nodes": [],
+            "connections": {},
+            "settings": {
+                "executionOrder": "v1",
+                "callerPolicy": "workflowsFromSameOwner",
+                "saveDataErrorExecution": "all",
+                "saveDataSuccessExecution": "all",
+                "saveManualExecutions": True,
+                "saveExecutionProgress": True,
+                "executionTimeout": 3600,
+                "errorWorkflow": "error-handler-wf-id",
+                "timezone": "Europe/London",
+            },
+        }
+
+        result = api._strip_readonly_fields(workflow_data)
+
+        # All valid settings should be preserved
+        assert_that(result["settings"]).is_length(9)
+        assert_that(result["settings"]["executionOrder"]).is_equal_to("v1")
+        assert_that(result["settings"]["timezone"]).is_equal_to("Europe/London")
+
+    def test_strip_readonly_fields_handles_non_dict_settings(self, temp_dir: Path) -> None:
+        """Test _strip_readonly_fields handles non-dict settings gracefully"""
+        mock_db = MagicMock()
+        mock_config = MagicMock()
+        mock_config.workflows_path = temp_dir / "workflows"
+        mock_api_manager = MagicMock()
+
+        api = N8nAPI(
+            db=mock_db,
+            config=mock_config,
+            api_manager=mock_api_manager,
+        )
+
+        # Settings as None
+        workflow_data: Dict[str, Any] = {
+            "name": "Test Workflow",
+            "settings": None,
+        }
+
+        result = api._strip_readonly_fields(workflow_data)
+
+        # None settings should pass through unchanged
+        assert_that(result["settings"]).is_none()
+
+    def test_strip_readonly_fields_handles_empty_settings(self, temp_dir: Path) -> None:
+        """Test _strip_readonly_fields handles empty settings dict"""
+        mock_db = MagicMock()
+        mock_config = MagicMock()
+        mock_config.workflows_path = temp_dir / "workflows"
+        mock_api_manager = MagicMock()
+
+        api = N8nAPI(
+            db=mock_db,
+            config=mock_config,
+            api_manager=mock_api_manager,
+        )
+
+        workflow_data: Dict[str, Any] = {
+            "name": "Test Workflow",
+            "settings": {},
+        }
+
+        result = api._strip_readonly_fields(workflow_data)
+
+        assert_that(result["settings"]).is_empty()
 
     def test_create_n8n_workflow_strips_fields(self, temp_dir: Path) -> None:
         """Test create_n8n_workflow strips readonly fields before POST"""
@@ -549,7 +705,7 @@ class TestDeleteN8nWorkflow:
             mock_response = Mock()
             mock_response.raise_for_status = Mock()
 
-            with patch("api.workflow.n8n_api.requests.delete", return_value=mock_response) as mock_delete:
+            with patch("api.workflow.http_client.requests.delete", return_value=mock_response) as mock_delete:
                 result = api.delete_n8n_workflow("test_wf_123")
 
                 assert_that(result).is_true()
@@ -609,7 +765,7 @@ class TestDeleteN8nWorkflow:
             mock_response.status_code = 404
             http_error = requests.exceptions.HTTPError(response=mock_response)
 
-            with patch("api.workflow.n8n_api.requests.delete") as mock_delete:
+            with patch("api.workflow.http_client.requests.delete") as mock_delete:
                 mock_delete.return_value.raise_for_status.side_effect = http_error
                 mock_delete.return_value = mock_response
                 mock_response.raise_for_status = Mock(side_effect=http_error)
@@ -648,7 +804,7 @@ class TestDeleteN8nWorkflow:
             mock_response.status_code = 500
             http_error = requests.exceptions.HTTPError(response=mock_response)
 
-            with patch("api.workflow.n8n_api.requests.delete") as mock_delete:
+            with patch("api.workflow.http_client.requests.delete") as mock_delete:
                 mock_response.raise_for_status = Mock(side_effect=http_error)
                 mock_delete.return_value = mock_response
 
@@ -682,7 +838,7 @@ class TestDeleteN8nWorkflow:
             },
         ):
             # Mock requests.delete to raise ConnectionError
-            with patch("api.workflow.n8n_api.requests.delete") as mock_delete:
+            with patch("api.workflow.http_client.requests.delete") as mock_delete:
                 mock_delete.side_effect = requests.exceptions.ConnectionError("Network unreachable")
 
                 result = api.delete_n8n_workflow("test_wf_123")
@@ -716,7 +872,7 @@ class TestDeleteN8nWorkflow:
             mock_response = Mock()
             mock_response.raise_for_status = Mock()
 
-            with patch("api.workflow.n8n_api.requests.delete", return_value=mock_response) as mock_delete:
+            with patch("api.workflow.http_client.requests.delete", return_value=mock_response) as mock_delete:
                 result = api.delete_n8n_workflow("test_wf_123")
 
                 assert_that(result).is_true()
@@ -727,3 +883,279 @@ class TestDeleteN8nWorkflow:
                     verify=False,
                     timeout=10,
                 )
+
+
+class TestN8nApiResult:
+    """Tests for N8nApiResult dataclass and its properties"""
+
+    def test_is_not_found_true_for_404(self) -> None:
+        """Test is_not_found returns True for NOT_FOUND error type"""
+        from api.workflow.types import N8nApiErrorType
+
+        result = N8nApiResult(success=False, error_type=N8nApiErrorType.NOT_FOUND)
+        assert_that(result.is_not_found).is_true()
+        assert_that(result.is_network_error).is_false()
+        assert_that(result.is_auth_error).is_false()
+        assert_that(result.is_server_error).is_false()
+
+    def test_is_network_error_true_for_connection_errors(self) -> None:
+        """Test is_network_error returns True for network-related errors"""
+        from api.workflow.types import N8nApiErrorType
+
+        result = N8nApiResult(success=False, error_type=N8nApiErrorType.NETWORK_ERROR)
+        assert_that(result.is_network_error).is_true()
+        assert_that(result.is_not_found).is_false()
+
+    def test_is_network_error_true_for_timeout(self) -> None:
+        """Test is_network_error returns True for timeout errors"""
+        from api.workflow.types import N8nApiErrorType
+
+        result = N8nApiResult(success=False, error_type=N8nApiErrorType.TIMEOUT)
+        assert_that(result.is_network_error).is_true()
+
+    def test_is_auth_error_true_for_auth_failure(self) -> None:
+        """Test is_auth_error returns True for auth failures"""
+        from api.workflow.types import N8nApiErrorType
+
+        result = N8nApiResult(success=False, error_type=N8nApiErrorType.AUTH_FAILURE)
+        assert_that(result.is_auth_error).is_true()
+        assert_that(result.is_not_found).is_false()
+
+    def test_is_server_error_true_for_5xx(self) -> None:
+        """Test is_server_error returns True for server errors"""
+        from api.workflow.types import N8nApiErrorType
+
+        result = N8nApiResult(success=False, error_type=N8nApiErrorType.SERVER_ERROR)
+        assert_that(result.is_server_error).is_true()
+
+    def test_successful_result_all_checks_false(self) -> None:
+        """Test successful result has all error checks returning False"""
+        result = N8nApiResult(success=True, data={"id": "test"})
+        assert_that(result.is_not_found).is_false()
+        assert_that(result.is_network_error).is_false()
+        assert_that(result.is_auth_error).is_false()
+        assert_that(result.is_server_error).is_false()
+
+
+class TestPushWorkflow404Handling:
+    """Tests for push_workflow handling of 404 errors (stale workflow IDs)"""
+
+    def test_push_workflow_404_creates_new_and_updates_id(self, temp_dir: Path) -> None:
+        """Test that 404 response creates new workflow and updates local ID"""
+        from api.workflow.types import N8nApiErrorType
+
+        mock_db = MagicMock()
+        mock_config = MagicMock()
+        workflows_path = temp_dir / "workflows"
+        workflows_path.mkdir(parents=True, exist_ok=True)
+        mock_config.workflows_path = workflows_path
+        mock_api_manager = MagicMock()
+
+        # Create workflow file with old ID
+        old_workflow_id = "stale_wf_123"
+        new_server_id = "new_server_456"
+        workflow_data: Dict[str, Any] = {
+            "id": old_workflow_id,
+            "name": "Test Workflow",
+            "nodes": [],
+            "connections": {},
+        }
+        workflow_file = workflows_path / f"{old_workflow_id}.json"
+        with open(workflow_file, "w") as f:
+            json.dump(workflow_data, f)
+
+        # Mock workflow object
+        from datetime import datetime, timezone
+
+        mock_wf = MagicMock()
+        mock_wf.id = old_workflow_id
+        mock_wf.name = "Test Workflow"
+        mock_wf.file = f"{old_workflow_id}.json"
+        mock_wf.file_folder = str(workflows_path)
+        mock_wf.server_id = None
+        mock_wf.status = "active"
+        mock_wf.created_at = datetime.now(timezone.utc)
+        mock_wf.push_count = 0
+        mock_wf.pull_count = 0
+
+        api = N8nAPI(
+            db=mock_db,
+            config=mock_config,
+            api_manager=mock_api_manager,
+        )
+
+        with patch.object(
+            api,
+            "_get_n8n_credentials",
+            return_value={
+                "api_key": "test_key",
+                "server_url": "http://test.com",
+                "headers": {"X-N8N-API-KEY": "test_key"},
+            },
+        ):
+            # Mock get_n8n_workflow_typed to return 404 (stale ID)
+            with patch.object(
+                api,
+                "get_n8n_workflow_typed",
+                return_value=N8nApiResult(success=False, error_type=N8nApiErrorType.NOT_FOUND, error_message="Not found"),
+            ):
+                # Mock create_n8n_workflow to return new ID
+                with patch.object(api, "create_n8n_workflow", return_value={"id": new_server_id, "name": "Test Workflow"}):
+                    with patch.object(api, "get_n8n_version", return_value="1.45.0"):
+                        with patch("api.workflow.crud.WorkflowCRUD") as mock_crud_class:
+                            mock_crud = MagicMock()
+                            mock_crud.get_workflow_info.return_value = {
+                                "wf": mock_wf,
+                                "name": "Test Workflow",
+                            }
+                            mock_crud.get_workflow_filename.return_value = f"{old_workflow_id}.json"
+                            mock_crud_class.return_value = mock_crud
+
+                            # Mock db.get_workflow for ID update
+                            mock_db.get_workflow.return_value = mock_wf
+
+                            result = api.push_workflow(old_workflow_id)
+
+        assert_that(result).is_true()
+        # Verify old ID was deleted and new ID was added
+        mock_db.delete_workflow.assert_called_once_with(old_workflow_id)
+        mock_db.add_workflow.assert_called_once()
+
+        # Verify the JSON file was updated with new ID
+        with open(workflow_file, "r") as f:
+            updated_data = json.load(f)
+        assert_that(updated_data["id"]).is_equal_to(new_server_id)
+
+    def test_push_workflow_network_error_aborts(self, temp_dir: Path) -> None:
+        """Test that network errors abort push without creating new workflow"""
+        from api.workflow.types import N8nApiErrorType
+
+        mock_db = MagicMock()
+        mock_config = MagicMock()
+        workflows_path = temp_dir / "workflows"
+        workflows_path.mkdir(parents=True, exist_ok=True)
+        mock_config.workflows_path = workflows_path
+        mock_api_manager = MagicMock()
+
+        # Create workflow file
+        workflow_id = "test_wf_789"
+        workflow_data: Dict[str, Any] = {
+            "id": workflow_id,
+            "name": "Test Workflow",
+            "nodes": [],
+            "connections": {},
+        }
+        workflow_file = workflows_path / f"{workflow_id}.json"
+        with open(workflow_file, "w") as f:
+            json.dump(workflow_data, f)
+
+        # Mock workflow object
+        mock_wf = MagicMock()
+        mock_wf.id = workflow_id
+        mock_wf.file_folder = str(workflows_path)
+
+        api = N8nAPI(
+            db=mock_db,
+            config=mock_config,
+            api_manager=mock_api_manager,
+        )
+
+        with patch.object(
+            api,
+            "_get_n8n_credentials",
+            return_value={
+                "api_key": "test_key",
+                "server_url": "http://test.com",
+                "headers": {"X-N8N-API-KEY": "test_key"},
+            },
+        ):
+            # Mock get_n8n_workflow_typed to return network error
+            with patch.object(
+                api,
+                "get_n8n_workflow_typed",
+                return_value=N8nApiResult(
+                    success=False, error_type=N8nApiErrorType.NETWORK_ERROR, error_message="Connection refused"
+                ),
+            ):
+                with patch("api.workflow.crud.WorkflowCRUD") as mock_crud_class:
+                    mock_crud = MagicMock()
+                    mock_crud.get_workflow_info.return_value = {
+                        "wf": mock_wf,
+                        "name": "Test Workflow",
+                    }
+                    mock_crud.get_workflow_filename.return_value = f"{workflow_id}.json"
+                    mock_crud_class.return_value = mock_crud
+
+                    result = api.push_workflow(workflow_id)
+
+        # Push should fail
+        assert_that(result).is_false()
+        # create_n8n_workflow should NOT have been called (no duplicate created)
+        # Database should remain unchanged
+        mock_db.delete_workflow.assert_not_called()
+        mock_db.add_workflow.assert_not_called()
+
+    def test_push_workflow_auth_error_aborts(self, temp_dir: Path) -> None:
+        """Test that auth errors abort push"""
+        from api.workflow.types import N8nApiErrorType
+
+        mock_db = MagicMock()
+        mock_config = MagicMock()
+        workflows_path = temp_dir / "workflows"
+        workflows_path.mkdir(parents=True, exist_ok=True)
+        mock_config.workflows_path = workflows_path
+        mock_api_manager = MagicMock()
+
+        # Create workflow file
+        workflow_id = "test_wf_auth"
+        workflow_data: Dict[str, Any] = {
+            "id": workflow_id,
+            "name": "Test Workflow",
+            "nodes": [],
+            "connections": {},
+        }
+        workflow_file = workflows_path / f"{workflow_id}.json"
+        with open(workflow_file, "w") as f:
+            json.dump(workflow_data, f)
+
+        mock_wf = MagicMock()
+        mock_wf.id = workflow_id
+        mock_wf.file_folder = str(workflows_path)
+
+        api = N8nAPI(
+            db=mock_db,
+            config=mock_config,
+            api_manager=mock_api_manager,
+        )
+
+        with patch.object(
+            api,
+            "_get_n8n_credentials",
+            return_value={
+                "api_key": "test_key",
+                "server_url": "http://test.com",
+                "headers": {"X-N8N-API-KEY": "test_key"},
+            },
+        ):
+            # Mock get_n8n_workflow_typed to return auth error
+            with patch.object(
+                api,
+                "get_n8n_workflow_typed",
+                return_value=N8nApiResult(
+                    success=False, error_type=N8nApiErrorType.AUTH_FAILURE, error_message="Invalid API key"
+                ),
+            ):
+                with patch("api.workflow.crud.WorkflowCRUD") as mock_crud_class:
+                    mock_crud = MagicMock()
+                    mock_crud.get_workflow_info.return_value = {
+                        "wf": mock_wf,
+                        "name": "Test Workflow",
+                    }
+                    mock_crud.get_workflow_filename.return_value = f"{workflow_id}.json"
+                    mock_crud_class.return_value = mock_crud
+
+                    result = api.push_workflow(workflow_id)
+
+        assert_that(result).is_false()
+        mock_db.delete_workflow.assert_not_called()
+        mock_db.add_workflow.assert_not_called()
