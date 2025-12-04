@@ -54,6 +54,10 @@ dev = [
     "types-requests>=2.31.0",
     "types-click>=7.1.8",
     "python-dotenv>=1.0.0",
+    # Code analysis tools
+    "radon>=6.0.0",
+    "vulture>=2.10",
+    "rope>=1.12.0",
 ]
 test = [
     "pytest>=7.0.0",

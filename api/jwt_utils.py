@@ -8,7 +8,6 @@ checking API key expiration.
 
 import base64
 import json
-import time
 from datetime import datetime, timedelta
 from typing import Any, Dict, Optional, Tuple, cast
 
