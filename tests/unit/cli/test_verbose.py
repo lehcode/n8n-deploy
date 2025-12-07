@@ -16,6 +16,7 @@ import pytest
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 
 from api.cli.verbose import (
+    get_verbose_level,
     is_verbose,
     log_error,
     log_request,
@@ -105,36 +106,36 @@ class TestVerboseState:
 
     def setup_method(self) -> None:
         """Reset verbose state before each test"""
-        set_verbose(False)
+        set_verbose(0)
 
     def teardown_method(self) -> None:
         """Reset verbose state after each test"""
-        set_verbose(False)
+        set_verbose(0)
 
     def test_default_disabled(self) -> None:
         """Verbose mode is disabled by default after reset"""
-        set_verbose(False)  # Explicit reset
+        set_verbose(0)  # Explicit reset
         assert is_verbose() is False
 
     def test_enable_verbose(self) -> None:
         """Verbose mode can be enabled"""
-        set_verbose(True)
+        set_verbose(1)
         assert is_verbose() is True
 
     def test_disable_verbose(self) -> None:
         """Verbose mode can be disabled"""
-        set_verbose(True)
-        set_verbose(False)
+        set_verbose(1)
+        set_verbose(0)
         assert is_verbose() is False
 
     def test_toggle_verbose(self) -> None:
         """Verbose mode can be toggled multiple times"""
         assert is_verbose() is False
-        set_verbose(True)
+        set_verbose(1)
         assert is_verbose() is True
-        set_verbose(False)
+        set_verbose(0)
         assert is_verbose() is False
-        set_verbose(True)
+        set_verbose(1)
         assert is_verbose() is True
 
 
@@ -143,11 +144,11 @@ class TestLogRequest:
 
     def setup_method(self) -> None:
         """Enable verbose for logging tests"""
-        set_verbose(True)
+        set_verbose(1)
 
     def teardown_method(self) -> None:
         """Reset verbose state"""
-        set_verbose(False)
+        set_verbose(0)
 
     def test_log_request_returns_start_time(self) -> None:
         """log_request returns start time for duration calculation"""
@@ -159,7 +160,7 @@ class TestLogRequest:
 
     def test_log_request_returns_time_when_disabled(self) -> None:
         """log_request returns time even when verbose is disabled"""
-        set_verbose(False)
+        set_verbose(0)
         before = time.perf_counter()
         start = log_request("GET", "http://example.com", {})
         after = time.perf_counter()
@@ -234,7 +235,7 @@ class TestLogRequest:
 
     def test_log_request_no_output_when_disabled(self) -> None:
         """No output when verbose mode is disabled"""
-        set_verbose(False)
+        set_verbose(0)
 
         with patch("click.echo") as mock_echo:
             log_request("GET", "http://example.com", {"X-N8N-API-KEY": "secret"})
@@ -246,11 +247,11 @@ class TestLogResponse:
 
     def setup_method(self) -> None:
         """Enable verbose for logging tests"""
-        set_verbose(True)
+        set_verbose(1)
 
     def teardown_method(self) -> None:
         """Reset verbose state"""
-        set_verbose(False)
+        set_verbose(0)
 
     def test_log_response_shows_status_code(self) -> None:
         """log_response shows HTTP status code"""
@@ -293,7 +294,7 @@ class TestLogResponse:
 
     def test_log_response_no_output_when_disabled(self) -> None:
         """No output when verbose mode is disabled"""
-        set_verbose(False)
+        set_verbose(0)
 
         with patch("click.echo") as mock_echo:
             log_response(200, {"Content-Type": "application/json"}, time.perf_counter())
@@ -305,11 +306,11 @@ class TestLogError:
 
     def setup_method(self) -> None:
         """Enable verbose for logging tests"""
-        set_verbose(True)
+        set_verbose(1)
 
     def teardown_method(self) -> None:
         """Reset verbose state"""
-        set_verbose(False)
+        set_verbose(0)
 
     def test_log_error_shows_error_type(self) -> None:
         """log_error shows error type"""
@@ -338,7 +339,7 @@ class TestLogError:
 
     def test_log_error_no_output_when_disabled(self) -> None:
         """No output when verbose mode is disabled"""
-        set_verbose(False)
+        set_verbose(0)
 
         with patch("click.echo") as mock_echo:
             log_error("TEST", "Test error")
@@ -351,3 +352,103 @@ class TestLogError:
 
             output = str(mock_echo.call_args_list)
             assert "!!!" in output
+
+
+class TestVerboseLevels:
+    """Tests for verbosity levels"""
+
+    def setup_method(self) -> None:
+        """Reset verbose state before each test"""
+        set_verbose(0)
+
+    def teardown_method(self) -> None:
+        """Reset verbose state after each test"""
+        set_verbose(0)
+
+    def test_level_0_is_not_verbose(self) -> None:
+        """Level 0 means verbose is disabled"""
+        set_verbose(0)
+        assert is_verbose() is False
+        assert get_verbose_level() == 0
+
+    def test_level_1_is_verbose(self) -> None:
+        """Level 1 (-v) means verbose is enabled"""
+        set_verbose(1)
+        assert is_verbose() is True
+        assert get_verbose_level() == 1
+
+    def test_level_2_is_verbose(self) -> None:
+        """Level 2 (-vv) means extended verbose is enabled"""
+        set_verbose(2)
+        assert is_verbose() is True
+        assert get_verbose_level() == 2
+
+    def test_higher_levels_are_verbose(self) -> None:
+        """Any level > 0 is verbose"""
+        set_verbose(5)
+        assert is_verbose() is True
+        assert get_verbose_level() == 5
+
+
+class TestLogResponseBody:
+    """Tests for response body logging at -vv"""
+
+    def setup_method(self) -> None:
+        """Enable extended verbose (-vv) for tests"""
+        set_verbose(2)
+
+    def teardown_method(self) -> None:
+        """Reset verbose state"""
+        set_verbose(0)
+
+    def test_response_body_shown_at_level_2(self) -> None:
+        """Response body is shown at -vv level"""
+        with patch("click.echo") as mock_echo:
+            log_response(400, {}, time.perf_counter(), '{"error": "Bad Request"}')
+
+            output = str(mock_echo.call_args_list)
+            assert "Response:" in output
+            assert "Bad Request" in output
+
+    def test_response_body_hidden_at_level_1(self) -> None:
+        """Response body is NOT shown at -v level"""
+        set_verbose(1)
+
+        with patch("click.echo") as mock_echo:
+            log_response(400, {}, time.perf_counter(), '{"error": "Bad Request"}')
+
+            output = str(mock_echo.call_args_list)
+            assert "Response:" not in output
+
+    def test_response_body_hidden_at_level_0(self) -> None:
+        """Response body is NOT shown when disabled"""
+        set_verbose(0)
+
+        with patch("click.echo") as mock_echo:
+            log_response(400, {}, time.perf_counter(), '{"error": "Bad Request"}')
+            mock_echo.assert_not_called()
+
+    def test_response_body_truncated(self) -> None:
+        """Long response body is truncated"""
+        with patch("click.echo") as mock_echo:
+            large_body = "x" * 2000
+            log_response(200, {}, time.perf_counter(), large_body)
+
+            output = str(mock_echo.call_args_list)
+            assert "truncated" in output
+
+    def test_response_body_none_not_shown(self) -> None:
+        """None response body is not logged"""
+        with patch("click.echo") as mock_echo:
+            log_response(200, {}, time.perf_counter(), None)
+
+            output = str(mock_echo.call_args_list)
+            assert "Response:" not in output
+
+    def test_response_body_empty_string_not_shown(self) -> None:
+        """Empty string response body is not logged"""
+        with patch("click.echo") as mock_echo:
+            log_response(200, {}, time.perf_counter(), "")
+
+            output = str(mock_echo.call_args_list)
+            assert "Response:" not in output
