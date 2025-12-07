@@ -128,33 +128,52 @@ class TestWorkflowFileHandling(WorkflowTestHelpers):
         assert returncode == 0
 
     def test_workflow_concurrent_operations(self) -> None:
-        """Test concurrent wf operations"""
+        """Test concurrent wf operations with SQLite
+
+        SQLite has limited concurrent access support. This test verifies
+        that read operations can execute concurrently without crashing,
+        using appropriate staggering and retry logic.
+        """
         import threading
         import time
 
         self.setup_database()
 
         # Add a test workflow to make the database non-empty
-        # This reduces race conditions during concurrent access
         test_wf = self.create_test_workflow("concurrent_test")
         self.run_wf_add("concurrent_test")
 
-        results = []
+        results: list[tuple[int, int, str, str]] = []
+        results_lock = threading.Lock()
 
         def list_workflows(thread_id: int) -> None:
-            # Add small stagger to reduce simultaneous access
-            time.sleep(thread_id * 0.05)
+            # Stagger thread starts to reduce lock contention on SQLite
+            time.sleep(thread_id * 0.1)
 
-            # Note: wf list reads from database, so it uses --data-dir
-            returncode, stdout, stderr = self.run_cli_command(
-                [
-                    "wf",
-                    "list",
-                    "--data-dir",
-                    self.temp_dir,
-                ]
-            )
-            results.append((thread_id, returncode, stdout, stderr))
+            # Retry logic for transient SQLite lock errors
+            max_retries = 3
+            for attempt in range(max_retries):
+                returncode, stdout, stderr = self.run_cli_command(
+                    [
+                        "wf",
+                        "list",
+                        "--data-dir",
+                        self.temp_dir,
+                    ]
+                )
+
+                # Success or non-transient error
+                if returncode == 0 or "database is locked" not in stderr.lower():
+                    with results_lock:
+                        results.append((thread_id, returncode, stdout, stderr))
+                    return
+
+                # Transient lock error - wait and retry
+                time.sleep(0.1 * (attempt + 1))
+
+            # All retries exhausted
+            with results_lock:
+                results.append((thread_id, returncode, stdout, stderr))
 
         threads = []
         for i in range(3):
@@ -162,13 +181,15 @@ class TestWorkflowFileHandling(WorkflowTestHelpers):
             threads.append(thread)
             thread.start()
 
+        # Join with timeout to prevent hanging
         for thread in threads:
-            thread.join()
-        assert len(results) == 3
+            thread.join(timeout=30)
+
+        assert len(results) == 3, f"Expected 3 results, got {len(results)}"
+
         # Operations should complete without crashes
         for thread_id, returncode, stdout, stderr in results:
             if returncode != 0:
-                # Provide detailed error output for debugging
                 print(f"\n=== Thread {thread_id} Error Details ===")
                 print(f"STDOUT: {stdout}")
                 print(f"STDERR: {stderr}")

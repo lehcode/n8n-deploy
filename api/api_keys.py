@@ -147,6 +147,8 @@ class KeyApi:
             print(f"🧪 Testing API key '{key_name}' against server: {test_server}")
 
         try:
+            from api.cli.verbose import log_error, log_request, log_response
+
             # Make a simple authenticated request to /api/v1/workflows
             url = f"{test_server.rstrip('/')}/api/v1/workflows"
             headers = {
@@ -154,7 +156,9 @@ class KeyApi:
                 "Content-Type": "application/json",
             }
 
+            start_time = log_request("GET", url, headers)
             response = requests.get(url, headers=headers, verify=not skip_ssl_verify, timeout=10)
+            log_response(response.status_code, dict(response.headers), start_time)
             response.raise_for_status()
 
             # Parse response
@@ -171,12 +175,14 @@ class KeyApi:
             return True
 
         except requests.exceptions.Timeout:
+            log_error("TIMEOUT", f"Connection timed out after 10 seconds")
             if no_emoji:
                 print(f"Connection to {test_server} timed out after 10 seconds")
             else:
                 print(f"❌ Connection to {test_server} timed out after 10 seconds")
             return False
         except requests.exceptions.SSLError as e:
+            log_error("SSL", str(e))
             if no_emoji:
                 print(f"SSL certificate verification failed: {e}")
                 print("Use --skip-ssl-verify to bypass SSL verification (not recommended for production)")
@@ -185,6 +191,7 @@ class KeyApi:
                 print("   Use --skip-ssl-verify to bypass SSL verification (not recommended for production)")
             return False
         except requests.exceptions.HTTPError as e:
+            log_error("HTTP", str(e))
             if no_emoji:
                 print(f"Authentication failed: {e}")
                 print("The API key may be invalid or expired")
@@ -193,12 +200,14 @@ class KeyApi:
                 print("   The API key may be invalid or expired")
             return False
         except requests.exceptions.RequestException as e:
+            log_error("REQUEST", str(e))
             if no_emoji:
                 print(f"Failed to connect to server: {e}")
             else:
                 print(f"❌ Failed to connect to server: {e}")
             return False
         except Exception as e:
+            log_error("UNKNOWN", str(e))
             if no_emoji:
                 print(f"Unexpected error during API key test: {e}")
             else:
