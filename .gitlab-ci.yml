@@ -86,17 +86,50 @@ cache:
     - .mypy_cache/
   policy: pull
 
-# Template for Python environment setup
+# Template for Python environment setup (uses cached venv from warm-cache job)
 .python_setup: &python_setup
   before_script:
-    # Configure APT proxy for faster package installation
+    - source .venv/bin/activate
+
+# ============================================
+# PRE STAGE - Cache warming
+# ============================================
+
+warm-cache:
+  stage: .pre
+  image: python:3.9-slim
+  tags:
+    - python
+    - cache
+  interruptible: true
+  rules:
+    - if: '$CI_COMMIT_TAG'
+      when: never
+    - when: on_success
+  cache:
+    key:
+      files:
+        - requirements.txt
+      prefix: ${CI_COMMIT_REF_SLUG}
+    fallback_keys:
+      - develop
+      - master
+    paths:
+      - .cache/pip/
+      - .venv/
+      - .mypy_cache/
+    policy: pull-push
+  before_script:
     - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy
     - apt-get -q update && apt-get -qy install git
     - python -m pip install --quiet --upgrade pip
     - pip install --quiet uv
+  script:
+    - echo "Warming cache..."
     - uv venv --python python3 .venv
     - source .venv/bin/activate
     - uv pip install --quiet -e ".[test,dev]"
+    - echo "Cache populated successfully"
 
 # ============================================
 # SECURITY STAGE
@@ -217,10 +250,11 @@ quality:mypy:
       when: never
     - when: on_success
   <<: *python_setup
-  needs: []  # Run in parallel with security stage
+  cache:
+    <<: *cache_pull
+  needs:
+    - warm-cache
   script:
-    - source .venv/bin/activate
-    - uv pip install --quiet types-requests types-click
     - mypy api/ --strict --show-error-codes
     - echo "✅ Type checking passed"
 
@@ -238,9 +272,9 @@ quality:black:
   <<: *python_setup
   cache:
     <<: *cache_pull
-  needs: []  # Run in parallel with security stage
+  needs:
+    - warm-cache
   script:
-    - source .venv/bin/activate
     - black --check api/
     - echo "✅ Code formatting check passed"
 
@@ -255,10 +289,10 @@ test:unit:
   tags:
     - python
   interruptible: true
-  <<: *python_setup
   cache:
     <<: *cache_pull
-  needs: []  # Run in parallel with security+quality stages
+  needs:
+    - warm-cache
   rules:
     - if: '$CI_COMMIT_TAG'
       when: never
@@ -266,8 +300,11 @@ test:unit:
       when: never
     - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
       when: on_success
-  script:
+  before_script:
+    - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy
+    - apt-get -q update && apt-get -qy install git
     - source .venv/bin/activate
+  script:
     - export N8N_DEPLOY_TESTING=1
     - python -m pytest tests/unit/ -rs --tb=short -q
     - echo "Unit tests passed"
@@ -282,7 +319,8 @@ test:integration:
   <<: *python_setup
   cache:
     <<: *cache_pull
-  needs: []  # Run in parallel with security+quality stages
+  needs:
+    - warm-cache
   rules:
     - if: '$CI_COMMIT_TAG'
       when: never
@@ -291,7 +329,6 @@ test:integration:
     - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
       when: on_success
   script:
-    - source .venv/bin/activate
     - export N8N_DEPLOY_TESTING=1
     - python -m pytest tests/integration/ -rs --tb=short -q
     - echo "Integration tests passed"
@@ -306,7 +343,8 @@ test:hypothesis:
   <<: *python_setup
   cache:
     <<: *cache_pull
-  needs: []  # Run in parallel with security+quality stages
+  needs:
+    - warm-cache
   rules:
     - if: '$CI_COMMIT_TAG'
       when: never
@@ -315,7 +353,6 @@ test:hypothesis:
     - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
       when: on_success
   script:
-    - source .venv/bin/activate
     - export N8N_DEPLOY_TESTING=1
     - echo "Running property-based tests with Hypothesis..."
     - python run_tests.py --hypothesis --no-deps-check
