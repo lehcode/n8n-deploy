@@ -6,6 +6,7 @@ stages:
   - security
   - quality
   - test
+  - coverage
   - build-matrix
   - release
 
@@ -408,6 +409,10 @@ test:unit:
     - export N8N_DEPLOY_TESTING=1
     - ./run_tests.py --unit --no-deps-check -q
     - echo "Unit tests passed"
+  artifacts:
+    paths:
+      - .coverage
+    expire_in: 1 hour
 
 # Integration tests
 test:integration:
@@ -436,6 +441,10 @@ test:integration:
     - export N8N_DEPLOY_TESTING=1
     - ./run_tests.py --integration --no-deps-check -q
     - echo "Integration tests passed"
+  artifacts:
+    paths:
+      - .coverage
+    expire_in: 1 hour
 
 # Property-based tests with Hypothesis
 test:hypothesis:
