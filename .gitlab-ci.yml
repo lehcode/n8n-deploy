@@ -1,6 +1,6 @@
 # GitLab CI/CD Pipeline for n8n-deploy
 # Python CLI tool for n8n workflow management
-# Mirrors GitHub Actions workflow structure with branch-based deployment strategy
+# Optimized for parallel stage execution
 
 stages:
   - security
@@ -217,11 +217,7 @@ quality:mypy:
       when: never
     - when: on_success
   <<: *python_setup
-  needs:
-    - security:bandit
-    - security:semgrep
-    - secret_detection
-    - dependency_scanning
+  needs: []  # Run in parallel with security stage
   script:
     - source .venv/bin/activate
     - uv pip install --quiet types-requests types-click
@@ -242,11 +238,7 @@ quality:black:
   <<: *python_setup
   cache:
     <<: *cache_pull
-  needs:
-    - security:bandit
-    - security:semgrep
-    - secret_detection
-    - dependency_scanning
+  needs: []  # Run in parallel with security stage
   script:
     - source .venv/bin/activate
     - black --check api/
@@ -263,7 +255,6 @@ test:unit:
   tags:
     - python
   interruptible: true
-  resource_group: test-runner
   <<: *python_setup
   cache:
     <<: *cache_pull
@@ -288,7 +279,6 @@ test:integration:
   tags:
     - python
   interruptible: true
-  resource_group: test-runner
   <<: *python_setup
   cache:
     <<: *cache_pull
