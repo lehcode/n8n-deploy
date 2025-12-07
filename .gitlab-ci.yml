@@ -6,7 +6,6 @@ stages:
   - security
   - quality
   - test
-  - coverage
   - build-matrix
   - release
 
@@ -385,18 +384,7 @@ test:unit:
     - when: on_success
   <<: *python_setup
   cache:
-    key:
-      files:
-        - requirements.txt
-      prefix: ${CI_COMMIT_REF_SLUG}
-    fallback_keys:
-      - develop
-      - master
-    paths:
-      - .cache/pip/
-      - .venv/
-      - .mypy_cache/
-    policy: pull
+    <<: *cache_pull
   needs: []  # Run in parallel with security+quality stages
   rules:
     - if: '$CI_COMMIT_TAG'
@@ -409,10 +397,6 @@ test:unit:
     - export N8N_DEPLOY_TESTING=1
     - ./run_tests.py --unit --no-deps-check -q
     - echo "Unit tests passed"
-  artifacts:
-    paths:
-      - .coverage
-    expire_in: 1 hour
 
 # Integration tests
 test:integration:
@@ -441,10 +425,6 @@ test:integration:
     - export N8N_DEPLOY_TESTING=1
     - ./run_tests.py --integration --no-deps-check -q
     - echo "Integration tests passed"
-  artifacts:
-    paths:
-      - .coverage
-    expire_in: 1 hour
 
 # Property-based tests with Hypothesis
 test:hypothesis:
