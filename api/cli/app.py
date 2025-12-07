@@ -10,6 +10,8 @@ from typing import Any, List, Optional
 import click
 from rich.console import Console
 
+from .verbose import set_verbose
+
 console = Console()
 
 # Program name constant for consistent CLI help messages
@@ -144,9 +146,24 @@ def handle_version_help(ctx: click.Context, _param: click.Parameter, value: Any)
     ctx.exit()
 
 
+def handle_verbose_flag(ctx: click.Context, _param: click.Parameter, value: Any) -> None:
+    """Handle verbose flag - sets global verbose state"""
+    if value and not ctx.resilient_parsing:
+        set_verbose(True)
+
+
 @click.group(cls=CustomGroup, context_settings={"help_option_names": ["-h", "--help"]}, no_args_is_help=True)
 @click.option(
     "--version", is_flag=True, expose_value=False, is_eager=True, callback=handle_version_help, help="Show version and exit"
+)
+@click.option(
+    "-v",
+    "--verbose",
+    is_flag=True,
+    expose_value=False,
+    is_eager=True,
+    callback=handle_verbose_flag,
+    help="Show HTTP request details",
 )
 def cli() -> None:
     """🎭 n8n-deploy - a simple N8N Workflow Manager
