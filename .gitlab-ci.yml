@@ -6,6 +6,7 @@ stages:
   - security
   - quality
   - test
+  - coverage
   - build-matrix
 
 # Docker services for caching (only used by Docker-specific jobs)
@@ -285,8 +286,12 @@ test:unit:
   script:
     - source .venv/bin/activate
     - export N8N_DEPLOY_TESTING=1
-    - python -m pytest tests/unit/ -rs --tb=short -q
+    - python -m pytest tests/unit/ -rs --tb=short -q --cov=api --cov-report=
     - echo "Unit tests passed"
+  artifacts:
+    paths:
+      - .coverage
+    expire_in: 1 hour
 
 # Integration tests
 test:integration:
@@ -321,8 +326,12 @@ test:integration:
   script:
     - source .venv/bin/activate
     - export N8N_DEPLOY_TESTING=1
-    - python -m pytest tests/integration/ -rs --tb=short -q
+    - python -m pytest tests/integration/ -rs --tb=short -q --cov=api --cov-report= --cov-append
     - echo "Integration tests passed"
+  artifacts:
+    paths:
+      - .coverage
+    expire_in: 1 hour
 
 # Property-based tests with Hypothesis
 test:hypothesis:
@@ -364,6 +373,47 @@ test:hypothesis:
     paths:
       - .hypothesis/
     expire_in: 7 days
+
+# ============================================
+# COVERAGE STAGE
+# ============================================
+
+# Coverage report aggregation
+coverage:report:
+  stage: coverage
+  image: python:3.9-slim
+  tags:
+    - python
+  interruptible: true
+  cache:
+    policy: pull
+  needs:
+    - test:unit
+    - test:integration
+  rules:
+    - if: '$CI_COMMIT_TAG'
+      when: never
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: never
+    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
+      when: on_success
+  before_script:
+    - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy
+    - apt-get -q update
+    - python -m pip install --quiet --upgrade pip
+    - pip install --quiet coverage
+  script:
+    - echo "Generating coverage report..."
+    - coverage combine || true
+    - coverage report --show-missing
+    - coverage xml -o coverage.xml
+  coverage: '/TOTAL.*\s+(\d+%)$/'
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+    expire_in: 30 days
 
 # ============================================
 # BUILD-MATRIX STAGE (runs on merge/push to protected branches)
