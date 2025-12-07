@@ -704,6 +704,8 @@ class TestDeleteN8nWorkflow:
             # Mock requests.delete to return successful response
             mock_response = Mock()
             mock_response.raise_for_status = Mock()
+            mock_response.status_code = 200
+            mock_response.headers = {}  # Required for verbose logging
 
             with patch("api.workflow.http_client.requests.delete", return_value=mock_response) as mock_delete:
                 result = api.delete_n8n_workflow("test_wf_123")
@@ -763,6 +765,7 @@ class TestDeleteN8nWorkflow:
             # Mock requests.delete to raise 404 HTTPError
             mock_response = Mock()
             mock_response.status_code = 404
+            mock_response.headers = {}  # Required for verbose logging
             http_error = requests.exceptions.HTTPError(response=mock_response)
 
             with patch("api.workflow.http_client.requests.delete") as mock_delete:
@@ -802,6 +805,7 @@ class TestDeleteN8nWorkflow:
             # Mock requests.delete to raise 500 HTTPError
             mock_response = Mock()
             mock_response.status_code = 500
+            mock_response.headers = {}  # Required for verbose logging
             http_error = requests.exceptions.HTTPError(response=mock_response)
 
             with patch("api.workflow.http_client.requests.delete") as mock_delete:
@@ -871,6 +875,8 @@ class TestDeleteN8nWorkflow:
         ):
             mock_response = Mock()
             mock_response.raise_for_status = Mock()
+            mock_response.status_code = 200
+            mock_response.headers = {}  # Required for verbose logging
 
             with patch("api.workflow.http_client.requests.delete", return_value=mock_response) as mock_delete:
                 result = api.delete_n8n_workflow("test_wf_123")
