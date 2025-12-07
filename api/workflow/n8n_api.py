@@ -148,7 +148,7 @@ class N8nAPI:
         """
         readonly_fields = [
             "id",
-            # "active" - preserved to maintain workflow state from JSON
+            "active",  # n8n API rejects setting active via PUT - use activate/deactivate endpoint
             "triggerCount",
             "updatedAt",
             "createdAt",

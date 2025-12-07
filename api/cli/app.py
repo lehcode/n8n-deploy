@@ -146,10 +146,16 @@ def handle_version_help(ctx: click.Context, _param: click.Parameter, value: Any)
     ctx.exit()
 
 
-def handle_verbose_flag(ctx: click.Context, _param: click.Parameter, value: Any) -> None:
-    """Handle verbose flag - sets global verbose state"""
+def handle_verbose_flag(ctx: click.Context, _param: click.Parameter, value: int) -> None:
+    """Handle verbose flag - sets global verbose level
+
+    Args:
+        ctx: Click context
+        _param: Click parameter (unused)
+        value: Verbosity level count (0=off, 1=-v, 2=-vv)
+    """
     if value and not ctx.resilient_parsing:
-        set_verbose(True)
+        set_verbose(value)
 
 
 @click.group(cls=CustomGroup, context_settings={"help_option_names": ["-h", "--help"]}, no_args_is_help=True)
@@ -159,11 +165,11 @@ def handle_verbose_flag(ctx: click.Context, _param: click.Parameter, value: Any)
 @click.option(
     "-v",
     "--verbose",
-    is_flag=True,
+    count=True,
     expose_value=False,
     is_eager=True,
     callback=handle_verbose_flag,
-    help="Show HTTP request details",
+    help="Verbosity level (-v headers, -vv +response body)",
 )
 def cli() -> None:
     """🎭 n8n-deploy - a simple N8N Workflow Manager
