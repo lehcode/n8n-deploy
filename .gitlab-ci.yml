@@ -57,7 +57,7 @@ workflow:
     # Skip for all other cases (including feature branch pushes)
     - when: never
 
-# Cache for pip dependencies
+# Cache for pip dependencies (default: pull-push)
 cache:
   key:
     files:
@@ -226,7 +226,18 @@ quality:black:
     - when: on_success
   <<: *python_setup
   cache:
-    policy: pull  # Only download cache, don't upload (mypy writes cache)
+    key:
+      files:
+        - requirements.txt
+      prefix: ${CI_COMMIT_REF_SLUG}
+    fallback_keys:
+      - develop
+      - master
+    paths:
+      - .cache/pip/
+      - .venv/
+      - .mypy_cache/
+    policy: pull
   needs:
     - security:bandit
     - security:semgrep
@@ -251,7 +262,18 @@ test:unit:
   resource_group: test-runner
   <<: *python_setup
   cache:
-    policy: pull  # Only download cache, don't upload (mypy writes cache)
+    key:
+      files:
+        - requirements.txt
+      prefix: ${CI_COMMIT_REF_SLUG}
+    fallback_keys:
+      - develop
+      - master
+    paths:
+      - .cache/pip/
+      - .venv/
+      - .mypy_cache/
+    policy: pull
   needs: []  # Run in parallel with security+quality stages
   rules:
     - if: '$CI_COMMIT_TAG'
@@ -276,7 +298,18 @@ test:integration:
   resource_group: test-runner
   <<: *python_setup
   cache:
-    policy: pull  # Only download cache, don't upload (mypy writes cache)
+    key:
+      files:
+        - requirements.txt
+      prefix: ${CI_COMMIT_REF_SLUG}
+    fallback_keys:
+      - develop
+      - master
+    paths:
+      - .cache/pip/
+      - .venv/
+      - .mypy_cache/
+    policy: pull
   needs: []  # Run in parallel with security+quality stages
   rules:
     - if: '$CI_COMMIT_TAG'
@@ -300,7 +333,18 @@ test:hypothesis:
   interruptible: true
   <<: *python_setup
   cache:
-    policy: pull  # Only download cache, don't upload (mypy writes cache)
+    key:
+      files:
+        - requirements.txt
+      prefix: ${CI_COMMIT_REF_SLUG}
+    fallback_keys:
+      - develop
+      - master
+    paths:
+      - .cache/pip/
+      - .venv/
+      - .mypy_cache/
+    policy: pull
   needs: []  # Run in parallel with security+quality stages
   rules:
     - if: '$CI_COMMIT_TAG'
