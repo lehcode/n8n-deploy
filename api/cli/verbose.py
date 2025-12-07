@@ -15,31 +15,46 @@ import click
 
 @dataclass
 class VerboseConfig:
-    """Configuration for verbose output"""
+    """Configuration for verbose output
 
-    enabled: bool = False
+    Supports multiple verbosity levels:
+    - 0: Disabled (default)
+    - 1: Basic verbose (-v) - method, URL, headers, status, timing
+    - 2: Extended verbose (-vv) - includes response body
+    """
+
+    level: int = 0
 
 
 # Global verbose state (set by CLI callback)
 _verbose_config = VerboseConfig()
 
 
-def set_verbose(enabled: bool) -> None:
-    """Set global verbose mode
+def set_verbose(level: int) -> None:
+    """Set global verbose level
 
     Args:
-        enabled: Whether verbose mode should be enabled
+        level: Verbosity level (0=off, 1=-v, 2=-vv)
     """
-    _verbose_config.enabled = enabled
+    _verbose_config.level = level
 
 
 def is_verbose() -> bool:
-    """Check if verbose mode is enabled
+    """Check if verbose mode is enabled (any level)
 
     Returns:
-        True if verbose mode is enabled
+        True if verbosity level is 1 or higher
     """
-    return _verbose_config.enabled
+    return _verbose_config.level >= 1
+
+
+def get_verbose_level() -> int:
+    """Get current verbosity level
+
+    Returns:
+        Current verbosity level (0=off, 1=-v, 2=-vv)
+    """
+    return _verbose_config.level
 
 
 def mask_api_key(value: str) -> str:
@@ -90,7 +105,7 @@ def log_request(
     """
     start_time = time.perf_counter()
 
-    if not _verbose_config.enabled:
+    if _verbose_config.level < 1:
         return start_time
 
     click.echo(f"[VERBOSE] --> {method.upper()} {url}", err=True)
@@ -114,6 +129,7 @@ def log_response(
     status_code: int,
     headers: Dict[str, str],
     start_time: float,
+    response_body: Optional[str] = None,
 ) -> None:
     """Log HTTP response details to stderr
 
@@ -121,8 +137,9 @@ def log_response(
         status_code: HTTP response status code
         headers: Response headers
         start_time: Request start time for duration calculation
+        response_body: Optional response body (shown at -vv level)
     """
-    if not _verbose_config.enabled:
+    if _verbose_config.level < 1:
         return
 
     duration_ms = (time.perf_counter() - start_time) * 1000
@@ -135,6 +152,13 @@ def log_response(
         if key in headers:
             click.echo(f"[VERBOSE]     {key}: {headers[key]}", err=True)
 
+    # At -vv level, show response body
+    if _verbose_config.level >= 2 and response_body:
+        body_display = response_body
+        if len(response_body) > 1000:
+            body_display = response_body[:1000] + "... (truncated)"
+        click.echo(f"[VERBOSE]     Response: {body_display}", err=True)
+
 
 def log_error(error_type: str, message: str) -> None:
     """Log error details to stderr
@@ -143,7 +167,7 @@ def log_error(error_type: str, message: str) -> None:
         error_type: Type of error (TIMEOUT, CONNECTION, etc.)
         message: Error message
     """
-    if not _verbose_config.enabled:
+    if _verbose_config.level < 1:
         return
 
     click.echo(f"[VERBOSE] !!! {error_type}: {message}", err=True)

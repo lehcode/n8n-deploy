@@ -31,11 +31,11 @@ def _log_request(
     return log_request(method, url, headers, data)
 
 
-def _log_response(status_code: int, headers: Dict[str, str], start_time: float) -> None:
+def _log_response(status_code: int, headers: Dict[str, str], start_time: float, response_body: Optional[str] = None) -> None:
     """Lazy wrapper for log_response to avoid circular import"""
     from ..cli.verbose import log_response
 
-    log_response(status_code, headers, start_time)
+    log_response(status_code, headers, start_time, response_body)
 
 
 def _log_error(error_type: str, message: str) -> None:
@@ -96,7 +96,8 @@ class N8nHttpClient:
         """
         try:
             response, start_time = self._execute_request(method, url, headers, data, timeout)
-            _log_response(response.status_code, dict(response.headers), start_time)
+            response_body = response.text if response.content else None
+            _log_response(response.status_code, dict(response.headers), start_time, response_body)
             return self._handle_response(response, silent)
 
         except requests.exceptions.Timeout:
@@ -276,7 +277,8 @@ class N8nHttpClient:
                 verify=not self.skip_ssl_verify,
                 timeout=timeout,
             )
-            _log_response(response.status_code, dict(response.headers), start_time)
+            response_body = response.text if response.content else None
+            _log_response(response.status_code, dict(response.headers), start_time, response_body)
             response.raise_for_status()
             return True
 
