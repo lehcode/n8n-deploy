@@ -333,7 +333,7 @@ class TestCLIVerboseFlag:
         """Reset verbose state after each test"""
         from api.cli.verbose import set_verbose
 
-        set_verbose(False)
+        set_verbose(0)
 
     def test_verbose_flag_available(self):
         """Test -v/--verbose flag is available at root level"""
@@ -367,7 +367,7 @@ class TestCLIVerboseFlag:
         """Test verbose flag has proper help description"""
         result = self.runner.invoke(cli, ["--help"])
         assert result.exit_code == 0
-        assert "HTTP request details" in result.output
+        assert "Verbosity level" in result.output or "-vv" in result.output
 
     def test_verbose_flag_is_global(self):
         """Test verbose flag is at root level, not on subcommands"""
