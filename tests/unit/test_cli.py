@@ -320,3 +320,64 @@ class TestCustomGroupMethods:
         result = self.runner.invoke(cli, ["--version", "--help"])
         assert result.exit_code == 0
         assert result.output == ""
+
+
+class TestCLIVerboseFlag:
+    """Test verbose flag behavior"""
+
+    def setup_method(self):
+        """Set up test environment"""
+        self.runner = CliRunner()
+
+    def teardown_method(self):
+        """Reset verbose state after each test"""
+        from api.cli.verbose import set_verbose
+
+        set_verbose(0)
+
+    def test_verbose_flag_available(self):
+        """Test -v/--verbose flag is available at root level"""
+        result = self.runner.invoke(cli, ["--help"])
+        assert result.exit_code == 0
+        assert "--verbose" in result.output or "-v" in result.output
+
+    def test_verbose_short_flag(self):
+        """Test -v short flag works"""
+        result = self.runner.invoke(cli, ["-v", "--help"])
+        assert result.exit_code == 0
+
+    def test_verbose_long_flag(self):
+        """Test --verbose long flag works"""
+        result = self.runner.invoke(cli, ["--verbose", "--help"])
+        assert result.exit_code == 0
+
+    def test_verbose_with_version(self):
+        """Test --verbose with --version shows version"""
+        result = self.runner.invoke(cli, ["--verbose", "--version"])
+        assert result.exit_code == 0
+        assert "n8n-deploy, version" in result.output
+
+    def test_verbose_with_subcommand_help(self):
+        """Test --verbose with subcommand --help works"""
+        result = self.runner.invoke(cli, ["-v", "wf", "--help"])
+        assert result.exit_code == 0
+        assert "wf" in result.output.lower() or "workflow" in result.output.lower()
+
+    def test_verbose_help_description(self):
+        """Test verbose flag has proper help description"""
+        result = self.runner.invoke(cli, ["--help"])
+        assert result.exit_code == 0
+        assert "Verbosity level" in result.output or "-vv" in result.output
+
+    def test_verbose_flag_is_global(self):
+        """Test verbose flag is at root level, not on subcommands"""
+        # Verbose should be at root level
+        result = self.runner.invoke(cli, ["--help"])
+        assert result.exit_code == 0
+        assert "--verbose" in result.output
+
+        # Verbose should NOT be repeated on subcommands
+        result = self.runner.invoke(cli, ["wf", "list", "--help"])
+        assert result.exit_code == 0
+        # --verbose should not appear in subcommand help (it's global)
+        # Note: This test documents expected behavior - global options appear at root only

@@ -10,6 +10,8 @@ from typing import Any, List, Optional
 import click
 from rich.console import Console
 
+from .verbose import set_verbose
+
 console = Console()
 
 # Program name constant for consistent CLI help messages
@@ -144,9 +146,30 @@ def handle_version_help(ctx: click.Context, _param: click.Parameter, value: Any)
     ctx.exit()
 
 
+def handle_verbose_flag(ctx: click.Context, _param: click.Parameter, value: int) -> None:
+    """Handle verbose flag - sets global verbose level
+
+    Args:
+        ctx: Click context
+        _param: Click parameter (unused)
+        value: Verbosity level count (0=off, 1=-v, 2=-vv)
+    """
+    if value and not ctx.resilient_parsing:
+        set_verbose(value)
+
+
 @click.group(cls=CustomGroup, context_settings={"help_option_names": ["-h", "--help"]}, no_args_is_help=True)
 @click.option(
     "--version", is_flag=True, expose_value=False, is_eager=True, callback=handle_version_help, help="Show version and exit"
+)
+@click.option(
+    "-v",
+    "--verbose",
+    count=True,
+    expose_value=False,
+    is_eager=True,
+    callback=handle_verbose_flag,
+    help="Verbosity level (-v headers, -vv +response body)",
 )
 def cli() -> None:
     """🎭 n8n-deploy - a simple N8N Workflow Manager
@@ -184,6 +207,7 @@ def register_commands() -> None:
     from .apikey import apikey
     from .db import db
     from .env import env
+    from .folder import folder
     from .server import server
     from .wf import wf
 
@@ -193,6 +217,7 @@ def register_commands() -> None:
     cli.add_command(apikey)
     cli.add_command(server)
     cli.add_command(env)
+    cli.add_command(folder)
 
 
 # Auto-register commands when module is imported

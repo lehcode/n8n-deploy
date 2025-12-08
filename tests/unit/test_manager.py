@@ -167,6 +167,7 @@ class TestN8nApiIntegration:
         mock_response.status_code = 200
         mock_response.json.return_value = {"data": []}
         mock_response.raise_for_status.return_value = None
+        mock_response.headers = {}  # Required for verbose logging
         mock_get.return_value = mock_response
 
         # Mock credentials
