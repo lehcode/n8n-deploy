@@ -168,18 +168,32 @@ n8n-deploy wf push my-descriptive-name.json --remote production
   - Timestamps
   - Server linkage
 
-## 🆘 Troubleshooting
+## Verbose Logging
+
+Use verbose flags to debug workflow operations:
+
+```bash
+# Basic verbose - shows HTTP requests
+n8n-deploy -v wf push workflow-name --remote production
+
+# Extended verbose - shows request/response details
+n8n-deploy -vv wf push workflow-name --remote production
+```
+
+## Troubleshooting
 
 - Verify server URL and API key
 - Check file permissions
 - Ensure workflow names are exact
 - Use `--skip-ssl-verify` for self-signed certificates
+- Use `-v` or `-vv` flags to see HTTP request details
 
 {: .note }
 > **Push operations**: Read-only fields are automatically stripped before sending to n8n server. See [Troubleshooting](/n8n-deploy/troubleshooting/) for details.
 
 ## 📖 Related Guides
 
+- [Folder Synchronization](/n8n-deploy/core-features/folders/) - Sync entire folders of workflows
 - [Configuration](/n8n-deploy/configuration/)
 - [API Key Management](/n8n-deploy/core-features/apikeys/)
 - [Troubleshooting](/n8n-deploy/troubleshooting/)
