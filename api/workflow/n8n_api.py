@@ -122,40 +122,6 @@ class N8nAPI:
             silent=silent,
         )
 
-    def _make_n8n_request_typed(
-        self, method: str, endpoint: str, data: Optional[Dict[str, Any]] = None, silent: bool = False
-    ) -> N8nApiResult:
-        """Make authenticated request to n8n API with typed result
-
-        Returns N8nApiResult with detailed error information instead of None.
-        This allows callers to distinguish between different error types,
-        particularly 404 (workflow not found) vs network errors.
-
-        Args:
-            method: HTTP method (GET, POST, PUT, DELETE)
-            endpoint: API endpoint path
-            data: Optional request payload
-            silent: If True, suppress error messages for failed requests
-        """
-        credentials = self._get_n8n_credentials()
-        if not credentials:
-            return N8nApiResult(
-                success=False,
-                error_type=N8nApiErrorType.AUTH_FAILURE,
-                error_message="No API credentials available",
-            )
-
-        base_url = credentials.get("server_url", "").rstrip("/")
-        url = f"{base_url}/{endpoint.lstrip('/')}"
-
-        return self._http_client.request(
-            method=method,
-            url=url,
-            headers=credentials["headers"],
-            data=data,
-            silent=silent,
-        )
-
     def get_n8n_workflows(self) -> Optional[List[Dict[str, Any]]]:
         """Fetch all workflows from n8n server"""
         result = self._make_n8n_request("GET", "api/v1/workflows")
@@ -187,26 +153,19 @@ class N8nAPI:
     def _strip_readonly_fields(self, workflow_data: Dict[str, Any]) -> Dict[str, Any]:
         """Strip read-only fields that n8n API rejects on create/update.
 
-        Filters both root-level readonly fields and invalid fields within
-        the settings object. Uses a whitelist approach for settings to
-        ensure only n8n-accepted fields are sent.
+        Uses a whitelist approach to ensure only n8n-accepted fields are sent.
+        Based on n8n API v1 documentation and GitHub issue #19587.
+
+        Allowed root fields: name, nodes, connections, settings, staticData
         """
-        readonly_fields = [
-            "id",
-            # "active" - preserved to maintain workflow state from JSON
-            "triggerCount",
-            "updatedAt",
-            "createdAt",
-            "versionId",
+        # Whitelist of fields accepted by n8n API for create/update
+        allowed_root_fields = {
+            "name",
+            "nodes",
+            "connections",
+            "settings",
             "staticData",
-            "tags",
-            "meta",
-            # Additional fields returned by GET but rejected by PUT
-            "isArchived",
-            "pinData",
-            "versionCounter",
-            "shared",
-        ]
+        }
 
         # Valid settings fields accepted by n8n API (whitelist)
         valid_settings_fields = {
@@ -221,7 +180,8 @@ class N8nAPI:
             "timezone",
         }
 
-        result = {k: v for k, v in workflow_data.items() if k not in readonly_fields}
+        # Only keep allowed root fields
+        result = {k: v for k, v in workflow_data.items() if k in allowed_root_fields}
 
         # Filter settings object to only include valid fields
         if "settings" in result and isinstance(result["settings"], dict):
