@@ -207,6 +207,7 @@ def register_commands() -> None:
     from .apikey import apikey
     from .db import db
     from .env import env
+    from .folder import folder
     from .server import server
     from .wf import wf
 
@@ -216,6 +217,7 @@ def register_commands() -> None:
     cli.add_command(apikey)
     cli.add_command(server)
     cli.add_command(env)
+    cli.add_command(folder)
 
 
 # Auto-register commands when module is imported
