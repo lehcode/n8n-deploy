@@ -48,3 +48,107 @@ class TestWorkflowModel:
         assert wf.pull_count == 3
         assert wf.n8n_version_id == "test_version_123"
         assert wf.last_synced is not None
+
+
+# === Folder Sync Model Tests (Stubs) ===
+SKIP_REASON = "Stub test - to be implemented"
+
+
+class TestSyncDirectionModel:
+    """Stub tests for SyncDirection enum"""
+
+    @pytest.mark.skip(reason=SKIP_REASON)
+    def test_sync_direction_push(self) -> None:
+        """Stub: Test SyncDirection.PUSH value"""
+        pass
+
+    @pytest.mark.skip(reason=SKIP_REASON)
+    def test_sync_direction_pull(self) -> None:
+        """Stub: Test SyncDirection.PULL value"""
+        pass
+
+    @pytest.mark.skip(reason=SKIP_REASON)
+    def test_sync_direction_bidirectional(self) -> None:
+        """Stub: Test SyncDirection.BIDIRECTIONAL value"""
+        pass
+
+
+class TestN8nFolderModel:
+    """Stub tests for N8nFolder model"""
+
+    @pytest.mark.skip(reason=SKIP_REASON)
+    def test_n8n_folder_creation_basic(self) -> None:
+        """Stub: Test basic N8nFolder creation"""
+        pass
+
+    @pytest.mark.skip(reason=SKIP_REASON)
+    def test_n8n_folder_creation_with_all_fields(self) -> None:
+        """Stub: Test N8nFolder creation with all fields"""
+        pass
+
+    @pytest.mark.skip(reason=SKIP_REASON)
+    def test_n8n_folder_json_serialization(self) -> None:
+        """Stub: Test N8nFolder JSON serialization"""
+        pass
+
+
+class TestFolderMappingModel:
+    """Stub tests for FolderMapping model"""
+
+    @pytest.mark.skip(reason=SKIP_REASON)
+    def test_folder_mapping_creation_basic(self) -> None:
+        """Stub: Test basic FolderMapping creation"""
+        pass
+
+    @pytest.mark.skip(reason=SKIP_REASON)
+    def test_folder_mapping_default_direction(self) -> None:
+        """Stub: Test FolderMapping default sync direction"""
+        pass
+
+    @pytest.mark.skip(reason=SKIP_REASON)
+    def test_folder_mapping_json_serialization(self) -> None:
+        """Stub: Test FolderMapping JSON serialization"""
+        pass
+
+
+class TestServerCredentialsModel:
+    """Stub tests for ServerCredentials model"""
+
+    @pytest.mark.skip(reason=SKIP_REASON)
+    def test_server_credentials_creation_basic(self) -> None:
+        """Stub: Test basic ServerCredentials creation"""
+        pass
+
+    @pytest.mark.skip(reason=SKIP_REASON)
+    def test_server_credentials_with_cookie(self) -> None:
+        """Stub: Test ServerCredentials with session cookie"""
+        pass
+
+    @pytest.mark.skip(reason=SKIP_REASON)
+    def test_server_credentials_json_serialization(self) -> None:
+        """Stub: Test ServerCredentials JSON serialization"""
+        pass
+
+
+class TestSyncResultModel:
+    """Stub tests for SyncResult model"""
+
+    @pytest.mark.skip(reason=SKIP_REASON)
+    def test_sync_result_creation_success(self) -> None:
+        """Stub: Test SyncResult creation for success"""
+        pass
+
+    @pytest.mark.skip(reason=SKIP_REASON)
+    def test_sync_result_creation_failure(self) -> None:
+        """Stub: Test SyncResult creation for failure"""
+        pass
+
+    @pytest.mark.skip(reason=SKIP_REASON)
+    def test_sync_result_with_errors(self) -> None:
+        """Stub: Test SyncResult with error messages"""
+        pass
+
+    @pytest.mark.skip(reason=SKIP_REASON)
+    def test_sync_result_with_warnings(self) -> None:
+        """Stub: Test SyncResult with warning messages"""
+        pass
