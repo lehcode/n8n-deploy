@@ -86,7 +86,6 @@ cache:
   paths:
     - .cache/pip/
     - .venv/
-    - .mypy_cache/
 
 # Cache template for read-only jobs (policy: pull)
 .cache_pull: &cache_pull
