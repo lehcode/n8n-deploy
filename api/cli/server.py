@@ -305,12 +305,6 @@ def show_keys(
         table.add_column("Linked At", style="green")
 
         for key in keys:
-            is_primary = key.get("is_primary", False)
-            if no_emoji:
-                primary_str = "Yes" if is_primary else ""
-            else:
-                primary_str = "[green]★[/green]" if is_primary else ""
-
             table.add_row(
                 key["name"],
                 str(key["linked_at"]),
@@ -323,67 +317,4 @@ def show_keys(
             console.print(f"Error showing keys: {e}")
         else:
             console.print(f"❌ Error showing keys: {e}")
-        raise click.Abort()
-
-
-@server.command(name="set-primary", cls=CustomCommand)
-@click.argument("server_name")
-@click.argument("api_key_name")
-@click.option("--data-dir", help="Application directory (overrides N8N_DEPLOY_DATA_DIR)")
-@click.option("--db-filename", type=str, help=HELP_DB_FILENAME)
-@click.option("--no-emoji", is_flag=True, help="Disable emoji in output")
-def set_primary(
-    server_name: str,
-    api_key_name: str,
-    data_dir: Optional[str],
-    db_filename: Optional[str],
-    no_emoji: bool,
-) -> None:
-    """Set primary API key for a server
-
-    When multiple API keys are linked to a server, the primary key
-    is used by default for push/pull operations.
-    """
-    try:
-        config = get_config(base_folder=data_dir, db_filename=db_filename)
-    except ValueError as e:
-        console.print(f"[red]{e}[/red]")
-        raise click.Abort()
-
-    try:
-        server_api = ServerCrud(config=config)
-
-        # Check server exists
-        server = server_api.get_server_by_name(server_name)
-        if not server:
-            if no_emoji:
-                console.print(f"Server '{server_name}' not found")
-            else:
-                console.print(f"❌ Server '{server_name}' not found")
-            raise click.Abort()
-
-        # Set primary key
-        success = server_api.set_primary_api_key(server_name, api_key_name)
-
-        if success:
-            if no_emoji:
-                console.print(f"Set '{api_key_name}' as primary key for server '{server_name}'")
-            else:
-                console.print(f"✅ Set '{api_key_name}' as primary key for server '{server_name}'")
-        else:
-            if no_emoji:
-                console.print(f"Failed to set primary key. Key '{api_key_name}' may not be linked to server '{server_name}'")
-            else:
-                console.print(
-                    f"❌ Failed to set primary key. Key '{api_key_name}' may not be linked to server '{server_name}'"
-                )
-            raise click.Abort()
-
-    except click.Abort:
-        raise
-    except Exception as e:
-        if no_emoji:
-            console.print(f"Error setting primary key: {e}")
-        else:
-            console.print(f"❌ Error setting primary key: {e}")
         raise click.Abort()
