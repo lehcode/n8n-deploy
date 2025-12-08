@@ -1,0 +1,14 @@
+{
+  "Rules": [
+    {
+      "ID": "expire-gitlab-cache-14d",
+      "Status": "Enabled",
+      "Filter": {
+        "Prefix": ""
+      },
+      "Expiration": {
+        "Days": 14
+      }
+    }
+  ]
+}

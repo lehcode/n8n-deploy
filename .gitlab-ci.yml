@@ -1,6 +1,6 @@
 # GitLab CI/CD Pipeline for n8n-deploy
 # Python CLI tool for n8n workflow management
-# Mirrors GitHub Actions workflow structure with branch-based deployment strategy
+# Optimized for parallel stage execution
 
 stages:
   - security
@@ -57,7 +57,7 @@ workflow:
     # Skip for all other cases (including feature branch pushes)
     - when: never
 
-# Cache for pip dependencies
+# Cache for pip dependencies (default: pull-push)
 cache:
   key:
     files:
@@ -69,19 +69,66 @@ cache:
   paths:
     - .cache/pip/
     - .venv/
-    - .mypy_cache/
 
-# Template for Python environment setup
+# Cache template for read-only jobs (policy: pull)
+.cache_pull: &cache_pull
+  key:
+    files:
+      - requirements.txt
+    prefix: ${CI_COMMIT_REF_SLUG}
+  fallback_keys:
+    - develop
+    - master
+  paths:
+    - .cache/pip/
+    - .venv/
+  policy: pull
+
+# Template for Python environment setup (uses cached venv from warm-cache job)
 .python_setup: &python_setup
   before_script:
-    # Configure APT proxy for faster package installation
+    - source .venv/bin/activate
+
+# ============================================
+# PRE STAGE - Cache warming
+# ============================================
+
+warm-cache:
+  stage: .pre
+  image: python:3.9-slim
+  # Use dualbuntu image for better performance
+  tags:
+    - python
+    - linux
+    - heavy
+  interruptible: true
+  rules:
+    - if: '$CI_COMMIT_TAG'
+      when: never
+    - when: on_success
+  cache:
+    key:
+      files:
+        - requirements.txt
+      prefix: ${CI_COMMIT_REF_SLUG}
+    fallback_keys:
+      - develop
+      - master
+    paths:
+      - .cache/pip/
+      - .venv/
+    policy: pull-push
+  before_script:
     - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy
     - apt-get -q update && apt-get -qy install git
     - python -m pip install --quiet --upgrade pip
     - pip install --quiet uv
+  script:
+    - echo "Warming cache..."
     - uv venv --python python3 .venv
     - source .venv/bin/activate
     - uv pip install --quiet -e ".[test,dev]"
+    - echo "Cache populated successfully"
 
 # ============================================
 # SECURITY STAGE
@@ -93,13 +140,15 @@ secret_detection:
   image: python:3.9-slim
   tags:
     - python
+    - alpine
+    - linux
   interruptible: true
   rules:
     - if: '$CI_COMMIT_TAG'
       when: never
     - when: on_success
   cache:
-    policy: pull
+    <<: *cache_pull
   variables:
     SECRET_DETECTION_EXCLUDED_PATHS: "tests/"
   before_script:
@@ -117,16 +166,18 @@ dependency_scanning:
   image: python:3.9-slim
   tags:
     - python
+    - alpine
+    - linux
   interruptible: true
   rules:
     - if: '$CI_COMMIT_TAG'
       when: never
     - when: on_success
   cache:
-    policy: pull
+    <<: *cache_pull
   before_script:
     - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy
-    - apt-get -q update && apt-get -qy install git
+    - apt-get -q update
     - python -m pip install --quiet --upgrade pip
     - pip install --quiet pip-audit
   script:
@@ -140,13 +191,15 @@ security:bandit:
   image: python:3.9-slim
   tags:
     - python
+    - alpine
+    - linux
   interruptible: true
   rules:
     - if: '$CI_COMMIT_TAG'
       when: never
     - when: on_success
   cache:
-    policy: pull
+    <<: *cache_pull
   variables:
     SAST_EXCLUDED_PATHS: "tests/, .venv/"
   before_script:
@@ -166,13 +219,15 @@ security:semgrep:
   image: python:3.9-slim
   tags:
     - python
+    - alpine
+    - linux
   interruptible: true
   rules:
     - if: '$CI_COMMIT_TAG'
       when: never
     - when: on_success
   cache:
-    policy: pull
+    <<: *cache_pull
   variables:
     SAST_EXCLUDED_PATHS: "tests/, .venv/"
   before_script:
@@ -196,20 +251,19 @@ quality:mypy:
   image: python:3.9-slim
   tags:
     - python
+    - alpine
+    - linux
   interruptible: true
   rules:
     - if: '$CI_COMMIT_TAG'
       when: never
     - when: on_success
   <<: *python_setup
+  cache:
+    <<: *cache_pull
   needs:
-    - security:bandit
-    - security:semgrep
-    - secret_detection
-    - dependency_scanning
+    - warm-cache
   script:
-    - source .venv/bin/activate
-    - uv pip install --quiet types-requests types-click
     - mypy api/ --strict --show-error-codes
     - echo "✅ Type checking passed"
 
@@ -219,19 +273,19 @@ quality:black:
   image: python:3.9-slim
   tags:
     - python
+    - alpine
+    - linux
   interruptible: true
   rules:
     - if: '$CI_COMMIT_TAG'
       when: never
     - when: on_success
   <<: *python_setup
+  cache:
+    <<: *cache_pull
   needs:
-    - security:bandit
-    - security:semgrep
-    - secret_detection
-    - dependency_scanning
+    - warm-cache
   script:
-    - source .venv/bin/activate
     - black --check api/
     - echo "✅ Code formatting check passed"
 
@@ -245,10 +299,13 @@ test:unit:
   image: python:3.9-slim
   tags:
     - python
+    - alpine
+    - linux
   interruptible: true
-  resource_group: test-runner
-  <<: *python_setup
-  needs: []  # Run in parallel with security+quality stages
+  cache:
+    <<: *cache_pull
+  needs:
+    - warm-cache
   rules:
     - if: '$CI_COMMIT_TAG'
       when: never
@@ -256,15 +313,14 @@ test:unit:
       when: never
     - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
       when: on_success
-  script:
+  before_script:
+    - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy
+    - apt-get -q update && apt-get -qy install git
     - source .venv/bin/activate
+  script:
     - export N8N_DEPLOY_TESTING=1
     - python -m pytest tests/unit/ -rs --tb=short -q
     - echo "Unit tests passed"
-  artifacts:
-    paths:
-      - .coverage
-    expire_in: 1 hour
 
 # Integration tests
 test:integration:
@@ -272,10 +328,14 @@ test:integration:
   image: python:3.9-slim
   tags:
     - python
+    - alpine
+    - linux
   interruptible: true
-  resource_group: test-runner
   <<: *python_setup
-  needs: []  # Run in parallel with security+quality stages
+  cache:
+    <<: *cache_pull
+  needs:
+    - warm-cache
   rules:
     - if: '$CI_COMMIT_TAG'
       when: never
@@ -284,14 +344,9 @@ test:integration:
     - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
       when: on_success
   script:
-    - source .venv/bin/activate
     - export N8N_DEPLOY_TESTING=1
     - python -m pytest tests/integration/ -rs --tb=short -q
     - echo "Integration tests passed"
-  artifacts:
-    paths:
-      - .coverage
-    expire_in: 1 hour
 
 # Property-based tests with Hypothesis
 test:hypothesis:
@@ -299,9 +354,14 @@ test:hypothesis:
   image: python:3.9-slim
   tags:
     - python
+    - heavy
+    - linux
   interruptible: true
   <<: *python_setup
-  needs: []  # Run in parallel with security+quality stages
+  cache:
+    <<: *cache_pull
+  needs:
+    - warm-cache
   rules:
     - if: '$CI_COMMIT_TAG'
       when: never
@@ -310,7 +370,6 @@ test:hypothesis:
     - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
       when: on_success
   script:
-    - source .venv/bin/activate
     - export N8N_DEPLOY_TESTING=1
     - echo "Running property-based tests with Hypothesis..."
     - python run_tests.py --hypothesis --no-deps-check
@@ -331,6 +390,8 @@ build:python-matrix:
   image: python:${PYTHON_VERSION}-slim
   tags:
     - python
+    - alpine
+    - linux
   interruptible: true
   cache:
     key:
