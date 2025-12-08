@@ -394,17 +394,18 @@ class TestStripReadonlyFields:
 
         result = api._strip_readonly_fields(workflow_data)
 
-        # Verify readonly fields are removed
+        # Verify only allowed fields are kept (whitelist approach)
+        # Allowed: name, nodes, connections, settings, staticData
         assert_that(result).does_not_contain_key("id")
-        # "active" is stripped - n8n API rejects it on PUT (use activate/deactivate endpoint)
         assert_that(result).does_not_contain_key("active")
         assert_that(result).does_not_contain_key("triggerCount")
         assert_that(result).does_not_contain_key("updatedAt")
         assert_that(result).does_not_contain_key("createdAt")
         assert_that(result).does_not_contain_key("versionId")
-        assert_that(result).does_not_contain_key("staticData")
         assert_that(result).does_not_contain_key("tags")
         assert_that(result).does_not_contain_key("meta")
+        # staticData IS allowed by n8n API
+        assert_that(result).contains_key("staticData")
 
     def test_strip_readonly_fields_preserves_other_fields(self, temp_dir: Path) -> None:
         """Test _strip_readonly_fields preserves non-readonly fields"""

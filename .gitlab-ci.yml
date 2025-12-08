@@ -69,7 +69,6 @@ cache:
   paths:
     - .cache/pip/
     - .venv/
-    - .mypy_cache/
 
 # Cache template for read-only jobs (policy: pull)
 .cache_pull: &cache_pull
@@ -83,7 +82,6 @@ cache:
   paths:
     - .cache/pip/
     - .venv/
-    - .mypy_cache/
   policy: pull
 
 # Template for Python environment setup (uses cached venv from warm-cache job)
@@ -98,9 +96,11 @@ cache:
 warm-cache:
   stage: .pre
   image: python:3.9-slim
+  # Use dualbuntu image for better performance
   tags:
     - python
-    - cache
+    - linux
+    - heavy
   interruptible: true
   rules:
     - if: '$CI_COMMIT_TAG'
@@ -117,7 +117,6 @@ warm-cache:
     paths:
       - .cache/pip/
       - .venv/
-      - .mypy_cache/
     policy: pull-push
   before_script:
     - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy
@@ -141,6 +140,8 @@ secret_detection:
   image: python:3.9-slim
   tags:
     - python
+    - alpine
+    - linux
   interruptible: true
   rules:
     - if: '$CI_COMMIT_TAG'
@@ -165,6 +166,8 @@ dependency_scanning:
   image: python:3.9-slim
   tags:
     - python
+    - alpine
+    - linux
   interruptible: true
   rules:
     - if: '$CI_COMMIT_TAG'
@@ -188,6 +191,8 @@ security:bandit:
   image: python:3.9-slim
   tags:
     - python
+    - alpine
+    - linux
   interruptible: true
   rules:
     - if: '$CI_COMMIT_TAG'
@@ -214,6 +219,8 @@ security:semgrep:
   image: python:3.9-slim
   tags:
     - python
+    - alpine
+    - linux
   interruptible: true
   rules:
     - if: '$CI_COMMIT_TAG'
@@ -244,6 +251,8 @@ quality:mypy:
   image: python:3.9-slim
   tags:
     - python
+    - alpine
+    - linux
   interruptible: true
   rules:
     - if: '$CI_COMMIT_TAG'
@@ -264,6 +273,8 @@ quality:black:
   image: python:3.9-slim
   tags:
     - python
+    - alpine
+    - linux
   interruptible: true
   rules:
     - if: '$CI_COMMIT_TAG'
@@ -288,6 +299,8 @@ test:unit:
   image: python:3.9-slim
   tags:
     - python
+    - alpine
+    - linux
   interruptible: true
   cache:
     <<: *cache_pull
@@ -315,6 +328,8 @@ test:integration:
   image: python:3.9-slim
   tags:
     - python
+    - alpine
+    - linux
   interruptible: true
   <<: *python_setup
   cache:
@@ -339,6 +354,8 @@ test:hypothesis:
   image: python:3.9-slim
   tags:
     - python
+    - heavy
+    - linux
   interruptible: true
   <<: *python_setup
   cache:
@@ -373,6 +390,8 @@ build:python-matrix:
   image: python:${PYTHON_VERSION}-slim
   tags:
     - python
+    - alpine
+    - linux
   interruptible: true
   cache:
     key:
