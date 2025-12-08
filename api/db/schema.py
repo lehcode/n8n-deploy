@@ -17,7 +17,7 @@ from .base import BaseDB
 class SchemaApi(BaseDB):
     """Manages database schema initialization and versioning"""
 
-    SCHEMA_VERSION = 5
+    SCHEMA_VERSION = 6
 
     def __init__(
         self,
@@ -138,6 +138,54 @@ class SchemaApi(BaseDB):
             """
             )
 
+            # Create n8n_folders table for caching remote folder structure
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS n8n_folders (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    n8n_folder_id TEXT NOT NULL,
+                    n8n_project_id TEXT NOT NULL,
+                    folder_path TEXT NOT NULL,
+                    server_id INTEGER NOT NULL,
+                    last_synced TIMESTAMP,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (server_id) REFERENCES servers(id) ON DELETE CASCADE,
+                    UNIQUE (n8n_folder_id, server_id)
+                )
+            """
+            )
+
+            # Create folder_mappings table for local-to-remote mappings
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS folder_mappings (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    local_path TEXT NOT NULL,
+                    n8n_folder_id INTEGER NOT NULL,
+                    sync_direction TEXT DEFAULT 'bidirectional',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (n8n_folder_id) REFERENCES n8n_folders(id) ON DELETE CASCADE,
+                    UNIQUE (local_path, n8n_folder_id)
+                )
+            """
+            )
+
+            # Create server_credentials table for internal API auth
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS server_credentials (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    server_id INTEGER NOT NULL UNIQUE,
+                    email TEXT NOT NULL,
+                    session_cookie TEXT,
+                    cookie_expires_at TIMESTAMP,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (server_id) REFERENCES servers(id) ON DELETE CASCADE
+                )
+            """
+            )
+
             # Create indexes for performance
             conn.execute("CREATE INDEX IF NOT EXISTS idx_workflows_status ON workflows (status)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_workflows_name ON workflows (name)")
@@ -147,6 +195,10 @@ class SchemaApi(BaseDB):
             conn.execute("CREATE INDEX IF NOT EXISTS idx_server_api_keys_server ON server_api_keys (server_id)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_server_api_keys_key ON server_api_keys (api_key_id)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_dependencies_workflow_id ON dependencies (workflow_id)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_n8n_folders_server ON n8n_folders (server_id)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_n8n_folders_path ON n8n_folders (folder_path)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_folder_mappings_local ON folder_mappings (local_path)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_server_credentials_server ON server_credentials (server_id)")
 
             # Record schema version
             conn.execute(
@@ -154,7 +206,7 @@ class SchemaApi(BaseDB):
                 INSERT OR REPLACE INTO schema_info (version, applied_at, description)
                 VALUES (?, ?, ?)
             """,
-                (self.SCHEMA_VERSION, datetime.now(), "Custom workflow filenames"),
+                (self.SCHEMA_VERSION, datetime.now(), "Folder sync support"),
             )
 
             conn.commit()
@@ -195,6 +247,71 @@ class SchemaApi(BaseDB):
                 except sqlite3.OperationalError:
                     # Column already exists
                     pass
+
+            # Migration from version 5 to 6: Add folder sync tables
+            if current_version < 6:
+                # Create n8n_folders table
+                conn.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS n8n_folders (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        n8n_folder_id TEXT NOT NULL,
+                        n8n_project_id TEXT NOT NULL,
+                        folder_path TEXT NOT NULL,
+                        server_id INTEGER NOT NULL,
+                        last_synced TIMESTAMP,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (server_id) REFERENCES servers(id) ON DELETE CASCADE,
+                        UNIQUE (n8n_folder_id, server_id)
+                    )
+                """
+                )
+
+                # Create folder_mappings table
+                conn.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS folder_mappings (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        local_path TEXT NOT NULL,
+                        n8n_folder_id INTEGER NOT NULL,
+                        sync_direction TEXT DEFAULT 'bidirectional',
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (n8n_folder_id) REFERENCES n8n_folders(id) ON DELETE CASCADE,
+                        UNIQUE (local_path, n8n_folder_id)
+                    )
+                """
+                )
+
+                # Create server_credentials table
+                conn.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS server_credentials (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        server_id INTEGER NOT NULL UNIQUE,
+                        email TEXT NOT NULL,
+                        session_cookie TEXT,
+                        cookie_expires_at TIMESTAMP,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (server_id) REFERENCES servers(id) ON DELETE CASCADE
+                    )
+                """
+                )
+
+                # Create indexes
+                conn.execute("CREATE INDEX IF NOT EXISTS idx_n8n_folders_server ON n8n_folders (server_id)")
+                conn.execute("CREATE INDEX IF NOT EXISTS idx_n8n_folders_path ON n8n_folders (folder_path)")
+                conn.execute("CREATE INDEX IF NOT EXISTS idx_folder_mappings_local ON folder_mappings (local_path)")
+                conn.execute("CREATE INDEX IF NOT EXISTS idx_server_credentials_server ON server_credentials (server_id)")
+
+                conn.execute(
+                    """
+                    INSERT OR REPLACE INTO schema_info (version, applied_at, description)
+                    VALUES (?, ?, ?)
+                    """,
+                    (6, datetime.now(), "Folder sync support"),
+                )
+                conn.commit()
 
     def get_schema_version(self) -> int:
         """Get current database schema version"""

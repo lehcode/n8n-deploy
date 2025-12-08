@@ -121,3 +121,4 @@ test-results.xml
 test-env
 tests/sequence.txt
 test_backup_path
+.n8n_cookies.json
