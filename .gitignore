@@ -105,6 +105,8 @@ Thumbs.db
 .tox/
 htmlcov/
 .nox/
+.testmondata
+.testmondata-journal
 
 # Documentation
 docs/_build/
