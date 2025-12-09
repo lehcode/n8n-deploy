@@ -133,22 +133,15 @@ echo -e "${GREEN}✓ Code formatting OK${NC}"
 
 echo ""
 echo -e "${YELLOW}════════════════════════════════════════${NC}"
-echo -e "${YELLOW}  Phase 3: Tests${NC}"
+echo -e "${YELLOW}  Phase 3: Tests (Affected Only)${NC}"
 echo -e "${YELLOW}════════════════════════════════════════${NC}"
 
-echo -e "\n${GREEN}Running unit tests...${NC}"
-python run_tests.py --unit --no-deps-check --quiet || {
-    echo -e "${RED}✗ Unit tests failed${NC}"
+echo -e "\n${GREEN}Running affected tests (pytest-testmon)...${NC}"
+python run_tests.py --affected --no-deps-check --quiet || {
+    echo -e "${RED}✗ Affected tests failed${NC}"
     exit 1
 }
-echo -e "${GREEN}✓ Unit tests passed${NC}"
-
-echo -e "\n${GREEN}Running integration tests...${NC}"
-python run_tests.py --integration --no-deps-check --quiet || {
-    echo -e "${RED}✗ Integration tests failed${NC}"
-    exit 1
-}
-echo -e "${GREEN}✓ Integration tests passed${NC}"
+echo -e "${GREEN}✓ Affected tests passed${NC}"
 
 echo ""
 echo -e "${GREEN}════════════════════════════════════════${NC}"

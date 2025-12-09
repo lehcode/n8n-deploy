@@ -13,22 +13,25 @@ description: "Details about Database in n8n-deploy"
 
 ## Schema Overview
 
-n8n-deploy uses a lightweight, efficient SQLite database to manage workflow metadata and configurations.
+n8n-deploy uses a lightweight, efficient SQLite database (schema v6) to manage workflow metadata, configurations, and folder synchronization.
 
-### Database Tables
+### Database Tables (Schema v6)
 
 ```mermaid
 erDiagram
     workflows ||--o{ dependencies : contains
-    workflows ||--o{ versions : contains
     servers ||--o{ server_api_keys : uses
     api_keys ||--o{ server_api_keys : links
+    servers ||--o{ n8n_folders : has
+    servers ||--o{ server_credentials : has
+    n8n_folders ||--o{ folder_mappings : maps_to
     workflows {
         TEXT id PK
         TEXT name
-        TEXT file_path
+        TEXT file
+        TEXT file_folder
+        INTEGER server_id FK
         TEXT status
-        TEXT tags
         DATETIME created_at
         DATETIME updated_at
     }
@@ -57,6 +60,7 @@ erDiagram
     configurations {
         TEXT key PK
         TEXT value
+        TEXT sha256
         DATETIME updated_at
     }
     dependencies {
@@ -66,10 +70,35 @@ erDiagram
         TEXT dependency_type
         DATETIME created_at
     }
-    versions {
-        INTEGER schema_version PK
-        TEXT migration_script
+    schema_info {
+        INTEGER version PK
+        TEXT description
         DATETIME applied_at
+    }
+    n8n_folders {
+        INTEGER id PK
+        TEXT n8n_folder_id UK
+        TEXT folder_path
+        TEXT n8n_project_id
+        INTEGER server_id FK
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    folder_mappings {
+        INTEGER id PK
+        INTEGER n8n_folder_id FK
+        TEXT local_path
+        TEXT sync_direction
+        DATETIME last_synced
+        DATETIME created_at
+    }
+    server_credentials {
+        INTEGER id PK
+        INTEGER server_id FK
+        TEXT credential_type
+        TEXT credential_value
+        DATETIME created_at
+        DATETIME updated_at
     }
 ```
 
@@ -133,18 +162,49 @@ erDiagram
 
 **Usage**: Enables future graph-push feature where workflows are deployed in correct dependency order. For example, if "Workflow A" depends on "Workflow B", a row would have `workflow_id='A'` and `depends_on='B'`, ensuring B is pushed before A.
 
-### 5. `versions` Table
+### 7. `schema_info` Table
 - **Purpose**: Track database schema versions
 - **Key Fields**:
-  - `schema_version`: Incremental version number
-  - `migration_script`: SQL migration script
+  - `version`: Current schema version number
+  - `description`: Human-readable version description
   - `applied_at`: Migration timestamp
+
+### 8. `n8n_folders` Table (v6)
+- **Purpose**: Store n8n server folder metadata for folder sync
+- **Key Fields**:
+  - `id`: Auto-increment primary key
+  - `n8n_folder_id`: Unique identifier from n8n server
+  - `folder_path`: Full path on n8n server (e.g., `project/subfolder`)
+  - `n8n_project_id`: Project identifier on n8n server
+  - `server_id`: Foreign key to servers.id
+  - `created_at`: Record creation timestamp
+  - `updated_at`: Last update timestamp
+
+### 9. `folder_mappings` Table (v6)
+- **Purpose**: Store local-to-remote folder mappings for sync
+- **Key Fields**:
+  - `id`: Auto-increment primary key
+  - `n8n_folder_id`: Foreign key to n8n_folders.id
+  - `local_path`: Absolute path to local directory
+  - `sync_direction`: One of `push`, `pull`, or `bidirectional`
+  - `last_synced`: Last successful sync timestamp
+  - `created_at`: Mapping creation timestamp
+
+### 10. `server_credentials` Table (v6)
+- **Purpose**: Store server authentication credentials for internal API
+- **Key Fields**:
+  - `id`: Auto-increment primary key
+  - `server_id`: Foreign key to servers.id
+  - `credential_type`: Type of credential (e.g., `cookie`, `session`)
+  - `credential_value`: Encrypted/stored credential value
+  - `created_at`: Creation timestamp
+  - `updated_at`: Last update timestamp
 
 ## Schema Versioning
 
 ```python
 # Example schema version management
-SCHEMA_VERSION = 2  # Current database schema version
+SCHEMA_VERSION = 6  # Current database schema version
 
 def check_schema_version(current_version: int) -> bool:
     """Check and potentially migrate database schema."""

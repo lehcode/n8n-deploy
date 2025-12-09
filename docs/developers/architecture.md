@@ -23,37 +23,53 @@ graph TD
     A --> C[Database Module]
     A --> D[Configuration Module]
     A --> E[API Key Module]
+    A --> K[Folder Sync Module]
 
     B --> F{Workflow Operations}
+    B --> J[HTTP Client]
+    B --> L[n8n Internal API]
     C --> G{Database Management}
     D --> H{Configuration Handling}
     E --> I{API Key Lifecycle}
+    K --> L
+    K --> C
 ```
 
 #### 1. CLI Module (`api/cli/`)
 - Entry point for command-line interactions
 - Handles command parsing and routing
 - Manages global flags and configuration
+- Verbose output handling (`verbose.py`)
+- Shared output formatting (`output.py`)
 
 #### 2. Workflow Module (`api/workflow/`)
 - Core workflow management logic
 - CRUD operations for workflows
-- Integration with n8n server API
+- Integration with n8n server API (`n8n_api.py`)
+- HTTP client abstraction (`http_client.py`)
+- Server resolver for flexible server selection (`server_resolver.py`)
+- n8n internal API client (`n8n_internal_api.py`) - for folder/tag operations
 
-#### 3. Database Module (`api/database/`)
-- SQLite database management
+#### 3. Database Module (`api/db/`)
+- SQLite database management (schema v6)
 - Schema initialization and migrations
 - Backup and restore functionality
+- Folder CRUD operations (`folders.py`)
 
 #### 4. Configuration Module (`api/config.py`)
 - Environment variable and configuration management
 - Path resolution and validation
 - Configuration precedence handling
 
-#### 5. API Key Module (`api/apikey.py`)
+#### 5. API Key Module (`api/api_keys.py`)
 - Plain-text API key storage
 - Key lifecycle management (add, list, delete)
 - Server authentication support
+
+#### 6. Folder Sync Module (`api/workflow/folder_sync.py`)
+- Bidirectional folder synchronization
+- Folder mapping management
+- Integration with n8n internal API
 
 ## Key Design Principles
 

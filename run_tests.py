@@ -31,7 +31,7 @@ def check_dependencies():
     """Check if required test dependencies are installed"""
     print("🔍 Checking test dependencies...")
 
-    required_packages = ["pytest", "pytest-cov", "pytest-mock"]
+    required_packages = ["pytest", "pytest-cov", "pytest-mock", "pytest-testmon"]
 
     missing_packages = []
 
@@ -40,6 +40,7 @@ def check_dependencies():
         "pytest": "pytest",
         "pytest-cov": "pytest_cov",
         "pytest-mock": "pytest_mock",
+        "pytest-testmon": "testmon",
     }
 
     for package in required_packages:
@@ -377,6 +378,79 @@ def run_fast_tests(quiet=False):
     return code == 0
 
 
+def run_affected_tests(quiet: bool = False, baseline: bool = False) -> bool:
+    """Run only tests affected by recent code changes using pytest-testmon.
+
+    Args:
+        quiet: Suppress verbose output
+        baseline: If True, build baseline without deselecting (--testmon-noselect)
+
+    Returns:
+        True if tests passed, False otherwise
+    """
+    # Determine mode
+    if baseline:
+        print("📊 Building testmon baseline (running all tests)...")
+        testmon_flag = "--testmon-noselect"
+    else:
+        print("🎯 Running affected tests only...")
+        testmon_flag = "--testmon"
+
+    # Auto-build baseline if missing
+    testmondata_path = Path(".testmondata")
+    if not baseline and not testmondata_path.exists():
+        print("⚠️  No testmon baseline found. Building baseline...")
+        testmon_flag = "--testmon-noselect"
+
+    # Set environment variable for tests
+    env = os.environ.copy()
+    env["N8N_DEPLOY_TESTING"] = "1"
+
+    # Build command - exclude E2E manual tests from affected testing
+    cmd = (
+        f"N8N_DEPLOY_TESTING=1 python -m pytest tests/ "
+        f"--ignore=tests/integration/test_e2e_manual_cli.py "
+        f"--ignore=tests/integration/test_e2e_manual_database.py "
+        f"--ignore=tests/integration/test_e2e_manual_apikeys.py "
+        f"--ignore=tests/integration/test_e2e_manual_workflows.py "
+        f"--ignore=tests/integration/test_e2e_manual_server.py "
+        f"{testmon_flag}"
+    )
+
+    if quiet:
+        cmd += " -q"
+
+    # Use real-time output unless quiet mode
+    if quiet:
+        try:
+            result = subprocess.run(cmd, shell=True, capture_output=True, text=True, check=False, env=env)
+            code, stdout, stderr = result.returncode, result.stdout, result.stderr
+        except Exception as e:
+            code, stdout, stderr = 1, "", str(e)
+    else:
+        code = subprocess.run(cmd, shell=True, env=env).returncode
+        stdout = stderr = ""
+
+    # Report result
+    if code == 0:
+        if baseline:
+            print("✅ Testmon baseline built successfully")
+        else:
+            print("✅ Affected tests passed")
+    else:
+        print("❌ Tests failed")
+        if quiet and stdout:
+            # Show failure summary in quiet mode
+            lines = stdout.split("\n")
+            for line in lines:
+                if "FAILED" in line or "ERROR" in line or "short test summary" in line:
+                    print(line)
+        if quiet and stderr:
+            print(f"Error: {stderr}")
+
+    return code == 0
+
+
 def check_code_quality():
     """Run code quality checks"""
     print("🧹 Running code quality checks...")
@@ -450,6 +524,8 @@ Examples:
   python run_tests.py --unit                   # Run unit tests only
   python run_tests.py --integration            # Run integration tests only (excluding E2E)
   python run_tests.py --e2e                    # Run E2E manual tests only
+  python run_tests.py --affected               # Run only tests affected by changes (fast!)
+  python run_tests.py --baseline               # Build testmon baseline (run all tests)
   python run_tests.py --integration --class TestE2EDatabase  # Run specific test class
   python run_tests.py --integration --class TestE2EEnv       # Run env tests only
   python run_tests.py --integration --class TestE2EWorkflows # Run wf tests only
@@ -465,7 +541,7 @@ Examples:
   python run_tests.py --report                 # Generate comprehensive report (excluding E2E)
   python run_tests.py --report-e2e             # Generate comprehensive report including E2E
 
-Note: You must specify a test type (--unit, --integration, --e2e, --hypothesis, --fast, --all, --all-e2e, --report, --report-e2e, --quality, or --specific)
+Note: You must specify a test type (--unit, --integration, --e2e, --affected, --baseline, --hypothesis, --fast, --all, --all-e2e, --report, --report-e2e, --quality, or --specific)
         """,
     )
 
@@ -486,6 +562,18 @@ Note: You must specify a test type (--unit, --integration, --e2e, --hypothesis, 
     parser.add_argument("--generated", action="store_true", help="Run auto-generated CLI tests (all commands and options)")
 
     parser.add_argument("--fast", action="store_true", help="Run fast tests only (excluding slow tests)")
+
+    parser.add_argument(
+        "--affected",
+        action="store_true",
+        help="Run only tests affected by recent code changes (uses pytest-testmon)",
+    )
+
+    parser.add_argument(
+        "--baseline",
+        action="store_true",
+        help="Build testmon baseline database without deselecting tests",
+    )
 
     parser.add_argument(
         "--all",
@@ -576,6 +664,12 @@ Note: You must specify a test type (--unit, --integration, --e2e, --hypothesis, 
     elif args.fast:
         success &= run_fast_tests(args.quiet)
 
+    elif args.affected:
+        success &= run_affected_tests(args.quiet, baseline=False)
+
+    elif args.baseline:
+        success &= run_affected_tests(args.quiet, baseline=True)
+
     elif args.all:
         success &= run_all_tests(args.quiet, args.coverage, include_e2e=False)
 
@@ -599,6 +693,8 @@ Note: You must specify a test type (--unit, --integration, --e2e, --hypothesis, 
         print("  --unit         Run unit tests only")
         print("  --integration  Run integration tests only (excluding E2E)")
         print("  --e2e          Run E2E manual tests only")
+        print("  --affected     Run only tests affected by recent changes")
+        print("  --baseline     Build testmon baseline database")
         print("  --fast         Run fast tests only")
         print("  --all          Run all tests (unit + integration, excluding E2E)")
         print("  --all-e2e      Run all tests including E2E manual tests")
@@ -608,6 +704,7 @@ Note: You must specify a test type (--unit, --integration, --e2e, --hypothesis, 
         print("  --quality      Run code quality checks")
         print("  --specific     Run specific test file/function")
         print("\n💡 Example: python run_tests.py --unit")
+        print("💡 Example: python run_tests.py --affected  # Fast - only changed tests")
         return 1
 
     print("=" * 50)

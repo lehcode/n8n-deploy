@@ -381,6 +381,129 @@ test:hypothesis:
     expire_in: 7 days
 
 # ============================================
+# AFFECTED TESTING (MR pipelines only)
+# Uses pytest-testmon for coverage-based test selection
+# ============================================
+
+# Affected tests for merge request pipelines
+test:affected:
+  stage: test
+  image: python:3.9-slim
+  tags:
+    - python
+    - alpine
+    - linux
+  interruptible: true
+  cache:
+    key:
+      files:
+        - requirements.txt
+      prefix: ${CI_COMMIT_REF_SLUG}
+    fallback_keys:
+      - develop
+      - master
+    paths:
+      - .cache/pip/
+      - .venv/
+      - .testmondata
+    policy: pull-push
+  needs:
+    - warm-cache
+  rules:
+    - if: '$CI_COMMIT_TAG'
+      when: never
+    # Run affected tests on MR pipelines
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && ($CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master" || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop")'
+      when: on_success
+  before_script:
+    - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy
+    - apt-get -q update && apt-get -qy install git
+    - source .venv/bin/activate
+  script:
+    - export N8N_DEPLOY_TESTING=1
+    - |
+      if [ -f .testmondata ]; then
+        echo "Using cached testmon database"
+        python -m pytest tests/ \
+          --ignore=tests/integration/test_e2e_manual_cli.py \
+          --ignore=tests/integration/test_e2e_manual_database.py \
+          --ignore=tests/integration/test_e2e_manual_apikeys.py \
+          --ignore=tests/integration/test_e2e_manual_workflows.py \
+          --ignore=tests/integration/test_e2e_manual_server.py \
+          --testmon -rs --tb=short -q
+      else
+        echo "No testmon baseline found - building baseline"
+        python -m pytest tests/ \
+          --ignore=tests/integration/test_e2e_manual_cli.py \
+          --ignore=tests/integration/test_e2e_manual_database.py \
+          --ignore=tests/integration/test_e2e_manual_apikeys.py \
+          --ignore=tests/integration/test_e2e_manual_workflows.py \
+          --ignore=tests/integration/test_e2e_manual_server.py \
+          --testmon-noselect -rs --tb=short -q
+      fi
+    - echo "Affected tests completed"
+  artifacts:
+    paths:
+      - .testmondata
+    expire_in: 7 days
+    when: always
+
+# Generate testmon baseline on protected branches
+test:baseline:
+  stage: test
+  image: python:3.9-slim
+  tags:
+    - python
+    - heavy
+    - linux
+  interruptible: true
+  cache:
+    key:
+      files:
+        - requirements.txt
+      prefix: ${CI_COMMIT_REF_SLUG}
+    fallback_keys:
+      - develop
+      - master
+    paths:
+      - .cache/pip/
+      - .venv/
+      - .testmondata
+    policy: pull-push
+  needs:
+    - warm-cache
+    - job: test:unit
+      optional: true
+    - job: test:integration
+      optional: true
+  rules:
+    - if: '$CI_COMMIT_TAG'
+      when: never
+    # Only run on develop/master after full test suite passes
+    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
+      when: on_success
+  before_script:
+    - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy
+    - apt-get -q update && apt-get -qy install git
+    - source .venv/bin/activate
+  script:
+    - export N8N_DEPLOY_TESTING=1
+    - echo "Building testmon baseline database..."
+    - python -m pytest tests/ \
+        --ignore=tests/integration/test_e2e_manual_cli.py \
+        --ignore=tests/integration/test_e2e_manual_database.py \
+        --ignore=tests/integration/test_e2e_manual_apikeys.py \
+        --ignore=tests/integration/test_e2e_manual_workflows.py \
+        --ignore=tests/integration/test_e2e_manual_server.py \
+        --testmon-noselect -rs --tb=short -q
+    - echo "Testmon baseline updated"
+  artifacts:
+    paths:
+      - .testmondata
+    expire_in: 30 days
+    when: always
+
+# ============================================
 # BUILD-MATRIX STAGE (runs on merge/push to protected branches)
 # ============================================
 
