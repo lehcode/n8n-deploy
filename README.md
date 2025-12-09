@@ -6,7 +6,7 @@
 [![GitHub last commit](https://img.shields.io/github/last-commit/lehcode/n8n-deploy?style=flat-square&logo=github)](https://github.com/lehcode/n8n-deploy/commits/master)
 [![GitHub issues](https://img.shields.io/github/issues/lehcode/n8n-deploy?style=flat-square&logo=github)](https://github.com/lehcode/n8n-deploy/issues)
 
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue?style=flat-square&logo=python)](https://github.com/lehcode/n8n-deploy)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue?style=flat-square&logo=python)](https://github.com/lehcode/n8n-deploy)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://github.com/lehcode/n8n-deploy/blob/master/LICENSE)
 [![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg?style=flat-square)](https://github.com/psf/black)
@@ -23,7 +23,7 @@
 ### Key Features
 
 - 🗂️ **Database-Driven Workflow Management**
-  - SQLite metadata store for tracking workflows
+  - SQLite metadata store for tracking workflows (schema v6)
   - Support for new workflows without server ID (auto-generates draft ID)
   - Flexible base folder configuration
   - Plain text API key storage
@@ -34,9 +34,15 @@
   - Priority-based server configuration (linked server → ENV → --remote)
   - Support for multiple server configurations with API key management
 
+- 📁 **Folder Synchronization** (NEW in v0.2.0)
+  - Bidirectional folder sync between local and n8n server
+  - `folder` CLI command group for folder operations
+  - Automatic folder mapping and tracking
+
 - 💻 **Versatile CLI Interface**
   - Emoji-rich output for interactive use
   - Script-friendly mode with `--no-emoji` flag
+  - Verbose logging with `-v` and `-vv` flags for debugging
   - Comprehensive workflow operations
 
 ### Installation
@@ -71,8 +77,18 @@ n8n-deploy wf pull workflow-name  # Uses production server
 # Override with --remote for ad-hoc operations
 n8n-deploy wf push workflow-name --remote staging
 
+# Delete workflow from local database
+n8n-deploy wf delete workflow-name
+
 # List workflows from server
 n8n-deploy wf server --remote production
+
+# Folder synchronization (NEW in v0.2.0)
+n8n-deploy folder sync --remote production  # Sync folders with server
+
+# Enable verbose logging for debugging
+n8n-deploy -v wf push workflow-name   # Basic verbose
+n8n-deploy -vv wf push workflow-name  # Extended verbose
 ```
 
 ### Community & Support
@@ -129,7 +145,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ### Requirements
 
-- Python 3.8+
+- Python 3.9+
 - n8n server (local or remote)
 - Basic understanding of workflow management
 
