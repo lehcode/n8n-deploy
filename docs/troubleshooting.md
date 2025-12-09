@@ -87,12 +87,45 @@ echo $N8N_SERVER_URL
 echo $N8N_DEPLOY_FLOWS_DIR
 ```
 
-## 🔍 Debugging Techniques
+### 5. Folder Sync Issues
+
+**Symptom**: Cannot sync folders or authentication fails
+
+**Solutions**:
+
+```bash
+# Authenticate with n8n server first
+n8n-deploy folder auth myserver --email user@example.com
+
+# Or use browser cookie
+n8n-deploy folder auth myserver --cookie "n8n-auth=..."
+
+# List folders to verify connection
+n8n-deploy folder list --remote myserver
+
+# Use dry-run to preview changes
+n8n-deploy folder sync --dry-run
+```
+
+{: .note }
+> Folder sync uses n8n's internal API (cookie-based auth), which is different from the public API (API key auth). You must authenticate separately for folder operations.
+
+## Debugging Techniques
 
 ### Verbose Mode
+
+n8n-deploy supports two levels of verbosity for debugging:
+
 ```bash
-# Add verbose flag for detailed output
-n8n-deploy --verbose <command>
+# Basic verbose - shows HTTP requests
+n8n-deploy -v wf push workflow-name --remote production
+
+# Extended verbose - shows request/response details
+n8n-deploy -vv wf push workflow-name --remote production
+
+# Combine with any command
+n8n-deploy -v apikey test my_server
+n8n-deploy -vv folder sync --remote myserver
 ```
 
 ### Environment Debugging
@@ -105,7 +138,7 @@ N8N_DEPLOY_TESTING=1 n8n-deploy <command>
 
 ### Verify Python Version
 ```bash
-python --version  # Should be 3.8+
+python --version  # Should be 3.9+
 ```
 
 ### Check Dependencies
@@ -144,6 +177,7 @@ n8n-deploy apikey --help
 
 - [Configuration](configuration/)
 - [Workflow Management](core-features/workflows/)
+- [Folder Synchronization](core-features/folders/)
 - [API Key Management](core-features/apikeys/)
 
 ## 🐛 Reporting Issues
