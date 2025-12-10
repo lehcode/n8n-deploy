@@ -379,6 +379,8 @@ test:unit:
     <<: *cache_pull
   needs:
     - warm-cache
+    - quality:mypy
+    - quality:black
   rules:
     - if: '$CI_COMMIT_TAG'
       when: never
@@ -403,6 +405,8 @@ test:integration:
     <<: *cache_pull
   needs:
     - warm-cache
+    - quality:mypy
+    - quality:black
   rules:
     - if: '$CI_COMMIT_TAG'
       when: never
@@ -426,6 +430,8 @@ test:hypothesis:
     <<: *cache_pull
   needs:
     - warm-cache
+    - quality:mypy
+    - quality:black
   rules:
     - if: '$CI_COMMIT_TAG'
       when: never
