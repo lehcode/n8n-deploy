@@ -207,8 +207,6 @@ dependency_scanning:
       when: on_success
   cache:
     <<: *cache_pull
-  needs:
-    - warm-cache
   before_script:
     - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy
     - apt-get -q update && apt-get -qy install git
@@ -246,8 +244,6 @@ security:bandit:
       when: on_success
   cache:
     <<: *cache_pull
-  needs:
-    - warm-cache
   variables:
     SAST_EXCLUDED_PATHS: "tests/, .venv/"
   before_script:
@@ -273,8 +269,6 @@ security:semgrep:
     - linux
   needs:
     - warm-cache
-  dependencies:
-    - warm-cache
   rules:
     - if: '$CI_COMMIT_TAG'
       when: never
@@ -289,8 +283,6 @@ security:semgrep:
       when: on_success
   cache:
     <<: *cache_pull
-  needs:
-    - warm-cache
   variables:
     SAST_EXCLUDED_PATHS: "tests/, .venv/"
   before_script:
@@ -320,10 +312,6 @@ quality:mypy:
     - linux
   needs:
     - warm-cache
-    - secret_detection
-    - dependency_scanning
-    - security:bandit
-    - security:semgrep
   rules:
     - if: '$CI_COMMIT_TAG'
       when: never
@@ -348,10 +336,6 @@ quality:black:
     - linux
   needs:
     - warm-cache
-    - secret_detection
-    - dependency_scanning
-    - security:bandit
-    - security:semgrep
   rules:
     - if: '$CI_COMMIT_TAG'
       when: never
@@ -480,6 +464,8 @@ test:affected:
       - .venv/
       - .testmondata
     policy: pull-push
+  needs:
+    - warm-cache
   rules:
     - if: '$CI_COMMIT_TAG'
       when: never
@@ -579,6 +565,7 @@ build:python-matrix:
     - test:unit
     - test:integration
     - test:hypothesis
+    - test:baseline
   rules:
     - if: '$CI_COMMIT_TAG'
       when: on_success
