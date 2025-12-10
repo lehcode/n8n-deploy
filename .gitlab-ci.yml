@@ -519,6 +519,8 @@ test:baseline:
     - warm-cache
   rules:
     - if: '$CI_COMMIT_TAG'
+      when: on_success
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
       when: never
     # Run in parallel with other test jobs on develop/master
     - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
@@ -564,9 +566,6 @@ build:python-matrix:
   #     - .cache/pip/
   #     - .venv/
   needs:
-    - test:unit
-    - test:integration
-    - test:hypothesis
     - test:baseline
   rules:
     - if: '$CI_COMMIT_TAG'
