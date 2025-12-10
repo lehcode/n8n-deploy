@@ -1,0 +1,93 @@
+{
+  "id": "script_sync_test_workflow",
+  "name": "Script Sync Test Workflow",
+  "active": false,
+  "nodes": [
+    {
+      "id": "start_node",
+      "name": "Start",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "parameters": {}
+    },
+    {
+      "id": "python_script_node",
+      "name": "Run Python Processor",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [450, 200],
+      "parameters": {
+        "command": "python /tmp/n8n-test-scripts/script_sync_test_workflow/test_processor.py"
+      }
+    },
+    {
+      "id": "cjs_script_node",
+      "name": "Run CJS Helper",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [450, 300],
+      "parameters": {
+        "command": "node /tmp/n8n-test-scripts/script_sync_test_workflow/test_helper.cjs"
+      }
+    },
+    {
+      "id": "js_script_node",
+      "name": "Run JS Utility",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [450, 400],
+      "parameters": {
+        "command": "node /tmp/n8n-test-scripts/script_sync_test_workflow/test_utility.js"
+      }
+    },
+    {
+      "id": "merge_node",
+      "name": "Merge Results",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2,
+      "position": [650, 300],
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "multiplex"
+      }
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {"node": "Run Python Processor", "type": "main", "index": 0},
+          {"node": "Run CJS Helper", "type": "main", "index": 0},
+          {"node": "Run JS Utility", "type": "main", "index": 0}
+        ]
+      ]
+    },
+    "Run Python Processor": {
+      "main": [
+        [{"node": "Merge Results", "type": "main", "index": 0}]
+      ]
+    },
+    "Run CJS Helper": {
+      "main": [
+        [{"node": "Merge Results", "type": "main", "index": 1}]
+      ]
+    },
+    "Run JS Utility": {
+      "main": [
+        [{"node": "Merge Results", "type": "main", "index": 2}]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "instanceId": "test-instance"
+  },
+  "tags": [],
+  "createdAt": "2025-01-01T00:00:00.000Z",
+  "updatedAt": "2025-01-01T00:00:00.000Z",
+  "versionId": "test-version-1"
+}
