@@ -555,14 +555,14 @@ build:python-matrix:
   tags:
     - alpine
     - linux
-  cache:
-    key:
-      files:
-        - requirements.txt
-      prefix: py${PYTHON_VERSION}-${CI_COMMIT_REF_SLUG}
-    paths:
-      - .cache/pip/
-      - .venv/
+  # cache:
+  #   key:
+  #     files:
+  #       - requirements.txt
+  #     prefix: py${PYTHON_VERSION}-${CI_COMMIT_REF_SLUG}
+  #   paths:
+  #     - .cache/pip/
+  #     - .venv/
   needs:
     - test:unit
     - test:integration
