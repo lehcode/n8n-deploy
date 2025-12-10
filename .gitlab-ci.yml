@@ -90,7 +90,19 @@ cache:
 # Template for Python environment setup (uses cached venv from warm-cache job)
 .python_setup: &python_setup
   before_script:
-    - source .venv/bin/activate
+    - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy
+    - apt-get -q update && apt-get -qy install git
+    - |
+      if [ ! -f .venv/bin/activate ]; then
+        echo "Cache miss - creating venv"
+        python -m pip install --quiet --upgrade pip
+        pip install --quiet uv
+        uv venv --python python3 .venv
+        source .venv/bin/activate
+        uv pip install --quiet -e ".[test,dev]"
+      else
+        source .venv/bin/activate
+      fi
 
 # ============================================
 # PRE STAGE - Cache warming
@@ -107,9 +119,6 @@ warm-cache:
   interruptible: true
   rules:
     - if: '$CI_COMMIT_TAG'
-      when: never
-    # Skip on conventional commit branches (security only - no cache needed)
-    - if: '$CI_COMMIT_BRANCH =~ /^(feat|fix|chore|refactor|docs|test|style|perf|ci|build)\//'
       when: never
     - when: on_success
   cache:
@@ -132,7 +141,6 @@ warm-cache:
   script:
     - echo "Warming cache..."
     - uv venv --python python3 .venv
-    - source .venv/bin/activate
     - uv pip install --quiet -e ".[test,dev]"
     - echo "Cache populated successfully"
 
@@ -149,6 +157,8 @@ secret_detection:
     - alpine
     - linux
   interruptible: true
+  needs:
+    - warm-cache
   rules:
     - if: '$CI_COMMIT_TAG'
       when: never
@@ -183,6 +193,8 @@ dependency_scanning:
     - alpine
     - linux
   interruptible: true
+  needs:
+    - warm-cache
   rules:
     - if: '$CI_COMMIT_TAG'
       when: never
@@ -200,7 +212,17 @@ dependency_scanning:
   before_script:
     - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy
     - apt-get -q update
-    - python -m pip install --quiet --upgrade pip
+    - |
+      if [ ! -f .venv/bin/activate ]; then
+        echo "Cache miss - creating venv"
+        python -m pip install --quiet --upgrade pip
+        pip install --quiet uv
+        uv venv --python python3 .venv
+        source .venv/bin/activate
+        uv pip install --quiet -e ".[test,dev]"
+      else
+        source .venv/bin/activate
+      fi
     - pip install --quiet pip-audit
   script:
     - echo "🔍 Running dependency vulnerability scanning..."
@@ -216,6 +238,8 @@ security:bandit:
     - alpine
     - linux
   interruptible: true
+  needs:
+    - warm-cache
   rules:
     - if: '$CI_COMMIT_TAG'
       when: never
@@ -235,9 +259,18 @@ security:bandit:
   before_script:
     - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy
     - apt-get -q update && apt-get -qy install git
-    - python -m pip install --quiet --upgrade pip
+    - |
+      if [ ! -f .venv/bin/activate ]; then
+        echo "Cache miss - creating venv"
+        python -m pip install --quiet --upgrade pip
+        pip install --quiet uv
+        uv venv --python python3 .venv
+        source .venv/bin/activate
+        uv pip install --quiet -e ".[test,dev]"
+      else
+        source .venv/bin/activate
+      fi
     - pip install --quiet bandit
-    - pip install -e .
   script:
     - echo "🔍 Running Python security analysis with Bandit..."
     - bandit -r api/ -f json --exclude tests/
@@ -252,6 +285,8 @@ security:semgrep:
     - alpine
     - linux
   interruptible: true
+  needs:
+    - warm-cache
   rules:
     - if: '$CI_COMMIT_TAG'
       when: never
@@ -271,9 +306,18 @@ security:semgrep:
   before_script:
     - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy
     - apt-get -q update && apt-get -qy install git
-    - python -m pip install --quiet --upgrade pip
+    - |
+      if [ ! -f .venv/bin/activate ]; then
+        echo "Cache miss - creating venv"
+        python -m pip install --quiet --upgrade pip
+        pip install --quiet uv
+        uv venv --python python3 .venv
+        source .venv/bin/activate
+        uv pip install --quiet -e ".[test,dev]"
+      else
+        source .venv/bin/activate
+      fi
     - pip install --quiet semgrep
-    - pip install -e .
   script:
     - echo "🔍 Running pattern-based security analysis with Semgrep..."
     - semgrep --config=auto api/ --json --error
@@ -292,21 +336,26 @@ quality:mypy:
     - alpine
     - linux
   interruptible: true
+  needs:
+    - warm-cache
   rules:
     - if: '$CI_COMMIT_TAG'
       when: never
-    # Skip on conventional commit branches (security only)
-    - if: '$CI_COMMIT_BRANCH =~ /^(feat|fix|chore|refactor|docs|test|style|perf|ci|build)\//'
+    # Skip on MR pipelines (already ran on feature branch push)
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
       when: never
-    - when: on_success
+    # Run on conventional commit branches (feature branch push)
+    - if: '$CI_COMMIT_BRANCH =~ /^(feat|fix|chore|refactor|docs|test|style|perf|ci|build)\//'
+      when: on_success
+    # Run on protected branches (post-merge)
+    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
+      when: on_success
   <<: *python_setup
   cache:
     <<: *cache_pull
-  needs:
-    - warm-cache
   script:
     - mypy api/ --strict --show-error-codes
-    - echo "✅ Type checking passed"
+    - echo "Type checking passed"
 
 # Code formatting check with black
 quality:black:
@@ -317,21 +366,26 @@ quality:black:
     - alpine
     - linux
   interruptible: true
+  needs:
+    - warm-cache
   rules:
     - if: '$CI_COMMIT_TAG'
       when: never
-    # Skip on conventional commit branches (security only)
-    - if: '$CI_COMMIT_BRANCH =~ /^(feat|fix|chore|refactor|docs|test|style|perf|ci|build)\//'
+    # Skip on MR pipelines (already ran on feature branch push)
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
       when: never
-    - when: on_success
+    # Run on conventional commit branches (feature branch push)
+    - if: '$CI_COMMIT_BRANCH =~ /^(feat|fix|chore|refactor|docs|test|style|perf|ci|build)\//'
+      when: on_success
+    # Run on protected branches (post-merge)
+    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
+      when: on_success
   <<: *python_setup
   cache:
     <<: *cache_pull
-  needs:
-    - warm-cache
   script:
     - black --check api/
-    - echo "✅ Code formatting check passed"
+    - echo "Code formatting check passed"
 
 # ============================================
 # TEST STAGE (runs on merge/push to protected branches)
@@ -360,7 +414,17 @@ test:unit:
   before_script:
     - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy
     - apt-get -q update && apt-get -qy install git
-    - source .venv/bin/activate
+    - |
+      if [ ! -f .venv/bin/activate ]; then
+        echo "Cache miss - creating venv"
+        python -m pip install --quiet --upgrade pip
+        pip install --quiet uv
+        uv venv --python python3 .venv
+        source .venv/bin/activate
+        uv pip install --quiet -e ".[test,dev]"
+      else
+        source .venv/bin/activate
+      fi
   script:
     - export N8N_DEPLOY_TESTING=1
     - python -m pytest tests/unit/ -rs --tb=short -q
@@ -435,8 +499,8 @@ test:affected:
   image: python:3.9-slim
   tags:
     - python
-    - alpine
     - linux
+    - heavy
   interruptible: true
   cache:
     key:

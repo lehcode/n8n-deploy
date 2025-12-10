@@ -6,3 +6,11 @@ useDefault = true
 
 # Disable rules that flag test API keys and sample credentials
 disabledRules = ["generic-api-key", "jwt", "curl-auth-header"]
+
+[[rules]]
+id = "gitlab-pat"
+# all the other attributes from the default rule are inherited
+
+# [[rules.allowlists]]
+# regexTarget = "line"
+# regexes = ['''MY-glpat-''']
