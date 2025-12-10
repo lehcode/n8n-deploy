@@ -7,7 +7,7 @@ Extracted from n8n_api.py to reduce complexity and improve testability.
 """
 
 import warnings
-from typing import Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple
 
 import requests
 from urllib3.exceptions import InsecureRequestWarning
@@ -100,10 +100,13 @@ class N8nHttpClient:
             N8nApiResult with success status and either data or error details
         """
         try:
-            response = self._execute_request(method, url, headers, data, timeout)
+            response, start_time = self._execute_request(method, url, headers, data, timeout)
+            response_body = response.text if response.content else None
+            _log_response(response.status_code, dict(response.headers), start_time, response_body)
             return self._handle_response(response, silent)
 
         except requests.exceptions.Timeout:
+            _log_error("TIMEOUT", f"Request timed out after {timeout} seconds")
             if not silent:
                 print(f"❌ n8n API request timed out after {timeout} seconds")
             return N8nApiResult(
@@ -112,6 +115,7 @@ class N8nHttpClient:
                 error_message=f"Request timed out after {timeout} seconds",
             )
         except requests.exceptions.ConnectionError as e:
+            _log_error("CONNECTION", str(e))
             if not silent:
                 print(f"❌ n8n API connection error: {e}")
             return N8nApiResult(
@@ -120,6 +124,7 @@ class N8nHttpClient:
                 error_message=str(e),
             )
         except requests.exceptions.RequestException as e:
+            _log_error("REQUEST", str(e))
             if not silent:
                 print(f"❌ n8n API request failed: {e}")
             return N8nApiResult(
@@ -163,8 +168,8 @@ class N8nHttpClient:
         headers: Dict[str, str],
         data: Optional[Dict[str, Any]],
         timeout: int,
-    ) -> requests.Response:
-        """Execute the HTTP request
+    ) -> Tuple[requests.Response, float]:
+        """Execute the HTTP request with verbose logging
 
         Args:
             method: HTTP method
@@ -174,25 +179,28 @@ class N8nHttpClient:
             timeout: Request timeout
 
         Returns:
-            requests.Response object
+            Tuple of (requests.Response, start_time) for duration calculation
 
         Raises:
             ValueError: For unsupported HTTP methods
             requests.exceptions.*: For network/request errors
         """
+        start_time = _log_request(method, url, headers, data)
         method_upper = method.upper()
         verify = not self.skip_ssl_verify
 
         if method_upper == "GET":
-            return requests.get(url, headers=headers, verify=verify, timeout=timeout)
+            response = requests.get(url, headers=headers, verify=verify, timeout=timeout)
         elif method_upper == "POST":
-            return requests.post(url, headers=headers, json=data, verify=verify, timeout=timeout)
+            response = requests.post(url, headers=headers, json=data, verify=verify, timeout=timeout)
         elif method_upper == "PUT":
-            return requests.put(url, headers=headers, json=data, verify=verify, timeout=timeout)
+            response = requests.put(url, headers=headers, json=data, verify=verify, timeout=timeout)
         elif method_upper == "DELETE":
-            return requests.delete(url, headers=headers, verify=verify, timeout=timeout)
+            response = requests.delete(url, headers=headers, verify=verify, timeout=timeout)
         else:
             raise ValueError(f"Unsupported HTTP method: {method}")
+
+        return response, start_time
 
     def _handle_response(self, response: requests.Response, silent: bool) -> N8nApiResult:
         """Handle HTTP response and convert to N8nApiResult
@@ -266,6 +274,7 @@ class N8nHttpClient:
         Returns:
             True if deletion successful (including 404 - already deleted)
         """
+        start_time = _log_request("DELETE", url, headers)
         try:
             response = requests.delete(
                 url,
@@ -273,6 +282,8 @@ class N8nHttpClient:
                 verify=not self.skip_ssl_verify,
                 timeout=timeout,
             )
+            response_body = response.text if response.content else None
+            _log_response(response.status_code, dict(response.headers), start_time, response_body)
             response.raise_for_status()
             return True
 
@@ -280,8 +291,10 @@ class N8nHttpClient:
             if e.response is not None and e.response.status_code == 404:
                 # Consider 404 as success - workflow is gone
                 return True
+            _log_error("HTTP", str(e))
             print(f"❌ Failed to delete workflow: {e}")
             return False
         except requests.exceptions.RequestException as e:
+            _log_error("REQUEST", str(e))
             print(f"❌ Failed to delete workflow: {e}")
             return False
