@@ -109,7 +109,7 @@ cache:
     - test -f .venv/bin/activate && echo "✓ Using cached venv" || echo "⚠ Cache miss - creating venv"
     - test -f .venv/bin/activate || uv venv --python python3 .venv
     - source .venv/bin/activate
-    - uv pip install --quiet -e ".[test,dev]"
+    - test -f .venv/lib/python*/site-packages/n8n_deploy.egg-info || uv pip install --quiet -e ".[test,dev]"
 
 # ============================================
 # PRE STAGE - Cache warming
