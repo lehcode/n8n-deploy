@@ -24,7 +24,7 @@ repos:
     rev: 1.8.3
     hooks:
       - id: bandit
-        args: ["-r", "api/", "--exclude", "tests/", "-ll"]
+        args: ["-r", "api/", "--exclude", "tests/"]
         pass_filenames: false
 
   - repo: local

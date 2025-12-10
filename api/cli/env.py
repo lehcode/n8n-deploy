@@ -53,9 +53,9 @@ def _gather_config_items(
     config_items.append(("N8N_SERVER_URL", server_url_value, server_url_source))
 
     # API Key (don't show the value, just the source)
-    api_key_set = bool(os.getenv("N8N_DEPLOY_SERVER_KEY"))
-    api_key_source = "N8N_DEPLOY_SERVER_KEY" if api_key_set else "not set"
-    config_items.append(("N8N_DEPLOY_SERVER_KEY", "***" if api_key_set else "not set", api_key_source))
+    api_key_set = bool(os.getenv("N8N_API_KEY"))
+    api_key_source = "N8N_API_KEY" if api_key_set else "not set"
+    config_items.append(("N8N_API_KEY", "***" if api_key_set else "not set", api_key_source))
 
     # Testing flag
     testing_value = os.getenv("N8N_DEPLOY_TESTING", "not set")

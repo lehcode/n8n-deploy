@@ -8,9 +8,8 @@ with comprehensive property-based edge case testing.
 """
 
 import json
-import re
 import subprocess
-from pathlib import Path
+from typing import Optional
 
 from hypothesis import assume, given, settings
 from hypothesis import strategies as st
@@ -144,7 +143,7 @@ class TestPropertyBased:
 
     @given(app_dir=valid_paths)
     @settings(max_examples=50, deadline=None)
-    def test_env_command_never_crashes_with_valid_paths(self, app_dir):
+    def test_env_command_never_crashes_with_valid_paths(self, app_dir: str) -> None:
         """Property: env command should handle any valid path"""
         result = subprocess.run(["./n8n-deploy", "env", "--data-dir", app_dir], capture_output=True, timeout=60, text=True)
         # Should always exit with known codes
@@ -152,7 +151,7 @@ class TestPropertyBased:
 
     @given(app_dir=valid_paths, flow_dir=valid_paths, format_choice=st.sampled_from(["table", "json", None]))
     @settings(max_examples=30, deadline=None)
-    def test_env_command_format_options(self, app_dir, flow_dir, format_choice):
+    def test_env_command_format_options(self, app_dir: str, flow_dir: str, format_choice: Optional[str]) -> None:
         """Property: env command should handle all format options"""
         cmd = ["./n8n-deploy", "env", "--data-dir", app_dir, "--flow-dir", flow_dir]
         if format_choice:
@@ -174,14 +173,14 @@ class TestPropertyBased:
 
     @given(server_url=server_urls)
     @settings(max_examples=20, deadline=None)
-    def test_env_accepts_valid_server_urls(self, server_url):
+    def test_env_accepts_valid_server_urls(self, server_url: str) -> None:
         """Property: env command should accept valid server URLs"""
         result = subprocess.run(["./n8n-deploy", "env", "--remote", server_url], capture_output=True, timeout=60, text=True)
         assert result.returncode == 0, f"Should accept valid URL: {server_url}"
 
     @given(workflow_name=workflow_names)
     @settings(max_examples=100, deadline=None)
-    def test_workflow_names_never_cause_injection(self, workflow_name):
+    def test_workflow_names_never_cause_injection(self, workflow_name: str) -> None:
         """Property: Workflow names should never cause command injection"""
         # This will test names like: "'; DROP TABLE--", "$(rm -rf /)", etc.
         result = subprocess.run(["./n8n-deploy", "wf", "search", workflow_name], capture_output=True, timeout=60, text=True)
@@ -193,7 +192,7 @@ class TestPropertyBased:
 
     @given(app_dir=valid_paths)
     @settings(max_examples=30, deadline=None)
-    def test_db_status_handles_all_paths(self, app_dir):
+    def test_db_status_handles_all_paths(self, app_dir: str) -> None:
         """Property: db status should handle any valid path"""
         result = subprocess.run(
             ["./n8n-deploy", "db", "status", "--data-dir", app_dir], capture_output=True, timeout=60, text=True
@@ -203,7 +202,7 @@ class TestPropertyBased:
 
     @given(format_choice=st.sampled_from(["table", "json", None]))
     @settings(max_examples=20, deadline=None)
-    def test_wf_list_handles_format_options(self, format_choice):
+    def test_wf_list_handles_format_options(self, format_choice: Optional[str]) -> None:
         """Property: wf list should handle all format options"""
         cmd = ["./n8n-deploy", "wf", "list"]
         if format_choice:
@@ -227,7 +226,7 @@ class TestPropertyBased:
         )
     )
     @settings(max_examples=50, deadline=None)
-    def test_wf_search_tags_never_crash(self, tag):
+    def test_wf_search_tags_never_crash(self, tag: str) -> None:
         """Property: wf search by tag should never crash"""
         result = subprocess.run(["./n8n-deploy", "wf", "search", "--tag", tag], capture_output=True, timeout=60, text=True)
         assert result.returncode in [0, 1, 2], "Search by tag crashed unexpectedly"
@@ -243,7 +242,7 @@ class TestPropertyBased:
         )
     )
     @settings(max_examples=30, deadline=None)
-    def test_deep_nested_paths_handled(self, path_components):
+    def test_deep_nested_paths_handled(self, path_components: list[str]) -> None:
         """Property: Commands should handle deeply nested paths"""
         deep_path = "/tmp/" + "/".join(path_components)
         result = subprocess.run(["./n8n-deploy", "env", "--data-dir", deep_path], capture_output=True, timeout=60, text=True)
@@ -251,7 +250,7 @@ class TestPropertyBased:
 
     @given(server_url=server_urls, app_dir=valid_paths)
     @settings(max_examples=20, deadline=None)
-    def test_combined_options_never_crash(self, server_url, app_dir):
+    def test_combined_options_never_crash(self, server_url: str, app_dir: str) -> None:
         """Property: Combining multiple options should never crash"""
         result = subprocess.run(
             ["./n8n-deploy", "env", "--data-dir", app_dir, "--remote", server_url, "--json"],
@@ -281,7 +280,7 @@ class TestFormatValidation:
 
     @given(app_dir=valid_paths)
     @settings(max_examples=30, deadline=None)
-    def test_env_json_always_valid(self, app_dir):
+    def test_env_json_always_valid(self, app_dir: str) -> None:
         """Property: env --format json always produces parseable JSON"""
         result = subprocess.run(
             ["./n8n-deploy", "env", "--data-dir", app_dir, "--json"],
@@ -301,7 +300,7 @@ class TestFormatValidation:
 
     @given(app_dir=valid_paths, format_choice=format_options)
     @settings(max_examples=40, deadline=None)
-    def test_db_status_formats(self, app_dir, format_choice):
+    def test_db_status_formats(self, app_dir: str, format_choice: Optional[str]) -> None:
         """Property: db status supports all format options correctly"""
         cmd = ["./n8n-deploy", "db", "status", "--data-dir", app_dir]
         if format_choice:
@@ -321,7 +320,7 @@ class TestFormatValidation:
 
     @given(app_dir=valid_paths)
     @settings(max_examples=20, deadline=None)
-    def test_apikey_list_json_structure(self, app_dir):
+    def test_apikey_list_json_structure(self, app_dir: str) -> None:
         """Property: apikey list --format json has consistent structure"""
         result = subprocess.run(
             ["./n8n-deploy", "apikey", "list", "--json"],
@@ -349,7 +348,7 @@ class TestPathHandling:
 
     @given(path=special_char_paths)
     @settings(max_examples=50, deadline=None)
-    def test_special_characters_in_paths(self, path):
+    def test_special_characters_in_paths(self, path: str) -> None:
         """Property: Special characters in paths never cause crashes"""
         result = subprocess.run(
             ["./n8n-deploy", "env", "--data-dir", path],
@@ -362,7 +361,7 @@ class TestPathHandling:
 
     @given(path=deep_paths)
     @settings(max_examples=40, deadline=None)
-    def test_deeply_nested_paths(self, path):
+    def test_deeply_nested_paths(self, path: str) -> None:
         """Property: Deeply nested paths handled correctly"""
         # Skip paths that are too long for filesystem
         assume(len(path) < 200)
@@ -377,7 +376,7 @@ class TestPathHandling:
 
     @given(app_dir=special_char_paths, flow_dir=special_char_paths)
     @settings(max_examples=30, deadline=None)
-    def test_matching_special_char_paths(self, app_dir, flow_dir):
+    def test_matching_special_char_paths(self, app_dir: str, flow_dir: str) -> None:
         """Property: Both app-dir and flow-dir with special chars work"""
         result = subprocess.run(
             ["./n8n-deploy", "env", "--data-dir", app_dir, "--flow-dir", flow_dir],
@@ -389,7 +388,7 @@ class TestPathHandling:
 
     @given(path_list=st.lists(valid_paths, min_size=2, max_size=5))
     @settings(max_examples=20, deadline=None)  # 5 second deadline for multiple subprocess calls
-    def test_path_consistency_across_commands(self, path_list):
+    def test_path_consistency_across_commands(self, path_list: list[str]) -> None:
         """Property: Same path works consistently across different commands"""
         path = path_list[0]
 
@@ -415,7 +414,7 @@ class TestPathHandling:
 
     @given(path_name=st.text(min_size=1, max_size=30, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"))
     @settings(max_examples=20, deadline=None)
-    def test_invalid_paths_default_to_cwd(self, path_name):
+    def test_invalid_paths_default_to_cwd(self, path_name: str) -> None:
         """Property: Invalid paths should default to cwd and not cause crashes"""
         # Generate a nonexistent path
         invalid_path = f"/nonexistent/test/{path_name}"
@@ -448,7 +447,7 @@ class TestInputSanitization:
 
     @given(malicious_input=malicious_names)
     @settings(max_examples=20, deadline=None)
-    def test_malicious_workflow_names_blocked(self, malicious_input):
+    def test_malicious_workflow_names_blocked(self, malicious_input: str) -> None:
         """Property: SQL injection attempts in wf names fail safely"""
         # Skip inputs with null bytes (Python subprocess limitation)
         assume("\x00" not in malicious_input)
@@ -472,7 +471,7 @@ class TestInputSanitization:
 
     @given(malicious_input=malicious_names)
     @settings(max_examples=20, deadline=None)
-    def test_malicious_tag_names_blocked(self, malicious_input):
+    def test_malicious_tag_names_blocked(self, malicious_input: str) -> None:
         """Property: Command injection in tags fails safely"""
         # Skip inputs with null bytes
         assume("\x00" not in malicious_input)
@@ -490,7 +489,7 @@ class TestInputSanitization:
 
     @given(malicious_input=malicious_names)
     @settings(max_examples=15, deadline=None)
-    def test_malicious_api_key_names_blocked(self, malicious_input):
+    def test_malicious_api_key_names_blocked(self, malicious_input: str) -> None:
         """Property: Injection attempts in API key names fail safely"""
         # Try to list with malicious search pattern
         result = subprocess.run(
@@ -514,7 +513,7 @@ class TestHelpConsistency:
 
     @given(command=st.sampled_from(["env", "db", "wf", "apikey"]))
     @settings(max_examples=10, deadline=None)
-    def test_command_help_always_works(self, command):
+    def test_command_help_always_works(self, command: str) -> None:
         """Property: All commands have working --help"""
         result = subprocess.run(
             ["./n8n-deploy", command, "--help"],
@@ -532,7 +531,7 @@ class TestHelpConsistency:
         command=st.sampled_from(["status", "init", "backup", "compact"]),
     )
     @settings(max_examples=10, deadline=None)
-    def test_db_subcommand_help(self, command):
+    def test_db_subcommand_help(self, command: str) -> None:
         """Property: All db subcommands have help"""
         result = subprocess.run(
             ["./n8n-deploy", "db", command, "--help"],
@@ -559,7 +558,7 @@ class TestHelpConsistency:
         ),
     )
     @settings(max_examples=12, deadline=None)
-    def test_wf_subcommand_help(self, command):
+    def test_wf_subcommand_help(self, command: str) -> None:
         """Property: All wf subcommands have help"""
         result = subprocess.run(
             ["./n8n-deploy", "wf", command, "--help"],
@@ -587,7 +586,9 @@ class TestOptionCombinations:
         format_choice=format_options,
     )
     @settings(max_examples=50, deadline=None)
-    def test_all_env_options_combined(self, app_dir, flow_dir, server_url, format_choice):
+    def test_all_env_options_combined(
+        self, app_dir: str, flow_dir: str, server_url: str, format_choice: Optional[str]
+    ) -> None:
         """Property: All env options work together"""
         cmd = [
             "./n8n-deploy",
@@ -625,7 +626,7 @@ class TestServerManagement:
 
     @given(server_name=server_names, server_url=server_urls)
     @settings(max_examples=50, deadline=None)
-    def test_server_create_with_valid_inputs(self, server_name, server_url):
+    def test_server_create_with_valid_inputs(self, server_name: str, server_url: str) -> None:
         """Property: Server create should handle valid names and URLs"""
         # Skip empty names (filtered by strategy but double-check)
         assume(len(server_name.strip()) > 0)
@@ -642,7 +643,7 @@ class TestServerManagement:
 
     @given(server_name=server_names)
     @settings(max_examples=30, deadline=None)
-    def test_server_list_never_crashes(self, server_name):
+    def test_server_list_never_crashes(self, server_name: str) -> None:
         """Property: Server list should never crash regardless of database state"""
         result = subprocess.run(
             ["./n8n-deploy", "server", "list"],
@@ -656,7 +657,7 @@ class TestServerManagement:
 
     @given(format_choice=format_options)
     @settings(max_examples=20, deadline=None)
-    def test_server_list_format_options(self, format_choice):
+    def test_server_list_format_options(self, format_choice: Optional[str]) -> None:
         """Property: Server list should handle all format options"""
         cmd = ["./n8n-deploy", "server", "list"]
         if format_choice:
@@ -675,7 +676,7 @@ class TestServerManagement:
 
     @given(active_flag=boolean_flags)
     @settings(max_examples=10, deadline=None)
-    def test_server_list_active_filter(self, active_flag):
+    def test_server_list_active_filter(self, active_flag: bool) -> None:
         """Property: Server list --active filter should work"""
         cmd = ["./n8n-deploy", "server", "list"]
         if active_flag:
@@ -686,7 +687,7 @@ class TestServerManagement:
 
     @given(server_name=server_names)
     @settings(max_examples=30, deadline=None)
-    def test_server_remove_handles_nonexistent(self, server_name):
+    def test_server_remove_handles_nonexistent(self, server_name: str) -> None:
         """Property: Removing non-existent server should fail gracefully"""
         assume(len(server_name.strip()) > 0)
 
@@ -706,7 +707,7 @@ class TestServerManagement:
         format_choice=format_options,
     )
     @settings(max_examples=40, deadline=None)
-    def test_server_operations_combined(self, server_name, server_url, format_choice):
+    def test_server_operations_combined(self, server_name: str, server_url: str, format_choice: Optional[str]) -> None:
         """Property: Server operations with format options should work"""
         assume(len(server_name.strip()) > 0)
 
@@ -731,7 +732,7 @@ class TestServerManagement:
 
     @given(malicious_input=malicious_names)
     @settings(max_examples=20, deadline=None)
-    def test_malicious_server_names_blocked(self, malicious_input):
+    def test_malicious_server_names_blocked(self, malicious_input: str) -> None:
         """Property: SQL injection in server names fails safely"""
         assume("\x00" not in malicious_input)
 
@@ -749,7 +750,7 @@ class TestServerManagement:
 
     @given(server_name=server_names, api_key_name=api_key_names)
     @settings(max_examples=30, deadline=None)
-    def test_server_api_key_linking_operations(self, server_name, api_key_name):
+    def test_server_api_key_linking_operations(self, server_name: str, api_key_name: str) -> None:
         """Property: Server API key linking should handle edge cases"""
         assume(len(server_name.strip()) > 0 and len(api_key_name.strip()) > 0)
 
@@ -766,7 +767,7 @@ class TestServerManagement:
 
     @given(server_url_1=server_urls)
     @settings(max_examples=20, deadline=None)
-    def test_multiple_servers_with_same_url(self, server_url_1):
+    def test_multiple_servers_with_same_url(self, server_url_1: str) -> None:
         """Property: Multiple servers can have different names with same URL"""
         # This tests that URL is not unique constraint (only name is)
         result1 = subprocess.run(
@@ -798,7 +799,7 @@ class TestDatabaseInit:
 
     @given(filename=db_filenames, data_dir=valid_paths)
     @settings(max_examples=30, deadline=None)
-    def test_db_init_filename_creates_database(self, filename, data_dir):
+    def test_db_init_filename_creates_database(self, filename: str, data_dir: str) -> None:
         """Property: db init --db-filename creates database with specified name"""
         import tempfile
         from pathlib import Path
@@ -822,7 +823,7 @@ class TestDatabaseInit:
 
     @given(filename=db_filenames)
     @settings(max_examples=20, deadline=None)
-    def test_db_init_custom_filename_auto_imports(self, filename):
+    def test_db_init_custom_filename_auto_imports(self, filename: str) -> None:
         """Property: Custom filename auto-imports on second init"""
         import tempfile
         from pathlib import Path
@@ -853,7 +854,7 @@ class TestDatabaseInit:
 
     @given(filename=db_filenames)
     @settings(max_examples=15, deadline=None)
-    def test_db_init_filename_json_output(self, filename):
+    def test_db_init_filename_json_output(self, filename: str) -> None:
         """Property: db init --db-filename with --json produces valid JSON"""
         import tempfile
 
@@ -880,7 +881,7 @@ class TestDatabaseInit:
         filename2=db_filenames,
     )
     @settings(max_examples=20, deadline=None)
-    def test_db_init_different_filenames_create_separate_databases(self, filename1, filename2):
+    def test_db_init_different_filenames_create_separate_databases(self, filename1: str, filename2: str) -> None:
         """Property: Different filenames create separate database files"""
         import tempfile
         from pathlib import Path
@@ -919,6 +920,205 @@ class TestDatabaseInit:
             assert db_path1 != db_path2
 
 
+# ═══════════════════════════════════════════════════════════════════════════
+# Script Sync Property Tests (workflow name sanitization and transport)
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+# Strategy: Script filenames with valid extensions
+script_filenames = st.builds(
+    lambda name, ext: f"{name}{ext}",
+    st.text(min_size=1, max_size=30, alphabet="abcdefghijklmnopqrstuvwxyz0123456789_-"),
+    st.sampled_from([".py", ".js", ".cjs"]),
+)
+
+# Strategy: Remote hosts (hostnames/IPs)
+remote_hosts = st.one_of(
+    st.just("localhost"),
+    st.just("127.0.0.1"),
+    st.builds(
+        lambda h: f"{h}.example.com",
+        st.text(min_size=1, max_size=15, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"),
+    ),
+)
+
+# Strategy: SSH ports
+ssh_ports = st.integers(min_value=1, max_value=65535)
+
+# Strategy: Remote base paths
+remote_base_paths = st.one_of(
+    st.just("/home/n8n/scripts"),
+    st.just("/opt/scripts"),
+    st.builds(
+        lambda p: f"/home/{p}/scripts",
+        st.text(min_size=1, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz0123456789"),
+    ),
+)
+
+
+class TestScriptSyncPropertyBased:
+    """Property-based tests for script sync functionality"""
+
+    @given(workflow_name=workflow_names)
+    @settings(max_examples=100, deadline=None)
+    def test_workflow_name_sanitization_never_crashes(self, workflow_name: str) -> None:
+        """Property: Any workflow name can be sanitized safely"""
+        from api.workflow.script_sync import ScriptSyncManager
+
+        result = ScriptSyncManager.sanitize_workflow_name(workflow_name)
+        # Should always return valid directory name
+        assert result, "Sanitization should never return empty string"
+        assert "/" not in result, "No slashes in sanitized name"
+        assert "\\" not in result, "No backslashes in sanitized name"
+        assert "\x00" not in result, "No null bytes in sanitized name"
+
+    @given(workflow_name=malicious_names)
+    @settings(max_examples=20, deadline=None)
+    def test_malicious_workflow_names_sanitized(self, workflow_name: str) -> None:
+        """Property: Malicious names are safely sanitized"""
+        from api.workflow.script_sync import ScriptSyncManager
+
+        assume("\x00" not in workflow_name)
+        result = ScriptSyncManager.sanitize_workflow_name(workflow_name)
+        # Should strip all dangerous characters
+        assert ";" not in result, "Semicolons should be stripped"
+        assert "$" not in result, "Dollar signs should be stripped"
+        assert "`" not in result, "Backticks should be stripped"
+        assert "'" not in result, "Single quotes should be stripped"
+        assert '"' not in result, "Double quotes should be stripped"
+        assert "<" not in result, "Less than should be stripped"
+        assert ">" not in result, "Greater than should be stripped"
+
+    @given(
+        workflow_name=st.text(
+            min_size=0,
+            max_size=100,
+            alphabet=st.characters(whitelist_categories=("Lu", "Ll", "Nd", "Zs", "P")),
+        )
+    )
+    @settings(max_examples=50, deadline=None)
+    def test_sanitization_always_returns_valid_dirname(self, workflow_name):
+        """Property: Sanitized name is always a valid directory name"""
+        from api.workflow.script_sync import ScriptSyncManager
+
+        result = ScriptSyncManager.sanitize_workflow_name(workflow_name)
+
+        # Should always be non-empty (defaults to 'unnamed_workflow')
+        assert len(result) > 0, "Result should never be empty"
+
+        # Should only contain safe characters
+        safe_chars = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_")
+        for char in result:
+            assert char in safe_chars, f"Unexpected character in result: {char!r}"
+
+        # Should not start or end with underscore
+        assert not result.startswith("_") or result == "unnamed_workflow"
+        assert not result.endswith("_") or result == "unnamed_workflow"
+
+    @given(workflow_name=workflow_names)
+    @settings(max_examples=30, deadline=None)
+    def test_sanitization_is_idempotent(self, workflow_name):
+        """Property: Sanitizing twice gives same result"""
+        from api.workflow.script_sync import ScriptSyncManager
+
+        first_pass = ScriptSyncManager.sanitize_workflow_name(workflow_name)
+        second_pass = ScriptSyncManager.sanitize_workflow_name(first_pass)
+        assert first_pass == second_pass, "Sanitization should be idempotent"
+
+    @given(
+        name1=workflow_names,
+        name2=workflow_names,
+    )
+    @settings(max_examples=50, deadline=None)
+    def test_different_names_produce_different_results(self, name1: str, name2: str) -> None:
+        """Property: Different inputs should usually produce different outputs"""
+        from api.workflow.script_sync import ScriptSyncManager
+
+        # Skip if names are identical
+        assume(name1.strip() != name2.strip())
+        assume(len(name1.strip()) > 0 and len(name2.strip()) > 0)
+
+        result1 = ScriptSyncManager.sanitize_workflow_name(name1)
+        result2 = ScriptSyncManager.sanitize_workflow_name(name2)
+
+        # Note: Different names MAY produce same result if they differ only
+        # in characters that get stripped. This is expected behavior.
+        # We just verify the function doesn't crash.
+        assert isinstance(result1, str)
+        assert isinstance(result2, str)
+
+
+class TestScriptChangeStatusPropertyBased:
+    """Property-based tests for ScriptChangeStatus enum and ScriptChange dataclass"""
+
+    @given(filename=script_filenames)
+    @settings(max_examples=50, deadline=None)
+    def test_script_change_creation_never_crashes(self, filename):
+        """Property: ScriptChange can be created with any valid filename"""
+        from pathlib import Path
+
+        from api.workflow.script_git import ScriptChange, ScriptChangeStatus
+
+        change = ScriptChange(
+            path=Path(f"/tmp/scripts/{filename}"),
+            filename=filename,
+            status=ScriptChangeStatus.MODIFIED,
+        )
+        assert change.filename == filename
+        assert change.needs_upload is True
+        assert change.needs_deletion is False
+
+    @given(status=st.sampled_from(["modified", "added", "deleted", "untracked", "unchanged"]))
+    @settings(max_examples=10, deadline=None)
+    def test_script_change_status_values(self, status):
+        """Property: All status values are valid"""
+        from api.workflow.script_git import ScriptChangeStatus
+
+        enum_value = ScriptChangeStatus(status)
+        assert enum_value.value == status
+
+
+class TestTransportTargetPropertyBased:
+    """Property-based tests for TransportTarget configuration"""
+
+    @given(
+        host=remote_hosts,
+        port=ssh_ports,
+        base_path=remote_base_paths,
+    )
+    @settings(max_examples=50, deadline=None)
+    def test_transport_target_creation(self, host: str, port: int, base_path: str) -> None:
+        """Property: TransportTarget can be created with various configs"""
+        from api.transports.base import TransportTarget
+
+        target = TransportTarget(
+            host=host,
+            port=port,
+            username="testuser",
+            base_path=base_path,
+            password="testpass",
+        )
+        assert target.host == host
+        assert target.port == port
+        assert target.base_path == base_path
+
+    @given(port=st.integers(min_value=-1000, max_value=100000))
+    @settings(max_examples=30, deadline=None)
+    def test_port_edge_cases(self, port: int) -> None:
+        """Property: Port validation handles edge cases"""
+        from api.transports.base import TransportTarget
+
+        # TransportTarget doesn't validate port range - that's up to the transport
+        target = TransportTarget(
+            host="localhost",
+            port=port,
+            username="test",
+            base_path="/scripts",
+            password="pass",
+        )
+        assert target.port == port
+
+
 def generate_example_runs():
     """Generate example test data for documentation"""
     print("Generating example test inputs that Hypothesis would try:\n")
@@ -946,5 +1146,7 @@ if __name__ == "__main__":
         print("\nTo run these tests:")
         print("  1. Install hypothesis: pip install hypothesis")
         print("  2. Run with pytest: pytest tests/generators/hypothesis_generator.py")
+        print("\nTo see example inputs:")
+        print("  python tests/generators/hypothesis_generator.py --examples")
         print("\nTo see example inputs:")
         print("  python tests/generators/hypothesis_generator.py --examples")

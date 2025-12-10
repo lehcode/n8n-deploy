@@ -644,6 +644,55 @@ def pull(
 @click.option("--flow-dir", type=click.Path(), help=HELP_FLOW_DIR)
 @click.option("--db-filename", type=str, help=HELP_DB_FILENAME)
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
+# Script sync options
+@click.option(
+    "--scripts",
+    type=click.Path(exists=True, file_okay=False, dir_okay=True),
+    help="Local directory containing scripts (.js, .cjs, .py) to sync",
+)
+@click.option(
+    "--scripts-base-path",
+    type=str,
+    default="/opt/n8n/scripts",
+    show_default=True,
+    help="Remote base path for scripts",
+)
+@click.option(
+    "--scripts-host",
+    type=str,
+    envvar="N8N_SCRIPTS_HOST",
+    help="Remote host for script sync [env: N8N_SCRIPTS_HOST]",
+)
+@click.option(
+    "--scripts-user",
+    type=str,
+    envvar="N8N_SCRIPTS_USER",
+    help="Remote username for script sync [env: N8N_SCRIPTS_USER]",
+)
+@click.option(
+    "--scripts-port",
+    type=int,
+    default=22,
+    show_default=True,
+    envvar="N8N_SCRIPTS_PORT",
+    help="Remote SSH port [env: N8N_SCRIPTS_PORT]",
+)
+@click.option(
+    "--scripts-key",
+    type=click.Path(exists=True),
+    envvar="N8N_SCRIPTS_KEY",
+    help="SSH key file for script sync [env: N8N_SCRIPTS_KEY]",
+)
+@click.option(
+    "--scripts-all",
+    is_flag=True,
+    help="Sync all scripts (not just git-changed ones)",
+)
+@click.option(
+    "--scripts-dry-run",
+    is_flag=True,
+    help="Show what scripts would be synced without transferring",
+)
 @click.argument("workflow_id", metavar="WORKFLOW_ID|WORKFLOW_NAME")
 def push(
     workflow_id: str,
@@ -653,6 +702,14 @@ def push(
     flow_dir: Optional[str],
     db_filename: Optional[str],
     no_emoji: bool,
+    scripts: Optional[str],
+    scripts_base_path: str,
+    scripts_host: Optional[str],
+    scripts_user: Optional[str],
+    scripts_port: int,
+    scripts_key: Optional[str],
+    scripts_all: bool,
+    scripts_dry_run: bool,
 ) -> None:
     """📤 Upload wf to n8n server
 
@@ -666,9 +723,15 @@ def push(
     Use --remote to override with server name (e.g., 'production') or URL.
     If server name is used, the linked API key will be used automatically.
 
+    Script Sync (optional):
+    Use --scripts to sync external scripts referenced by Execute Command nodes.
+    Requires --scripts-host, --scripts-user, and either --scripts-key or password.
+    Uses git to detect changed scripts (use --scripts-all to sync all).
+
     Examples:
       n8n-deploy wf push workflow-name              # Uses linked server
       n8n-deploy wf push workflow-name --remote staging  # Override to staging
+      n8n-deploy wf push workflow-name --scripts ./scripts --scripts-host n8n.example.com --scripts-user deploy --scripts-key ~/.ssh/id_rsa
     """
     try:
         config = get_config(base_folder=data_dir, flow_folder=flow_dir, db_filename=db_filename)
@@ -694,6 +757,22 @@ def push(
                 console.print(f"[red]{error_msg}[/red]")
             raise click.Abort()
 
+        # Script sync (only if workflow push succeeded and --scripts provided)
+        if scripts:
+            _sync_scripts_for_workflow(
+                config=config,
+                workflow_id=workflow_id,
+                scripts_dir=scripts,
+                scripts_base_path=scripts_base_path,
+                scripts_host=scripts_host,
+                scripts_user=scripts_user,
+                scripts_port=scripts_port,
+                scripts_key=scripts_key,
+                scripts_all=scripts_all,
+                scripts_dry_run=scripts_dry_run,
+                no_emoji=no_emoji,
+            )
+
     except click.Abort:
         raise  # Re-raise without additional message
     except Exception as e:
@@ -702,6 +781,158 @@ def push(
             console.print(error_msg)
         else:
             console.print(f"[red]{error_msg}[/red]")
+        raise click.Abort()
+
+
+def _sync_scripts_for_workflow(
+    config: AppConfig,
+    workflow_id: str,
+    scripts_dir: str,
+    scripts_base_path: str,
+    scripts_host: Optional[str],
+    scripts_user: Optional[str],
+    scripts_port: int,
+    scripts_key: Optional[str],
+    scripts_all: bool,
+    scripts_dry_run: bool,
+    no_emoji: bool,
+) -> None:
+    """Sync scripts for a workflow after push.
+
+    Args:
+        config: Application configuration
+        workflow_id: Workflow ID or name
+        scripts_dir: Local scripts directory
+        scripts_base_path: Remote base path
+        scripts_host: Remote host
+        scripts_user: Remote username
+        scripts_port: SSH port
+        scripts_key: SSH key file path
+        scripts_all: Sync all scripts (not just changed)
+        scripts_dry_run: Dry run mode
+        no_emoji: Disable emoji output
+    """
+    from ..workflow.script_sync import ScriptSyncConfig, ScriptSyncManager
+
+    # Validate required options
+    if not scripts_host:
+        error_msg = "--scripts-host is required when using --scripts"
+        if no_emoji:
+            console.print(error_msg)
+        else:
+            console.print(f"[red]{error_msg}[/red]")
+        raise click.Abort()
+
+    if not scripts_user:
+        error_msg = "--scripts-user is required when using --scripts"
+        if no_emoji:
+            console.print(error_msg)
+        else:
+            console.print(f"[red]{error_msg}[/red]")
+        raise click.Abort()
+
+    if not scripts_key:
+        error_msg = "--scripts-key is required when using --scripts"
+        if no_emoji:
+            console.print(error_msg)
+        else:
+            console.print(f"[red]{error_msg}[/red]")
+        raise click.Abort()
+
+    # Load workflow data
+    crud = WorkflowApi(config=config)
+    info = crud.crud.get_workflow_info(workflow_id)
+    if not info:
+        error_msg = f"Workflow '{workflow_id}' not found in database"
+        if no_emoji:
+            console.print(error_msg)
+        else:
+            console.print(f"[red]{error_msg}[/red]")
+        raise click.Abort()
+
+    workflow_file = info["wf"].file
+    if not workflow_file:
+        error_msg = f"Workflow '{workflow_id}' has no associated file"
+        if no_emoji:
+            console.print(error_msg)
+        else:
+            console.print(f"[red]{error_msg}[/red]")
+        raise click.Abort()
+
+    workflow_path = config.workflows_path / workflow_file
+    if not workflow_path.exists():
+        error_msg = f"Workflow file not found: {workflow_path}"
+        if no_emoji:
+            console.print(error_msg)
+        else:
+            console.print(f"[red]{error_msg}[/red]")
+        raise click.Abort()
+
+    # Load workflow JSON
+    with open(workflow_path, "r", encoding="utf-8") as f:
+        workflow_data = json.load(f)
+
+    workflow_name = workflow_data.get("name", workflow_id)
+
+    # Create sync config
+    sync_config = ScriptSyncConfig(
+        scripts_dir=Path(scripts_dir),
+        remote_base_path=scripts_base_path,
+        workflow_name=workflow_name,
+        host=scripts_host,
+        port=scripts_port,
+        username=scripts_user,
+        key_file=Path(scripts_key).expanduser() if scripts_key else None,
+        changed_only=not scripts_all,
+        dry_run=scripts_dry_run,
+    )
+
+    try:
+        sync_manager = ScriptSyncManager(sync_config)
+    except ValueError as e:
+        error_msg = f"Script sync config error: {e}"
+        if no_emoji:
+            console.print(error_msg)
+        else:
+            console.print(f"[red]{error_msg}[/red]")
+        raise click.Abort()
+
+    # Perform sync
+    if scripts_dry_run:
+        console.print("\n[yellow]Script sync dry run:[/yellow]" if not no_emoji else "\nScript sync dry run:")
+
+    result = sync_manager.sync_scripts(workflow_data)
+
+    # Report results
+    if result.success:
+        if result.scripts_synced > 0:
+            sync_msg = f"Synced {result.scripts_synced} script(s) to {scripts_host}:{scripts_base_path}/{ScriptSyncManager.sanitize_workflow_name(workflow_name)}/"
+            if no_emoji:
+                console.print(sync_msg)
+            else:
+                console.print(f"[green]✓ {sync_msg}[/green]")
+
+            for script_file in result.synced_files:
+                console.print(f"  - {script_file}")
+
+        if result.scripts_skipped > 0:
+            skip_msg = f"Skipped {result.scripts_skipped} unchanged script(s)"
+            if no_emoji:
+                console.print(skip_msg)
+            else:
+                console.print(f"[dim]{skip_msg}[/dim]")
+
+        for warning in result.warnings:
+            if no_emoji:
+                console.print(f"Warning: {warning}")
+            else:
+                console.print(f"[yellow]Warning: {warning}[/yellow]")
+    else:
+        for error in result.errors:
+            if no_emoji:
+                console.print(f"Script sync error: {error}")
+            else:
+                console.print(f"[red]Script sync error: {error}[/red]")
         raise click.Abort()
 
 

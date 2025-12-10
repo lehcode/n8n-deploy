@@ -4,14 +4,15 @@ Test runner script for n8n-deploy project
 Provides convenient way to run different test suites with various options
 """
 
-import sys
+import argparse
 import os
 import subprocess
-import argparse
+import sys
 from pathlib import Path
+from typing import Tuple, Union
 
 
-def run_command(cmd, cwd=None):
+def run_command(cmd: str, cwd: Union[str, Path, None] = None) -> Tuple[int, str, str]:
     """Run a command and return the result"""
     try:
         result = subprocess.run(cmd, shell=True, cwd=cwd, capture_output=True, text=True, check=False)
@@ -20,15 +21,19 @@ def run_command(cmd, cwd=None):
         return 1, "", str(e)
 
 
-def get_verbosity_level(quiet):
+def get_verbosity_level(quiet: bool) -> bool:
     """Determine output level: quiet=False, normal=True"""
     if quiet:
         return False
     return True  # Default to normal output level
 
 
-def check_dependencies():
-    """Check if required test dependencies are installed"""
+def check_dependencies() -> bool:
+    """Check if required test dependencies are installed
+
+    Returns:
+        bool: True if all dependencies are installed, False otherwise
+    """
     print("🔍 Checking test dependencies...")
 
     required_packages = ["pytest", "pytest-cov", "pytest-mock", "pytest-testmon"]
@@ -58,7 +63,7 @@ def check_dependencies():
     return True
 
 
-def run_unit_tests(quiet=False, coverage=False, test_class=None):
+def run_unit_tests(quiet: bool = False, coverage: bool = False, test_class: str | None = None) -> bool:
     """Run unit tests"""
     if test_class:
         print(f"🧪 Running unit tests for class: {test_class}")
@@ -106,7 +111,7 @@ def run_unit_tests(quiet=False, coverage=False, test_class=None):
     return code == 0
 
 
-def run_integration_tests(quiet=False, test_class=None):
+def run_integration_tests(quiet: bool = False, test_class: str | None = None) -> bool:
     """Run integration tests (excluding E2E manual tests)"""
     if test_class:
         print(f"🔗 Running integration tests for class: {test_class}")
@@ -156,7 +161,7 @@ def run_integration_tests(quiet=False, test_class=None):
     return code == 0
 
 
-def run_e2e_tests(quiet=False, test_class=None):
+def run_e2e_tests(quiet: bool = False, test_class: str | None = None) -> bool:
     """Run End-to-End manual tests"""
     if test_class:
         print(f"🎭 Running E2E manual tests for class: {test_class}")
@@ -206,7 +211,7 @@ def run_e2e_tests(quiet=False, test_class=None):
     return code == 0
 
 
-def run_specific_test(test_path, quiet=False):
+def run_specific_test(test_path: str, quiet: bool = False) -> bool:
     """Run a specific test file or test function"""
     print(f"🎯 Running specific test: {test_path}")
 
@@ -237,7 +242,7 @@ def run_specific_test(test_path, quiet=False):
     return code == 0
 
 
-def run_hypothesis_tests(quiet=False, show_statistics=False):
+def run_hypothesis_tests(quiet: bool = False, show_statistics: bool = False) -> bool:
     """Run property-based tests with Hypothesis"""
     print("🔬 Running property-based tests (Hypothesis)...")
 
@@ -275,7 +280,7 @@ def run_hypothesis_tests(quiet=False, show_statistics=False):
     return code == 0
 
 
-def run_generated_tests(quiet=False):
+def run_generated_tests(quiet: bool = False) -> bool:
     """Run auto-generated CLI tests"""
     print("🤖 Running auto-generated CLI tests...")
 
@@ -307,7 +312,7 @@ def run_generated_tests(quiet=False):
     return code == 0
 
 
-def run_all_tests(quiet=False, coverage=False, include_e2e=False):
+def run_all_tests(quiet: bool = False, coverage: bool = False, include_e2e: bool = False) -> bool:
     """Run all tests"""
     if include_e2e:
         print("🚀 Running all tests (including E2E)...")
@@ -348,7 +353,7 @@ def run_all_tests(quiet=False, coverage=False, include_e2e=False):
     return success
 
 
-def run_fast_tests(quiet=False):
+def run_fast_tests(quiet: bool = False) -> bool:
     """Run fast tests only (excluding slow integration tests)"""
     print("⚡ Running fast tests only...")
 
@@ -451,8 +456,12 @@ def run_affected_tests(quiet: bool = False, baseline: bool = False) -> bool:
     return code == 0
 
 
-def check_code_quality():
-    """Run code quality checks"""
+def check_code_quality() -> bool:
+    """Run code quality checks
+
+    Returns:
+        bool: True if all checks pass, False otherwise
+    """
     print("🧹 Running code quality checks...")
 
     success = True
@@ -479,8 +488,15 @@ def check_code_quality():
     return success
 
 
-def generate_test_report(include_e2e=False):
-    """Generate comprehensive test report"""
+def generate_test_report(include_e2e: bool = False) -> bool:
+    """Generate comprehensive test report
+
+    Args:
+        include_e2e: Whether to include end-to-end tests in the report
+
+    Returns:
+        bool: True if test report was generated successfully, False otherwise
+    """
     if include_e2e:
         print("📊 Generating comprehensive test report (including E2E)...")
         # Run all tests including E2E with coverage and JUnit XML output
@@ -514,7 +530,7 @@ def generate_test_report(include_e2e=False):
     return code == 0
 
 
-def main():
+def main() -> int:
     """Main test runner function"""
     parser = argparse.ArgumentParser(
         description="n8n-deploy Test Runner",

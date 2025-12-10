@@ -94,18 +94,31 @@ else
 fi
 
 echo -e "\n${GREEN}Running security scan with bandit...${NC}"
-bandit -r api/ -f json --exclude tests/ >/dev/null || {
+BANDIT_OUTPUT=$(mktemp)
+# -ll: only medium and high severity (matches pre-commit config)
+if ! bandit -r api/ -f txt --exclude tests/ > "$BANDIT_OUTPUT" 2>&1; then
     echo -e "${RED}✗ Bandit security scan failed${NC}"
+    echo -e "${YELLOW}--- Bandit Output ---${NC}"
+    cat "$BANDIT_OUTPUT"
+    echo -e "${YELLOW}---------------------${NC}"
+    rm -f "$BANDIT_OUTPUT"
     exit 1
-}
+fi
+rm -f "$BANDIT_OUTPUT"
 echo -e "${GREEN}✓ Bandit passed${NC}"
 
 echo -e "\n${GREEN}Running pattern-based security with semgrep...${NC}"
 if command -v semgrep >/dev/null 2>&1; then
-    semgrep --config=auto api/ --json --error >/dev/null || {
+    SEMGREP_OUTPUT=$(mktemp)
+    if ! semgrep --config=auto api/ --error > "$SEMGREP_OUTPUT" 2>&1; then
         echo -e "${RED}✗ Semgrep scan failed${NC}"
+        echo -e "${YELLOW}--- Semgrep Output ---${NC}"
+        cat "$SEMGREP_OUTPUT"
+        echo -e "${YELLOW}----------------------${NC}"
+        rm -f "$SEMGREP_OUTPUT"
         exit 1
-    }
+    fi
+    rm -f "$SEMGREP_OUTPUT"
     echo -e "${GREEN}✓ Semgrep passed${NC}"
 else
     echo -e "${YELLOW}⚠️  semgrep not installed. Skipping (CI requires it).${NC}"
@@ -117,18 +130,30 @@ echo -e "${YELLOW}  Phase 2: Quality Checks${NC}"
 echo -e "${YELLOW}════════════════════════════════════════${NC}"
 
 echo -e "\n${GREEN}Running type checking with mypy...${NC}"
-mypy api/ --strict --show-error-codes || {
+MYPY_OUTPUT=$(mktemp)
+if ! mypy api/ --strict --show-error-codes > "$MYPY_OUTPUT" 2>&1; then
     echo -e "${RED}✗ Type checking failed${NC}"
+    echo -e "${YELLOW}--- Mypy Output ---${NC}"
+    cat "$MYPY_OUTPUT"
+    echo -e "${YELLOW}-------------------${NC}"
+    rm -f "$MYPY_OUTPUT"
     exit 1
-}
+fi
+rm -f "$MYPY_OUTPUT"
 echo -e "${GREEN}✓ Type checking passed${NC}"
 
 echo -e "\n${GREEN}Checking code formatting with black...${NC}"
-if ! black --check api/ >/dev/null 2>&1; then
+BLACK_OUTPUT=$(mktemp)
+if ! black --check api/ > "$BLACK_OUTPUT" 2>&1; then
     echo -e "${RED}✗ Code not formatted. Run 'black api/' before pushing.${NC}"
+    echo -e "${YELLOW}--- Black Output ---${NC}"
+    cat "$BLACK_OUTPUT"
+    echo -e "${YELLOW}--------------------${NC}"
     echo -e "${YELLOW}   Tip: Pre-commit hook should auto-format on commit.${NC}"
+    rm -f "$BLACK_OUTPUT"
     exit 1
 fi
+rm -f "$BLACK_OUTPUT"
 echo -e "${GREEN}✓ Code formatting OK${NC}"
 
 echo ""
@@ -137,10 +162,16 @@ echo -e "${YELLOW}  Phase 3: Tests (Affected Only)${NC}"
 echo -e "${YELLOW}════════════════════════════════════════${NC}"
 
 echo -e "\n${GREEN}Running affected tests (pytest-testmon)...${NC}"
-python run_tests.py --affected --no-deps-check --quiet || {
+TEST_OUTPUT=$(mktemp)
+if ! python run_tests.py --affected --no-deps-check --quiet > "$TEST_OUTPUT" 2>&1; then
     echo -e "${RED}✗ Affected tests failed${NC}"
+    echo -e "${YELLOW}--- Test Output ---${NC}"
+    cat "$TEST_OUTPUT"
+    echo -e "${YELLOW}-------------------${NC}"
+    rm -f "$TEST_OUTPUT"
     exit 1
-}
+fi
+rm -f "$TEST_OUTPUT"
 echo -e "${GREEN}✓ Affected tests passed${NC}"
 
 echo ""
