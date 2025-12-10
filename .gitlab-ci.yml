@@ -317,6 +317,10 @@ quality:mypy:
     - alpine
     - linux
   needs:
+    - secret_detection
+    - dependency_scanning
+    - security:bandit
+    - security:semgrep
     - warm-cache
   rules:
     - if: '$CI_COMMIT_TAG'
@@ -341,6 +345,10 @@ quality:black:
     - alpine
     - linux
   needs:
+    - secret_detection
+    - dependency_scanning
+    - security:bandit
+    - security:semgrep
     - warm-cache
   rules:
     - if: '$CI_COMMIT_TAG'
@@ -374,6 +382,8 @@ test:unit:
   cache:
     <<: *cache_pull
   needs:
+    - quality:mypy
+    - quality:black
     - warm-cache
     - quality:mypy
     - quality:black
@@ -416,6 +426,8 @@ test:integration:
   cache:
     <<: *cache_pull
   needs:
+    - quality:mypy
+    - quality:black
     - warm-cache
     - quality:mypy
     - quality:black
@@ -444,6 +456,8 @@ test:hypothesis:
   cache:
     <<: *cache_pull
   needs:
+    - quality:mypy
+    - quality:black
     - warm-cache
     - quality:mypy
     - quality:black
@@ -548,6 +562,8 @@ test:baseline:
         - .testmondata
       policy: push
   needs:
+    - quality:mypy
+    - quality:black
     - warm-cache
   rules:
     - if: '$CI_COMMIT_TAG'
