@@ -47,6 +47,7 @@ default:
       - runner_system_failure
       - stuck_or_timeout_failure
       - scheduler_failure
+  interruptible: true
 
 # Workflow rules - define when pipeline runs
 # Push to protected branches (master/develop): full pipeline
@@ -207,8 +208,6 @@ dependency_scanning:
       when: on_success
   cache:
     <<: *cache_pull
-  needs:
-    - warm-cache
   before_script:
     - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy
     - apt-get -q update && apt-get -qy install git
@@ -218,7 +217,7 @@ dependency_scanning:
     - test -f .venv/bin/activate || uv venv --python python3 .venv
     - source .venv/bin/activate
     - test -f .venv/lib/python*/site-packages/n8n_deploy.egg-info || uv pip install --quiet -e ".[test,dev]"
-    - pip install --quiet pip-audit
+    - uv pip install --quiet pip-audit
   script:
     - echo "🔍 Running dependency vulnerability scanning..."
     - pip-audit -r requirements.txt
@@ -246,8 +245,6 @@ security:bandit:
       when: on_success
   cache:
     <<: *cache_pull
-  needs:
-    - warm-cache
   variables:
     SAST_EXCLUDED_PATHS: "tests/, .venv/"
   before_script:
@@ -273,8 +270,6 @@ security:semgrep:
     - linux
   needs:
     - warm-cache
-  dependencies:
-    - warm-cache
   rules:
     - if: '$CI_COMMIT_TAG'
       when: never
@@ -289,8 +284,6 @@ security:semgrep:
       when: on_success
   cache:
     <<: *cache_pull
-  needs:
-    - warm-cache
   variables:
     SAST_EXCLUDED_PATHS: "tests/, .venv/"
   before_script:
@@ -320,10 +313,6 @@ quality:mypy:
     - linux
   needs:
     - warm-cache
-    - secret_detection
-    - dependency_scanning
-    - security:bandit
-    - security:semgrep
   rules:
     - if: '$CI_COMMIT_TAG'
       when: never
@@ -348,10 +337,6 @@ quality:black:
     - linux
   needs:
     - warm-cache
-    - secret_detection
-    - dependency_scanning
-    - security:bandit
-    - security:semgrep
   rules:
     - if: '$CI_COMMIT_TAG'
       when: never
@@ -404,7 +389,7 @@ test:unit:
 test:integration:
   stage: test
   tags:
-    - alpine
+    - tests
     - linux
   <<: *python_setup
   cache:
@@ -429,7 +414,7 @@ test:integration:
 test:hypothesis:
   stage: test
   tags:
-    - heavy
+    - tests
     - linux
   <<: *python_setup
   cache:
@@ -466,7 +451,7 @@ test:affected:
   stage: test
   tags:
     - linux
-    - heavy
+    - tests
   cache:
     key:
       files:
@@ -480,6 +465,8 @@ test:affected:
       - .venv/
       - .testmondata
     policy: pull-push
+  needs:
+    - warm-cache
   rules:
     - if: '$CI_COMMIT_TAG'
       when: never
@@ -513,7 +500,7 @@ test:affected:
 test:baseline:
   stage: test
   tags:
-    - heavy
+    - tests
     - linux
   cache:
     key:
@@ -564,6 +551,7 @@ test:baseline:
 build:python-matrix:
   stage: build-matrix
   image: python:${PYTHON_VERSION}-slim
+  interruptible: false
   tags:
     - alpine
     - linux
@@ -579,6 +567,7 @@ build:python-matrix:
     - test:unit
     - test:integration
     - test:hypothesis
+    - test:baseline
   rules:
     - if: '$CI_COMMIT_TAG'
       when: on_success
@@ -598,7 +587,7 @@ build:python-matrix:
     - test -f .venv/bin/activate || uv venv --python python3 .venv
     - source .venv/bin/activate
     - test -f .venv/lib/python*/site-packages/n8n_deploy.egg-info || uv pip install --quiet -e ".[test,dev]"
-    - pip install --quiet build
+    - uv pip install --quiet build
   script:
     - echo "Building package for Python ${PYTHON_VERSION}..."
     - python -m build --wheel --sdist
