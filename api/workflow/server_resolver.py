@@ -188,7 +188,7 @@ class ServerResolver:
             return (server_url, api_key)
 
         # Fallback to environment variable
-        env_api_key = os.getenv("N8N_DEPLOY_SERVER_KEY")
+        env_api_key = os.getenv("N8N_API_KEY")
         self._check_expiration(env_api_key)
         return (server_url, env_api_key)
 
@@ -207,7 +207,7 @@ class ServerResolver:
             self._check_expiration(api_key)
             return (url, api_key)
 
-        env_api_key = os.getenv("N8N_DEPLOY_SERVER_KEY")
+        env_api_key = os.getenv("N8N_API_KEY")
         self._check_expiration(env_api_key)
         return (url, env_api_key)
 
