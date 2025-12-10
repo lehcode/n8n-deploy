@@ -36,6 +36,18 @@ variables:
   # Git configuration for proper versioning
   GIT_DEPTH: 0  # Full clone with all tags for setuptools_scm version detection
 
+# Global defaults for all jobs
+default:
+  image: python:3.9-slim
+  tags:
+    - python
+  retry:
+    max: 2
+    when:
+      - runner_system_failure
+      - stuck_or_timeout_failure
+      - scheduler_failure
+
 # Workflow rules - define when pipeline runs
 # Push to protected branches (master/develop): full pipeline
 # MR targeting protected branches: full pipeline
@@ -92,17 +104,12 @@ cache:
   before_script:
     - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy
     - apt-get -q update && apt-get -qy install git
-    - |
-      if [ ! -f .venv/bin/activate ]; then
-        echo "Cache miss - creating venv"
-        python -m pip install --quiet --upgrade pip
-        pip install --quiet uv
-        uv venv --python python3 .venv
-        source .venv/bin/activate
-        uv pip install --quiet -e ".[test,dev]"
-      else
-        source .venv/bin/activate
-      fi
+    - python -m pip install --quiet --upgrade pip
+    - pip install --quiet uv
+    - test -f .venv/bin/activate && echo "✓ Using cached venv" || echo "⚠ Cache miss - creating venv"
+    - test -f .venv/bin/activate || uv venv --python python3 .venv
+    - source .venv/bin/activate
+    - test -f .venv/lib/python*/site-packages/n8n_deploy.egg-info || uv pip install --quiet -e ".[test,dev]"
 
 # ============================================
 # PRE STAGE - Cache warming
@@ -110,13 +117,10 @@ cache:
 
 warm-cache:
   stage: .pre
-  image: python:3.9-slim
   # Use dualbuntu image for better performance
   tags:
-    - python
     - linux
     - heavy
-  interruptible: true
   rules:
     - if: '$CI_COMMIT_TAG'
       when: never
@@ -151,14 +155,9 @@ warm-cache:
 # Secret detection with gitleaks
 secret_detection:
   stage: security
-  image: python:3.9-slim
   tags:
-    - python
     - alpine
     - linux
-  interruptible: true
-  needs:
-    - warm-cache
   rules:
     - if: '$CI_COMMIT_TAG'
       when: never
@@ -173,6 +172,8 @@ secret_detection:
       when: on_success
   cache:
     <<: *cache_pull
+  needs:
+    - warm-cache
   variables:
     SECRET_DETECTION_EXCLUDED_PATHS: "tests/"
   before_script:
@@ -187,12 +188,9 @@ secret_detection:
 # Dependency vulnerability scanning
 dependency_scanning:
   stage: security
-  image: python:3.9-slim
   tags:
-    - python
     - alpine
     - linux
-  interruptible: true
   needs:
     - warm-cache
   rules:
@@ -211,18 +209,13 @@ dependency_scanning:
     <<: *cache_pull
   before_script:
     - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy
-    - apt-get -q update
-    - |
-      if [ ! -f .venv/bin/activate ]; then
-        echo "Cache miss - creating venv"
-        python -m pip install --quiet --upgrade pip
-        pip install --quiet uv
-        uv venv --python python3 .venv
-        source .venv/bin/activate
-        uv pip install --quiet -e ".[test,dev]"
-      else
-        source .venv/bin/activate
-      fi
+    - apt-get -q update && apt-get -qy install git
+    - python -m pip install --quiet --upgrade pip
+    - pip install --quiet uv
+    - test -f .venv/bin/activate && echo "✓ Using cached venv" || echo "⚠ Cache miss - creating venv"
+    - test -f .venv/bin/activate || uv venv --python python3 .venv
+    - source .venv/bin/activate
+    - test -f .venv/lib/python*/site-packages/n8n_deploy.egg-info || uv pip install --quiet -e ".[test,dev]"
     - pip install --quiet pip-audit
   script:
     - echo "🔍 Running dependency vulnerability scanning..."
@@ -232,12 +225,9 @@ dependency_scanning:
 # Python security scanning with Bandit
 security:bandit:
   stage: security
-  image: python:3.9-slim
   tags:
-    - python
     - alpine
     - linux
-  interruptible: true
   needs:
     - warm-cache
   rules:
@@ -259,17 +249,12 @@ security:bandit:
   before_script:
     - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy
     - apt-get -q update && apt-get -qy install git
-    - |
-      if [ ! -f .venv/bin/activate ]; then
-        echo "Cache miss - creating venv"
-        python -m pip install --quiet --upgrade pip
-        pip install --quiet uv
-        uv venv --python python3 .venv
-        source .venv/bin/activate
-        uv pip install --quiet -e ".[test,dev]"
-      else
-        source .venv/bin/activate
-      fi
+    - python -m pip install --quiet --upgrade pip
+    - pip install --quiet uv
+    - test -f .venv/bin/activate && echo "✓ Using cached venv" || echo "⚠ Cache miss - creating venv"
+    - test -f .venv/bin/activate || uv venv --python python3 .venv
+    - source .venv/bin/activate
+    - test -f .venv/lib/python*/site-packages/n8n_deploy.egg-info || uv pip install --quiet -e ".[test,dev]"
     - pip install --quiet bandit
   script:
     - echo "🔍 Running Python security analysis with Bandit..."
@@ -279,13 +264,12 @@ security:bandit:
 # Pattern-based security scanning with Semgrep
 security:semgrep:
   stage: security
-  image: python:3.9-slim
   tags:
-    - python
     - alpine
     - linux
-  interruptible: true
   needs:
+    - warm-cache
+  dependencies:
     - warm-cache
   rules:
     - if: '$CI_COMMIT_TAG'
@@ -306,17 +290,12 @@ security:semgrep:
   before_script:
     - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy
     - apt-get -q update && apt-get -qy install git
-    - |
-      if [ ! -f .venv/bin/activate ]; then
-        echo "Cache miss - creating venv"
-        python -m pip install --quiet --upgrade pip
-        pip install --quiet uv
-        uv venv --python python3 .venv
-        source .venv/bin/activate
-        uv pip install --quiet -e ".[test,dev]"
-      else
-        source .venv/bin/activate
-      fi
+    - python -m pip install --quiet --upgrade pip
+    - pip install --quiet uv
+    - test -f .venv/bin/activate && echo "✓ Using cached venv" || echo "⚠ Cache miss - creating venv"
+    - test -f .venv/bin/activate || uv venv --python python3 .venv
+    - source .venv/bin/activate
+    - test -f .venv/lib/python*/site-packages/n8n_deploy.egg-info || uv pip install --quiet -e ".[test,dev]"
     - pip install --quiet semgrep
   script:
     - echo "🔍 Running pattern-based security analysis with Semgrep..."
@@ -330,24 +309,22 @@ security:semgrep:
 # Type checking with mypy
 quality:mypy:
   stage: quality
-  image: python:3.9-slim
   tags:
-    - python
     - alpine
     - linux
-  interruptible: true
   needs:
     - warm-cache
+    - secret_detection
+    - dependency_scanning
+    - security:bandit
+    - security:semgrep
   rules:
     - if: '$CI_COMMIT_TAG'
       when: never
-    # Skip on MR pipelines (already ran on feature branch push)
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
       when: never
-    # Run on conventional commit branches (feature branch push)
     - if: '$CI_COMMIT_BRANCH =~ /^(feat|fix|chore|refactor|docs|test|style|perf|ci|build)\//'
       when: on_success
-    # Run on protected branches (post-merge)
     - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
       when: on_success
   <<: *python_setup
@@ -360,14 +337,15 @@ quality:mypy:
 # Code formatting check with black
 quality:black:
   stage: quality
-  image: python:3.9-slim
   tags:
-    - python
     - alpine
     - linux
-  interruptible: true
   needs:
     - warm-cache
+    - secret_detection
+    - dependency_scanning
+    - security:bandit
+    - security:semgrep
   rules:
     - if: '$CI_COMMIT_TAG'
       when: never
@@ -394,12 +372,9 @@ quality:black:
 # Unit tests
 test:unit:
   stage: test
-  image: python:3.9-slim
   tags:
-    - python
     - alpine
     - linux
-  interruptible: true
   cache:
     <<: *cache_pull
   needs:
@@ -411,20 +386,7 @@ test:unit:
       when: never
     - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
       when: on_success
-  before_script:
-    - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy
-    - apt-get -q update && apt-get -qy install git
-    - |
-      if [ ! -f .venv/bin/activate ]; then
-        echo "Cache miss - creating venv"
-        python -m pip install --quiet --upgrade pip
-        pip install --quiet uv
-        uv venv --python python3 .venv
-        source .venv/bin/activate
-        uv pip install --quiet -e ".[test,dev]"
-      else
-        source .venv/bin/activate
-      fi
+  <<: *python_setup
   script:
     - export N8N_DEPLOY_TESTING=1
     - python -m pytest tests/unit/ -rs --tb=short -q
@@ -433,12 +395,9 @@ test:unit:
 # Integration tests
 test:integration:
   stage: test
-  image: python:3.9-slim
   tags:
-    - python
     - alpine
     - linux
-  interruptible: true
   <<: *python_setup
   cache:
     <<: *cache_pull
@@ -459,12 +418,9 @@ test:integration:
 # Property-based tests with Hypothesis
 test:hypothesis:
   stage: test
-  image: python:3.9-slim
   tags:
-    - python
     - heavy
     - linux
-  interruptible: true
   <<: *python_setup
   cache:
     <<: *cache_pull
@@ -496,12 +452,9 @@ test:hypothesis:
 # Affected tests for merge request pipelines
 test:affected:
   stage: test
-  image: python:3.9-slim
   tags:
-    - python
     - linux
     - heavy
-  interruptible: true
   cache:
     key:
       files:
@@ -515,8 +468,6 @@ test:affected:
       - .venv/
       - .testmondata
     policy: pull-push
-  needs:
-    - warm-cache
   rules:
     - if: '$CI_COMMIT_TAG'
       when: never
@@ -526,26 +477,19 @@ test:affected:
   before_script:
     - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy
     - apt-get -q update && apt-get -qy install git
-    - |
-      if [ ! -f .venv/bin/activate ]; then
-        echo "Cache miss - creating venv"
-        pip install --quiet uv
-        uv venv --python python3 .venv
-        source .venv/bin/activate
-        uv pip install --quiet -e ".[test,dev]"
-      else
-        source .venv/bin/activate
-      fi
+    - python -m pip install --quiet --upgrade pip
+    - pip install --quiet uv
+    - test -f .venv/bin/activate && echo "✓ Using cached venv" || echo "⚠ Cache miss - creating venv"
+    - test -f .venv/bin/activate || uv venv --python python3 .venv
+    - source .venv/bin/activate
+    - test -f .venv/lib/python*/site-packages/n8n_deploy.egg-info || uv pip install --quiet -e ".[test,dev]"
   script:
     - export N8N_DEPLOY_TESTING=1
-    - |
-      if [ -f .testmondata ]; then
-        echo "Using cached testmon database"
-        python -m pytest tests/ --ignore=tests/integration/test_e2e_manual_cli.py --ignore=tests/integration/test_e2e_manual_database.py --ignore=tests/integration/test_e2e_manual_apikeys.py --ignore=tests/integration/test_e2e_manual_workflows.py --ignore=tests/integration/test_e2e_manual_server.py --testmon -rs --tb=short -q
-      else
-        echo "No testmon baseline found - building baseline"
-        python -m pytest tests/ --ignore=tests/integration/test_e2e_manual_cli.py --ignore=tests/integration/test_e2e_manual_database.py --ignore=tests/integration/test_e2e_manual_apikeys.py --ignore=tests/integration/test_e2e_manual_workflows.py --ignore=tests/integration/test_e2e_manual_server.py --testmon-noselect -rs --tb=short -q
-      fi
+    - test -f .testmondata && echo "Using cached testmon database" || echo "No testmon baseline found - building baseline"
+    - >
+      test -f .testmondata &&
+      python -m pytest tests/ --ignore=tests/integration/test_e2e_manual_cli.py --ignore=tests/integration/test_e2e_manual_database.py --ignore=tests/integration/test_e2e_manual_apikeys.py --ignore=tests/integration/test_e2e_manual_workflows.py --ignore=tests/integration/test_e2e_manual_server.py --testmon -rs --tb=short -q ||
+      python -m pytest tests/ --ignore=tests/integration/test_e2e_manual_cli.py --ignore=tests/integration/test_e2e_manual_database.py --ignore=tests/integration/test_e2e_manual_apikeys.py --ignore=tests/integration/test_e2e_manual_workflows.py --ignore=tests/integration/test_e2e_manual_server.py --testmon-noselect -rs --tb=short -q
     - echo "Affected tests completed"
   artifacts:
     paths:
@@ -556,12 +500,9 @@ test:affected:
 # Generate testmon baseline on protected branches
 test:baseline:
   stage: test
-  image: python:3.9-slim
   tags:
-    - python
     - heavy
     - linux
-  interruptible: true
   cache:
     key:
       files:
@@ -586,16 +527,12 @@ test:baseline:
   before_script:
     - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy
     - apt-get -q update && apt-get -qy install git
-    - |
-      if [ ! -f .venv/bin/activate ]; then
-        echo "Cache miss - creating venv"
-        pip install --quiet uv
-        uv venv --python python3 .venv
-        source .venv/bin/activate
-        uv pip install --quiet -e ".[test,dev]"
-      else
-        source .venv/bin/activate
-      fi
+    - python -m pip install --quiet --upgrade pip
+    - pip install --quiet uv
+    - test -f .venv/bin/activate && echo "✓ Using cached venv" || echo "⚠ Cache miss - creating venv"
+    - test -f .venv/bin/activate || uv venv --python python3 .venv
+    - source .venv/bin/activate
+    - test -f .venv/lib/python*/site-packages/n8n_deploy.egg-info || uv pip install --quiet -e ".[test,dev]"
   script:
     - export N8N_DEPLOY_TESTING=1
     - echo "Building testmon baseline database..."
@@ -616,10 +553,8 @@ build:python-matrix:
   stage: build-matrix
   image: python:${PYTHON_VERSION}-slim
   tags:
-    - python
     - alpine
     - linux
-  interruptible: true
   cache:
     key:
       files:
@@ -629,10 +564,9 @@ build:python-matrix:
       - .cache/pip/
       - .venv/
   needs:
-    - job: test:unit
-      optional: true
-    - job: test:integration
-      optional: true
+    - test:unit
+    - test:integration
+    - test:hypothesis
   rules:
     - if: '$CI_COMMIT_TAG'
       when: on_success
@@ -648,11 +582,12 @@ build:python-matrix:
     - apt-get -q update && apt-get -qy install git
     - python -m pip install --quiet --upgrade pip
     - pip install --quiet uv
-  script:
-    - uv venv --python python3 .venv
+    - test -f .venv/bin/activate && echo "✓ Using cached venv for Python ${PYTHON_VERSION}" || echo "⚠ Cache miss - creating venv for Python ${PYTHON_VERSION}"
+    - test -f .venv/bin/activate || uv venv --python python3 .venv
     - source .venv/bin/activate
-    - uv pip install --quiet -e ".[test,dev]"
-    - uv pip install --quiet build
+    - test -f .venv/lib/python*/site-packages/n8n_deploy.egg-info || uv pip install --quiet -e ".[test,dev]"
+    - pip install --quiet build
+  script:
     - echo "Building package for Python ${PYTHON_VERSION}..."
     - python -m build --wheel --sdist
     - pip install dist/*.whl

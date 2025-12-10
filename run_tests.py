@@ -9,7 +9,7 @@ import os
 import subprocess
 import sys
 from pathlib import Path
-from typing import Tuple, Union
+from typing import Optional, Tuple, Union
 
 
 def run_command(cmd: str, cwd: Union[str, Path, None] = None) -> Tuple[int, str, str]:
@@ -63,7 +63,7 @@ def check_dependencies() -> bool:
     return True
 
 
-def run_unit_tests(quiet: bool = False, coverage: bool = False, test_class: str | None = None) -> bool:
+def run_unit_tests(quiet: bool = False, coverage: bool = False, test_class: Optional[str] = None) -> bool:
     """Run unit tests"""
     if test_class:
         print(f"🧪 Running unit tests for class: {test_class}")
@@ -111,7 +111,7 @@ def run_unit_tests(quiet: bool = False, coverage: bool = False, test_class: str 
     return code == 0
 
 
-def run_integration_tests(quiet: bool = False, test_class: str | None = None) -> bool:
+def run_integration_tests(quiet: bool = False, test_class: Optional[str] = None) -> bool:
     """Run integration tests (excluding E2E manual tests)"""
     if test_class:
         print(f"🔗 Running integration tests for class: {test_class}")
@@ -161,7 +161,7 @@ def run_integration_tests(quiet: bool = False, test_class: str | None = None) ->
     return code == 0
 
 
-def run_e2e_tests(quiet: bool = False, test_class: str | None = None) -> bool:
+def run_e2e_tests(quiet: bool = False, test_class: Optional[str] = None) -> bool:
     """Run End-to-End manual tests"""
     if test_class:
         print(f"🎭 Running E2E manual tests for class: {test_class}")
