@@ -47,6 +47,7 @@ default:
       - runner_system_failure
       - stuck_or_timeout_failure
       - scheduler_failure
+  interruptible: true
 
 # Workflow rules - define when pipeline runs
 # Push to protected branches (master/develop): full pipeline
@@ -216,7 +217,7 @@ dependency_scanning:
     - test -f .venv/bin/activate || uv venv --python python3 .venv
     - source .venv/bin/activate
     - test -f .venv/lib/python*/site-packages/n8n_deploy.egg-info || uv pip install --quiet -e ".[test,dev]"
-    - pip install --quiet pip-audit
+    - uv pip install --quiet pip-audit
   script:
     - echo "🔍 Running dependency vulnerability scanning..."
     - pip-audit -r requirements.txt
@@ -388,7 +389,7 @@ test:unit:
 test:integration:
   stage: test
   tags:
-    - alpine
+    - tests
     - linux
   <<: *python_setup
   cache:
@@ -413,7 +414,7 @@ test:integration:
 test:hypothesis:
   stage: test
   tags:
-    - heavy
+    - tests
     - linux
   <<: *python_setup
   cache:
@@ -450,7 +451,7 @@ test:affected:
   stage: test
   tags:
     - linux
-    - heavy
+    - tests
   cache:
     key:
       files:
@@ -499,7 +500,7 @@ test:affected:
 test:baseline:
   stage: test
   tags:
-    - heavy
+    - tests
     - linux
   cache:
     key:
@@ -550,6 +551,7 @@ test:baseline:
 build:python-matrix:
   stage: build-matrix
   image: python:${PYTHON_VERSION}-slim
+  interruptible: false
   tags:
     - alpine
     - linux
@@ -585,7 +587,7 @@ build:python-matrix:
     - test -f .venv/bin/activate || uv venv --python python3 .venv
     - source .venv/bin/activate
     - test -f .venv/lib/python*/site-packages/n8n_deploy.egg-info || uv pip install --quiet -e ".[test,dev]"
-    - pip install --quiet build
+    - uv pip install --quiet build
   script:
     - echo "Building package for Python ${PYTHON_VERSION}..."
     - python -m build --wheel --sdist
