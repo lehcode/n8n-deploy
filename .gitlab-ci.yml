@@ -109,7 +109,7 @@ cache:
     - test -f .venv/bin/activate && echo "✓ Using cached venv" || echo "⚠ Cache miss - creating venv"
     - test -f .venv/bin/activate || uv venv --python python3 .venv
     - source .venv/bin/activate
-    - test -f .venv/lib/python*/site-packages/n8n_deploy.egg-info || uv pip install --quiet -e ".[test,dev]"
+    - uv pip install --quiet -e ".[test,dev]"
 
 # ============================================
 # PRE STAGE - Cache warming
@@ -319,10 +319,6 @@ quality:mypy:
     - alpine
     - linux
   needs:
-    - secret_detection
-    - dependency_scanning
-    - security:bandit
-    - security:semgrep
     - warm-cache
     - secret_detection
     - dependency_scanning
@@ -351,10 +347,6 @@ quality:black:
     - alpine
     - linux
   needs:
-    - secret_detection
-    - dependency_scanning
-    - security:bandit
-    - security:semgrep
     - warm-cache
     - secret_detection
     - dependency_scanning
