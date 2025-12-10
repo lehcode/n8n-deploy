@@ -207,8 +207,6 @@ dependency_scanning:
       when: on_success
   cache:
     <<: *cache_pull
-  needs:
-    - warm-cache
   before_script:
     - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy
     - apt-get -q update && apt-get -qy install git
@@ -246,8 +244,6 @@ security:bandit:
       when: on_success
   cache:
     <<: *cache_pull
-  needs:
-    - warm-cache
   variables:
     SAST_EXCLUDED_PATHS: "tests/, .venv/"
   before_script:
@@ -287,8 +283,6 @@ security:semgrep:
       when: on_success
   cache:
     <<: *cache_pull
-  needs:
-    - warm-cache
   variables:
     SAST_EXCLUDED_PATHS: "tests/, .venv/"
   before_script:
