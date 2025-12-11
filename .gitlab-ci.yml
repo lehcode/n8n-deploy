@@ -606,10 +606,11 @@ build:python-matrix:
 # Release candidate tags on develop branch (vX.Y.Z-rcN format)
 release:rc:
   stage: release
-  image: registry.gitlab.com/juhani/go-semrel-gitlab:v0.21.1
+  image: alpine:3.19
   tags:
     - alpine
     - linux
+  cache: {}  # Disable cache - not needed for release
   needs:
     - job: build:python-matrix
       artifacts: false
@@ -625,6 +626,9 @@ release:rc:
     GSG_TOKEN: $GITLAB_TOKEN
     GSG_PRE_TMPL: "rc{{ seq }}"
   before_script:
+    - apk add --no-cache git curl
+    - curl -sL "https://gitlab.com/juhani/go-semrel-gitlab/-/releases/v0.21.1/downloads/release-linux-amd64" -o /usr/local/bin/release
+    - chmod +x /usr/local/bin/release
     - git config --global http.sslVerify false
     - git fetch --tags
   script:
@@ -642,10 +646,11 @@ release:rc:
 # Production release tags on master branch (vX.Y.Z format)
 release:production:
   stage: release
-  image: registry.gitlab.com/juhani/go-semrel-gitlab:v0.21.1
+  image: alpine:3.19
   tags:
     - alpine
     - linux
+  cache: {}  # Disable cache - not needed for release
   needs:
     - job: build:python-matrix
       artifacts: false
@@ -660,6 +665,9 @@ release:production:
     GIT_SSL_NO_VERIFY: "1"
     GSG_TOKEN: $GITLAB_TOKEN
   before_script:
+    - apk add --no-cache git curl
+    - curl -sL "https://gitlab.com/juhani/go-semrel-gitlab/-/releases/v0.21.1/downloads/release-linux-amd64" -o /usr/local/bin/release
+    - chmod +x /usr/local/bin/release
     - git config --global http.sslVerify false
     - git fetch --tags
   script:
