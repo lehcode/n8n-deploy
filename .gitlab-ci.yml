@@ -632,7 +632,7 @@ build:python-matrix:
 # Release candidate tags on develop branch
 release:rc:
   stage: release
-  image: registry.gitlab.com/juhani/go-semrel-gitlab:v0.21.1
+  image: alpine:3.19
   tags:
     - alpine
     - linux
@@ -663,7 +663,7 @@ release:rc:
 # Production release tags on master branch
 release:production:
   stage: release
-  image: registry.gitlab.com/juhani/go-semrel-gitlab:v0.21.1
+  image: alpine:3.19
   tags:
     - alpine
     - linux
