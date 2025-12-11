@@ -628,7 +628,7 @@ release:rc:
     GSG_PRE_TMPL: 'rc,{{ seq }}'
   script:
     - echo "Calculating next RC version..."
-    - NEXT_VERSION=$(release next-version --allow-current)
+    - NEXT_VERSION=$(release --skip-ssl-verify next-version --allow-current)
     - echo "Next version - ${NEXT_VERSION}"
     # Note: setuptools_scm normalizes v0.3.0-rc.2 -> 0.3.0rc2 (PEP 440)
     - if [ -n "$NEXT_VERSION" ]; then echo "Creating RC tag v${NEXT_VERSION}..." && release tag; else echo "No version bump needed"; fi
@@ -656,6 +656,6 @@ release:production:
     GSG_TOKEN: $GITLAB_TOKEN
   script:
     - echo "Calculating next production version..."
-    - NEXT_VERSION=$(release next-version --allow-current)
+    - NEXT_VERSION=$(release --skip-ssl-verify next-version --allow-current)
     - echo "Next version - ${NEXT_VERSION}"
     - if [ -n "$NEXT_VERSION" ]; then echo "Creating release tag v${NEXT_VERSION}..." && release tag; else echo "No version bump needed"; fi
