@@ -631,7 +631,7 @@ release:rc:
     - NEXT_VERSION=$(release next-version --allow-current)
     - echo "Next version - ${NEXT_VERSION}"
     # Note: setuptools_scm normalizes v0.3.0-rc.2 -> 0.3.0rc2 (PEP 440)
-    - if [ -n "$NEXT_VERSION" ]; then echo "Creating RC tag v${NEXT_VERSION}..." && release tag --allow-current; else echo "No version bump needed"; fi
+    - if [ -n "$NEXT_VERSION" ]; then echo "Creating RC tag v${NEXT_VERSION}..." && release tag; else echo "No version bump needed"; fi
 
 # Production release tags on master branch (vX.Y.Z format)
 release:production:
@@ -658,4 +658,4 @@ release:production:
     - echo "Calculating next production version..."
     - NEXT_VERSION=$(release next-version --allow-current)
     - echo "Next version - ${NEXT_VERSION}"
-    - if [ -n "$NEXT_VERSION" ]; then echo "Creating release tag v${NEXT_VERSION}..." && release tag --allow-current; else echo "No version bump needed"; fi
+    - if [ -n "$NEXT_VERSION" ]; then echo "Creating release tag v${NEXT_VERSION}..." && release tag; else echo "No version bump needed"; fi
