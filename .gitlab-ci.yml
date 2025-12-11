@@ -603,10 +603,10 @@ build:python-matrix:
 # RELEASE STAGE (automatic versioning with go-semrel-gitlab)
 # ============================================
 
-# Release candidate tags on develop branch (vX.Y.Z-rcN format)
+# Release candidate tags on develop branch (vX.Y.ZrcN format - PEP 440)
 release:rc:
   stage: release
-  image: alpine:3.19
+  image: registry.gitlab.com/juhani/go-semrel-gitlab:v0.21.1
   tags:
     - alpine
     - linux
@@ -624,29 +624,19 @@ release:rc:
   variables:
     GIT_SSL_NO_VERIFY: "1"
     GSG_TOKEN: $GITLAB_TOKEN
-    GSG_PRE_TMPL: "rc{{ seq }}"
-  before_script:
-    - apk add --no-cache git curl
-    - curl -sL "https://gitlab.com/juhani/go-semrel-gitlab/-/releases/v0.21.1/downloads/release-linux-amd64" -o /usr/local/bin/release
-    - chmod +x /usr/local/bin/release
-    - git config --global http.sslVerify false
-    - git fetch --tags
+    GSG_RELEASE_BRANCHES: master
+    GSG_PRE_TMPL: 'rc,{{ seq }}'
   script:
     - echo "Calculating next RC version..."
     - NEXT_VERSION=$(release next-version --allow-current)
-    - echo "Next version would be ${NEXT_VERSION}"
-    - |
-      if [ -n "$NEXT_VERSION" ]; then
-        echo "Creating RC tag v${NEXT_VERSION}..."
-        release tag --allow-current
-      else
-        echo "No version bump needed"
-      fi
+    - echo "Next version - ${NEXT_VERSION}"
+    # Note: setuptools_scm normalizes v0.3.0-rc.2 -> 0.3.0rc2 (PEP 440)
+    - if [ -n "$NEXT_VERSION" ]; then echo "Creating RC tag v${NEXT_VERSION}..." && release tag --allow-current; else echo "No version bump needed"; fi
 
 # Production release tags on master branch (vX.Y.Z format)
 release:production:
   stage: release
-  image: alpine:3.19
+  image: registry.gitlab.com/juhani/go-semrel-gitlab:v0.21.1
   tags:
     - alpine
     - linux
@@ -664,20 +654,8 @@ release:production:
   variables:
     GIT_SSL_NO_VERIFY: "1"
     GSG_TOKEN: $GITLAB_TOKEN
-  before_script:
-    - apk add --no-cache git curl
-    - curl -sL "https://gitlab.com/juhani/go-semrel-gitlab/-/releases/v0.21.1/downloads/release-linux-amd64" -o /usr/local/bin/release
-    - chmod +x /usr/local/bin/release
-    - git config --global http.sslVerify false
-    - git fetch --tags
   script:
     - echo "Calculating next production version..."
     - NEXT_VERSION=$(release next-version --allow-current)
-    - echo "Next version would be ${NEXT_VERSION}"
-    - |
-      if [ -n "$NEXT_VERSION" ]; then
-        echo "Creating release tag v${NEXT_VERSION}..."
-        release tag --allow-current
-      else
-        echo "No version bump needed"
-      fi
+    - echo "Next version - ${NEXT_VERSION}"
+    - if [ -n "$NEXT_VERSION" ]; then echo "Creating release tag v${NEXT_VERSION}..." && release tag --allow-current; else echo "No version bump needed"; fi
