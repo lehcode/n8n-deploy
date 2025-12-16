@@ -476,7 +476,7 @@ test:affected:
     - key: testmondata-baseline
       paths:
         - .testmondata
-      policy: pull
+      policy: pull-push
   needs:
     - warm-cache
   rules:
