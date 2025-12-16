@@ -136,7 +136,6 @@ warm-cache:
     paths:
       - .cache/pip/
       - .venv/
-      - .testmondata
     policy: pull-push
   before_script:
     - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy
@@ -462,27 +461,29 @@ test:affected:
     - linux
     - tests
   cache:
-    key:
-      files:
-        - requirements.txt
-      prefix: ${CI_COMMIT_REF_SLUG}
-    fallback_keys:
-      - develop
-      - master
-    paths:
-      - .cache/pip/
-      - .venv/
-      - .testmondata
-    policy: pull-push
+    # Use multiple caches: venv (branch-specific) + testmondata (shared)
+    - key:
+        files:
+          - requirements.txt
+        prefix: ${CI_COMMIT_REF_SLUG}
+      fallback_keys:
+        - develop
+        - master
+      paths:
+        - .cache/pip/
+        - .venv/
+      policy: pull
+    - key: testmondata-baseline
+      paths:
+        - .testmondata
+      policy: pull
   needs:
     - warm-cache
   rules:
     - if: '$CI_COMMIT_TAG'
       when: never
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-      when: never
-    # Run affected tests on develop/master after merge (uses baseline)
-    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
+    # Run affected tests on MR pipelines (fast validation)
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && ($CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master" || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop")'
       when: on_success
   before_script:
     - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy
@@ -511,25 +512,31 @@ test:baseline:
     - tests
     - linux
   cache:
-    key:
-      files:
-        - requirements.txt
-      prefix: ${CI_COMMIT_REF_SLUG}
-    fallback_keys:
-      - develop
-      - master
-    paths:
-      - .cache/pip/
-      - .venv/
-      - .testmondata
-    policy: pull-push
+    # Use multiple caches: venv (branch-specific) + testmondata (shared, push)
+    - key:
+        files:
+          - requirements.txt
+        prefix: ${CI_COMMIT_REF_SLUG}
+      fallback_keys:
+        - develop
+        - master
+      paths:
+        - .cache/pip/
+        - .venv/
+      policy: pull
+    - key: testmondata-baseline
+      paths:
+        - .testmondata
+      policy: push
   needs:
     - warm-cache
   rules:
     - if: '$CI_COMMIT_TAG'
       when: on_success
-    # Run on MR pipelines to build/update baseline
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && ($CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master" || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop")'
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: never
+    # Run on develop/master to build/update baseline after merge
+    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
       when: on_success
   before_script:
     - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy
