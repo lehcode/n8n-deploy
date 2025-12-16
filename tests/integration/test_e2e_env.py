@@ -171,7 +171,7 @@ class TestE2EEnv(E2ETestBase):
 
     def test_env_masks_api_key(self) -> None:
         """Test that env command masks API key values"""
-        env = {"N8N_DEPLOY_SERVER_KEY": "secret_api_key_should_be_hidden"}
+        env = {"N8N_API_KEY": "secret_api_key_should_be_hidden"}
 
         returncode, stdout, stderr = self.run_cli_command(["env", "--json"], env=env)
 
@@ -179,8 +179,8 @@ class TestE2EEnv(E2ETestBase):
 
         # Verify API key is masked
         data = json.loads(stdout)
-        assert "N8N_DEPLOY_SERVER_KEY" in data["variables"]
-        assert data["variables"]["N8N_DEPLOY_SERVER_KEY"]["value"] == "***"
+        assert "N8N_API_KEY" in data["variables"]
+        assert data["variables"]["N8N_API_KEY"]["value"] == "***"
         assert "secret_api_key_should_be_hidden" not in stdout
 
     def test_env_defaults_to_cwd_when_app_dir_invalid(self) -> None:

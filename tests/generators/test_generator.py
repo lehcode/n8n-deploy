@@ -51,7 +51,7 @@ def get_param_type_name(param: click.Parameter) -> str:
         return "int"
     elif isinstance(param.type, click.types.BoolParamType):
         return "bool"
-    elif param.is_flag:
+    elif isinstance(param, click.Option) and param.is_flag:
         return "flag"
     else:
         return "string"
@@ -98,7 +98,6 @@ def generate_test_scenarios(command_path: List[str], command: click.Command) -> 
     # Test 3: Test each option individually
     for option in options:
         param_name = option.name.replace("_", "-")
-        param_type = get_param_type_name(option)
 
         # Skip global flags that are handled elsewhere
         if option.name in ["app_dir", "flow_dir", "server_url", "no_emoji"]:
@@ -235,7 +234,7 @@ def {scenario['name']}():
     return code
 
 
-def main():
+def main() -> None:
     """Generate test scenarios for all CLI commands"""
     print("🔍 Introspecting CLI commands...")
 

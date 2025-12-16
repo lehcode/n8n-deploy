@@ -1,0 +1,101 @@
+@startuml packages_n8n_deploy
+set namespaceSeparator none
+package "api" as api {
+}
+package "api.api_keys" as api.api_keys {
+}
+package "api.cli" as api.cli {
+}
+package "api.cli.__main__" as api.cli.__main__ {
+}
+package "api.cli.apikey" as api.cli.apikey {
+}
+package "api.cli.app" as api.cli.app {
+}
+package "api.cli.db" as api.cli.db {
+}
+package "api.cli.env" as api.cli.env {
+}
+package "api.cli.output" as api.cli.output {
+}
+package "api.cli.server" as api.cli.server {
+}
+package "api.cli.wf" as api.cli.wf {
+}
+package "api.config" as api.config {
+}
+package "api.db" as api.db {
+}
+package "api.db.apikeys" as api.db.apikeys {
+}
+package "api.db.backup" as api.db.backup {
+}
+package "api.db.base" as api.db.base {
+}
+package "api.db.core" as api.db.core {
+}
+package "api.db.schema" as api.db.schema {
+}
+package "api.db.servers" as api.db.servers {
+}
+package "api.jwt_utils" as api.jwt_utils {
+}
+package "api.models" as api.models {
+}
+package "api.workflow" as api.workflow {
+}
+package "api.workflow.crud" as api.workflow.crud {
+}
+package "api.workflow.main" as api.workflow.main {
+}
+package "api.workflow.n8n_api" as api.workflow.n8n_api {
+}
+api --> api.db
+api --> api.models
+api --> api.workflow
+api.api_keys --> api.config
+api.api_keys --> api.db
+api.api_keys --> api.db.apikeys
+api.cli --> api.cli.app
+api.cli.__main__ --> api.cli.app
+api.cli.apikey --> api.cli.app
+api.cli.apikey --> api.cli.db
+api.cli.apikey --> api.cli.db
+api.cli.apikey --> api.cli.output
+api.cli.app --> api
+api.cli.app --> api.cli.apikey
+api.cli.app --> api.cli.db
+api.cli.app --> api.cli.env
+api.cli.app --> api.cli.server
+api.cli.app --> api.cli.wf
+api.cli.db --> api.cli.app
+api.cli.db --> api.cli.db
+api.cli.env --> api.cli.app
+api.cli.server --> api.cli.app
+api.cli.server --> api.cli.db
+api.cli.server --> api.cli.output
+api.cli.wf --> api.cli.app
+api.cli.wf --> api.cli.db
+api.cli.wf --> api.cli.output
+api.cli.wf --> api.db.servers
+api.db --> api.db.apikeys
+api.db --> api.db.backup
+api.db --> api.db.core
+api.db --> api.db.schema
+api.db.apikeys --> api.db.base
+api.db.backup --> api.db.base
+api.db.backup --> api.db.schema
+api.db.core --> api.config
+api.db.core --> api.db.base
+api.db.core --> api.db.schema
+api.db.core --> api.models
+api.db.schema --> api.db.base
+api.db.servers --> api.db.base
+api.workflow --> api.workflow.crud
+api.workflow --> api.workflow.main
+api.workflow --> api.workflow.n8n_api
+api.workflow.main --> api.workflow.crud
+api.workflow.main --> api.workflow.n8n_api
+api.workflow.n8n_api --> api.models
+api.workflow.n8n_api --> api.workflow.crud
+@enduml
