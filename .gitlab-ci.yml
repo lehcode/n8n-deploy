@@ -136,6 +136,7 @@ warm-cache:
     paths:
       - .cache/pip/
       - .venv/
+      - .testmondata
     policy: pull-push
   before_script:
     - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy
