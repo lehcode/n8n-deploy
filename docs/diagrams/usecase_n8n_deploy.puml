@@ -1,0 +1,98 @@
+@startuml n8n-deploy-usecases
+left to right direction
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
+
+title n8n-deploy Use Case Diagram
+
+actor "CLI User" as user
+actor "n8n Server" as n8n <<external>>
+database "SQLite DB" as db <<system>>
+
+rectangle "n8n-deploy" {
+  package "Workflow Management" {
+    usecase "Add workflow" as WF_ADD
+    usecase "List workflows" as WF_LIST
+    usecase "Remove workflow" as WF_REMOVE
+    usecase "Search workflows" as WF_SEARCH
+    usecase "Show statistics" as WF_STATS
+    usecase "Push to server" as WF_PUSH
+    usecase "Pull from server" as WF_PULL
+    usecase "List server workflows" as WF_SERVER
+  }
+
+  package "Database Management" {
+    usecase "Initialize DB" as DB_INIT
+    usecase "Show DB status" as DB_STATUS
+    usecase "Backup DB" as DB_BACKUP
+    usecase "Compact DB" as DB_COMPACT
+  }
+
+  package "API Key Management" {
+    usecase "Add API key" as KEY_ADD
+    usecase "List API keys" as KEY_LIST
+    usecase "Delete API key" as KEY_DELETE
+    usecase "Activate key" as KEY_ACTIVATE
+    usecase "Deactivate key" as KEY_DEACTIVATE
+    usecase "Test API key" as KEY_TEST
+  }
+
+  package "Server Management" {
+    usecase "Create server" as SRV_CREATE
+    usecase "List servers" as SRV_LIST
+    usecase "Remove server" as SRV_REMOVE
+    usecase "Show server keys" as SRV_KEYS
+    usecase "Set primary key" as SRV_PRIMARY
+  }
+
+  package "Environment" {
+    usecase "Show config" as ENV_SHOW
+  }
+}
+
+' User interactions
+user --> WF_ADD
+user --> WF_LIST
+user --> WF_REMOVE
+user --> WF_SEARCH
+user --> WF_STATS
+user --> WF_PUSH
+user --> WF_PULL
+user --> WF_SERVER
+
+user --> DB_INIT
+user --> DB_STATUS
+user --> DB_BACKUP
+user --> DB_COMPACT
+
+user --> KEY_ADD
+user --> KEY_LIST
+user --> KEY_DELETE
+user --> KEY_ACTIVATE
+user --> KEY_DEACTIVATE
+user --> KEY_TEST
+
+user --> SRV_CREATE
+user --> SRV_LIST
+user --> SRV_REMOVE
+user --> SRV_KEYS
+user --> SRV_PRIMARY
+
+user --> ENV_SHOW
+
+' External system interactions
+WF_PUSH --> n8n : REST API
+WF_PULL --> n8n : REST API
+WF_SERVER --> n8n : REST API
+KEY_TEST --> n8n : REST API
+
+' Database interactions
+WF_ADD ..> db : stores metadata
+WF_LIST ..> db : reads
+WF_REMOVE ..> db : deletes
+DB_INIT ..> db : creates schema
+DB_BACKUP ..> db : exports
+KEY_ADD ..> db : stores
+SRV_CREATE ..> db : stores
+
+@enduml

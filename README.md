@@ -39,6 +39,12 @@
   - `folder` CLI command group for folder operations
   - Automatic folder mapping and tracking
 
+- 📜 **Script Synchronization** (NEW)
+  - Sync external scripts (.js, .cjs, .py) referenced by Execute Command nodes
+  - Git-based change detection (only sync modified scripts)
+  - Extensible transport plugin system (SCP included)
+  - Automatic remote folder creation per workflow
+
 - 💻 **Versatile CLI Interface**
   - Emoji-rich output for interactive use
   - Script-friendly mode with `--no-emoji` flag
@@ -86,6 +92,16 @@ n8n-deploy wf server --remote production
 # Folder synchronization (NEW in v0.2.0)
 n8n-deploy folder sync --remote production  # Sync folders with server
 
+# Script synchronization (sync .js, .cjs, .py files with workflow push)
+n8n-deploy wf push workflow-name \
+  --scripts ./scripts \
+  --scripts-host n8n.example.com \
+  --scripts-user deploy \
+  --scripts-key ~/.ssh/id_rsa
+
+# Dry run to see what scripts would sync
+n8n-deploy wf push workflow-name --scripts ./scripts --scripts-dry-run
+
 # Enable verbose logging for debugging
 n8n-deploy -v wf push workflow-name   # Basic verbose
 n8n-deploy -vv wf push workflow-name  # Extended verbose
@@ -118,6 +134,10 @@ n8n-deploy -vv wf push workflow-name  # Extended verbose
 - `N8N_DEPLOY_FLOWS_DIR`: Workflow files directory
 - `N8N_DEPLOY_DATA_DIR`: Application data directory
 - `N8N_SERVER_URL`: n8n server URL for remote operations
+- `N8N_SCRIPTS_HOST`: Remote host for script sync
+- `N8N_SCRIPTS_USER`: Remote username for script sync
+- `N8N_SCRIPTS_PORT`: SSH port for script sync (default: 22)
+- `N8N_SCRIPTS_KEY`: SSH key file path for script sync
 
 ### Documentation
 

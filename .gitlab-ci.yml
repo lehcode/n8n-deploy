@@ -7,6 +7,7 @@ stages:
   - quality
   - test
   - build-matrix
+  - release
 
 # Docker services for caching (only used by Docker-specific jobs)
 # Uncomment and configure for jobs that need Docker-in-Docker:
@@ -36,10 +37,23 @@ variables:
   # Git configuration for proper versioning
   GIT_DEPTH: 0  # Full clone with all tags for setuptools_scm version detection
 
+# Global defaults for all jobs
+default:
+  image: python:3.9-slim
+  tags:
+    - python
+  retry:
+    max: 2
+    when:
+      - runner_system_failure
+      - stuck_or_timeout_failure
+      - scheduler_failure
+  interruptible: true
+
 # Workflow rules - define when pipeline runs
 # Push to protected branches (master/develop): full pipeline
 # MR targeting protected branches: full pipeline
-# Feature branch push: NO pipeline (run locally with ./scripts/run-like-ci.sh)
+# Conventional commit branches (feat/, fix/, etc.): security stage only
 workflow:
   rules:
     # Run on master/develop (protected branches)
@@ -54,7 +68,10 @@ workflow:
     # Manual workflow dispatch
     - if: '$CI_PIPELINE_SOURCE == "web"'
       when: always
-    # Skip for all other cases (including feature branch pushes)
+    # Run on conventional commit branches (security checks only)
+    - if: '$CI_COMMIT_BRANCH =~ /^(feat|fix|chore|refactor|docs|test|style|perf|ci|build)\//'
+      when: always
+    # Skip for all other cases
     - when: never
 
 # Cache for pip dependencies (default: pull-push)
@@ -87,7 +104,14 @@ cache:
 # Template for Python environment setup (uses cached venv from warm-cache job)
 .python_setup: &python_setup
   before_script:
+    - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy
+    - apt-get -q update && apt-get -qy install git
+    - python -m pip install --quiet --upgrade pip
+    - pip install --quiet uv
+    - test -f .venv/bin/activate && echo "✓ Using cached venv" || echo "⚠ Cache miss - creating venv"
+    - test -f .venv/bin/activate || uv venv --python python3 .venv
     - source .venv/bin/activate
+    - test -f .venv/lib/python*/site-packages/n8n_deploy.egg-info || uv pip install --quiet -e ".[test,dev]"
 
 # ============================================
 # PRE STAGE - Cache warming
@@ -95,16 +119,11 @@ cache:
 
 warm-cache:
   stage: .pre
-  image: python:3.9-slim
   # Use dualbuntu image for better performance
   tags:
-    - python
     - linux
-    - heavy
-  interruptible: true
+    - cache
   rules:
-    - if: '$CI_COMMIT_TAG'
-      when: never
     - when: on_success
   cache:
     key:
@@ -126,7 +145,6 @@ warm-cache:
   script:
     - echo "Warming cache..."
     - uv venv --python python3 .venv
-    - source .venv/bin/activate
     - uv pip install --quiet -e ".[test,dev]"
     - echo "Cache populated successfully"
 
@@ -137,18 +155,25 @@ warm-cache:
 # Secret detection with gitleaks
 secret_detection:
   stage: security
-  image: python:3.9-slim
   tags:
-    - python
     - alpine
     - linux
-  interruptible: true
   rules:
     - if: '$CI_COMMIT_TAG'
       when: never
-    - when: on_success
+    # Skip on MR pipelines (already ran on feature branch push)
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: never
+    # Run on conventional commit branches (feature branch push)
+    - if: '$CI_COMMIT_BRANCH =~ /^(feat|fix|chore|refactor|docs|test|style|perf|ci|build)\//'
+      when: on_success
+    # Run on protected branches (post-merge)
+    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
+      when: on_success
   cache:
     <<: *cache_pull
+  needs:
+    - warm-cache
   variables:
     SECRET_DETECTION_EXCLUDED_PATHS: "tests/"
   before_script:
@@ -163,23 +188,35 @@ secret_detection:
 # Dependency vulnerability scanning
 dependency_scanning:
   stage: security
-  image: python:3.9-slim
   tags:
-    - python
     - alpine
     - linux
-  interruptible: true
+  needs:
+    - warm-cache
   rules:
     - if: '$CI_COMMIT_TAG'
       when: never
-    - when: on_success
+    # Skip on MR pipelines (already ran on feature branch push)
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: never
+    # Run on conventional commit branches (feature branch push)
+    - if: '$CI_COMMIT_BRANCH =~ /^(feat|fix|chore|refactor|docs|test|style|perf|ci|build)\//'
+      when: on_success
+    # Run on protected branches (post-merge)
+    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
+      when: on_success
   cache:
     <<: *cache_pull
   before_script:
     - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy
-    - apt-get -q update
+    - apt-get -q update && apt-get -qy install git
     - python -m pip install --quiet --upgrade pip
-    - pip install --quiet pip-audit
+    - pip install --quiet uv
+    - test -f .venv/bin/activate && echo "✓ Using cached venv" || echo "⚠ Cache miss - creating venv"
+    - test -f .venv/bin/activate || uv venv --python python3 .venv
+    - source .venv/bin/activate
+    - test -f .venv/lib/python*/site-packages/n8n_deploy.egg-info || uv pip install --quiet -e ".[test,dev]"
+    - uv pip install --quiet pip-audit
   script:
     - echo "🔍 Running dependency vulnerability scanning..."
     - pip-audit -r requirements.txt
@@ -188,16 +225,23 @@ dependency_scanning:
 # Python security scanning with Bandit
 security:bandit:
   stage: security
-  image: python:3.9-slim
   tags:
-    - python
     - alpine
     - linux
-  interruptible: true
+  needs:
+    - warm-cache
   rules:
     - if: '$CI_COMMIT_TAG'
       when: never
-    - when: on_success
+    # Skip on MR pipelines (already ran on feature branch push)
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: never
+    # Run on conventional commit branches (feature branch push)
+    - if: '$CI_COMMIT_BRANCH =~ /^(feat|fix|chore|refactor|docs|test|style|perf|ci|build)\//'
+      when: on_success
+    # Run on protected branches (post-merge)
+    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
+      when: on_success
   cache:
     <<: *cache_pull
   variables:
@@ -206,8 +250,12 @@ security:bandit:
     - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy
     - apt-get -q update && apt-get -qy install git
     - python -m pip install --quiet --upgrade pip
+    - pip install --quiet uv
+    - test -f .venv/bin/activate && echo "✓ Using cached venv" || echo "⚠ Cache miss - creating venv"
+    - test -f .venv/bin/activate || uv venv --python python3 .venv
+    - source .venv/bin/activate
+    - test -f .venv/lib/python*/site-packages/n8n_deploy.egg-info || uv pip install --quiet -e ".[test,dev]"
     - pip install --quiet bandit
-    - pip install -e .
   script:
     - echo "🔍 Running Python security analysis with Bandit..."
     - bandit -r api/ -f json --exclude tests/
@@ -216,16 +264,23 @@ security:bandit:
 # Pattern-based security scanning with Semgrep
 security:semgrep:
   stage: security
-  image: python:3.9-slim
   tags:
-    - python
     - alpine
     - linux
-  interruptible: true
+  needs:
+    - warm-cache
   rules:
     - if: '$CI_COMMIT_TAG'
       when: never
-    - when: on_success
+    # Skip on MR pipelines (already ran on feature branch push)
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: never
+    # Run on conventional commit branches (feature branch push)
+    - if: '$CI_COMMIT_BRANCH =~ /^(feat|fix|chore|refactor|docs|test|style|perf|ci|build)\//'
+      when: on_success
+    # Run on protected branches (post-merge)
+    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
+      when: on_success
   cache:
     <<: *cache_pull
   variables:
@@ -234,8 +289,12 @@ security:semgrep:
     - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy
     - apt-get -q update && apt-get -qy install git
     - python -m pip install --quiet --upgrade pip
+    - pip install --quiet uv
+    - test -f .venv/bin/activate && echo "✓ Using cached venv" || echo "⚠ Cache miss - creating venv"
+    - test -f .venv/bin/activate || uv venv --python python3 .venv
+    - source .venv/bin/activate
+    - test -f .venv/lib/python*/site-packages/n8n_deploy.egg-info || uv pip install --quiet -e ".[test,dev]"
     - pip install --quiet semgrep
-    - pip install -e .
   script:
     - echo "🔍 Running pattern-based security analysis with Semgrep..."
     - semgrep --config=auto api/ --json --error
@@ -248,46 +307,53 @@ security:semgrep:
 # Type checking with mypy
 quality:mypy:
   stage: quality
-  image: python:3.9-slim
   tags:
-    - python
     - alpine
     - linux
-  interruptible: true
+  needs:
+    - warm-cache
   rules:
     - if: '$CI_COMMIT_TAG'
       when: never
-    - when: on_success
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: never
+    - if: '$CI_COMMIT_BRANCH =~ /^(feat|fix|chore|refactor|docs|test|style|perf|ci|build)\//'
+      when: on_success
+    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
+      when: on_success
   <<: *python_setup
   cache:
     <<: *cache_pull
-  needs:
-    - warm-cache
   script:
     - mypy api/ --strict --show-error-codes
-    - echo "✅ Type checking passed"
+    - echo "Type checking passed"
 
 # Code formatting check with black
 quality:black:
   stage: quality
-  image: python:3.9-slim
   tags:
-    - python
     - alpine
     - linux
-  interruptible: true
+  needs:
+    - warm-cache
   rules:
     - if: '$CI_COMMIT_TAG'
       when: never
-    - when: on_success
+    # Skip on MR pipelines (already ran on feature branch push)
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: never
+    # Run on conventional commit branches (feature branch push)
+    - if: '$CI_COMMIT_BRANCH =~ /^(feat|fix|chore|refactor|docs|test|style|perf|ci|build)\//'
+      when: on_success
+    # Run on protected branches (post-merge)
+    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
+      when: on_success
   <<: *python_setup
   cache:
     <<: *cache_pull
-  needs:
-    - warm-cache
   script:
     - black --check api/
-    - echo "✅ Code formatting check passed"
+    - echo "Code formatting check passed"
 
 # ============================================
 # TEST STAGE (runs on merge/push to protected branches)
@@ -296,16 +362,15 @@ quality:black:
 # Unit tests
 test:unit:
   stage: test
-  image: python:3.9-slim
   tags:
-    - python
     - alpine
     - linux
-  interruptible: true
   cache:
     <<: *cache_pull
   needs:
     - warm-cache
+    - quality:mypy
+    - quality:black
   rules:
     - if: '$CI_COMMIT_TAG'
       when: never
@@ -313,10 +378,7 @@ test:unit:
       when: never
     - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
       when: on_success
-  before_script:
-    - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy
-    - apt-get -q update && apt-get -qy install git
-    - source .venv/bin/activate
+  <<: *python_setup
   script:
     - export N8N_DEPLOY_TESTING=1
     - python -m pytest tests/unit/ -rs --tb=short -q
@@ -325,17 +387,16 @@ test:unit:
 # Integration tests
 test:integration:
   stage: test
-  image: python:3.9-slim
   tags:
-    - python
-    - alpine
+    - tests
     - linux
-  interruptible: true
   <<: *python_setup
   cache:
     <<: *cache_pull
   needs:
     - warm-cache
+    - quality:mypy
+    - quality:black
   rules:
     - if: '$CI_COMMIT_TAG'
       when: never
@@ -351,17 +412,16 @@ test:integration:
 # Property-based tests with Hypothesis
 test:hypothesis:
   stage: test
-  image: python:3.9-slim
   tags:
-    - python
-    - heavy
+    - tests
     - linux
-  interruptible: true
   <<: *python_setup
   cache:
     <<: *cache_pull
   needs:
     - warm-cache
+    - quality:mypy
+    - quality:black
   rules:
     - if: '$CI_COMMIT_TAG'
       when: never
@@ -381,6 +441,110 @@ test:hypothesis:
     expire_in: 7 days
 
 # ============================================
+# AFFECTED TESTING (MR pipelines only)
+# Uses pytest-testmon for coverage-based test selection
+# ============================================
+
+# Affected tests for merge request pipelines
+test:affected:
+  stage: test
+  tags:
+    - linux
+    - tests
+  cache:
+    key:
+      files:
+        - requirements.txt
+      prefix: ${CI_COMMIT_REF_SLUG}
+    fallback_keys:
+      - develop
+      - master
+    paths:
+      - .cache/pip/
+      - .venv/
+      - .testmondata
+    policy: pull-push
+  needs:
+    - warm-cache
+  rules:
+    - if: '$CI_COMMIT_TAG'
+      when: never
+    # Run affected tests on MR pipelines
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && ($CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master" || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop")'
+      when: on_success
+  before_script:
+    - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy
+    - apt-get -q update && apt-get -qy install git
+    - python -m pip install --quiet --upgrade pip
+    - pip install --quiet uv
+    - test -f .venv/bin/activate && echo "✓ Using cached venv" || echo "⚠ Cache miss - creating venv"
+    - test -f .venv/bin/activate || uv venv --python python3 .venv
+    - source .venv/bin/activate
+    - test -f .venv/lib/python*/site-packages/n8n_deploy.egg-info || uv pip install --quiet -e ".[test,dev]"
+  script:
+    - export N8N_DEPLOY_TESTING=1
+    - test -f .testmondata && echo "Using cached testmon database" || echo "No testmon baseline found - building baseline"
+    - >
+      test -f .testmondata &&
+      python -m pytest tests/ --ignore=tests/integration/test_e2e_manual_cli.py --ignore=tests/integration/test_e2e_manual_database.py --ignore=tests/integration/test_e2e_manual_apikeys.py --ignore=tests/integration/test_e2e_manual_workflows.py --ignore=tests/integration/test_e2e_manual_server.py --testmon -rs --tb=short -q ||
+      python -m pytest tests/ --ignore=tests/integration/test_e2e_manual_cli.py --ignore=tests/integration/test_e2e_manual_database.py --ignore=tests/integration/test_e2e_manual_apikeys.py --ignore=tests/integration/test_e2e_manual_workflows.py --ignore=tests/integration/test_e2e_manual_server.py --testmon-noselect -rs --tb=short -q
+    - echo "Affected tests completed"
+  artifacts:
+    paths:
+      - .testmondata
+    expire_in: 7 days
+    when: always
+
+# Generate testmon baseline on protected branches
+test:baseline:
+  stage: test
+  tags:
+    - tests
+    - linux
+  cache:
+    key:
+      files:
+        - requirements.txt
+      prefix: ${CI_COMMIT_REF_SLUG}
+    fallback_keys:
+      - develop
+      - master
+    paths:
+      - .cache/pip/
+      - .venv/
+      - .testmondata
+    policy: pull-push
+  needs:
+    - warm-cache
+  rules:
+    - if: '$CI_COMMIT_TAG'
+      when: on_success
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: never
+    # Run in parallel with other test jobs on develop/master
+    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
+      when: on_success
+  before_script:
+    - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy
+    - apt-get -q update && apt-get -qy install git
+    - python -m pip install --quiet --upgrade pip
+    - pip install --quiet uv
+    - test -f .venv/bin/activate && echo "✓ Using cached venv" || echo "⚠ Cache miss - creating venv"
+    - test -f .venv/bin/activate || uv venv --python python3 .venv
+    - source .venv/bin/activate
+    - test -f .venv/lib/python*/site-packages/n8n_deploy.egg-info || uv pip install --quiet -e ".[test,dev]"
+  script:
+    - export N8N_DEPLOY_TESTING=1
+    - echo "Building testmon baseline database..."
+    - python -m pytest tests/ --ignore=tests/integration/test_e2e_manual_cli.py --ignore=tests/integration/test_e2e_manual_database.py --ignore=tests/integration/test_e2e_manual_apikeys.py --ignore=tests/integration/test_e2e_manual_workflows.py --ignore=tests/integration/test_e2e_manual_server.py --testmon-noselect -rs --tb=short -q
+    - echo "Testmon baseline updated"
+  artifacts:
+    paths:
+      - .testmondata
+    expire_in: 30 days
+    when: always
+
+# ============================================
 # BUILD-MATRIX STAGE (runs on merge/push to protected branches)
 # ============================================
 
@@ -388,24 +552,20 @@ test:hypothesis:
 build:python-matrix:
   stage: build-matrix
   image: python:${PYTHON_VERSION}-slim
+  interruptible: false
   tags:
-    - python
     - alpine
     - linux
-  interruptible: true
-  cache:
-    key:
-      files:
-        - requirements.txt
-      prefix: py${PYTHON_VERSION}-${CI_COMMIT_REF_SLUG}
-    paths:
-      - .cache/pip/
-      - .venv/
+  # cache:
+  #   key:
+  #     files:
+  #       - requirements.txt
+  #     prefix: py${PYTHON_VERSION}-${CI_COMMIT_REF_SLUG}
+  #   paths:
+  #     - .cache/pip/
+  #     - .venv/
   needs:
-    - job: test:unit
-      optional: true
-    - job: test:integration
-      optional: true
+    - test:baseline
   rules:
     - if: '$CI_COMMIT_TAG'
       when: on_success
@@ -421,11 +581,12 @@ build:python-matrix:
     - apt-get -q update && apt-get -qy install git
     - python -m pip install --quiet --upgrade pip
     - pip install --quiet uv
-  script:
-    - uv venv --python python3 .venv
+    - test -f .venv/bin/activate && echo "✓ Using cached venv for Python ${PYTHON_VERSION}" || echo "⚠ Cache miss - creating venv for Python ${PYTHON_VERSION}"
+    - test -f .venv/bin/activate || uv venv --python python3 .venv
     - source .venv/bin/activate
-    - uv pip install --quiet -e ".[test,dev]"
+    - test -f .venv/lib/python*/site-packages/n8n_deploy.egg-info || uv pip install --quiet -e ".[test,dev]"
     - uv pip install --quiet build
+  script:
     - echo "Building package for Python ${PYTHON_VERSION}..."
     - python -m build --wheel --sdist
     - pip install dist/*.whl
@@ -435,3 +596,64 @@ build:python-matrix:
     paths:
       - dist/
     expire_in: 1 hour
+
+# ============================================
+# RELEASE STAGE (automatic versioning with go-semrel-gitlab)
+# ============================================
+
+# Release candidate tags on develop branch (vX.Y.ZrcN format - PEP 440)
+release:rc:
+  stage: release
+  image: registry.gitlab.com/juhani/go-semrel-gitlab:v0.21.1
+  tags:
+    - alpine
+    - linux
+  cache: {}  # Disable cache - not needed for release
+  needs:
+    - job: build:python-matrix
+      artifacts: false
+  rules:
+    - if: '$CI_COMMIT_TAG'
+      when: never
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: never
+    - if: '$CI_COMMIT_BRANCH == "develop"'
+      when: on_success
+  variables:
+    GIT_SSL_NO_VERIFY: "1"
+    GSG_TOKEN: $GITLAB_TOKEN
+    GSG_RELEASE_BRANCHES: master
+    GSG_PRE_TMPL: 'rc,{{ seq }}'
+  script:
+    - echo "Calculating next RC version..."
+    - NEXT_VERSION=$(release --skip-ssl-verify next-version --allow-current)
+    - echo "Next version - ${NEXT_VERSION}"
+    # Note: setuptools_scm normalizes v0.3.0-rc.2 -> 0.3.0rc2 (PEP 440)
+    - if [ -n "$NEXT_VERSION" ]; then echo "Creating RC tag v${NEXT_VERSION}..." && release --skip-ssl-verify tag; else echo "No version bump needed"; fi
+
+# Production release tags on master branch (vX.Y.Z format)
+release:production:
+  stage: release
+  image: registry.gitlab.com/juhani/go-semrel-gitlab:v0.21.1
+  tags:
+    - alpine
+    - linux
+  cache: {}  # Disable cache - not needed for release
+  needs:
+    - job: build:python-matrix
+      artifacts: false
+  rules:
+    - if: '$CI_COMMIT_TAG'
+      when: never
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: never
+    - if: '$CI_COMMIT_BRANCH == "master"'
+      when: on_success
+  variables:
+    GIT_SSL_NO_VERIFY: "1"
+    GSG_TOKEN: $GITLAB_TOKEN
+  script:
+    - echo "Calculating next production version..."
+    - NEXT_VERSION=$(release --skip-ssl-verify next-version --allow-current)
+    - echo "Next version - ${NEXT_VERSION}"
+    - if [ -n "$NEXT_VERSION" ]; then echo "Creating release tag v${NEXT_VERSION}..." && release --skip-ssl-verify tag; else echo "No version bump needed"; fi

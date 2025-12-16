@@ -63,8 +63,13 @@ class N8nInternalClient:
         """Set the session cookie for authentication
 
         Args:
-            cookie: The n8n session cookie value (typically named 'n8n-auth')
+            cookie: The n8n session cookie value (typically named 'n8n-auth').
+                    Accepts either raw JWT value or full cookie string with
+                    'n8n-auth=' prefix.
         """
+        # Strip cookie name prefix if provided (e.g., "n8n-auth=eyJ..." -> "eyJ...")
+        if cookie.startswith("n8n-auth="):
+            cookie = cookie[9:]
         self._session_cookie = cookie
         self._session.cookies.set("n8n-auth", cookie)
 
