@@ -18,7 +18,16 @@ from ..transports.base import (
     TransportTarget,
 )
 from .script_git import GitScriptDetector, is_git_repository
-from .script_parser import WorkflowScriptParser
+from .script_parser import ScriptReference, WorkflowScriptParser
+
+
+@dataclass
+class ScriptMapping:
+    """Maps local script file to remote path."""
+
+    local_path: Path
+    remote_dir: str  # Directory from workflow (e.g., /files/testing/)
+    filename: str
 
 
 @dataclass
@@ -141,6 +150,24 @@ class ScriptSyncManager:
         sanitized = re.sub(r"_+", "_", sanitized)
         return sanitized.strip("_") or "unnamed_workflow"
 
+    def find_local_script(self, filename: str) -> Optional[Path]:
+        """Find a single local script file by filename.
+
+        Args:
+            filename: Script filename to find
+
+        Returns:
+            Path to existing local script or None
+        """
+        # Search in scripts directory (flat first)
+        script_path = self.config.scripts_dir / filename
+        if script_path.exists():
+            return script_path
+
+        # Try recursive search
+        matches = list(self.config.scripts_dir.rglob(filename))
+        return matches[0] if matches else None
+
     def find_local_scripts(
         self,
         workflow_scripts: Set[str],
@@ -154,19 +181,63 @@ class ScriptSyncManager:
             List of paths to existing local scripts
         """
         found: List[Path] = []
-
         for script_name in workflow_scripts:
-            # Search in scripts directory (flat and recursive)
-            script_path = self.config.scripts_dir / script_name
-            if script_path.exists():
-                found.append(script_path)
-            else:
-                # Try recursive search
-                matches = list(self.config.scripts_dir.rglob(script_name))
-                if matches:
-                    found.append(matches[0])
-
+            local = self.find_local_script(script_name)
+            if local:
+                found.append(local)
         return found
+
+    def get_remote_dir(self, script_path: str) -> str:
+        """Determine remote directory for a script.
+
+        - Absolute paths: Use directory from workflow directly
+        - Relative paths: Prefix with base_path
+
+        Args:
+            script_path: Script path from workflow command
+
+        Returns:
+            Remote directory path
+        """
+        if script_path.startswith("/"):
+            return str(Path(script_path).parent)
+        else:
+            return self.config.remote_base_path
+
+    def build_script_mappings(
+        self,
+        script_refs: List[ScriptReference],
+    ) -> List[ScriptMapping]:
+        """Build mappings from local files to remote paths.
+
+        Args:
+            script_refs: Script references from workflow parser
+
+        Returns:
+            List of ScriptMapping for files that exist locally
+        """
+        mappings: List[ScriptMapping] = []
+        seen_filenames: Set[str] = set()
+
+        for ref in script_refs:
+            # Skip duplicates (same script referenced multiple times)
+            if ref.filename in seen_filenames:
+                continue
+            seen_filenames.add(ref.filename)
+
+            # Find local file
+            local_path = self.find_local_script(ref.filename)
+            if local_path:
+                remote_dir = self.get_remote_dir(ref.script_path)
+                mappings.append(
+                    ScriptMapping(
+                        local_path=local_path,
+                        remote_dir=remote_dir,
+                        filename=ref.filename,
+                    )
+                )
+
+        return mappings
 
     def get_scripts_to_sync(
         self,
@@ -191,6 +262,26 @@ class ScriptSyncManager:
 
         return [s for s in local_scripts if s.name in changed_filenames]
 
+    def _filter_mappings_by_changes(
+        self,
+        mappings: List[ScriptMapping],
+    ) -> List[ScriptMapping]:
+        """Filter mappings to only include changed scripts.
+
+        Args:
+            mappings: All script mappings
+
+        Returns:
+            Filtered mappings (only changed scripts if git detection enabled)
+        """
+        if not self.config.changed_only or not self._git_detector:
+            return mappings
+
+        changes = self._git_detector.get_modified_scripts()
+        changed_filenames = {c.filename for c in changes if c.needs_upload}
+
+        return [m for m in mappings if m.filename in changed_filenames]
+
     def sync_scripts(
         self,
         workflow_data: Dict[str, Any],
@@ -213,50 +304,74 @@ class ScriptSyncManager:
             result.add_warning("No Execute Command nodes with scripts found")
             return result
 
-        workflow_scripts = parser.get_script_filenames()
-        scripts_to_sync = self.get_scripts_to_sync(workflow_scripts)
+        # Build mappings from local files to remote paths
+        all_mappings = self.build_script_mappings(script_refs)
 
-        if not scripts_to_sync:
-            if self.config.changed_only and self._git_detector:
-                result.add_warning("No scripts need syncing (all unchanged in git)")
-            else:
-                result.add_warning(f"No matching scripts found in {self.config.scripts_dir}")
-            result.scripts_skipped = len(workflow_scripts)
+        if not all_mappings:
+            result.add_warning(f"No matching scripts found in {self.config.scripts_dir}")
+            result.scripts_skipped = len(script_refs)
             return result
 
-        # Build remote subdirectory from workflow name
-        workflow_name = self.sanitize_workflow_name(str(workflow_data.get("name", "unknown")))
-        remote_subdir = workflow_name
+        # Filter to changed scripts only (if git detection enabled)
+        mappings_to_sync = self._filter_mappings_by_changes(all_mappings)
 
+        if not mappings_to_sync:
+            result.add_warning("No scripts need syncing (all unchanged in git)")
+            result.scripts_skipped = len(all_mappings)
+            return result
+
+        # Dry run: show what would be uploaded
         if self.config.dry_run:
-            for script in scripts_to_sync:
-                result.synced_files.append(f"[DRY RUN] {script.name}")
-            result.scripts_synced = len(scripts_to_sync)
-            result.scripts_skipped = len(workflow_scripts) - len(scripts_to_sync)
+            for mapping in mappings_to_sync:
+                remote_path = f"{mapping.remote_dir}/{mapping.filename}"
+                result.synced_files.append(f"[DRY RUN] {mapping.filename} -> {remote_path}")
+            result.scripts_synced = len(mappings_to_sync)
+            result.scripts_skipped = len(all_mappings) - len(mappings_to_sync)
             return result
 
-        # Perform upload
+        # Perform uploads grouped by remote directory
         target = self._build_transport_target()
-        upload_result = self._transport.upload_files(
-            target=target,
-            files=scripts_to_sync,
-            remote_subdir=remote_subdir,
-            create_dirs=True,
-        )
+        total_transferred = 0
+        total_bytes = 0
 
-        if upload_result.success:
-            # Set executable permissions on uploaded scripts
-            remote_files = [f"{remote_subdir}/{s.name}" for s in scripts_to_sync]
-            chmod_result = self._transport.set_executable(target, remote_files)
-            if not chmod_result.success:
-                result.add_warning(f"Failed to set executable permissions: {chmod_result.error_message}")
+        # Group mappings by remote directory for batch upload
+        dir_groups: Dict[str, List[ScriptMapping]] = {}
+        for mapping in mappings_to_sync:
+            if mapping.remote_dir not in dir_groups:
+                dir_groups[mapping.remote_dir] = []
+            dir_groups[mapping.remote_dir].append(mapping)
 
-            result.scripts_synced = upload_result.files_transferred
-            result.bytes_transferred = upload_result.bytes_transferred
-            result.synced_files = [s.name for s in scripts_to_sync]
-            result.scripts_skipped = len(workflow_scripts) - len(scripts_to_sync)
-        else:
-            result.add_error(f"Upload failed: {upload_result.error_message}")
+        # Upload each group to its directory
+        for remote_dir, group in dir_groups.items():
+            files = [m.local_path for m in group]
+            upload_result = self._transport.upload_files(
+                target=target,
+                files=files,
+                remote_subdir=remote_dir,
+                create_dirs=True,
+            )
+
+            if upload_result.success:
+                total_transferred += upload_result.files_transferred
+                total_bytes += upload_result.bytes_transferred
+
+                # Set executable permissions
+                remote_files = [f"{remote_dir}/{m.filename}" for m in group]
+                chmod_result = self._transport.set_executable(target, remote_files)
+                if not chmod_result.success:
+                    result.add_warning(
+                        f"Failed to set executable permissions in {remote_dir}: " f"{chmod_result.error_message}"
+                    )
+            else:
+                result.add_error(f"Upload to {remote_dir} failed: {upload_result.error_message}")
+
+        if result.errors:
+            return result
+
+        result.scripts_synced = total_transferred
+        result.bytes_transferred = total_bytes
+        result.synced_files = [m.filename for m in mappings_to_sync]
+        result.scripts_skipped = len(all_mappings) - len(mappings_to_sync)
 
         return result
 

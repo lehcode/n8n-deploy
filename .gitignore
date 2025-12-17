@@ -124,3 +124,5 @@ test-env
 tests/sequence.txt
 test_backup_path
 .n8n_cookies.json
+tests/fixtures/scripts/test-script.js
+script-sync-test.json
