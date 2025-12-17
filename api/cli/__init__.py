@@ -27,12 +27,6 @@ def main() -> None:
     cli(prog_name=PROG_NAME)
 
 
-
-def main() -> None:
-    """Main entry point for the CLI application"""
-    cli(prog_name=PROG_NAME)
-
-
 __all__ = [
     "get_cli_app",
     "cli",
