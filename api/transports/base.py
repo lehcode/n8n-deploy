@@ -9,7 +9,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Any, ClassVar, Dict, List, Optional, Type
+from typing import Any, ClassVar, Dict, List, Optional, Type, Union
 
 
 class TransportErrorType(str, Enum):
@@ -119,6 +119,7 @@ class TransportPlugin(ABC):
         files: List[Path],
         remote_subdir: str = "",
         create_dirs: bool = True,
+        rename_map: Optional[Dict[Path, str]] = None,
     ) -> TransportResult:
         """Upload files to remote server.
 
@@ -127,6 +128,9 @@ class TransportPlugin(ABC):
             files: List of local file paths to upload
             remote_subdir: Subdirectory under base_path
             create_dirs: Create directories if they don't exist
+            rename_map: Optional mapping of local paths to remote filenames.
+                       Use when remote filename should differ from local
+                       (e.g., uploading 'script.cjs' as 'script.js').
 
         Returns:
             TransportResult with operation details

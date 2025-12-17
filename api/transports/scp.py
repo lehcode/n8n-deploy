@@ -8,7 +8,7 @@ Uses Paramiko for pure-Python SSH/SFTP file transfer.
 import socket
 import stat
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import paramiko
 
@@ -233,6 +233,7 @@ class SCPTransport(TransportPlugin):
         files: List[Path],
         remote_subdir: str = "",
         create_dirs: bool = True,
+        rename_map: Optional[Dict[Path, str]] = None,
     ) -> TransportResult:
         """Upload files using SFTP."""
         if not files:
@@ -261,7 +262,9 @@ class SCPTransport(TransportPlugin):
 
             total_bytes = 0
             for local_file in file_list:
-                remote_file = f"{remote_path}/{local_file.name}"
+                # Use rename_map if provided, otherwise use local filename
+                target_name = rename_map.get(local_file, local_file.name) if rename_map else local_file.name
+                remote_file = f"{remote_path}/{target_name}"
                 sftp.put(str(local_file), remote_file)
                 total_bytes += local_file.stat().st_size
 
