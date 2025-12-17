@@ -616,7 +616,7 @@ build:python-matrix:
 # RELEASE STAGE (automatic versioning with go-semrel-gitlab)
 # ============================================
 
-# Release candidate tags (vX.Y.Z-rc.N or vX.Y.ZrcN format)
+# Release candidate tags on develop branch
 release:rc:
   stage: release
   image: registry.gitlab.com/juhani/go-semrel-gitlab:v0.21.1
@@ -628,16 +628,26 @@ release:rc:
     - job: build:python-matrix
       artifacts: false
   rules:
-    # Only run on RC tags (v0.3.0-rc.3 or v0.3.0rc3)
-    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+-?rc\.?[0-9]+$/'
+    # Run after MR merge to develop (not on tags or MR events)
+    - if: '$CI_COMMIT_TAG'
+      when: never
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: never
+    - if: '$CI_COMMIT_BRANCH == "develop"'
       when: on_success
     - when: never
   variables:
     GIT_SSL_NO_VERIFY: "1"
+    GSG_TOKEN: $GITLAB_TOKEN
+    GSG_RELEASE_BRANCHES: master
+    GSG_PRE_TMPL: 'rc,{{ seq }}'
   script:
-    - echo "RC tag ${CI_COMMIT_TAG} pushed"
+    - echo "Calculating next RC version..."
+    - NEXT_VERSION=$(release --skip-ssl-verify next-version --allow-current)
+    - echo "Next version - ${NEXT_VERSION}"
+    - if [ -n "$NEXT_VERSION" ]; then echo "Creating RC tag v${NEXT_VERSION}..." && release --skip-ssl-verify tag; else echo "No version bump needed"; fi
 
-# Production release tags (vX.Y.Z format - no suffix)
+# Production release tags on master branch
 release:production:
   stage: release
   image: registry.gitlab.com/juhani/go-semrel-gitlab:v0.21.1
@@ -649,11 +659,19 @@ release:production:
     - job: build:python-matrix
       artifacts: false
   rules:
-    # Only run on production tags (v0.3.0, v1.0.0 - no -rc suffix)
-    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/'
+    # Run after MR merge to master (not on tags or MR events)
+    - if: '$CI_COMMIT_TAG'
+      when: never
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: never
+    - if: '$CI_COMMIT_BRANCH == "master"'
       when: on_success
     - when: never
   variables:
     GIT_SSL_NO_VERIFY: "1"
+    GSG_TOKEN: $GITLAB_TOKEN
   script:
-    - echo "Production tag ${CI_COMMIT_TAG} pushed"
+    - echo "Calculating next production version..."
+    - NEXT_VERSION=$(release --skip-ssl-verify next-version --allow-current)
+    - echo "Next version - ${NEXT_VERSION}"
+    - if [ -n "$NEXT_VERSION" ]; then echo "Creating release tag v${NEXT_VERSION}..." && release --skip-ssl-verify tag; else echo "No version bump needed"; fi
