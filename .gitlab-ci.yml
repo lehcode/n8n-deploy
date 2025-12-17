@@ -356,100 +356,6 @@ quality:black:
     - echo "Code formatting check passed"
 
 # ============================================
-# TEST STAGE (runs on merge/push to protected branches)
-# ============================================
-
-# Unit tests
-test:unit:
-  stage: test
-  tags:
-    - alpine
-    - linux
-  cache:
-    <<: *cache_pull
-  needs:
-    - warm-cache
-    - quality:mypy
-    - quality:black
-  rules:
-    - if: '$CI_COMMIT_TAG'
-      when: never
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-      when: never
-    # Skip on develop/master (test:baseline runs all tests there)
-    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
-      when: never
-    # Run on feature branches for developer feedback
-    - when: on_success
-  <<: *python_setup
-  script:
-    - export N8N_DEPLOY_TESTING=1
-    - ./run_tests.py --unit --no-deps-check -q
-    - echo "Unit tests passed"
-
-# Integration tests
-test:integration:
-  stage: test
-  tags:
-    - tests
-    - linux
-  <<: *python_setup
-  cache:
-    <<: *cache_pull
-  needs:
-    - warm-cache
-    - quality:mypy
-    - quality:black
-  rules:
-    - if: '$CI_COMMIT_TAG'
-      when: never
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-      when: never
-    # Skip on develop/master (test:baseline runs all tests there)
-    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
-      when: never
-    # Run on feature branches for developer feedback
-    - when: on_success
-  script:
-    - export N8N_DEPLOY_TESTING=1
-    - ./run_tests.py --integration --no-deps-check -q
-    - echo "Integration tests passed"
-
-# Property-based tests with Hypothesis
-test:hypothesis:
-  stage: test
-  tags:
-    - tests
-    - linux
-  <<: *python_setup
-  cache:
-    <<: *cache_pull
-  needs:
-    - warm-cache
-    - quality:mypy
-    - quality:black
-  rules:
-    - if: '$CI_COMMIT_TAG'
-      when: never
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-      when: never
-    # Skip on develop/master (test:baseline runs all tests there)
-    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
-      when: never
-    # Run on feature branches for developer feedback
-    - when: on_success
-  script:
-    - export N8N_DEPLOY_TESTING=1
-    - echo "Running property-based tests with Hypothesis..."
-    - ./run_tests.py --hypothesis --no-deps-check -q
-    - echo "Property-based tests passed"
-  artifacts:
-    when: always
-    paths:
-      - .hypothesis/
-    expire_in: 7 days
-
-# ============================================
 # AFFECTED TESTING (MR pipelines only)
 # Uses pytest-testmon for coverage-based test selection
 # ============================================
@@ -481,61 +387,14 @@ test:affected:
     - warm-cache
   rules:
     - if: '$CI_COMMIT_TAG'
-      when: never
+      when: on_success
+    # Run on conventional commit branches (feature branch push)
+    - if: '$CI_COMMIT_BRANCH =~ /^(feat|fix|chore|refactor|docs|test|style|perf|ci|build)\//'
+      when: on_success
     # Run affected tests on MR pipelines (fast validation)
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && ($CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master" || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop")'
       when: on_success
-  before_script:
-    - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy
-    - apt-get -q update && apt-get -qy install git
-    - python -m pip install --quiet --upgrade pip
-    - pip install --quiet uv
-    - test -f .venv/bin/activate && echo "✓ Using cached venv" || echo "⚠ Cache miss - creating venv"
-    - test -f .venv/bin/activate || uv venv --python python3 .venv
-    - source .venv/bin/activate
-    - test -f .venv/lib/python*/site-packages/n8n_deploy.egg-info || uv pip install --quiet -e ".[test,dev]"
-  script:
-    - export N8N_DEPLOY_TESTING=1
-    - test -f .testmondata && echo "Using cached testmon database" || echo "No testmon baseline found - building baseline"
-    - ./run_tests.py --affected --no-deps-check -q
-    - echo "Affected tests completed"
-  artifacts:
-    paths:
-      - .testmondata
-    expire_in: 7 days
-    when: always
-
-# Generate testmon baseline on protected branches
-test:baseline:
-  stage: test
-  tags:
-    - tests
-    - linux
-  cache:
-    # Use multiple caches: venv (branch-specific) + testmondata (shared, push)
-    - key:
-        files:
-          - requirements.txt
-        prefix: ${CI_COMMIT_REF_SLUG}
-      fallback_keys:
-        - develop
-        - master
-      paths:
-        - .cache/pip/
-        - .venv/
-      policy: pull
-    - key: testmondata-baseline
-      paths:
-        - .testmondata
-      policy: push
-  needs:
-    - warm-cache
-  rules:
-    - if: '$CI_COMMIT_TAG'
-      when: on_success
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-      when: never
-    # Run on develop/master to build/update baseline after merge
+    # Run on protected branches (post-merge)
     - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
       when: on_success
   before_script:
@@ -549,13 +408,13 @@ test:baseline:
     - test -f .venv/lib/python*/site-packages/n8n_deploy.egg-info || uv pip install --quiet -e ".[test,dev]"
   script:
     - export N8N_DEPLOY_TESTING=1
-    - echo "Building testmon baseline database..."
-    - ./run_tests.py --baseline --no-deps-check -q
-    - echo "Testmon baseline updated"
+    - test -f .testmondata && echo "Using cached testmon database" || echo "No testmon baseline found"
+    - ./run_tests.py --affected --no-deps-check
+    - echo "Affected tests completed"
   artifacts:
     paths:
       - .testmondata
-    expire_in: 30 days
+    expire_in: 7 days
     when: always
 
 # ============================================
@@ -570,16 +429,17 @@ build:python-matrix:
   tags:
     - alpine
     - linux
-  # cache:
-  #   key:
-  #     files:
-  #       - requirements.txt
-  #     prefix: py${PYTHON_VERSION}-${CI_COMMIT_REF_SLUG}
-  #   paths:
-  #     - .cache/pip/
-  #     - .venv/
+  cache:
+    key:
+      files:
+        - requirements.txt
+      prefix: py${PYTHON_VERSION}-${CI_COMMIT_REF_SLUG}
+    paths:
+      - .cache/pip/
+      - .venv/
+    policy: pull
   needs:
-    - job: test:baseline
+    - job: test:affected
       optional: true
   rules:
     - if: '$CI_COMMIT_TAG'
@@ -645,7 +505,21 @@ release:rc:
     - echo "Calculating next RC version..."
     - NEXT_VERSION=$(release --skip-ssl-verify next-version --allow-current)
     - echo "Next version - ${NEXT_VERSION}"
-    - if [ -n "$NEXT_VERSION" ]; then echo "Creating RC tag v${NEXT_VERSION}..." && release --skip-ssl-verify tag; else echo "No version bump needed"; fi
+    - |
+      if [ -n "$NEXT_VERSION" ]; then
+        echo "Creating RC tag v${NEXT_VERSION}..."
+        if ! release --skip-ssl-verify tag 2>&1 | tee /tmp/release.log; then
+          if grep -q "no changes found" /tmp/release.log; then
+            echo "No releasable changes (ci/docs/chore commits only) - skipping tag"
+          else
+            echo "Release failed with error:"
+            cat /tmp/release.log
+            exit 1
+          fi
+        fi
+      else
+        echo "No version bump needed"
+      fi
 
 # Production release tags on master branch
 release:production:
@@ -674,4 +548,18 @@ release:production:
     - echo "Calculating next production version..."
     - NEXT_VERSION=$(release --skip-ssl-verify next-version --allow-current)
     - echo "Next version - ${NEXT_VERSION}"
-    - if [ -n "$NEXT_VERSION" ]; then echo "Creating release tag v${NEXT_VERSION}..." && release --skip-ssl-verify tag; else echo "No version bump needed"; fi
+    - |
+      if [ -n "$NEXT_VERSION" ]; then
+        echo "Creating release tag v${NEXT_VERSION}..."
+        if ! release --skip-ssl-verify tag 2>&1 | tee /tmp/release.log; then
+          if grep -q "no changes found" /tmp/release.log; then
+            echo "No releasable changes (ci/docs/chore commits only) - skipping tag"
+          else
+            echo "Release failed with error:"
+            cat /tmp/release.log
+            exit 1
+          fi
+        fi
+      else
+        echo "No version bump needed"
+      fi

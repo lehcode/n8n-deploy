@@ -42,7 +42,7 @@ class TestScriptSyncE2E(E2ETestBase):
         assert "--scripts-key" in stdout, "Missing --scripts-key option"
         assert "--scripts-base-path" in stdout, "Missing --scripts-base-path option"
         assert "--scripts-all" in stdout, "Missing --scripts-all option"
-        assert "--scripts-dry-run" in stdout, "Missing --scripts-dry-run option"
+        assert "--dry-run" in stdout, "Missing --dry-run option"
 
     def test_wf_push_scripts_requires_workflow_name(self) -> None:
         """Test wf push requires workflow name argument"""
@@ -76,7 +76,7 @@ class TestScriptSyncE2E(E2ETestBase):
         assert returncode != 0, "Should fail"
 
     def test_wf_push_scripts_dry_run_no_transfer(self) -> None:
-        """Test --scripts-dry-run shows what would be synced without transferring"""
+        """Test --dry-run shows what would be synced without transferring"""
         # Create script files
         script_file = Path(self.scripts_dir) / "helper.js"
         script_file.write_text("// Test helper\nmodule.exports = {};")
@@ -97,7 +97,7 @@ class TestScriptSyncE2E(E2ETestBase):
                 "testuser",
                 "--scripts-key",
                 "/dev/null",  # Non-existent key for dry-run
-                "--scripts-dry-run",
+                "--dry-run",
             ]
         )
 
@@ -148,7 +148,7 @@ class TestScriptSyncE2E(E2ETestBase):
                 "--scripts-key",
                 "/dev/null",
                 "--scripts-all",
-                "--scripts-dry-run",
+                "--dry-run",
             ]
         )
 
@@ -224,7 +224,7 @@ class TestScriptSyncValidation(E2ETestBase):
                 "test",
                 "--scripts-port",
                 "2222",
-                "--scripts-dry-run",
+                "--dry-run",
             ]
         )
 
@@ -248,7 +248,7 @@ class TestScriptSyncValidation(E2ETestBase):
                 "test",
                 "--scripts-key",
                 "/nonexistent/key/file",
-                "--scripts-dry-run",
+                "--dry-run",
             ]
         )
 

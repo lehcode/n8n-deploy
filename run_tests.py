@@ -677,6 +677,15 @@ Note: You must specify a test type (--unit, --integration, --e2e, --affected, --
     elif args.generated:
         success &= run_generated_tests(args.quiet)
 
+    elif args.e2e:
+        success &= run_e2e_tests(args.quiet, args.test_class)
+
+    elif args.hypothesis:
+        success &= run_hypothesis_tests(args.quiet, show_statistics=not args.quiet)
+
+    elif args.generated:
+        success &= run_generated_tests(args.quiet)
+
     elif args.fast:
         success &= run_fast_tests(args.quiet)
 

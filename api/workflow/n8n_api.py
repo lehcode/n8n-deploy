@@ -43,6 +43,17 @@ class N8nAPI:
             remote=remote,
         )
 
+        # HTTP client for API requests
+        self._http_client = N8nHttpClient(skip_ssl_verify=skip_ssl_verify)
+
+        # Server resolver for URL and API key resolution
+        self._server_resolver = ServerResolver(
+            config=config,
+            db=db,
+            api_manager=api_manager,
+            remote=remote,
+        )
+
     def _get_n8n_credentials(self, workflow_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
         """Get n8n API credentials using remote-based resolution
 

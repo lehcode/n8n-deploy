@@ -34,6 +34,10 @@ from .output import (
     cli_error,
     print_workflow_search_table,
     print_workflow_table,
+    print_error,
+    print_success,
+    print_workflow_search_table,
+    print_workflow_table,
 )
 
 console = Console()
@@ -203,6 +207,10 @@ def add(
     except ValueError as e:
         cli_error(str(e), no_emoji)
         raise click.Abort()
+
+    from .db import check_database_exists
+
+    check_database_exists(config.database_path, output_json=output_json, no_emoji=no_emoji)
 
     from .db import check_database_exists
 
@@ -655,7 +663,8 @@ def pull(
     type=str,
     default="/opt/n8n/scripts",
     show_default=True,
-    help="Remote base path for scripts",
+    envvar="N8N_SCRIPTS_BASE_PATH",
+    help="Remote base path for scripts [env: N8N_SCRIPTS_BASE_PATH]",
 )
 @click.option(
     "--scripts-host",
@@ -689,9 +698,9 @@ def pull(
     help="Sync all scripts (not just git-changed ones)",
 )
 @click.option(
-    "--scripts-dry-run",
+    "--dry-run",
     is_flag=True,
-    help="Show what scripts would be synced without transferring",
+    help="Preview mode: show what would be synced without transferring",
 )
 @click.argument("workflow_id", metavar="WORKFLOW_ID|WORKFLOW_NAME")
 def push(
@@ -709,7 +718,7 @@ def push(
     scripts_port: int,
     scripts_key: Optional[str],
     scripts_all: bool,
-    scripts_dry_run: bool,
+    dry_run: bool,
 ) -> None:
     """📤 Upload wf to n8n server
 
@@ -769,7 +778,7 @@ def push(
                 scripts_port=scripts_port,
                 scripts_key=scripts_key,
                 scripts_all=scripts_all,
-                scripts_dry_run=scripts_dry_run,
+                dry_run=dry_run,
                 no_emoji=no_emoji,
             )
 
@@ -794,7 +803,7 @@ def _sync_scripts_for_workflow(
     scripts_port: int,
     scripts_key: Optional[str],
     scripts_all: bool,
-    scripts_dry_run: bool,
+    dry_run: bool,
     no_emoji: bool,
 ) -> None:
     """Sync scripts for a workflow after push.
@@ -809,7 +818,7 @@ def _sync_scripts_for_workflow(
         scripts_port: SSH port
         scripts_key: SSH key file path
         scripts_all: Sync all scripts (not just changed)
-        scripts_dry_run: Dry run mode
+        dry_run: Dry run mode
         no_emoji: Disable emoji output
     """
     from ..workflow.script_sync import ScriptSyncConfig, ScriptSyncManager
@@ -884,7 +893,7 @@ def _sync_scripts_for_workflow(
         username=scripts_user,
         key_file=Path(scripts_key).expanduser() if scripts_key else None,
         changed_only=not scripts_all,
-        dry_run=scripts_dry_run,
+        dry_run=dry_run,
     )
 
     try:
@@ -898,7 +907,7 @@ def _sync_scripts_for_workflow(
         raise click.Abort()
 
     # Perform sync
-    if scripts_dry_run:
+    if dry_run:
         console.print("\n[yellow]Script sync dry run:[/yellow]" if not no_emoji else "\nScript sync dry run:")
 
     result = sync_manager.sync_scripts(workflow_data)
@@ -906,14 +915,14 @@ def _sync_scripts_for_workflow(
     # Report results
     if result.success:
         if result.scripts_synced > 0:
-            sync_msg = f"Synced {result.scripts_synced} script(s) to {scripts_host}:{scripts_base_path}/{ScriptSyncManager.sanitize_workflow_name(workflow_name)}/"
+            sync_msg = f"Synced {result.scripts_synced} script(s) to {scripts_host}"
             if no_emoji:
                 console.print(sync_msg)
             else:
                 console.print(f"[green]✓ {sync_msg}[/green]")
 
-            for script_file in result.synced_files:
-                console.print(f"  - {script_file}")
+            for script_info in result.synced_files:
+                console.print(f"  - {script_info}")
 
         if result.scripts_skipped > 0:
             skip_msg = f"Skipped {result.scripts_skipped} unchanged script(s)"
