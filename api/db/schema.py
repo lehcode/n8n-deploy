@@ -79,6 +79,21 @@ class SchemaApi(BaseDB):
             """
             )
 
+            # Create servers table
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS servers (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    url TEXT NOT NULL,
+                    name TEXT NOT NULL UNIQUE,
+                    description TEXT,
+                    is_active BOOLEAN DEFAULT TRUE,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    last_used TIMESTAMP
+                )
+            """
+            )
+
             # Create api_keys table
             conn.execute(
                 """

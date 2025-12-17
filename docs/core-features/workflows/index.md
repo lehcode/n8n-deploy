@@ -191,6 +191,12 @@ n8n-deploy -vv wf push workflow-name --remote production
 {: .note }
 > **Push operations**: Read-only fields are automatically stripped before sending to n8n server. See [Troubleshooting](/n8n-deploy/troubleshooting/) for details.
 
+{: .note }
+> **Push operations**: Read-only fields are automatically stripped before sending to n8n server. See [Troubleshooting](/n8n-deploy/troubleshooting/) for details.
+
+{: .note }
+> **Push operations**: Read-only fields are automatically stripped before sending to n8n server. See [Troubleshooting](/n8n-deploy/troubleshooting/) for details.
+
 ## 📖 Related Guides
 
 - [Folder Synchronization](/n8n-deploy/core-features/folders/) - Sync entire folders of workflows
