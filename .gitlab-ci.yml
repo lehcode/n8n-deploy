@@ -380,11 +380,11 @@ test:unit:
     - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
       when: never
     # Run on feature branches for developer feedback
-    - when: on_success
+    # - when: on_success
   <<: *python_setup
   script:
     - export N8N_DEPLOY_TESTING=1
-    - ./run_tests.py --unit --no-deps-check -q
+    - ./run_tests.py --unit --no-deps-check
     - echo "Unit tests passed"
 
 # Integration tests
@@ -409,10 +409,10 @@ test:integration:
     - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
       when: never
     # Run on feature branches for developer feedback
-    - when: on_success
+    # - when: on_success
   script:
     - export N8N_DEPLOY_TESTING=1
-    - ./run_tests.py --integration --no-deps-check -q
+    - ./run_tests.py --integration --no-deps-check
     - echo "Integration tests passed"
 
 # Property-based tests with Hypothesis
@@ -437,11 +437,11 @@ test:hypothesis:
     - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
       when: never
     # Run on feature branches for developer feedback
-    - when: on_success
+    # - when: on_success
   script:
     - export N8N_DEPLOY_TESTING=1
     - echo "Running property-based tests with Hypothesis..."
-    - ./run_tests.py --hypothesis --no-deps-check -q
+    - ./run_tests.py --hypothesis --no-deps-check
     - echo "Property-based tests passed"
   artifacts:
     when: always
@@ -476,12 +476,16 @@ test:affected:
     - key: testmondata-baseline
       paths:
         - .testmondata
-      policy: pull-push
+      policy: pull
   needs:
     - warm-cache
+    - test:baseline
   rules:
     - if: '$CI_COMMIT_TAG'
-      when: never
+      when: on_success
+    # Run on conventional commit branches (feature branch push)
+    - if: '$CI_COMMIT_BRANCH =~ /^(feat|fix|chore|refactor|docs|test|style|perf|ci|build)\//'
+      when: on_success
     # Run affected tests on MR pipelines (fast validation)
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && ($CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master" || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop")'
       when: on_success
@@ -497,7 +501,7 @@ test:affected:
   script:
     - export N8N_DEPLOY_TESTING=1
     - test -f .testmondata && echo "Using cached testmon database" || echo "No testmon baseline found - building baseline"
-    - ./run_tests.py --affected --no-deps-check -q
+    - ./run_tests.py --affected --no-deps-check
     - echo "Affected tests completed"
   artifacts:
     paths:
@@ -535,6 +539,9 @@ test:baseline:
       when: on_success
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
       when: never
+    # Run on conventional commit branches (feature branch push)
+    - if: '$CI_COMMIT_BRANCH =~ /^(feat|fix|chore|refactor|docs|test|style|perf|ci|build)\//'
+      when: on_success
     # Run on develop/master to build/update baseline after merge
     - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
       when: on_success
@@ -550,7 +557,7 @@ test:baseline:
   script:
     - export N8N_DEPLOY_TESTING=1
     - echo "Building testmon baseline database..."
-    - ./run_tests.py --baseline --no-deps-check -q
+    - ./run_tests.py --baseline --no-deps-check
     - echo "Testmon baseline updated"
   artifacts:
     paths:
