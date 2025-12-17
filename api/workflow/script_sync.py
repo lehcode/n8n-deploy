@@ -381,11 +381,15 @@ class ScriptSyncManager:
         # Upload each group to its directory
         for remote_dir, group in dir_groups.items():
             files = [m.local_path for m in group]
+            # Build rename_map for files that need extension conversion
+            # (e.g., local 'script.cjs' -> remote 'script.js' as workflow expects)
+            rename_map = {m.local_path: m.filename for m in group if m.local_path.name != m.filename}
             upload_result = self._transport.upload_files(
                 target=target,
                 files=files,
                 remote_subdir=remote_dir,
                 create_dirs=True,
+                rename_map=rename_map or None,
             )
 
             if upload_result.success:
