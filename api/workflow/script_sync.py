@@ -150,8 +150,16 @@ class ScriptSyncManager:
         sanitized = re.sub(r"_+", "_", sanitized)
         return sanitized.strip("_") or "unnamed_workflow"
 
+    # Valid script extensions for n8n Execute Command nodes
+    JS_EXTENSIONS = (".js", ".cjs", ".mjs")
+    PY_EXTENSIONS = (".py", ".pyw")
+    SCRIPT_EXTENSIONS = JS_EXTENSIONS + PY_EXTENSIONS
+
     def find_local_script(self, filename: str) -> Optional[Path]:
         """Find a single local script file by filename.
+
+        Supports extension fallback: if workflow references 'script.js' but
+        local file is 'script.cjs', it will match by stem.
 
         Args:
             filename: Script filename to find
@@ -159,14 +167,43 @@ class ScriptSyncManager:
         Returns:
             Path to existing local script or None
         """
-        # Search in scripts directory (flat first)
+        # Search in scripts directory (exact match first)
         script_path = self.config.scripts_dir / filename
         if script_path.exists():
             return script_path
 
-        # Try recursive search
+        # Try recursive search for exact match
         matches = list(self.config.scripts_dir.rglob(filename))
-        return matches[0] if matches else None
+        if matches:
+            return matches[0]
+
+        # Try extension fallback - match by stem with alternative extensions
+        stem = Path(filename).stem
+        original_ext = Path(filename).suffix.lower()
+
+        # Determine which extensions to try based on original
+        alt_extensions: tuple[str, ...]
+        if original_ext in self.JS_EXTENSIONS:
+            alt_extensions = self.JS_EXTENSIONS
+        elif original_ext in self.PY_EXTENSIONS:
+            alt_extensions = self.PY_EXTENSIONS
+        else:
+            alt_extensions = self.SCRIPT_EXTENSIONS
+
+        for ext in alt_extensions:
+            if ext == original_ext:
+                continue  # Already tried exact match
+            alt_filename = stem + ext
+            # Flat search
+            alt_path = self.config.scripts_dir / alt_filename
+            if alt_path.exists():
+                return alt_path
+            # Recursive search
+            alt_matches = list(self.config.scripts_dir.rglob(alt_filename))
+            if alt_matches:
+                return alt_matches[0]
+
+        return None
 
     def find_local_scripts(
         self,
