@@ -382,8 +382,8 @@ test:affected:
     - key: testmondata-baseline
       paths:
         - .testmondata
-        - .testmondata-wal
-        - .testmondata-shm
+        - .pytest_cache
+        - .hypothesis
       policy: pull-push
   needs:
     - warm-cache
