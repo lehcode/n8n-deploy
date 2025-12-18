@@ -983,6 +983,7 @@ class TestPushWorkflow404Handling:
         mock_wf.created_at = datetime.now(timezone.utc)
         mock_wf.push_count = 0
         mock_wf.pull_count = 0
+        mock_wf.scripts_path = None
 
         api = N8nAPI(
             db=mock_db,

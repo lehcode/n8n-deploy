@@ -40,6 +40,44 @@ n8n-deploy --server-url http://n8n.example.com:5678 wf push "Deployment Pipeline
 n8n-deploy --flow-dir /path/to/workflows wf push "Deployment Pipeline"
 ```
 
+### Script Synchronization
+
+Sync external scripts (.js, .cjs, .py) referenced by Execute Command nodes alongside workflow push.
+
+**Remote path formula:** `<scripts-base-path>/<workflow-name>/`
+
+Example: With `--scripts-base-path=/opt/n8n/scripts` and workflow "My Workflow", scripts upload to `/opt/n8n/scripts/My_Workflow/`
+
+```bash
+# Push workflow with script sync
+n8n-deploy wf push "My Workflow" \
+  --scripts ./scripts \
+  --scripts-host n8n.example.com \
+  --scripts-user deploy \
+  --scripts-key ~/.ssh/id_rsa
+
+# Custom base path (default: /opt/n8n/scripts)
+n8n-deploy wf push "My Workflow" \
+  --scripts ./scripts \
+  --scripts-base-path /mnt/n8n/local-files \
+  --scripts-host n8n.example.com \
+  --scripts-user deploy \
+  --scripts-key ~/.ssh/id_rsa
+
+# Dry run to preview without uploading
+n8n-deploy wf push "My Workflow" --scripts ./scripts --dry-run
+
+# Sync all scripts (ignore git change detection)
+n8n-deploy wf push "My Workflow" --scripts ./scripts --scripts-all
+```
+
+**Environment variables:**
+- `N8N_SCRIPTS_HOST`: Remote host
+- `N8N_SCRIPTS_USER`: SSH username
+- `N8N_SCRIPTS_PORT`: SSH port (default: 22)
+- `N8N_SCRIPTS_KEY`: SSH key file path
+- `N8N_SCRIPTS_BASE_PATH`: Base path on remote (default: /opt/n8n/scripts)
+
 ### Workflow Backup
 ```bash
 # Backup all workflows

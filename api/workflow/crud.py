@@ -49,6 +49,7 @@ class WorkflowCRUD:
             updated_at=datetime.now(timezone.utc),
             last_synced=None,
             n8n_version_id=n8n_version_id,
+            scripts_path=None,
         )
 
         self.db.add_workflow(wf)

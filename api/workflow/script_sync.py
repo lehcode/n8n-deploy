@@ -26,7 +26,6 @@ class ScriptMapping:
     """Maps local script file to remote path."""
 
     local_path: Path
-    remote_dir: str  # Directory from workflow (e.g., /files/testing/)
     filename: str
 
 
@@ -224,23 +223,6 @@ class ScriptSyncManager:
                 found.append(local)
         return found
 
-    def get_remote_dir(self, script_path: str) -> str:
-        """Determine remote directory for a script.
-
-        - Absolute paths: Use directory from workflow directly
-        - Relative paths: Prefix with base_path
-
-        Args:
-            script_path: Script path from workflow command
-
-        Returns:
-            Remote directory path
-        """
-        if script_path.startswith("/"):
-            return str(Path(script_path).parent)
-        else:
-            return self.config.remote_base_path
-
     def build_script_mappings(
         self,
         script_refs: List[ScriptReference],
@@ -265,11 +247,9 @@ class ScriptSyncManager:
             # Find local file
             local_path = self.find_local_script(ref.filename)
             if local_path:
-                remote_dir = self.get_remote_dir(ref.script_path)
                 mappings.append(
                     ScriptMapping(
                         local_path=local_path,
-                        remote_dir=remote_dir,
                         filename=ref.filename,
                     )
                 )
@@ -357,60 +337,47 @@ class ScriptSyncManager:
             result.scripts_skipped = len(all_mappings)
             return result
 
+        # Remote directory: use workflow name as subdirectory
+        remote_subdir = self.config.workflow_name
+
         # Dry run: show what would be uploaded
         if self.config.dry_run:
             for mapping in mappings_to_sync:
-                remote_path = f"{mapping.remote_dir}/{mapping.filename}"
+                remote_path = f"{self.config.remote_base_path}/{remote_subdir}/{mapping.filename}"
                 result.synced_files.append(f"[DRY RUN] {mapping.filename} -> {remote_path}")
             result.scripts_synced = len(mappings_to_sync)
             result.scripts_skipped = len(all_mappings) - len(mappings_to_sync)
             return result
 
-        # Perform uploads grouped by remote directory
+        # Perform upload to workflow subdirectory
         target = self._build_transport_target()
-        total_transferred = 0
-        total_bytes = 0
 
-        # Group mappings by remote directory for batch upload
-        dir_groups: Dict[str, List[ScriptMapping]] = {}
-        for mapping in mappings_to_sync:
-            if mapping.remote_dir not in dir_groups:
-                dir_groups[mapping.remote_dir] = []
-            dir_groups[mapping.remote_dir].append(mapping)
+        files = [m.local_path for m in mappings_to_sync]
+        # Build rename_map for files that need extension conversion
+        # (e.g., local 'script.cjs' -> remote 'script.js' as workflow expects)
+        rename_map = {m.local_path: m.filename for m in mappings_to_sync if m.local_path.name != m.filename}
+        upload_result = self._transport.upload_files(
+            target=target,
+            files=files,
+            remote_subdir=remote_subdir,
+            create_dirs=True,
+            rename_map=rename_map or None,
+        )
 
-        # Upload each group to its directory
-        for remote_dir, group in dir_groups.items():
-            files = [m.local_path for m in group]
-            # Build rename_map for files that need extension conversion
-            # (e.g., local 'script.cjs' -> remote 'script.js' as workflow expects)
-            rename_map = {m.local_path: m.filename for m in group if m.local_path.name != m.filename}
-            upload_result = self._transport.upload_files(
-                target=target,
-                files=files,
-                remote_subdir=remote_dir,
-                create_dirs=True,
-                rename_map=rename_map or None,
-            )
-
-            if upload_result.success:
-                total_transferred += upload_result.files_transferred
-                total_bytes += upload_result.bytes_transferred
-
-                # Set executable permissions
-                remote_files = [f"{remote_dir}/{m.filename}" for m in group]
-                chmod_result = self._transport.set_executable(target, remote_files)
-                if not chmod_result.success:
-                    result.add_warning(
-                        f"Failed to set executable permissions in {remote_dir}: " f"{chmod_result.error_message}"
-                    )
-            else:
-                result.add_error(f"Upload to {remote_dir} failed: {upload_result.error_message}")
+        if upload_result.success:
+            # Set executable permissions
+            remote_files = [f"{remote_subdir}/{m.filename}" for m in mappings_to_sync]
+            chmod_result = self._transport.set_executable(target, remote_files)
+            if not chmod_result.success:
+                result.add_warning(f"Failed to set executable permissions: {chmod_result.error_message}")
+        else:
+            result.add_error(f"Upload failed: {upload_result.error_message}")
 
         if result.errors:
             return result
 
-        result.scripts_synced = total_transferred
-        result.bytes_transferred = total_bytes
+        result.scripts_synced = upload_result.files_transferred
+        result.bytes_transferred = upload_result.bytes_transferred
         result.synced_files = [m.filename for m in mappings_to_sync]
         result.scripts_skipped = len(all_mappings) - len(mappings_to_sync)
 

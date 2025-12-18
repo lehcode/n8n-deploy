@@ -664,7 +664,7 @@ def pull(
     default="/opt/n8n/scripts",
     show_default=True,
     envvar="N8N_SCRIPTS_BASE_PATH",
-    help="Remote base path for scripts [env: N8N_SCRIPTS_BASE_PATH]",
+    help="Remote base path (workflow name appended as subfolder) [env: N8N_SCRIPTS_BASE_PATH]",
 )
 @click.option(
     "--scripts-host",
@@ -882,12 +882,14 @@ def _sync_scripts_for_workflow(
         workflow_data = json.load(f)
 
     workflow_name = workflow_data.get("name", workflow_id)
+    # Sanitize for use as remote directory name
+    sanitized_name = ScriptSyncManager.sanitize_workflow_name(workflow_name)
 
     # Create sync config
     sync_config = ScriptSyncConfig(
         scripts_dir=Path(scripts_dir),
         remote_base_path=scripts_base_path,
-        workflow_name=workflow_name,
+        workflow_name=sanitized_name,
         host=scripts_host,
         port=scripts_port,
         username=scripts_user,
