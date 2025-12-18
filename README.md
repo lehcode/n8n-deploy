@@ -93,14 +93,16 @@ n8n-deploy wf server --remote production
 n8n-deploy folder sync --remote production  # Sync folders with server
 
 # Script synchronization (sync .js, .cjs, .py files with workflow push)
+# Scripts upload to: <base-path>/<workflow-name>/ (e.g., /opt/n8n/scripts/My_Workflow/)
 n8n-deploy wf push workflow-name \
   --scripts ./scripts \
   --scripts-host n8n.example.com \
   --scripts-user deploy \
-  --scripts-key ~/.ssh/id_rsa
+  --scripts-key ~/.ssh/id_rsa \
+  --scripts-base-path /opt/n8n/scripts  # Optional, this is the default
 
 # Dry run to see what scripts would sync
-n8n-deploy wf push workflow-name --scripts ./scripts --scripts-dry-run
+n8n-deploy wf push workflow-name --scripts ./scripts --dry-run
 
 # Enable verbose logging for debugging
 n8n-deploy -v wf push workflow-name   # Basic verbose
@@ -138,6 +140,7 @@ n8n-deploy -vv wf push workflow-name  # Extended verbose
 - `N8N_SCRIPTS_USER`: Remote username for script sync
 - `N8N_SCRIPTS_PORT`: SSH port for script sync (default: 22)
 - `N8N_SCRIPTS_KEY`: SSH key file path for script sync
+- `N8N_SCRIPTS_BASE_PATH`: Remote base path for scripts (default: /opt/n8n/scripts)
 
 ### Documentation
 

@@ -382,7 +382,7 @@ test:affected:
     - key: testmondata-baseline
       paths:
         - .testmondata
-        - .pytest_cache
+        #- .pytest_cache
         - .hypothesis
       policy: pull-push
   needs:
