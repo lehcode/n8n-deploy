@@ -169,7 +169,7 @@ def handle_verbose_flag(ctx: click.Context, _param: click.Parameter, value: int)
     expose_value=False,
     is_eager=True,
     callback=handle_verbose_flag,
-    help="Verbosity level (-v headers, -vv +response body)",
+    help="Verbosity level (-v HTTP/SFTP ops, -vv +details/timing)",
 )
 def cli() -> None:
     """🎭 n8n-deploy - a simple N8N Workflow Manager
