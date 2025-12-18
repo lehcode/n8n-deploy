@@ -7,8 +7,9 @@ Uses Paramiko for pure-Python SSH/SFTP file transfer.
 
 import socket
 import stat
+import time
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 import paramiko
 
@@ -19,6 +20,33 @@ from .base import (
     TransportResult,
     TransportTarget,
 )
+
+# Lazy import to avoid circular dependency
+_verbose_funcs: Optional[Dict[str, Callable[..., Any]]] = None
+
+
+def _get_verbose_funcs() -> Dict[str, Callable[..., Any]]:
+    """Lazy load verbose functions to avoid circular imports."""
+    global _verbose_funcs
+    if _verbose_funcs is None:
+        from ..cli.verbose import (
+            log_transport_chmod,
+            log_transport_connect,
+            log_transport_connected,
+            log_transport_error,
+            log_transport_mkdir,
+            log_transport_upload,
+        )
+
+        _verbose_funcs = {
+            "connect": log_transport_connect,
+            "connected": log_transport_connected,
+            "mkdir": log_transport_mkdir,
+            "upload": log_transport_upload,
+            "chmod": log_transport_chmod,
+            "error": log_transport_error,
+        }
+    return _verbose_funcs
 
 
 class _AutoAddHostKeyPolicy(paramiko.MissingHostKeyPolicy):
@@ -75,6 +103,10 @@ class SCPTransport(TransportPlugin):
             paramiko.AuthenticationException: If authentication fails
             socket.error: If connection fails
         """
+        verbose = _get_verbose_funcs()
+        key_file_str = str(target.key_file) if target.key_file else None
+        connect_start = verbose["connect"](target.host, target.port, target.username, key_file_str)
+
         client = paramiko.SSHClient()
         # Load system host keys (from ~/.ssh/known_hosts)
         client.load_system_host_keys()
@@ -106,6 +138,7 @@ class SCPTransport(TransportPlugin):
                 timeout=10.0,
             )
 
+        verbose["connected"](connect_start)
         return client
 
     def _categorize_error(self, error: Exception, error_msg: str = "") -> TransportErrorType:
@@ -183,6 +216,7 @@ class SCPTransport(TransportPlugin):
         remote_dir: str,
     ) -> TransportResult:
         """Ensure remote directory exists using SFTP mkdir."""
+        verbose = _get_verbose_funcs()
         full_path = f"{target.base_path}/{remote_dir}".replace("//", "/")
 
         try:
@@ -199,10 +233,12 @@ class SCPTransport(TransportPlugin):
                 except IOError:
                     try:
                         sftp.mkdir(current_path)
+                        verbose["mkdir"](current_path)
                     except IOError as e:
                         if "permission denied" in str(e).lower():
                             sftp.close()
                             client.close()
+                            verbose["error"]("mkdir", str(e))
                             return TransportResult(
                                 success=False,
                                 error_type=TransportErrorType.PERMISSION_DENIED,
@@ -236,6 +272,8 @@ class SCPTransport(TransportPlugin):
         rename_map: Optional[Dict[Path, str]] = None,
     ) -> TransportResult:
         """Upload files using SFTP."""
+        verbose = _get_verbose_funcs()
+
         if not files:
             return TransportResult(success=True, files_transferred=0)
 
@@ -265,8 +303,11 @@ class SCPTransport(TransportPlugin):
                 # Use rename_map if provided, otherwise use local filename
                 target_name = rename_map.get(local_file, local_file.name) if rename_map else local_file.name
                 remote_file = f"{remote_path}/{target_name}"
+                file_size = local_file.stat().st_size
+                upload_start = time.perf_counter()
                 sftp.put(str(local_file), remote_file)
-                total_bytes += local_file.stat().st_size
+                verbose["upload"](str(local_file), remote_file, file_size, upload_start)
+                total_bytes += file_size
 
             sftp.close()
             client.close()
@@ -414,6 +455,8 @@ class SCPTransport(TransportPlugin):
         Returns:
             TransportResult indicating success/failure
         """
+        verbose = _get_verbose_funcs()
+
         if not remote_files:
             return TransportResult(success=True)
 
@@ -430,10 +473,12 @@ class SCPTransport(TransportPlugin):
                     # Add execute permission for owner, group, others
                     new_mode = current_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH
                     sftp.chmod(full_path, new_mode)
+                    verbose["chmod"](full_path, new_mode)
                 except IOError as e:
                     sftp.close()
                     client.close()
                     error_type = self._categorize_error(e, str(e))
+                    verbose["error"]("chmod", str(e))
                     return TransportResult(
                         success=False,
                         error_type=error_type,
