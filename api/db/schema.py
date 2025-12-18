@@ -17,7 +17,7 @@ from .base import BaseDB
 class SchemaApi(BaseDB):
     """Manages database schema initialization and versioning"""
 
-    SCHEMA_VERSION = 6
+    SCHEMA_VERSION = 7
 
     def __init__(
         self,
@@ -59,6 +59,7 @@ class SchemaApi(BaseDB):
                     n8n_version_id TEXT,
                     push_count INTEGER DEFAULT 0,
                     pull_count INTEGER DEFAULT 0,
+                    scripts_path TEXT,
                     FOREIGN KEY (server_id) REFERENCES servers(id) ON DELETE SET NULL
                 )
             """
@@ -221,7 +222,7 @@ class SchemaApi(BaseDB):
                 INSERT OR REPLACE INTO schema_info (version, applied_at, description)
                 VALUES (?, ?, ?)
             """,
-                (self.SCHEMA_VERSION, datetime.now(), "Folder sync support"),
+                (self.SCHEMA_VERSION, datetime.now(), "Workflow scripts path"),
             )
 
             conn.commit()
@@ -327,6 +328,22 @@ class SchemaApi(BaseDB):
                     (6, datetime.now(), "Folder sync support"),
                 )
                 conn.commit()
+
+            # Migration from version 6 to 7: Add scripts_path to workflows
+            if current_version < 7:
+                try:
+                    conn.execute("ALTER TABLE workflows ADD COLUMN scripts_path TEXT")
+                    conn.execute(
+                        """
+                        INSERT OR REPLACE INTO schema_info (version, applied_at, description)
+                        VALUES (?, ?, ?)
+                        """,
+                        (7, datetime.now(), "Workflow scripts path"),
+                    )
+                    conn.commit()
+                except sqlite3.OperationalError:
+                    # Column already exists
+                    pass
 
     def get_schema_version(self) -> int:
         """Get current database schema version"""

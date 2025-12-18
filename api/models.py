@@ -39,6 +39,7 @@ class Workflow(BaseModel):
     n8n_version_id: Optional[str] = Field(None, description="n8n version identifier")
     push_count: int = Field(default=0, description="Number of push operations")
     pull_count: int = Field(default=0, description="Number of pull operations")
+    scripts_path: Optional[str] = Field(None, description="Remote path for script uploads")
 
     class Config:
         use_enum_values = True

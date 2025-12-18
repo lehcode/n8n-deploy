@@ -67,6 +67,7 @@ class DBApi(BaseDB):
                     n8n_version_id=row["n8n_version_id"],
                     push_count=row["push_count"] or 0,
                     pull_count=row["pull_count"] or 0,
+                    scripts_path=row["scripts_path"] if "scripts_path" in row.keys() else None,
                 )
             return None
 
@@ -95,6 +96,7 @@ class DBApi(BaseDB):
                     n8n_version_id=row["n8n_version_id"],
                     push_count=row["push_count"] or 0,
                     pull_count=row["pull_count"] or 0,
+                    scripts_path=row["scripts_path"] if "scripts_path" in row.keys() else None,
                 )
 
             # Then try by filename (exact match first, then basename match)
@@ -123,6 +125,7 @@ class DBApi(BaseDB):
                     n8n_version_id=row["n8n_version_id"],
                     push_count=row["push_count"] or 0,
                     pull_count=row["pull_count"] or 0,
+                    scripts_path=row["scripts_path"] if "scripts_path" in row.keys() else None,
                 )
             return None
 
@@ -158,6 +161,7 @@ class DBApi(BaseDB):
                     n8n_version_id=row["n8n_version_id"],
                     push_count=row["push_count"] or 0,
                     pull_count=row["pull_count"] or 0,
+                    scripts_path=row["scripts_path"] if "scripts_path" in row.keys() else None,
                 )
                 workflows.append(wf)
 
@@ -171,7 +175,7 @@ class DBApi(BaseDB):
                 UPDATE workflows SET
                     name = ?, file = ?, file_folder = ?, server_id = ?, status = ?, updated_at = ?,
                     last_synced = ?, n8n_version_id = ?,
-                    push_count = ?, pull_count = ?
+                    push_count = ?, pull_count = ?, scripts_path = ?
                 WHERE id = ?
             """,
                 (
@@ -185,6 +189,7 @@ class DBApi(BaseDB):
                     wf.n8n_version_id,
                     wf.push_count,
                     wf.pull_count,
+                    wf.scripts_path,
                     wf.id,
                 ),
             )
@@ -229,6 +234,7 @@ class DBApi(BaseDB):
                     n8n_version_id=row["n8n_version_id"],
                     push_count=row["push_count"] or 0,
                     pull_count=row["pull_count"] or 0,
+                    scripts_path=row["scripts_path"] if "scripts_path" in row.keys() else None,
                 )
                 workflows.append(wf)
             return workflows

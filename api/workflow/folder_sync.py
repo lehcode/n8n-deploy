@@ -336,6 +336,7 @@ class FolderSyncManager:
                     status=WorkflowStatus.ACTIVE,
                     last_synced=datetime.now(timezone.utc),
                     n8n_version_id=None,
+                    scripts_path=existing.scripts_path if existing else None,
                 )
 
                 if existing:
