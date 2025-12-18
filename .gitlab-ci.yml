@@ -399,7 +399,7 @@ test:affected:
       when: on_success
   before_script:
     - echo "Acquire::http::Proxy \"http://${APT_PROXY}\";" > /etc/apt/apt.conf.d/01proxy
-    - apt-get -q update && apt-get -qy install git sqlite3
+    - apt-get -q update && apt-get -qy install git
     - python -m pip install --quiet --upgrade pip
     - pip install --quiet uv
     - test -f .venv/bin/activate && echo "✓ Using cached venv" || echo "⚠ Cache miss - creating venv"
@@ -411,10 +411,6 @@ test:affected:
     - test -f .testmondata && echo "Using cached testmon database" || echo "No testmon baseline found"
     - ./run_tests.py --affected --no-deps-check
     - echo "Affected tests completed"
-  after_script:
-    # Flush SQLite WAL to main database before caching
-    # This ensures .testmondata contains all data without needing -wal/-shm files
-    - sqlite3 .testmondata "PRAGMA wal_checkpoint(TRUNCATE);" 2>/dev/null || true
   artifacts:
     paths:
       - .testmondata
