@@ -443,7 +443,7 @@ build:python-matrix:
     paths:
       - .cache/pip/
       - .venv/
-    policy: pull
+    policy: pull-push
   needs:
     - job: test:affected
       optional: true
