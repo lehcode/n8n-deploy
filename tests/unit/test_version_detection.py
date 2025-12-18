@@ -84,8 +84,8 @@ class TestVersionDetection:
         runner = CliRunner()
         result = runner.invoke(cli, ["--version"])
 
-        # Extract CLI version
-        version_pattern = r"n8n-deploy, version (\d+\.\d+(\.\d+)?(\.dev\d+|-rc\d+)?)"
+        # Extract CLI version (PEP 440: X.Y.Z[rcN][.devM])
+        version_pattern = r"n8n-deploy, version (\d+\.\d+(\.\d+)?(rc\d+)?(\.dev\d+)?)"
         match = re.search(version_pattern, result.output)
         cli_version = match.group(1) if match else None
 
