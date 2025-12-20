@@ -178,6 +178,10 @@ n8n-deploy -v wf push workflow-name --remote production
 
 # Extended verbose - shows request/response details
 n8n-deploy -vv wf push workflow-name --remote production
+
+# Flag can be placed at root or subcommand level
+n8n-deploy wf -v push workflow-name    # Same as above
+n8n-deploy wf -vv pull workflow-name   # Works at subcommand level
 ```
 
 ## Troubleshooting
