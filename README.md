@@ -48,7 +48,7 @@
 - 💻 **Versatile CLI Interface**
   - Emoji-rich output for interactive use
   - Script-friendly mode with `--no-emoji` flag
-  - Verbose logging with `-v` and `-vv` flags for debugging
+  - Verbose logging with `-v` and `-vv` flags at any command level
   - Comprehensive workflow operations
 
 ### Installation

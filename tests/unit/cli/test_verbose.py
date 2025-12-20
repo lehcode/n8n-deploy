@@ -452,3 +452,105 @@ class TestLogResponseBody:
 
             output = str(mock_echo.call_args_list)
             assert "Response:" not in output
+
+
+class TestVerboseCLIIntegration:
+    """Tests for verbose option at CLI subcommand level"""
+
+    def setup_method(self) -> None:
+        """Reset verbose state before each test"""
+        set_verbose(0)
+
+    def teardown_method(self) -> None:
+        """Reset verbose state after each test"""
+        set_verbose(0)
+
+    def test_wf_group_has_verbose_option(self) -> None:
+        """wf command group has -v/--verbose option"""
+        from click.testing import CliRunner
+        from api.cli import cli
+
+        runner = CliRunner()
+        result = runner.invoke(cli, ["wf", "--help"])
+
+        assert result.exit_code == 0
+        assert "-v, --verbose" in result.output
+        assert "Verbosity level" in result.output
+
+    def test_db_group_has_verbose_option(self) -> None:
+        """db command group has -v/--verbose option"""
+        from click.testing import CliRunner
+        from api.cli import cli
+
+        runner = CliRunner()
+        result = runner.invoke(cli, ["db", "--help"])
+
+        assert result.exit_code == 0
+        assert "-v, --verbose" in result.output
+
+    def test_server_group_has_verbose_option(self) -> None:
+        """server command group has -v/--verbose option"""
+        from click.testing import CliRunner
+        from api.cli import cli
+
+        runner = CliRunner()
+        result = runner.invoke(cli, ["server", "--help"])
+
+        assert result.exit_code == 0
+        assert "-v, --verbose" in result.output
+
+    def test_apikey_group_has_verbose_option(self) -> None:
+        """apikey command group has -v/--verbose option"""
+        from click.testing import CliRunner
+        from api.cli import cli
+
+        runner = CliRunner()
+        result = runner.invoke(cli, ["apikey", "--help"])
+
+        assert result.exit_code == 0
+        assert "-v, --verbose" in result.output
+
+    def test_folder_group_has_verbose_option(self) -> None:
+        """folder command group has -v/--verbose option"""
+        from click.testing import CliRunner
+        from api.cli import cli
+
+        runner = CliRunner()
+        result = runner.invoke(cli, ["folder", "--help"])
+
+        assert result.exit_code == 0
+        assert "-v, --verbose" in result.output
+
+    def test_verbose_at_subcommand_level_accepted(self) -> None:
+        """Verbose flag at subcommand level is accepted (no error)"""
+        from click.testing import CliRunner
+        from api.cli import cli
+
+        runner = CliRunner()
+        # -v before help should not cause "No such option" error
+        result = runner.invoke(cli, ["wf", "-v", "--help"])
+
+        assert result.exit_code == 0
+        assert "No such option" not in result.output
+
+    def test_double_verbose_at_subcommand_level_accepted(self) -> None:
+        """Double verbose (-vv) at subcommand level is accepted"""
+        from click.testing import CliRunner
+        from api.cli import cli
+
+        runner = CliRunner()
+        result = runner.invoke(cli, ["db", "-vv", "--help"])
+
+        assert result.exit_code == 0
+        assert "No such option" not in result.output
+
+    def test_verbose_flag_long_form_at_subcommand(self) -> None:
+        """--verbose long form works at subcommand level"""
+        from click.testing import CliRunner
+        from api.cli import cli
+
+        runner = CliRunner()
+        result = runner.invoke(cli, ["server", "--verbose", "--help"])
+
+        assert result.exit_code == 0
+        assert "No such option" not in result.output

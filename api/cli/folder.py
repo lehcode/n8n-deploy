@@ -20,7 +20,7 @@ from ..db.folders import FolderDB
 from ..db.servers import ServerCrud
 from ..models import SyncDirection
 from ..workflow.folder_sync import FolderSyncManager
-from .app import cli_data_dir_help, HELP_DB_FILENAME, CustomCommand, CustomGroup
+from .app import cli_data_dir_help, handle_verbose_flag, HELP_DB_FILENAME, CustomCommand, CustomGroup
 
 console = Console()
 
@@ -57,6 +57,15 @@ def _get_server_id(
 
 
 @click.group(name="folder", cls=CustomGroup)
+@click.option(
+    "-v",
+    "--verbose",
+    count=True,
+    expose_value=False,
+    is_eager=True,
+    callback=handle_verbose_flag,
+    help="Verbosity level (-v, -vv)",
+)
 def folder() -> None:
     """📁 Manage folder synchronization with n8n server"""
     pass

@@ -23,7 +23,7 @@ from rich.table import Table
 
 from ..config import get_config, AppConfig
 from ..db import DBApi
-from .app import cli_data_dir_help, HELP_DB_FILENAME, HELP_JSON, HELP_NO_EMOJI, CustomCommand, CustomGroup
+from .app import cli_data_dir_help, handle_verbose_flag, HELP_DB_FILENAME, HELP_JSON, HELP_NO_EMOJI, CustomCommand, CustomGroup
 
 console = Console()
 
@@ -307,6 +307,15 @@ def _perform_db_init(config: AppConfig, output_json: bool, no_emoji: bool) -> No
 
 
 @click.group(cls=CustomGroup)
+@click.option(
+    "-v",
+    "--verbose",
+    count=True,
+    expose_value=False,
+    is_eager=True,
+    callback=handle_verbose_flag,
+    help="Verbosity level (-v, -vv)",
+)
 def db() -> None:
     """🎭 Database management commands
 

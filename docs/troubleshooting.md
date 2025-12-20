@@ -123,9 +123,10 @@ n8n-deploy -v wf push workflow-name --remote production
 # Extended verbose - shows request/response details
 n8n-deploy -vv wf push workflow-name --remote production
 
-# Combine with any command
-n8n-deploy -v apikey test my_server
-n8n-deploy -vv folder sync --remote myserver
+# Verbose flag can be used at root or subcommand level
+n8n-deploy -v wf push workflow-name    # Root level
+n8n-deploy wf -v push workflow-name    # Subcommand level (same effect)
+n8n-deploy db -vv status               # Works on any subcommand group
 ```
 
 ### Environment Debugging
