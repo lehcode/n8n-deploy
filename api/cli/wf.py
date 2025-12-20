@@ -21,6 +21,7 @@ from ..config import get_config, AppConfig
 from ..workflow import WorkflowApi
 from .app import (
     cli_data_dir_help,
+    handle_verbose_flag,
     HELP_DB_FILENAME,
     HELP_FLOW_DIR,
     HELP_JSON,
@@ -165,6 +166,15 @@ def _output_add_success(workflow_id: str, workflow_name: str, output_json: bool,
 
 
 @click.group(cls=CustomGroup)
+@click.option(
+    "-v",
+    "--verbose",
+    count=True,
+    expose_value=False,
+    is_eager=True,
+    callback=handle_verbose_flag,
+    help="Verbosity level (-v, -vv)",
+)
 def wf() -> None:
     """🔄 Workflow management commands"""
     pass
