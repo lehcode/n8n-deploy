@@ -20,7 +20,7 @@ from ..api_keys import KeyApi
 from ..config import get_config
 from ..db import DBApi
 from ..jwt_utils import check_jwt_expiration, format_expiration_date, get_jwt_issued_at
-from .app import cli_data_dir_help, HELP_DB_FILENAME, HELP_JSON, HELP_NO_EMOJI, CustomCommand, CustomGroup
+from .app import cli_data_dir_help, handle_verbose_flag, HELP_DB_FILENAME, HELP_JSON, HELP_NO_EMOJI, CustomCommand, CustomGroup
 from .output import cli_error
 
 console = Console()
@@ -125,6 +125,15 @@ def _output_apikey_table(keys: List[Dict[str, Any]], unmask: bool, no_emoji: boo
 
 
 @click.group(cls=CustomGroup)
+@click.option(
+    "-v",
+    "--verbose",
+    count=True,
+    expose_value=False,
+    is_eager=True,
+    callback=handle_verbose_flag,
+    help="Verbosity level (-v, -vv)",
+)
 def apikey() -> None:
     """🔐 API key management commands
 

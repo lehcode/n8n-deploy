@@ -14,16 +14,24 @@ from rich.table import Table
 
 from ..api_keys import KeyApi
 from ..config import AppConfig, get_config
-from .app import cli_data_dir_help, HELP_DB_FILENAME
+from .app import cli_data_dir_help, handle_verbose_flag, HELP_DB_FILENAME, HELP_JSON, HELP_TABLE, CustomCommand, CustomGroup
 from ..db.core import DBApi
 from ..db.servers import ServerCrud
-from .app import HELP_JSON, HELP_TABLE, CustomCommand, CustomGroup
 from .output import format_server_table
 
 console = Console()
 
 
 @click.group(name="server", cls=CustomGroup)
+@click.option(
+    "-v",
+    "--verbose",
+    count=True,
+    expose_value=False,
+    is_eager=True,
+    callback=handle_verbose_flag,
+    help="Verbosity level (-v, -vv)",
+)
 def server() -> None:
     """🖥️  Manage n8n servers"""
     pass
