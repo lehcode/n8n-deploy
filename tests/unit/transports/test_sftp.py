@@ -1,6 +1,6 @@
-"""Unit tests for api/transports/scp.py module
+"""Unit tests for api/transports/sftp.py module
 
-Tests for SCPTransport class methods using Paramiko mocks.
+Tests for SFTPTransport class methods using Paramiko mocks.
 """
 
 import socket
@@ -12,16 +12,16 @@ import pytest
 from assertpy import assert_that
 
 from api.transports.base import TransportTarget, TransportErrorType
-from api.transports.scp import SCPTransport
+from api.transports.sftp import SFTPTransport
 
 
-class TestSCPTransport:
-    """Tests for SCPTransport class"""
+class TestSFTPTransport:
+    """Tests for SFTPTransport class"""
 
     def test_name_property(self) -> None:
         """Test transport name property"""
-        transport = SCPTransport()
-        assert_that(transport.name).is_equal_to("scp")
+        transport = SFTPTransport()
+        assert_that(transport.name).is_equal_to("sftp")
 
     def test_upload_files_success(self, temp_dir: Path) -> None:
         """Test successful file upload via SFTP"""
@@ -39,7 +39,7 @@ class TestSCPTransport:
             key_file=Path("/home/user/.ssh/id_rsa"),
         )
 
-        transport = SCPTransport()
+        transport = SFTPTransport()
 
         with patch.object(transport, "_create_ssh_client") as mock_create:
             mock_client = MagicMock(spec=paramiko.SSHClient)
@@ -74,7 +74,7 @@ class TestSCPTransport:
             key_file=Path("/home/user/.ssh/id_rsa"),
         )
 
-        transport = SCPTransport()
+        transport = SFTPTransport()
 
         with patch.object(transport, "_create_ssh_client") as mock_create:
             mock_create.side_effect = socket.error("Connection refused")
@@ -101,7 +101,7 @@ class TestSCPTransport:
             key_file=Path("/home/user/.ssh/id_rsa"),
         )
 
-        transport = SCPTransport()
+        transport = SFTPTransport()
 
         with patch.object(transport, "_create_ssh_client") as mock_create:
             mock_client = MagicMock(spec=paramiko.SSHClient)
@@ -135,7 +135,7 @@ class TestSCPTransport:
             key_file=Path("/home/user/.ssh/wrong_key"),
         )
 
-        transport = SCPTransport()
+        transport = SFTPTransport()
 
         with patch.object(transport, "_create_ssh_client") as mock_create:
             mock_create.side_effect = paramiko.AuthenticationException("Authentication failed")
@@ -159,7 +159,7 @@ class TestSCPTransport:
             key_file=Path("/home/user/.ssh/id_rsa"),
         )
 
-        transport = SCPTransport()
+        transport = SFTPTransport()
 
         result = transport.upload_files(
             target=target,
@@ -184,7 +184,7 @@ class TestSCPTransport:
             key_file=Path("/home/user/.ssh/id_rsa"),
         )
 
-        transport = SCPTransport()
+        transport = SFTPTransport()
 
         with patch.object(transport, "_create_ssh_client") as mock_create:
             mock_client = MagicMock(spec=paramiko.SSHClient)
@@ -214,7 +214,7 @@ class TestSCPTransport:
             key_file=Path("/home/user/.ssh/id_rsa"),
         )
 
-        transport = SCPTransport()
+        transport = SFTPTransport()
 
         with patch.object(transport, "_create_ssh_client") as mock_create:
             mock_client = MagicMock(spec=paramiko.SSHClient)
@@ -241,7 +241,7 @@ class TestSCPTransport:
             key_file=Path("/home/user/.ssh/id_rsa"),
         )
 
-        transport = SCPTransport()
+        transport = SFTPTransport()
 
         with patch.object(transport, "_create_ssh_client") as mock_create:
             mock_client = MagicMock(spec=paramiko.SSHClient)
@@ -269,7 +269,7 @@ class TestSCPTransport:
             key_file=Path("/home/user/.ssh/id_rsa"),
         )
 
-        transport = SCPTransport()
+        transport = SFTPTransport()
 
         with patch.object(transport, "_create_ssh_client") as mock_create:
             mock_client = MagicMock(spec=paramiko.SSHClient)
@@ -291,7 +291,7 @@ class TestSCPTransport:
             key_file=Path("/home/user/.ssh/id_rsa"),
         )
 
-        transport = SCPTransport()
+        transport = SFTPTransport()
 
         with patch.object(transport, "_create_ssh_client") as mock_create:
             mock_create.side_effect = socket.error("Connection refused")
@@ -314,7 +314,7 @@ class TestSCPTransport:
             key_file=Path("/home/user/.ssh/id_rsa"),
         )
 
-        transport = SCPTransport()
+        transport = SFTPTransport()
 
         with patch("paramiko.SSHClient") as MockSSHClient:
             mock_client = MagicMock()
@@ -365,7 +365,7 @@ class TestTransportTarget:
 
 
 class TestSetExecutable:
-    """Tests for SCPTransport.set_executable method"""
+    """Tests for SFTPTransport.set_executable method"""
 
     def test_set_executable_success(self) -> None:
         """Test setting executable permissions on remote files"""
@@ -377,7 +377,7 @@ class TestSetExecutable:
             key_file=Path("/home/user/.ssh/id_rsa"),
         )
 
-        transport = SCPTransport()
+        transport = SFTPTransport()
 
         with patch.object(transport, "_create_ssh_client") as mock_create:
             mock_client = MagicMock(spec=paramiko.SSHClient)
@@ -410,7 +410,7 @@ class TestSetExecutable:
             key_file=Path("/home/user/.ssh/id_rsa"),
         )
 
-        transport = SCPTransport()
+        transport = SFTPTransport()
 
         # No SSH call should be made for empty list
         result = transport.set_executable(target=target, remote_files=[])
@@ -427,7 +427,7 @@ class TestSetExecutable:
             key_file=Path("/home/user/.ssh/id_rsa"),
         )
 
-        transport = SCPTransport()
+        transport = SFTPTransport()
 
         with patch.object(transport, "_create_ssh_client") as mock_create:
             mock_client = MagicMock(spec=paramiko.SSHClient)
@@ -459,7 +459,7 @@ class TestSetExecutable:
             key_file=Path("/home/user/.ssh/id_rsa"),
         )
 
-        transport = SCPTransport()
+        transport = SFTPTransport()
 
         with patch.object(transport, "_create_ssh_client") as mock_create:
             mock_create.side_effect = socket.timeout("Connection timed out")
@@ -483,7 +483,7 @@ class TestSetExecutable:
             key_file=Path("/home/user/.ssh/id_rsa"),
         )
 
-        transport = SCPTransport()
+        transport = SFTPTransport()
 
         with patch("paramiko.SSHClient") as MockSSHClient:
             mock_client = MagicMock()
@@ -513,7 +513,7 @@ class TestSetExecutable:
             key_file=Path("/home/user/.ssh/id_rsa"),
         )
 
-        transport = SCPTransport()
+        transport = SFTPTransport()
 
         with patch.object(transport, "_create_ssh_client") as mock_create:
             mock_client = MagicMock(spec=paramiko.SSHClient)

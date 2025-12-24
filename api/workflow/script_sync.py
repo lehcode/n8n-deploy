@@ -38,7 +38,7 @@ class ScriptSyncConfig:
     workflow_name: str  # Sanitized workflow name for remote subdir
 
     # Transport configuration
-    transport: str = "scp"
+    transport: str = "sftp"
     host: str = ""
     port: int = 22
     username: str = ""
@@ -408,7 +408,7 @@ def create_sync_manager_from_cli(
     port: int = 22,
     key_file: Optional[str] = None,
     password: Optional[str] = None,
-    transport: str = "scp",
+    transport: str = "sftp",
     changed_only: bool = True,
     dry_run: bool = False,
 ) -> ScriptSyncManager:
