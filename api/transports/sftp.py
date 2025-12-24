@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-SCP transport plugin for script synchronization.
+SFTP transport plugin for script synchronization.
 
 Uses Paramiko for pure-Python SSH/SFTP file transfer.
 """
@@ -69,19 +69,19 @@ class _AutoAddHostKeyPolicy(paramiko.MissingHostKeyPolicy):
 
 
 @PluginRegistry.register
-class SCPTransport(TransportPlugin):
+class SFTPTransport(TransportPlugin):
     """SFTP-based file transport plugin using Paramiko."""
 
     @property
     def name(self) -> str:
-        return "scp"
+        return "sftp"
 
     @property
     def description(self) -> str:
-        return "Secure Copy Protocol (SCP/SFTP) file transfer"
+        return "SSH File Transfer Protocol (SFTP) file transfer"
 
     def validate_config(self, target: TransportTarget) -> bool:
-        """Validate SCP configuration."""
+        """Validate SFTP configuration."""
         if not target.host or not target.username:
             return False
         if not target.password and not target.key_file:

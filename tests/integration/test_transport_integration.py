@@ -16,19 +16,19 @@ class TestTransportPluginRegistry:
     """Integration tests for transport plugin registry"""
 
     def test_scp_transport_is_registered(self) -> None:
-        """Test SCP transport is properly registered in plugin registry"""
+        """Test SFTP transport is properly registered in plugin registry"""
         from api.transports.base import PluginRegistry
 
         plugins = PluginRegistry.list_plugins()
-        assert "scp" in plugins, f"SCP transport not registered. Available: {plugins}"
+        assert "sftp" in plugins, f"SFTP transport not registered. Available: {plugins}"
 
     def test_scp_transport_can_be_created(self) -> None:
-        """Test SCP transport can be instantiated via registry"""
+        """Test SFTP transport can be instantiated via registry"""
         from api.transports.base import PluginRegistry
 
-        plugin = PluginRegistry.create_instance("scp")
-        assert plugin is not None, "Failed to create SCP transport instance"
-        assert plugin.name == "scp"
+        plugin = PluginRegistry.create_instance("sftp")
+        assert plugin is not None, "Failed to create SFTP transport instance"
+        assert plugin.name == "sftp"
 
     def test_unknown_transport_returns_none(self) -> None:
         """Test unknown transport name returns None"""
@@ -38,12 +38,12 @@ class TestTransportPluginRegistry:
         assert plugin is None
 
     def test_scp_transport_has_description(self) -> None:
-        """Test SCP transport has a description"""
+        """Test SFTP transport has a description"""
         from api.transports.base import PluginRegistry
 
-        plugin = PluginRegistry.create_instance("scp")
+        plugin = PluginRegistry.create_instance("sftp")
         assert plugin is not None
-        assert plugin.description, "SCP transport should have a description"
+        assert plugin.description, "SFTP transport should have a description"
         assert "SCP" in plugin.description or "SFTP" in plugin.description
 
 
@@ -175,14 +175,14 @@ class TestTransportErrorTypes:
         assert len(values) == len(set(values)), "Error type values should be unique"
 
 
-class TestSCPTransportValidation:
-    """Integration tests for SCP transport config validation"""
+class TestSFTPTransportValidation:
+    """Integration tests for SFTP transport config validation"""
 
     def test_validate_config_requires_host(self) -> None:
         """Test config validation requires host"""
         from api.transports.base import PluginRegistry, TransportTarget
 
-        transport = PluginRegistry.create_instance("scp")
+        transport = PluginRegistry.create_instance("sftp")
         assert transport is not None
 
         target = TransportTarget(
@@ -199,7 +199,7 @@ class TestSCPTransportValidation:
         """Test config validation requires username"""
         from api.transports.base import PluginRegistry, TransportTarget
 
-        transport = PluginRegistry.create_instance("scp")
+        transport = PluginRegistry.create_instance("sftp")
         assert transport is not None
 
         target = TransportTarget(
@@ -216,7 +216,7 @@ class TestSCPTransportValidation:
         """Test config validation requires password or key"""
         from api.transports.base import PluginRegistry, TransportTarget
 
-        transport = PluginRegistry.create_instance("scp")
+        transport = PluginRegistry.create_instance("sftp")
         assert transport is not None
 
         target = TransportTarget(
@@ -233,7 +233,7 @@ class TestSCPTransportValidation:
         """Test config validation accepts password authentication"""
         from api.transports.base import PluginRegistry, TransportTarget
 
-        transport = PluginRegistry.create_instance("scp")
+        transport = PluginRegistry.create_instance("sftp")
         assert transport is not None
 
         target = TransportTarget(
@@ -264,7 +264,7 @@ class TestSCPTransportValidation:
         """Test config validation accepts SSH key authentication"""
         from api.transports.base import PluginRegistry, TransportTarget
 
-        transport = PluginRegistry.create_instance("scp")
+        transport = PluginRegistry.create_instance("sftp")
         assert transport is not None
 
         target = TransportTarget(
@@ -281,7 +281,7 @@ class TestSCPTransportValidation:
         """Test config validation rejects non-existent key file"""
         from api.transports.base import PluginRegistry, TransportTarget
 
-        transport = PluginRegistry.create_instance("scp")
+        transport = PluginRegistry.create_instance("sftp")
         assert transport is not None
 
         target = TransportTarget(

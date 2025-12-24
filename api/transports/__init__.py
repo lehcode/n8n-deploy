@@ -3,7 +3,7 @@
 Transport plugins for n8n-deploy script synchronization.
 
 This module provides an extensible plugin architecture for file transfer
-operations. The default transport is SCP.
+operations. The default transport is SFTP.
 
 Usage:
     from api.transports import PluginRegistry, TransportTarget
@@ -12,7 +12,7 @@ Usage:
     plugins = PluginRegistry.list_plugins()
 
     # Create a transport instance
-    transport = PluginRegistry.create_instance("scp")
+    transport = PluginRegistry.create_instance("sftp")
 
     # Configure target
     target = TransportTarget(
@@ -36,8 +36,8 @@ from .base import (
     TransportTarget,
 )
 
-# Import SCP transport to register it
-from . import scp  # noqa: F401
+# Import SFTP transport to register it
+from . import sftp  # noqa: F401
 
 __all__ = [
     "PluginRegistry",

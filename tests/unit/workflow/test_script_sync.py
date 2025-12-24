@@ -50,7 +50,7 @@ class TestScriptSyncConfig:
             key_file=Path("/home/user/.ssh/id_rsa"),
             remote_base_path="/opt/n8n/scripts",
             workflow_name="My Workflow",
-            transport="scp",
+            transport="sftp",
             changed_only=False,
             dry_run=True,
         )
