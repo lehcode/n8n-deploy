@@ -15,14 +15,14 @@ import pytest
 class TestTransportPluginRegistry:
     """Integration tests for transport plugin registry"""
 
-    def test_scp_transport_is_registered(self) -> None:
+    def test_sftp_transport_is_registered(self) -> None:
         """Test SFTP transport is properly registered in plugin registry"""
         from api.transports.base import PluginRegistry
 
         plugins = PluginRegistry.list_plugins()
         assert "sftp" in plugins, f"SFTP transport not registered. Available: {plugins}"
 
-    def test_scp_transport_can_be_created(self) -> None:
+    def test_sftp_transport_can_be_created(self) -> None:
         """Test SFTP transport can be instantiated via registry"""
         from api.transports.base import PluginRegistry
 
@@ -37,14 +37,14 @@ class TestTransportPluginRegistry:
         plugin = PluginRegistry.create_instance("nonexistent_transport")
         assert plugin is None
 
-    def test_scp_transport_has_description(self) -> None:
+    def test_sftp_transport_has_description(self) -> None:
         """Test SFTP transport has a description"""
         from api.transports.base import PluginRegistry
 
         plugin = PluginRegistry.create_instance("sftp")
         assert plugin is not None
         assert plugin.description, "SFTP transport should have a description"
-        assert "SCP" in plugin.description or "SFTP" in plugin.description
+        assert "SFTP" in plugin.description
 
 
 class TestTransportTarget:

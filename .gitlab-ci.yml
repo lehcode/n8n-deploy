@@ -121,7 +121,6 @@ warm-cache:
   stage: .pre
   # Use dualbuntu image for better performance
   tags:
-    - linux
     - cache
   rules:
     - when: on_success
@@ -156,8 +155,8 @@ warm-cache:
 secret_detection:
   stage: security
   tags:
-    - alpine
     - linux
+    - python
   rules:
     - if: '$CI_COMMIT_TAG'
       when: never
@@ -189,8 +188,8 @@ secret_detection:
 dependency_scanning:
   stage: security
   tags:
-    - alpine
     - linux
+    - python
   needs:
     - warm-cache
   rules:
@@ -226,8 +225,8 @@ dependency_scanning:
 security:bandit:
   stage: security
   tags:
-    - alpine
     - linux
+    - python
   needs:
     - warm-cache
   rules:
@@ -265,8 +264,8 @@ security:bandit:
 security:semgrep:
   stage: security
   tags:
-    - alpine
     - linux
+    - python
   needs:
     - warm-cache
   rules:
@@ -332,8 +331,8 @@ quality:mypy:
 quality:black:
   stage: quality
   tags:
-    - alpine
     - linux
+    - python
   needs:
     - warm-cache
   rules:
@@ -433,8 +432,8 @@ build:python-matrix:
   image: python:${PYTHON_VERSION}-slim
   interruptible: false
   tags:
-    - alpine
     - linux
+    - python
   cache:
     key:
       files:
@@ -487,8 +486,8 @@ release:rc:
   stage: release
   image: registry.gitlab.com/juhani/go-semrel-gitlab:v0.21.1
   tags:
-    - alpine
     - linux
+    - python
   cache: {}  # Disable cache - not needed for release
   needs:
     - job: build:python-matrix
@@ -532,8 +531,8 @@ release:production:
   stage: release
   image: registry.gitlab.com/juhani/go-semrel-gitlab:v0.21.1
   tags:
-    - alpine
     - linux
+    - python
   cache: {}  # Disable cache - not needed for release
   needs:
     - job: build:python-matrix
