@@ -6,6 +6,7 @@ Simple n8n workflow deployment tool with SQLite metadata store
 from .models import Workflow
 from .db import DBApi
 from .workflow import WorkflowApi
+from . import config  # Make api.config accessible for patching in tests
 from . import workflow  # Make api.workflow accessible for patching in tests
 
 # Dynamic version from package metadata (set by setuptools_scm from git tags)
