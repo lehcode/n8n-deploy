@@ -68,7 +68,7 @@ class ServerCrud(BaseDB):
         with self.get_connection() as conn:
             cursor = conn.execute(
                 """
-                SELECT id, url, name, is_active, created_at, last_used
+                SELECT id, url, name, is_active, skip_ssl_verify, created_at, last_used
                 FROM servers
                 WHERE name = ?
                 """,
@@ -81,8 +81,9 @@ class ServerCrud(BaseDB):
                     "url": row[1],
                     "name": row[2],
                     "is_active": bool(row[3]),
-                    "created_at": row[4],
-                    "last_used": row[5],
+                    "skip_ssl_verify": bool(row[4]) if row[4] is not None else False,
+                    "created_at": row[5],
+                    "last_used": row[6],
                 }
             return None
 
@@ -99,7 +100,7 @@ class ServerCrud(BaseDB):
         with self.get_connection() as conn:
             cursor = conn.execute(
                 """
-                SELECT id, url, name, is_active, created_at, last_used
+                SELECT id, url, name, is_active, skip_ssl_verify, created_at, last_used
                 FROM servers
                 WHERE id = ?
                 """,
@@ -112,8 +113,9 @@ class ServerCrud(BaseDB):
                     "url": row[1],
                     "name": row[2],
                     "is_active": bool(row[3]),
-                    "created_at": row[4],
-                    "last_used": row[5],
+                    "skip_ssl_verify": bool(row[4]) if row[4] is not None else False,
+                    "created_at": row[5],
+                    "last_used": row[6],
                 }
             return None
 
@@ -130,7 +132,7 @@ class ServerCrud(BaseDB):
         with self.get_connection() as conn:
             cursor = conn.execute(
                 """
-                SELECT id, url, name, is_active, created_at, last_used
+                SELECT id, url, name, is_active, skip_ssl_verify, created_at, last_used
                 FROM servers
                 WHERE url = ? AND is_active = TRUE
                 ORDER BY created_at DESC
@@ -145,8 +147,9 @@ class ServerCrud(BaseDB):
                     "url": row[1],
                     "name": row[2],
                     "is_active": bool(row[3]),
-                    "created_at": row[4],
-                    "last_used": row[5],
+                    "skip_ssl_verify": bool(row[4]) if row[4] is not None else False,
+                    "created_at": row[5],
+                    "last_used": row[6],
                 }
             return None
 
@@ -162,7 +165,7 @@ class ServerCrud(BaseDB):
         """
         with self.get_connection() as conn:
             query = """
-                SELECT id, url, name, is_active, created_at, last_used
+                SELECT id, url, name, is_active, skip_ssl_verify, created_at, last_used
                 FROM servers
             """
             if active_only:
@@ -177,8 +180,9 @@ class ServerCrud(BaseDB):
                     "url": row[1],
                     "name": row[2],
                     "is_active": bool(row[3]),
-                    "created_at": row[4],
-                    "last_used": row[5],
+                    "skip_ssl_verify": bool(row[4]) if row[4] is not None else False,
+                    "created_at": row[5],
+                    "last_used": row[6],
                 }
                 for row in rows
             ]
@@ -188,6 +192,7 @@ class ServerCrud(BaseDB):
         name: str,
         url: Optional[str] = None,
         is_active: Optional[bool] = None,
+        skip_ssl_verify: Optional[bool] = None,
     ) -> bool:
         """
         Update server details
@@ -196,6 +201,7 @@ class ServerCrud(BaseDB):
             name: Server name (identifier)
             url: New server URL (optional)
             is_active: New active status (optional)
+            skip_ssl_verify: Skip SSL verification (optional)
 
         Returns:
             True if server was updated, False if not found
@@ -204,7 +210,7 @@ class ServerCrud(BaseDB):
         if not server:
             return False
 
-        if url is None and is_active is None:
+        if url is None and is_active is None and skip_ssl_verify is None:
             return True  # Nothing to update
 
         with self.get_connection() as conn:
@@ -216,8 +222,26 @@ class ServerCrud(BaseDB):
                     "UPDATE servers SET is_active = ? WHERE name = ?",
                     (1 if is_active else 0, name),
                 )
+            if skip_ssl_verify is not None:
+                conn.execute(
+                    "UPDATE servers SET skip_ssl_verify = ? WHERE name = ?",
+                    (1 if skip_ssl_verify else 0, name),
+                )
             conn.commit()
             return True
+
+    def set_server_ssl_verify(self, name: str, skip_ssl_verify: bool) -> bool:
+        """
+        Set SSL verification setting for a server
+
+        Args:
+            name: Server name
+            skip_ssl_verify: True to skip SSL verification, False to enforce
+
+        Returns:
+            True if updated, False if server not found
+        """
+        return self.update_server(name, skip_ssl_verify=skip_ssl_verify)
 
     def delete_server(self, name: str) -> bool:
         """

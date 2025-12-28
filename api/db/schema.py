@@ -17,7 +17,7 @@ from .base import BaseDB
 class SchemaApi(BaseDB):
     """Manages database schema initialization and versioning"""
 
-    SCHEMA_VERSION = 7
+    SCHEMA_VERSION = 8
 
     def __init__(
         self,
@@ -74,21 +74,7 @@ class SchemaApi(BaseDB):
                     name TEXT NOT NULL UNIQUE,
                     description TEXT,
                     is_active BOOLEAN DEFAULT TRUE,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    last_used TIMESTAMP
-                )
-            """
-            )
-
-            # Create servers table
-            conn.execute(
-                """
-                CREATE TABLE IF NOT EXISTS servers (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    url TEXT NOT NULL,
-                    name TEXT NOT NULL UNIQUE,
-                    description TEXT,
-                    is_active BOOLEAN DEFAULT TRUE,
+                    skip_ssl_verify BOOLEAN DEFAULT FALSE,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     last_used TIMESTAMP
                 )
@@ -222,7 +208,7 @@ class SchemaApi(BaseDB):
                 INSERT OR REPLACE INTO schema_info (version, applied_at, description)
                 VALUES (?, ?, ?)
             """,
-                (self.SCHEMA_VERSION, datetime.now(), "Workflow scripts path"),
+                (self.SCHEMA_VERSION, datetime.now(), "Server SSL verification setting"),
             )
 
             conn.commit()
@@ -339,6 +325,22 @@ class SchemaApi(BaseDB):
                         VALUES (?, ?, ?)
                         """,
                         (7, datetime.now(), "Workflow scripts path"),
+                    )
+                    conn.commit()
+                except sqlite3.OperationalError:
+                    # Column already exists
+                    pass
+
+            # Migration from version 7 to 8: Add skip_ssl_verify to servers
+            if current_version < 8:
+                try:
+                    conn.execute("ALTER TABLE servers ADD COLUMN skip_ssl_verify BOOLEAN DEFAULT FALSE")
+                    conn.execute(
+                        """
+                        INSERT OR REPLACE INTO schema_info (version, applied_at, description)
+                        VALUES (?, ?, ?)
+                        """,
+                        (8, datetime.now(), "Server SSL verification setting"),
                     )
                     conn.commit()
                 except sqlite3.OperationalError:

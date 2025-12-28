@@ -26,6 +26,7 @@ def server_api(temp_dir: Path) -> ServerCrud:
                 url TEXT NOT NULL,
                 name TEXT NOT NULL UNIQUE,
                 is_active BOOLEAN DEFAULT TRUE,
+                skip_ssl_verify BOOLEAN DEFAULT FALSE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 last_used TIMESTAMP
             )

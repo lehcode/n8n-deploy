@@ -326,3 +326,110 @@ def show_keys(
         else:
             console.print(f"❌ Error showing keys: {e}")
         raise click.Abort()
+
+
+@server.command(name="ssl", cls=CustomCommand)
+@click.argument("server_name")
+@click.option("--skip-verify", is_flag=True, help="Skip SSL certificate verification")
+@click.option("--verify", is_flag=True, help="Require SSL certificate verification")
+@click.option("--json", "output_json", is_flag=True, help=HELP_JSON)
+@click.option("--data-dir", help="Application directory (overrides N8N_DEPLOY_DATA_DIR)")
+@click.option("--db-filename", type=str, help=HELP_DB_FILENAME)
+@click.option("--no-emoji", is_flag=True, help="Disable emoji in output")
+def server_ssl(
+    server_name: str,
+    skip_verify: bool,
+    verify: bool,
+    output_json: bool,
+    data_dir: Optional[str],
+    db_filename: Optional[str],
+    no_emoji: bool,
+) -> None:
+    """🔐 Configure SSL certificate verification for a server
+
+    Set whether SSL certificate verification should be skipped for
+    connections to this server. Useful for self-signed certificates.
+
+    \b
+    Examples:
+      n8n-deploy server ssl production --skip-verify
+      n8n-deploy server ssl production --verify
+    """
+    # JSON output implies no emoji
+    if output_json:
+        no_emoji = True
+
+    # Validate mutually exclusive options
+    if skip_verify and verify:
+        error_msg = "Cannot use both --skip-verify and --verify"
+        if output_json:
+            console.print(json.dumps({"success": False, "error": error_msg}))
+        else:
+            console.print(f"[red]{error_msg}[/red]")
+        raise click.Abort()
+
+    if not skip_verify and not verify:
+        error_msg = "Must specify either --skip-verify or --verify"
+        if output_json:
+            console.print(json.dumps({"success": False, "error": error_msg}))
+        else:
+            console.print(f"[yellow]{error_msg}[/yellow]")
+        raise click.Abort()
+
+    try:
+        config = get_config(base_folder=data_dir, db_filename=db_filename)
+    except ValueError as e:
+        console.print(f"[red]{e}[/red]")
+        raise click.Abort()
+
+    try:
+        server_api = ServerCrud(config=config)
+
+        # Check server exists
+        existing = server_api.get_server_by_name(server_name)
+        if not existing:
+            error_msg = f"Server '{server_name}' not found"
+            if output_json:
+                console.print(json.dumps({"success": False, "error": error_msg}))
+            else:
+                console.print(f"[red]❌ {error_msg}[/red]")
+            raise click.Abort()
+
+        # Update SSL setting
+        new_skip_ssl = skip_verify  # True for --skip-verify, False for --verify
+        success = server_api.set_server_ssl_verify(server_name, new_skip_ssl)
+
+        if not success:
+            error_msg = f"Failed to update SSL setting for '{server_name}'"
+            if output_json:
+                console.print(json.dumps({"success": False, "error": error_msg}))
+            else:
+                console.print(f"[red]❌ {error_msg}[/red]")
+            raise click.Abort()
+
+        result = {
+            "success": True,
+            "server": server_name,
+            "skip_ssl_verify": new_skip_ssl,
+            "message": f"SSL verification {'disabled' if new_skip_ssl else 'enabled'} for {server_name}",
+        }
+
+        if output_json:
+            console.print(json.dumps(result, indent=2))
+        elif no_emoji:
+            console.print(f"SSL verification {'disabled' if new_skip_ssl else 'enabled'} for {server_name}")
+        else:
+            if new_skip_ssl:
+                console.print(f"⚠️  SSL verification [yellow]disabled[/yellow] for {server_name}")
+            else:
+                console.print(f"✅ SSL verification [green]enabled[/green] for {server_name}")
+
+    except click.Abort:
+        raise
+    except Exception as e:
+        error_msg = f"Error updating SSL setting: {e}"
+        if output_json:
+            console.print(json.dumps({"success": False, "error": error_msg}))
+        else:
+            console.print(f"[red]❌ {error_msg}[/red]")
+        raise click.Abort()
