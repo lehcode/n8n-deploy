@@ -503,6 +503,7 @@ release:rc:
     - when: never
   variables:
     GIT_SSL_NO_VERIFY: "1"
+    GITLAB_URL: "https://192.168.76.5:8443/api/v4"
     GSG_TOKEN: $GITLAB_TOKEN
     GSG_RELEASE_BRANCHES: master
     GSG_PRE_TMPL: 'rc,{{ seq }}'
@@ -548,6 +549,7 @@ release:production:
     - when: never
   variables:
     GIT_SSL_NO_VERIFY: "1"
+    GITLAB_URL: "https://192.168.76.5:8443/api/v4"
     GSG_TOKEN: $GITLAB_TOKEN
   script:
     - echo "Calculating next production version..."
