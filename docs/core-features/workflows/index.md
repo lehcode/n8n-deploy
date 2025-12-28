@@ -9,7 +9,7 @@ description: "Managing n8n workflows with n8n-deploy"
 
 # Workflow Management
 
-n8n-deploy provides comprehensive workflow management capabilities, allowing you to interact with n8n workflows seamlessly.
+n8n-deploy stores workflow configuration in a local database. Push and pull by name or ID (copy from the n8n UI URL) - the database tracks paths and server links.
 
 ## 🆕 Adding New Workflows
 
@@ -163,36 +163,30 @@ n8n-deploy wf push my-workflow --scripts ./scripts
 
 ---
 
-## 🔄 Automatic Path Resolution
+## 🔄 Path and Server Resolution
 
-n8n-deploy stores workflow paths in the database, eliminating repetitive CLI flags:
-
-### Path Resolution Priority
-
-1. **CLI explicit** (`--flow-dir ./foo`) - Always used when provided
-2. **Database stored** (`file_folder` column) - Used when no CLI flag
-3. **Environment variable** (`N8N_DEPLOY_FLOWS_DIR`) - Fallback
-4. **Current directory** - Final fallback (with warning)
-
-### Server Resolution Priority
-
-1. **CLI explicit** (`--remote staging`) - Always used when provided
-2. **Workflow's linked server** (`server_id` column) - Automatic
-3. **Environment variable** (`N8N_SERVER_URL`) - Fallback
-
-### Example Workflow
+When you add a workflow with `--flow-dir` and `--link-remote`, those values are stored. Future commands use them automatically:
 
 ```bash
-# Setup once with full paths
+# Add with configuration
 n8n-deploy wf add workflow.json --flow-dir ./workflows --link-remote production
 
-# Future operations use stored values
-n8n-deploy wf push workflow-name   # No --flow-dir or --remote needed!
-n8n-deploy wf pull workflow-name   # Uses stored paths automatically
+# Push/pull - just the name
+n8n-deploy wf push my-workflow
+n8n-deploy wf pull my-workflow
 
 # Override when needed
-n8n-deploy wf push workflow-name --remote staging  # Ad-hoc override
+n8n-deploy wf push my-workflow --remote staging
 ```
+
+### Resolution Order
+
+| Setting | Priority |
+|---------|----------|
+| Flow directory | CLI flag > Database > Environment > Current dir |
+| Server | CLI flag > Database > Environment |
+
+Explicit flags always take precedence.
 
 ---
 

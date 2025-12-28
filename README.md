@@ -18,22 +18,25 @@
 
 ## Overview
 
-`n8n-deploy` is a powerful Python CLI tool designed to simplify n8n workflow management through a database-first approach. It provides a flexible, efficient solution for managing n8n workflows, especially in environments without direct web UI access.
+`n8n-deploy` is a Python CLI that **remembers your workflow configuration**. Built on SQLite, it stores paths, servers, and settings - so deployment commands stay simple.
+
+```bash
+n8n-deploy wf push my-workflow
+```
+
+The database knows where your workflow lives and which server it belongs to.
 
 ### Key Features
 
-- 🗂️ **Database-Driven Workflow Management**
-  - SQLite metadata store for tracking workflows (schema v8)
-  - Support for new workflows without server ID (auto-generates draft ID)
-  - Flexible base folder configuration with automatic path resolution
-  - Plain text API key storage
+- 🧠 **Smart Configuration**
+  - Stores workflow paths, server links, and SSL settings
+  - Push/pull with just the workflow name
+  - Override anytime with explicit flags
 
-- 🚀 **Seamless n8n Server Integration**
-  - Push and pull workflows directly from remote n8n servers
-  - Workflow-server linking for automatic server resolution
-  - Priority-based server configuration (linked server → ENV → --remote)
-  - Per-server SSL verification settings (for self-signed certificates)
-  - Support for multiple server configurations with API key management
+- 🚀 **Multi-Server Support**
+  - Push and pull workflows to any n8n server
+  - Per-server SSL verification settings
+  - API key management with server linking
 
 - 📁 **Folder Synchronization** (NEW in v0.2.0)
   - Bidirectional folder sync between local and n8n server

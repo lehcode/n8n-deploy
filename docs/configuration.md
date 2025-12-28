@@ -6,7 +6,7 @@ nav_order: 3
 
 ## Configuration Guide
 
-n8n-deploy offers multiple configuration methods to suit different environments and use cases.
+n8n-deploy uses a local SQLite database to store workflow paths, server links, and SSL settings. Configuration can come from CLI flags, the database, or environment variables.
 
 ## 🔧 Configuration Methods
 
