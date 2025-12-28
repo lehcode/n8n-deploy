@@ -23,7 +23,8 @@ class TestN8nAPI:
         # Create mocks
         mock_db = MagicMock()
         mock_config = MagicMock()
-        mock_config.workflows_path = temp_dir / "workflows"
+        mock_config.flow_folder = temp_dir / "workflows"
+        mock_config.flow_folder_explicit = False
         mock_api_manager = MagicMock()
 
         # Test basic initialization
@@ -39,6 +40,7 @@ class TestN8nAPI:
         assert_that(api.skip_ssl_verify).is_false()
         assert_that(api.remote).is_none()
         assert_that(api.base_path).is_equal_to(temp_dir / "workflows")
+        assert_that(api.base_path_explicit).is_false()
         # Server URL and API key are now cached in ServerResolver
         assert_that(api._server_resolver._cached_url).is_none()
         assert_that(api._server_resolver._cached_api_key).is_none()
@@ -47,7 +49,8 @@ class TestN8nAPI:
         """Test N8nAPI initialization with skip_ssl_verify=True"""
         mock_db = MagicMock()
         mock_config = MagicMock()
-        mock_config.workflows_path = temp_dir / "workflows"
+        mock_config.flow_folder = temp_dir / "workflows"
+        mock_config.flow_folder_explicit = True
         mock_api_manager = MagicMock()
 
         api = N8nAPI(
@@ -58,12 +61,14 @@ class TestN8nAPI:
         )
 
         assert_that(api.skip_ssl_verify).is_true()
+        assert_that(api.base_path_explicit).is_true()
 
     def test_init_with_remote(self, temp_dir: Path) -> None:
         """Test N8nAPI initialization with remote parameter"""
         mock_db = MagicMock()
         mock_config = MagicMock()
-        mock_config.workflows_path = temp_dir / "workflows"
+        mock_config.flow_folder = temp_dir / "workflows"
+        mock_config.flow_folder_explicit = True
         mock_api_manager = MagicMock()
 
         api = N8nAPI(
@@ -82,7 +87,8 @@ class TestN8nAPI:
         mock_config = MagicMock()
         workflows_path = temp_dir / "workflows"
         workflows_path.mkdir(parents=True, exist_ok=True)
-        mock_config.workflows_path = workflows_path
+        mock_config.flow_folder = workflows_path
+        mock_config.flow_folder_explicit = True
         mock_api_manager = MagicMock()
 
         # Configure mock workflow data
@@ -145,7 +151,8 @@ class TestN8nAPI:
         """Test pull_workflow returns False when credentials unavailable"""
         mock_db = MagicMock()
         mock_config = MagicMock()
-        mock_config.workflows_path = temp_dir / "workflows"
+        mock_config.flow_folder = temp_dir / "workflows"
+        mock_config.flow_folder_explicit = True
         mock_api_manager = MagicMock()
 
         api = N8nAPI(
@@ -172,7 +179,8 @@ class TestN8nAPI:
         mock_config = MagicMock()
         workflows_path = temp_dir / "workflows"
         workflows_path.mkdir(parents=True, exist_ok=True)
-        mock_config.workflows_path = workflows_path
+        mock_config.flow_folder = workflows_path
+        mock_config.flow_folder_explicit = True
         mock_api_manager = MagicMock()
 
         # Create workflow file
@@ -241,7 +249,8 @@ class TestN8nAPI:
         mock_config = MagicMock()
         workflows_path = temp_dir / "workflows"
         workflows_path.mkdir(parents=True, exist_ok=True)
-        mock_config.workflows_path = workflows_path
+        mock_config.flow_folder = workflows_path
+        mock_config.flow_folder_explicit = True
         mock_api_manager = MagicMock()
 
         # Mock workflow info but no file
@@ -273,7 +282,8 @@ class TestN8nAPI:
         """Test get_n8n_version retrieves version from settings endpoint"""
         mock_db = MagicMock()
         mock_config = MagicMock()
-        mock_config.workflows_path = temp_dir / "workflows"
+        mock_config.flow_folder = temp_dir / "workflows"
+        mock_config.flow_folder_explicit = True
         mock_api_manager = MagicMock()
 
         api = N8nAPI(
@@ -296,7 +306,8 @@ class TestN8nAPI:
         """Test get_n8n_version with n8nVersion field"""
         mock_db = MagicMock()
         mock_config = MagicMock()
-        mock_config.workflows_path = temp_dir / "workflows"
+        mock_config.flow_folder = temp_dir / "workflows"
+        mock_config.flow_folder_explicit = True
         mock_api_manager = MagicMock()
 
         api = N8nAPI(
@@ -319,7 +330,8 @@ class TestN8nAPI:
         """Test get_n8n_version falls back to healthz endpoint"""
         mock_db = MagicMock()
         mock_config = MagicMock()
-        mock_config.workflows_path = temp_dir / "workflows"
+        mock_config.flow_folder = temp_dir / "workflows"
+        mock_config.flow_folder_explicit = True
         mock_api_manager = MagicMock()
 
         api = N8nAPI(
@@ -345,7 +357,8 @@ class TestN8nAPI:
         """Test get_n8n_version returns None on exception"""
         mock_db = MagicMock()
         mock_config = MagicMock()
-        mock_config.workflows_path = temp_dir / "workflows"
+        mock_config.flow_folder = temp_dir / "workflows"
+        mock_config.flow_folder_explicit = True
         mock_api_manager = MagicMock()
 
         api = N8nAPI(
@@ -368,7 +381,8 @@ class TestStripReadonlyFields:
         """Test _strip_readonly_fields removes all read-only fields"""
         mock_db = MagicMock()
         mock_config = MagicMock()
-        mock_config.workflows_path = temp_dir / "workflows"
+        mock_config.flow_folder = temp_dir / "workflows"
+        mock_config.flow_folder_explicit = True
         mock_api_manager = MagicMock()
 
         api = N8nAPI(
@@ -411,7 +425,8 @@ class TestStripReadonlyFields:
         """Test _strip_readonly_fields preserves non-readonly fields"""
         mock_db = MagicMock()
         mock_config = MagicMock()
-        mock_config.workflows_path = temp_dir / "workflows"
+        mock_config.flow_folder = temp_dir / "workflows"
+        mock_config.flow_folder_explicit = True
         mock_api_manager = MagicMock()
 
         api = N8nAPI(
@@ -442,7 +457,8 @@ class TestStripReadonlyFields:
         """Test _strip_readonly_fields handles empty input"""
         mock_db = MagicMock()
         mock_config = MagicMock()
-        mock_config.workflows_path = temp_dir / "workflows"
+        mock_config.flow_folder = temp_dir / "workflows"
+        mock_config.flow_folder_explicit = True
         mock_api_manager = MagicMock()
 
         api = N8nAPI(
@@ -459,7 +475,8 @@ class TestStripReadonlyFields:
         """Test _strip_readonly_fields removes additional readonly fields (isArchived, pinData, etc)"""
         mock_db = MagicMock()
         mock_config = MagicMock()
-        mock_config.workflows_path = temp_dir / "workflows"
+        mock_config.flow_folder = temp_dir / "workflows"
+        mock_config.flow_folder_explicit = True
         mock_api_manager = MagicMock()
 
         api = N8nAPI(
@@ -494,7 +511,8 @@ class TestStripReadonlyFields:
         """Test _strip_readonly_fields filters invalid fields from settings object"""
         mock_db = MagicMock()
         mock_config = MagicMock()
-        mock_config.workflows_path = temp_dir / "workflows"
+        mock_config.flow_folder = temp_dir / "workflows"
+        mock_config.flow_folder_explicit = True
         mock_api_manager = MagicMock()
 
         api = N8nAPI(
@@ -528,7 +546,8 @@ class TestStripReadonlyFields:
         """Test _strip_readonly_fields preserves all valid settings fields"""
         mock_db = MagicMock()
         mock_config = MagicMock()
-        mock_config.workflows_path = temp_dir / "workflows"
+        mock_config.flow_folder = temp_dir / "workflows"
+        mock_config.flow_folder_explicit = True
         mock_api_manager = MagicMock()
 
         api = N8nAPI(
@@ -565,7 +584,8 @@ class TestStripReadonlyFields:
         """Test _strip_readonly_fields handles non-dict settings gracefully"""
         mock_db = MagicMock()
         mock_config = MagicMock()
-        mock_config.workflows_path = temp_dir / "workflows"
+        mock_config.flow_folder = temp_dir / "workflows"
+        mock_config.flow_folder_explicit = True
         mock_api_manager = MagicMock()
 
         api = N8nAPI(
@@ -589,7 +609,8 @@ class TestStripReadonlyFields:
         """Test _strip_readonly_fields handles empty settings dict"""
         mock_db = MagicMock()
         mock_config = MagicMock()
-        mock_config.workflows_path = temp_dir / "workflows"
+        mock_config.flow_folder = temp_dir / "workflows"
+        mock_config.flow_folder_explicit = True
         mock_api_manager = MagicMock()
 
         api = N8nAPI(
@@ -611,7 +632,8 @@ class TestStripReadonlyFields:
         """Test create_n8n_workflow strips readonly fields before POST"""
         mock_db = MagicMock()
         mock_config = MagicMock()
-        mock_config.workflows_path = temp_dir / "workflows"
+        mock_config.flow_folder = temp_dir / "workflows"
+        mock_config.flow_folder_explicit = True
         mock_api_manager = MagicMock()
 
         api = N8nAPI(
@@ -643,7 +665,8 @@ class TestStripReadonlyFields:
         """Test update_n8n_workflow strips readonly fields before PUT"""
         mock_db = MagicMock()
         mock_config = MagicMock()
-        mock_config.workflows_path = temp_dir / "workflows"
+        mock_config.flow_folder = temp_dir / "workflows"
+        mock_config.flow_folder_explicit = True
         mock_api_manager = MagicMock()
 
         api = N8nAPI(
@@ -682,7 +705,8 @@ class TestDeleteN8nWorkflow:
         """Test successful workflow deletion"""
         mock_db = MagicMock()
         mock_config = MagicMock()
-        mock_config.workflows_path = temp_dir / "workflows"
+        mock_config.flow_folder = temp_dir / "workflows"
+        mock_config.flow_folder_explicit = True
         mock_api_manager = MagicMock()
 
         api = N8nAPI(
@@ -722,7 +746,8 @@ class TestDeleteN8nWorkflow:
         """Test deletion fails without credentials"""
         mock_db = MagicMock()
         mock_config = MagicMock()
-        mock_config.workflows_path = temp_dir / "workflows"
+        mock_config.flow_folder = temp_dir / "workflows"
+        mock_config.flow_folder_explicit = True
         mock_api_manager = MagicMock()
 
         api = N8nAPI(
@@ -741,7 +766,8 @@ class TestDeleteN8nWorkflow:
         """Test 404 response is treated as success (workflow already deleted)"""
         mock_db = MagicMock()
         mock_config = MagicMock()
-        mock_config.workflows_path = temp_dir / "workflows"
+        mock_config.flow_folder = temp_dir / "workflows"
+        mock_config.flow_folder_explicit = True
         mock_api_manager = MagicMock()
 
         api = N8nAPI(
@@ -781,7 +807,8 @@ class TestDeleteN8nWorkflow:
         """Test deletion handles server errors (non-404)"""
         mock_db = MagicMock()
         mock_config = MagicMock()
-        mock_config.workflows_path = temp_dir / "workflows"
+        mock_config.flow_folder = temp_dir / "workflows"
+        mock_config.flow_folder_explicit = True
         mock_api_manager = MagicMock()
 
         api = N8nAPI(
@@ -820,7 +847,8 @@ class TestDeleteN8nWorkflow:
         """Test deletion handles network errors"""
         mock_db = MagicMock()
         mock_config = MagicMock()
-        mock_config.workflows_path = temp_dir / "workflows"
+        mock_config.flow_folder = temp_dir / "workflows"
+        mock_config.flow_folder_explicit = True
         mock_api_manager = MagicMock()
 
         api = N8nAPI(
@@ -853,7 +881,8 @@ class TestDeleteN8nWorkflow:
         """Test deletion with skip_ssl_verify option"""
         mock_db = MagicMock()
         mock_config = MagicMock()
-        mock_config.workflows_path = temp_dir / "workflows"
+        mock_config.flow_folder = temp_dir / "workflows"
+        mock_config.flow_folder_explicit = True
         mock_api_manager = MagicMock()
 
         api = N8nAPI(
@@ -954,7 +983,8 @@ class TestPushWorkflow404Handling:
         mock_config = MagicMock()
         workflows_path = temp_dir / "workflows"
         workflows_path.mkdir(parents=True, exist_ok=True)
-        mock_config.workflows_path = workflows_path
+        mock_config.flow_folder = workflows_path
+        mock_config.flow_folder_explicit = True
         mock_api_manager = MagicMock()
 
         # Create workflow file with old ID
@@ -1041,7 +1071,8 @@ class TestPushWorkflow404Handling:
         mock_config = MagicMock()
         workflows_path = temp_dir / "workflows"
         workflows_path.mkdir(parents=True, exist_ok=True)
-        mock_config.workflows_path = workflows_path
+        mock_config.flow_folder = workflows_path
+        mock_config.flow_folder_explicit = True
         mock_api_manager = MagicMock()
 
         # Create workflow file
@@ -1110,7 +1141,8 @@ class TestPushWorkflow404Handling:
         mock_config = MagicMock()
         workflows_path = temp_dir / "workflows"
         workflows_path.mkdir(parents=True, exist_ok=True)
-        mock_config.workflows_path = workflows_path
+        mock_config.flow_folder = workflows_path
+        mock_config.flow_folder_explicit = True
         mock_api_manager = MagicMock()
 
         # Create workflow file

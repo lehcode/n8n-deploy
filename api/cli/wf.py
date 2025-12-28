@@ -10,14 +10,14 @@ Provides a consistent 'wf' command group for all wf operations including:
 import json
 import uuid
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import click
 from rich.console import Console
 from rich.json import JSON
 from rich.table import Table
 
-from ..config import get_config, AppConfig
+from ..config import get_config, AppConfig, NOT_PROVIDED
 from ..workflow import WorkflowApi
 from .app import (
     cli_data_dir_help,
@@ -213,7 +213,12 @@ def add(
         no_emoji = True
 
     try:
-        config = get_config(base_folder=data_dir, flow_folder=flow_dir, db_filename=db_filename)
+        # Use sentinel to distinguish "not provided" from explicit --flow-dir
+        config = get_config(
+            base_folder=data_dir,
+            flow_folder=flow_dir if flow_dir is not None else NOT_PROVIDED,
+            db_filename=db_filename,
+        )
     except ValueError as e:
         cli_error(str(e), no_emoji)
         raise click.Abort()
@@ -342,7 +347,12 @@ def delete(
       n8n-deploy wf delete my-workflow.json          # Delete by filename
     """
     try:
-        config = get_config(base_folder=data_dir, flow_folder=flow_dir, db_filename=db_filename)
+        # Use sentinel to distinguish "not provided" from explicit --flow-dir
+        config = get_config(
+            base_folder=data_dir,
+            flow_folder=flow_dir if flow_dir is not None else NOT_PROVIDED,
+            db_filename=db_filename,
+        )
     except ValueError as e:
         console.print(f"[red]{e}[/red]")
         raise click.Abort()
@@ -447,7 +457,12 @@ def search(
         no_emoji = True
 
     try:
-        config = get_config(base_folder=data_dir, flow_folder=flow_dir, db_filename=db_filename)
+        # Use sentinel to distinguish "not provided" from explicit --flow-dir
+        config = get_config(
+            base_folder=data_dir,
+            flow_folder=flow_dir if flow_dir is not None else NOT_PROVIDED,
+            db_filename=db_filename,
+        )
     except ValueError as e:
         console.print(f"[red]{e}[/red]")
         raise click.Abort()
@@ -500,7 +515,12 @@ def stats(
         no_emoji = True
 
     try:
-        config = get_config(base_folder=data_dir, flow_folder=flow_dir, db_filename=db_filename)
+        # Use sentinel to distinguish "not provided" from explicit --flow-dir
+        config = get_config(
+            base_folder=data_dir,
+            flow_folder=flow_dir if flow_dir is not None else NOT_PROVIDED,
+            db_filename=db_filename,
+        )
     except ValueError as e:
         console.print(f"[red]{e}[/red]")
         raise click.Abort()
@@ -588,7 +608,12 @@ def pull(
       n8n-deploy wf pull abc123 --filename my-workflow.json  # Custom filename
     """
     try:
-        config = get_config(base_folder=data_dir, flow_folder=flow_dir, db_filename=db_filename)
+        # Use sentinel to distinguish "not provided" from explicit --flow-dir
+        config = get_config(
+            base_folder=data_dir,
+            flow_folder=flow_dir if flow_dir is not None else NOT_PROVIDED,
+            db_filename=db_filename,
+        )
     except ValueError as e:
         console.print(f"[red]{e}[/red]")
         raise click.Abort()
@@ -753,7 +778,12 @@ def push(
       n8n-deploy wf push workflow-name --scripts ./scripts --scripts-host n8n.example.com --scripts-user deploy --scripts-key ~/.ssh/id_rsa
     """
     try:
-        config = get_config(base_folder=data_dir, flow_folder=flow_dir, db_filename=db_filename)
+        # Use sentinel to distinguish "not provided" from explicit --flow-dir
+        config = get_config(
+            base_folder=data_dir,
+            flow_folder=flow_dir if flow_dir is not None else NOT_PROVIDED,
+            db_filename=db_filename,
+        )
     except ValueError as e:
         console.print(f"[red]{e}[/red]")
         raise click.Abort()
@@ -982,7 +1012,12 @@ def list_server(
         no_emoji = True
 
     try:
-        config = get_config(base_folder=data_dir, flow_folder=flow_dir, db_filename=db_filename)
+        # Use sentinel to distinguish "not provided" from explicit --flow-dir
+        config = get_config(
+            base_folder=data_dir,
+            flow_folder=flow_dir if flow_dir is not None else NOT_PROVIDED,
+            db_filename=db_filename,
+        )
     except ValueError as e:
         console.print(f"[red]{e}[/red]")
         raise click.Abort()
@@ -1024,4 +1059,138 @@ def list_server(
             console.print(error_msg)
         else:
             console.print(f"[red]{error_msg}[/red]")
+        raise click.Abort()
+
+
+@wf.command(cls=CustomCommand)
+@click.argument("workflow_id")
+@click.option("--flow-dir", type=click.Path(), help="Update workflow's flow directory")
+@click.option("--server", "server_name", help="Link workflow to server (by name)")
+@click.option("--scripts-path", help="Update scripts path for Execute Command nodes")
+@click.option("--data-dir", type=click.Path(), help=cli_data_dir_help)
+@click.option("--db-filename", type=str, help=HELP_DB_FILENAME)
+@click.option("--json", "output_json", is_flag=True, help=HELP_JSON)
+@click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
+def link(
+    workflow_id: str,
+    flow_dir: Optional[str],
+    server_name: Optional[str],
+    scripts_path: Optional[str],
+    data_dir: Optional[str],
+    db_filename: Optional[str],
+    output_json: bool,
+    no_emoji: bool,
+) -> None:
+    """🔗 Update workflow metadata (flow-dir, server, scripts-path)
+
+    Updates stored metadata for a workflow without performing push/pull.
+    Use this to configure where a workflow's files are located or which
+    server it should sync with.
+
+    \b
+    Examples:
+      n8n-deploy wf link my-workflow --flow-dir ./workflows
+      n8n-deploy wf link my-workflow --server production
+      n8n-deploy wf link my-workflow --scripts-path /opt/n8n/scripts
+      n8n-deploy wf link my-workflow --flow-dir ./workflows --server production
+    """
+    if output_json:
+        no_emoji = True
+
+    try:
+        config = get_config(
+            base_folder=data_dir,
+            flow_folder=NOT_PROVIDED,  # Not used for linking
+            db_filename=db_filename,
+        )
+    except ValueError as e:
+        cli_error(str(e), no_emoji)
+        raise click.Abort()
+
+    from .db import check_database_exists
+
+    check_database_exists(config.database_path, output_json=output_json, no_emoji=no_emoji)
+
+    try:
+        manager = WorkflowApi(config=config)
+
+        # Find workflow by ID or name
+        workflow_obj = manager.db.get_workflow(workflow_id)
+        if not workflow_obj:
+            # Try searching by name
+            workflows = manager.db.search_workflows(workflow_id)
+            if len(workflows) == 1:
+                workflow_obj = workflows[0]
+            elif len(workflows) > 1:
+                error_msg = f"Multiple workflows match '{workflow_id}'. Use the full workflow ID."
+                if output_json:
+                    console.print(JSON.from_data({"success": False, "error": error_msg}))
+                else:
+                    cli_error(error_msg, no_emoji)
+                raise click.Abort()
+
+        if not workflow_obj:
+            error_msg = f"Workflow '{workflow_id}' not found in database"
+            if output_json:
+                console.print(JSON.from_data({"success": False, "error": error_msg}))
+            else:
+                cli_error(error_msg, no_emoji)
+            raise click.Abort()
+
+        updated_fields: List[str] = []
+
+        # Update flow_dir
+        if flow_dir is not None:
+            resolved_path = str(Path(flow_dir).resolve())
+            workflow_obj.file_folder = resolved_path
+            updated_fields.append(f"flow-dir={resolved_path}")
+
+        # Update server linkage
+        if server_name is not None:
+            server_name_resolved, server_id = _resolve_server_for_linking(config, server_name, output_json, no_emoji)
+            workflow_obj.server_id = server_id
+            updated_fields.append(f"server={server_name_resolved}")
+
+        # Update scripts path
+        if scripts_path is not None:
+            workflow_obj.scripts_path = scripts_path
+            updated_fields.append(f"scripts-path={scripts_path}")
+
+        if not updated_fields:
+            warning_msg = "No updates specified. Use --flow-dir, --server, or --scripts-path"
+            if output_json:
+                console.print(JSON.from_data({"success": False, "error": warning_msg}))
+            else:
+                if no_emoji:
+                    console.print(warning_msg)
+                else:
+                    console.print(f"[yellow]{warning_msg}[/yellow]")
+            return
+
+        # Save updates
+        manager.db.update_workflow(workflow_obj)
+
+        # Output success
+        result = {
+            "success": True,
+            "workflow_id": workflow_obj.id,
+            "workflow_name": workflow_obj.name,
+            "updated": updated_fields,
+        }
+
+        if output_json:
+            console.print(JSON.from_data(result))
+        elif no_emoji:
+            console.print(f"Updated workflow '{workflow_obj.name}': {', '.join(updated_fields)}")
+        else:
+            console.print(f"✅ Updated workflow '{workflow_obj.name}': {', '.join(updated_fields)}")
+
+    except click.Abort:
+        raise
+    except Exception as e:
+        error_msg = f"Failed to update workflow: {e}"
+        if output_json:
+            console.print(JSON.from_data({"success": False, "error": error_msg}))
+        else:
+            cli_error(error_msg, no_emoji)
         raise click.Abort()

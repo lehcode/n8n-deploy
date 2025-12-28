@@ -4,9 +4,22 @@ n8n_deploy_ Configuration Management
 """
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional, Union
+
+
+class _NotProvided:
+    """Sentinel to distinguish 'not provided' from None or explicit value.
+
+    Used to detect when --flow-dir was not specified by user,
+    allowing fallback to DB-stored workflow paths.
+    """
+
+    pass
+
+
+NOT_PROVIDED: _NotProvided = _NotProvided()
 
 # Import dotenv if available (ENVIRONMENT check happens at runtime in get_config)
 try:
@@ -23,6 +36,7 @@ class AppConfig:
 
     base_folder: Path
     flow_folder: Optional[Path] = None
+    flow_folder_explicit: bool = False  # True if user provided --flow-dir or env var
     n8n_url: Optional[str] = None
     backup_dir: Optional[Path] = None
     db_filename: str = "n8n-deploy.db"
@@ -75,7 +89,7 @@ class AppConfig:
 
 def get_config(
     base_folder: Optional[Union[str, Path]] = None,
-    flow_folder: Optional[Union[str, Path]] = None,
+    flow_folder: Optional[Union[str, Path, _NotProvided]] = NOT_PROVIDED,
     n8n_url: Optional[str] = None,
     db_filename: Optional[str] = None,
 ) -> AppConfig:
@@ -90,7 +104,8 @@ def get_config(
     Flow folder priority:
     1. Explicit --flow-dir parameter (highest priority)
     2. N8N_DEPLOY_FLOWS_DIR environment variable
-    3. Current working directory (default)
+    3. DB-stored workflow file_folder (when not explicit)
+    4. Current working directory (fallback with warning)
 
     n8n URL priority:
     1. Explicit --remote parameter (highest priority)
@@ -120,15 +135,25 @@ def get_config(
     else:
         base_path = Path.cwd()
 
-    if flow_folder is not None:
-        flow_path = Path(flow_folder).resolve()
+    # Flow folder: distinguish "not provided" from "explicitly provided"
+    # When not explicit, defer to DB-stored workflow file_folder
+    flow_folder_explicit = False
+    flow_path: Optional[Path] = None
+
+    if not isinstance(flow_folder, _NotProvided):
+        # User explicitly provided --flow-dir (could be path string)
+        flow_folder_explicit = True
+        if flow_folder is not None:
+            flow_path = Path(flow_folder).resolve()
     elif "N8N_DEPLOY_FLOWS_DIR" in os.environ:
+        # Environment variable counts as explicit
+        flow_folder_explicit = True
         flow_path = Path(os.environ["N8N_DEPLOY_FLOWS_DIR"]).resolve()
-        # Default to cwd if path doesn't exist or isn't a directory
+        # Default to None (defer to DB) if path doesn't exist
         if not flow_path.exists() or not flow_path.is_dir():
-            flow_path = Path.cwd()
-    else:
-        flow_path = Path.cwd()
+            flow_path = None
+            flow_folder_explicit = False
+    # else: flow_path stays None, defer to DB-stored file_folder
 
     if n8n_url is not None:
         api_url = n8n_url.rstrip("/")
@@ -149,7 +174,13 @@ def get_config(
     else:
         filename = "n8n-deploy.db"
 
-    config = AppConfig(base_folder=base_path, flow_folder=flow_path, n8n_url=api_url, db_filename=filename)
+    config = AppConfig(
+        base_folder=base_path,
+        flow_folder=flow_path,
+        flow_folder_explicit=flow_folder_explicit,
+        n8n_url=api_url,
+        db_filename=filename,
+    )
 
     config.ensure_directories()
     config.validate_paths()

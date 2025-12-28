@@ -82,6 +82,7 @@ class N8nHttpClient:
         data: Optional[Dict[str, Any]] = None,
         silent: bool = False,
         timeout: int = DEFAULT_TIMEOUT,
+        skip_ssl_verify: Optional[bool] = None,
     ) -> N8nApiResult:
         """Make HTTP request with typed result
 
@@ -95,12 +96,15 @@ class N8nHttpClient:
             data: Optional request payload for POST/PUT
             silent: If True, suppress error messages
             timeout: Request timeout in seconds
+            skip_ssl_verify: Per-request SSL override (None uses instance default)
 
         Returns:
             N8nApiResult with success status and either data or error details
         """
+        # Use per-request override if provided, otherwise instance default
+        effective_skip_ssl = skip_ssl_verify if skip_ssl_verify is not None else self.skip_ssl_verify
         try:
-            response, start_time = self._execute_request(method, url, headers, data, timeout)
+            response, start_time = self._execute_request(method, url, headers, data, timeout, effective_skip_ssl)
             response_body = response.text if response.content else None
             _log_response(response.status_code, dict(response.headers), start_time, response_body)
             return self._handle_response(response, silent)
@@ -141,6 +145,7 @@ class N8nHttpClient:
         data: Optional[Dict[str, Any]] = None,
         silent: bool = False,
         timeout: int = DEFAULT_TIMEOUT,
+        skip_ssl_verify: Optional[bool] = None,
     ) -> Optional[Dict[str, Any]]:
         """Make HTTP request returning dict or None
 
@@ -154,11 +159,12 @@ class N8nHttpClient:
             data: Optional request payload for POST/PUT
             silent: If True, suppress error messages
             timeout: Request timeout in seconds
+            skip_ssl_verify: Per-request SSL override (None uses instance default)
 
         Returns:
             Response data dict on success, None on failure
         """
-        result = self.request(method, url, headers, data, silent, timeout)
+        result = self.request(method, url, headers, data, silent, timeout, skip_ssl_verify)
         return result.data if result.success else None
 
     def _execute_request(
@@ -168,6 +174,7 @@ class N8nHttpClient:
         headers: Dict[str, str],
         data: Optional[Dict[str, Any]],
         timeout: int,
+        skip_ssl_verify: bool = False,
     ) -> Tuple[requests.Response, float]:
         """Execute the HTTP request with verbose logging
 
@@ -177,6 +184,7 @@ class N8nHttpClient:
             headers: Request headers
             data: Optional payload
             timeout: Request timeout
+            skip_ssl_verify: Skip SSL certificate verification
 
         Returns:
             Tuple of (requests.Response, start_time) for duration calculation
@@ -187,7 +195,7 @@ class N8nHttpClient:
         """
         start_time = _log_request(method, url, headers, data)
         method_upper = method.upper()
-        verify = not self.skip_ssl_verify
+        verify = not skip_ssl_verify
 
         if method_upper == "GET":
             response = requests.get(url, headers=headers, verify=verify, timeout=timeout)
@@ -261,6 +269,7 @@ class N8nHttpClient:
         url: str,
         headers: Dict[str, str],
         timeout: int = DEFAULT_TIMEOUT,
+        skip_ssl_verify: Optional[bool] = None,
     ) -> bool:
         """Delete a workflow from n8n server
 
@@ -270,16 +279,19 @@ class N8nHttpClient:
             url: Full URL to the workflow endpoint
             headers: Request headers (including authentication)
             timeout: Request timeout in seconds
+            skip_ssl_verify: Per-request SSL override (None uses instance default)
 
         Returns:
             True if deletion successful (including 404 - already deleted)
         """
+        # Use per-request override if provided, otherwise instance default
+        effective_skip_ssl = skip_ssl_verify if skip_ssl_verify is not None else self.skip_ssl_verify
         start_time = _log_request("DELETE", url, headers)
         try:
             response = requests.delete(
                 url,
                 headers=headers,
-                verify=not self.skip_ssl_verify,
+                verify=not effective_skip_ssl,
                 timeout=timeout,
             )
             response_body = response.text if response.content else None

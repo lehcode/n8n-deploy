@@ -30,7 +30,10 @@ class N8nAPI:
         self.api_manager = api_manager
         self.skip_ssl_verify = skip_ssl_verify
         self.remote = remote
-        self.base_path = config.workflows_path
+        # base_path may be None if flow_folder was not explicitly provided
+        self.base_path: Optional[Path] = config.flow_folder
+        # Track if flow folder was explicitly provided (--flow-dir or env var)
+        self.base_path_explicit = config.flow_folder_explicit
 
         # HTTP client for API requests
         self._http_client = N8nHttpClient(skip_ssl_verify=skip_ssl_verify)
@@ -41,17 +44,7 @@ class N8nAPI:
             db=db,
             api_manager=api_manager,
             remote=remote,
-        )
-
-        # HTTP client for API requests
-        self._http_client = N8nHttpClient(skip_ssl_verify=skip_ssl_verify)
-
-        # Server resolver for URL and API key resolution
-        self._server_resolver = ServerResolver(
-            config=config,
-            db=db,
-            api_manager=api_manager,
-            remote=remote,
+            skip_ssl_verify=skip_ssl_verify,
         )
 
     def _get_n8n_credentials(self, workflow_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
@@ -86,6 +79,7 @@ class N8nAPI:
             headers=credentials["headers"],
             data=data,
             silent=silent,
+            skip_ssl_verify=credentials.get("skip_ssl_verify"),
         )
 
     def _make_n8n_request_typed(
@@ -120,6 +114,7 @@ class N8nAPI:
             headers=credentials["headers"],
             data=data,
             silent=silent,
+            skip_ssl_verify=credentials.get("skip_ssl_verify"),
         )
 
     def get_n8n_workflows(self) -> Optional[List[Dict[str, Any]]]:
@@ -221,6 +216,7 @@ class N8nAPI:
         success = self._http_client.delete_workflow(
             url=url,
             headers=credentials["headers"],
+            skip_ssl_verify=credentials.get("skip_ssl_verify"),
         )
 
         if success:
@@ -290,7 +286,23 @@ class N8nAPI:
                 # New workflow - use {id}.json as default
                 target_filename = f"{actual_id}.json"
 
-            workflow_path = self.base_path / target_filename
+            # Determine save directory
+            # Priority: explicit --flow-dir > DB-stored file_folder > base_folder > cwd
+            if self.base_path_explicit and self.base_path:
+                # User explicitly provided --flow-dir, use it
+                save_folder = self.base_path
+            elif existing_workflow and existing_workflow.file_folder:
+                # Existing workflow - use stored folder
+                save_folder = Path(existing_workflow.file_folder)
+            elif self.base_path:
+                # Fallback to environment variable or config
+                save_folder = self.base_path
+            else:
+                # Ultimate fallback to current directory with warning
+                save_folder = Path.cwd()
+                print(f"⚠️  No flow directory specified, using current directory: {save_folder}")
+
+            workflow_path = save_folder / target_filename
             with open(workflow_path, "w", encoding="utf-8") as f:
                 json.dump(workflow_data, f, indent=2, ensure_ascii=False)
 
@@ -306,7 +318,7 @@ class N8nAPI:
                     id=actual_id,
                     name=workflow_data.get("name", "Unknown"),
                     file=target_filename,
-                    file_folder=str(self.base_path),
+                    file_folder=str(save_folder),  # Store resolved save folder
                     server_id=None,  # Will be set if workflow is linked to a server
                     n8n_version_id=n8n_version,
                     created_at=datetime.now(timezone.utc),
@@ -407,13 +419,20 @@ class N8nAPI:
             actual_id = wf.id
 
             # Construct file path from workflow data using stored filename
-            # Priority: current --flow-dir (self.base_path) > stored file_folder > cwd
-            if self.base_path:
+            # Priority: explicit --flow-dir > DB-stored file_folder > base_folder > cwd
+            if self.base_path_explicit and self.base_path:
+                # User explicitly provided --flow-dir, use it
                 flow_folder = self.base_path
             elif wf.file_folder:
+                # Use DB-stored path from workflow registration
                 flow_folder = Path(wf.file_folder)
+            elif self.base_path:
+                # Fallback to environment variable or config
+                flow_folder = self.base_path
             else:
+                # Ultimate fallback to current directory with warning
                 flow_folder = Path.cwd()
+                print(f"⚠️  No flow directory specified, using current directory: {flow_folder}")
 
             # Use stored filename or fallback to {id}.json
             filename = crud.get_workflow_filename(wf)
