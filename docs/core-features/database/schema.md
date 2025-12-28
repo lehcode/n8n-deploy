@@ -13,12 +13,13 @@ Complete reference for n8n-deploy database structure and relationships.
 
 ## 📋 Schema Overview
 
-The database consists of 7 tables organized into 3 functional groups:
+The database consists of 10 tables organized into 4 functional groups:
 1. **Workflow Management** (2 tables)
 2. **Server & API Key Management** (3 tables)
-3. **Configuration & Schema** (2 tables)
+3. **Folder Synchronization** (2 tables)
+4. **Configuration & Schema** (3 tables)
 
-**Current Schema Version**: 5
+**Current Schema Version**: 8
 
 ---
 
@@ -42,6 +43,7 @@ Stores workflow metadata and file references.
 | n8n_version_id | INTEGER | | n8n version identifier |
 | push_count | INTEGER | DEFAULT 0 | Number of times pushed to server |
 | pull_count | INTEGER | DEFAULT 0 | Number of times pulled from server |
+| scripts_path | TEXT | | Remote path for workflow scripts (v7) |
 
 **Indexes:**
 - `idx_workflows_name` on `name` (for search operations)
@@ -78,12 +80,16 @@ Stores n8n server configurations.
 | url | TEXT | NOT NULL | Server URL (e.g., `http://n8n.example.com:5678`) |
 | name | TEXT | NOT NULL UNIQUE | Server name (UTF-8, emojis supported) |
 | is_active | INTEGER | DEFAULT 1 | Active status (1=active, 0=inactive) |
+| skip_ssl_verify | INTEGER | DEFAULT 0 | Skip SSL verification (v8) |
 | created_at | TIMESTAMP | NOT NULL | Creation timestamp |
 | last_used | TIMESTAMP | | Last connection timestamp |
 
 **Indexes:**
 - `idx_servers_name` on `name` (UNIQUE)
 - `idx_servers_active` on `is_active`
+
+{: .note }
+> **SSL Configuration**: Use `n8n-deploy server ssl <name> --skip-verify` to enable SSL bypass for servers with self-signed certificates.
 
 ### api_keys Table
 
@@ -154,21 +160,69 @@ Tracks database schema version for migrations.
 | migration_script | TEXT | | SQL migration script |
 | applied_at | TIMESTAMP | | Migration application timestamp |
 
-**Current Version:** 5 (as of December 2025)
+**Current Version:** 8 (as of December 2025)
+
+### server_credentials Table
+
+Stores server authentication credentials.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | INTEGER | PRIMARY KEY AUTOINCREMENT | Auto-increment ID |
+| server_id | INTEGER | FOREIGN KEY | Server reference |
+| credential_type | TEXT | NOT NULL | Credential type (ssh, api, etc.) |
+| credential_data | TEXT | | Credential data (JSON) |
+| created_at | TIMESTAMP | | Creation timestamp |
+
+---
+
+## 📁 Folder Synchronization Tables
+
+### n8n_folders Table
+
+Stores n8n folder metadata for folder sync.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | INTEGER | PRIMARY KEY AUTOINCREMENT | Auto-increment ID |
+| folder_id | TEXT | NOT NULL | n8n folder ID |
+| name | TEXT | NOT NULL | Folder name |
+| server_id | INTEGER | FOREIGN KEY | Server reference |
+| created_at | TIMESTAMP | | Creation timestamp |
+
+### folder_mappings Table
+
+Maps local directories to remote n8n folders.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | INTEGER | PRIMARY KEY AUTOINCREMENT | Auto-increment ID |
+| local_path | TEXT | NOT NULL | Local directory path |
+| folder_id | INTEGER | FOREIGN KEY | n8n folder reference |
+| server_id | INTEGER | FOREIGN KEY | Server reference |
+| created_at | TIMESTAMP | | Creation timestamp |
 
 ---
 
 ## 🔗 Relationship Diagram
 
+```mermaid
+erDiagram
+    WORKFLOWS ||--o{ DEPENDENCIES : "has"
+    WORKFLOWS }o--|| SERVERS : "linked to"
+    SERVERS ||--o{ SERVER_API_KEYS : "uses"
+    API_KEYS ||--o{ SERVER_API_KEYS : "linked to"
+    SERVERS ||--o{ N8N_FOLDERS : "contains"
+    SERVERS ||--o{ FOLDER_MAPPINGS : "maps"
+    SERVERS ||--o{ SERVER_CREDENTIALS : "authenticates"
+    N8N_FOLDERS ||--o{ FOLDER_MAPPINGS : "mapped by"
 ```
-workflows 1──────┤ many dependencies
-                 │
-servers many─────┤├─── many api_keys
-                 ││     (via server_api_keys)
-                 ││
-                 └┴──── configurations
-                        schema_info
-```
+
+**Key Relationships:**
+- Workflows link to servers via `server_id` for automatic server resolution
+- Servers have SSL configuration (`skip_ssl_verify`) for self-signed certificates
+- Servers and API keys have many-to-many relationship via junction table
+- Folder mappings connect local paths to remote n8n folders
 
 ---
 

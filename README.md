@@ -23,15 +23,16 @@
 ### Key Features
 
 - 🗂️ **Database-Driven Workflow Management**
-  - SQLite metadata store for tracking workflows (schema v6)
+  - SQLite metadata store for tracking workflows (schema v8)
   - Support for new workflows without server ID (auto-generates draft ID)
-  - Flexible base folder configuration
+  - Flexible base folder configuration with automatic path resolution
   - Plain text API key storage
 
 - 🚀 **Seamless n8n Server Integration**
   - Push and pull workflows directly from remote n8n servers
   - Workflow-server linking for automatic server resolution
   - Priority-based server configuration (linked server → ENV → --remote)
+  - Per-server SSL verification settings (for self-signed certificates)
   - Support for multiple server configurations with API key management
 
 - 📁 **Folder Synchronization** (NEW in v0.2.0)
@@ -73,12 +74,20 @@ n8n-deploy db init --data-dir ~/.n8n-deploy
 n8n-deploy server create production https://n8n.example.com
 echo "your-n8n-api-key" | n8n-deploy apikey add - --name "prod-key"
 
-# Link workflow to server (automatic server resolution)
-n8n-deploy wf add workflow.json --link-remote production
+# Configure SSL for self-signed certificates (optional)
+n8n-deploy server ssl production --skip-verify
 
-# Push/pull uses linked server automatically (no --remote needed!)
-n8n-deploy wf push workflow-name  # Uses production server
-n8n-deploy wf pull workflow-name  # Uses production server
+# Link workflow to server with flow directory (automatic server resolution)
+n8n-deploy wf add workflow.json --flow-dir ./workflows --link-remote production
+
+# Push/pull uses linked server AND stored flow-dir automatically!
+n8n-deploy wf push workflow-name  # No --flow-dir or --remote needed!
+n8n-deploy wf pull workflow-name  # Uses stored paths automatically
+
+# Update workflow metadata without push/pull
+n8n-deploy wf link my-workflow --flow-dir ./new-location
+n8n-deploy wf link my-workflow --server staging
+n8n-deploy wf link my-workflow --scripts-path /opt/n8n/scripts/custom
 
 # Override with --remote for ad-hoc operations
 n8n-deploy wf push workflow-name --remote staging

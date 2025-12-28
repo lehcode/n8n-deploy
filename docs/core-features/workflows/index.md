@@ -119,6 +119,83 @@ n8n-deploy wf delete workflow-name --skip-ssl-verify
 {: .note }
 > **Draft workflows**: Workflows with draft IDs (`draft_*`) are only removed from the database since they don't exist on any server yet.
 
+## 🔗 Link Command - Update Workflow Metadata
+
+The `wf link` command updates stored workflow metadata without performing push/pull operations. This is useful for:
+
+- Changing the stored flow directory
+- Associating a workflow with a different server
+- Updating the remote scripts path
+
+### Update Flow Directory
+
+```bash
+# Update stored flow-dir for a workflow
+n8n-deploy wf link my-workflow --flow-dir ./new-location
+
+# Future push/pull will automatically use this path
+n8n-deploy wf push my-workflow  # Uses ./new-location
+```
+
+### Link to Different Server
+
+```bash
+# Associate workflow with a server
+n8n-deploy wf link my-workflow --server production
+
+# Future push uses this server automatically
+n8n-deploy wf push my-workflow  # No --remote needed
+```
+
+### Update Scripts Path
+
+```bash
+# Set custom remote scripts path
+n8n-deploy wf link my-workflow --scripts-path /opt/n8n/scripts/custom
+
+# Script sync will use this path instead of default
+n8n-deploy wf push my-workflow --scripts ./scripts
+```
+
+{: .tip }
+> **Combine options**: Update multiple settings at once:
+> `n8n-deploy wf link my-workflow --flow-dir ./workflows --server staging`
+
+---
+
+## 🔄 Automatic Path Resolution
+
+n8n-deploy stores workflow paths in the database, eliminating repetitive CLI flags:
+
+### Path Resolution Priority
+
+1. **CLI explicit** (`--flow-dir ./foo`) - Always used when provided
+2. **Database stored** (`file_folder` column) - Used when no CLI flag
+3. **Environment variable** (`N8N_DEPLOY_FLOWS_DIR`) - Fallback
+4. **Current directory** - Final fallback (with warning)
+
+### Server Resolution Priority
+
+1. **CLI explicit** (`--remote staging`) - Always used when provided
+2. **Workflow's linked server** (`server_id` column) - Automatic
+3. **Environment variable** (`N8N_SERVER_URL`) - Fallback
+
+### Example Workflow
+
+```bash
+# Setup once with full paths
+n8n-deploy wf add workflow.json --flow-dir ./workflows --link-remote production
+
+# Future operations use stored values
+n8n-deploy wf push workflow-name   # No --flow-dir or --remote needed!
+n8n-deploy wf pull workflow-name   # Uses stored paths automatically
+
+# Override when needed
+n8n-deploy wf push workflow-name --remote staging  # Ad-hoc override
+```
+
+---
+
 ## 🔍 Advanced Workflow Management
 
 ### Search Workflows
@@ -191,12 +268,6 @@ n8n-deploy wf -vv pull workflow-name   # Works at subcommand level
 - Ensure workflow names are exact
 - Use `--skip-ssl-verify` for self-signed certificates
 - Use `-v` or `-vv` flags to see HTTP request details
-
-{: .note }
-> **Push operations**: Read-only fields are automatically stripped before sending to n8n server. See [Troubleshooting](/n8n-deploy/troubleshooting/) for details.
-
-{: .note }
-> **Push operations**: Read-only fields are automatically stripped before sending to n8n server. See [Troubleshooting](/n8n-deploy/troubleshooting/) for details.
 
 {: .note }
 > **Push operations**: Read-only fields are automatically stripped before sending to n8n server. See [Troubleshooting](/n8n-deploy/troubleshooting/) for details.

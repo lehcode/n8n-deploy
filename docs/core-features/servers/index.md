@@ -16,6 +16,7 @@ n8n-deploy enables management of multiple n8n server connections, each with dedi
 Server management in n8n-deploy provides:
 - **Multi-Server Support**: Connect to development, staging, and production n8n instances
 - **Server-Key Linking**: Associate specific API keys with servers
+- **SSL Configuration**: Per-server SSL verification settings for self-signed certificates
 - **UTF-8 Names**: Use descriptive names with international characters and emojis
 - **Active/Inactive States**: Toggle server availability without deletion
 - **Centralized Configuration**: All servers managed from single database
@@ -33,12 +34,14 @@ erDiagram
         TEXT url
         TEXT name UK
         INTEGER is_active
+        INTEGER skip_ssl_verify
         TIMESTAMP created_at
         TIMESTAMP last_used
     }
     SERVER_API_KEYS {
         INTEGER server_id FK
         INTEGER api_key_id FK
+        INTEGER is_primary
         TIMESTAMP created_at
     }
 ```
@@ -89,6 +92,8 @@ Common server management issues and solutions.
 | List servers | `n8n-deploy server list` |
 | Active servers | `n8n-deploy server list --active` |
 | Server keys | `n8n-deploy server keys "Name"` |
+| Skip SSL verify | `n8n-deploy server ssl "Name" --skip-verify` |
+| Enable SSL verify | `n8n-deploy server ssl "Name" --verify` |
 | Remove server | `n8n-deploy server remove "Name"` |
 | JSON output | `n8n-deploy server list --json` |
 
@@ -112,6 +117,16 @@ n8n-deploy server create "QA Server" http://n8n-qa:5678
 
 # Add and link API key
 echo "$QA_API_KEY" | n8n-deploy apikey add - --name qa_key --server "QA Server"
+```
+
+### Configure SSL for Self-Signed Certificates
+
+```bash
+# Disable SSL verification for server with self-signed cert
+n8n-deploy server ssl "Production 🚀" --skip-verify
+
+# Re-enable SSL verification
+n8n-deploy server ssl "Production 🚀" --verify
 ```
 
 ### List Active Servers

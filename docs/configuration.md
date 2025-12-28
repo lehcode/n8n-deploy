@@ -44,18 +44,40 @@ N8N_DEPLOY_FLOW_DIR=/path/to/workflows
 ## 📋 Available Configuration Options
 
 ### Server Configuration
-- `--server-url` / `N8N_SERVER_URL`
-  - Specifies the n8n server URL for remote operations
-  - Example: `http://n8n.example.com:5678`
+- `--remote` / `N8N_SERVER_URL`
+  - Specifies the n8n server for remote operations
+  - Resolution priority:
+    1. CLI explicit (`--remote staging`)
+    2. Workflow's linked server (`server_id` in database)
+    3. Environment variable (`N8N_SERVER_URL`)
+  - Example: `n8n-deploy wf push my-workflow --remote production`
+
+### SSL Verification
+- `--skip-ssl-verify` (per-command)
+  - Bypasses SSL certificate verification for current operation
+  - Useful for servers with self-signed certificates
+
+- `server ssl` command (persistent)
+  - Stores SSL setting in database per server
+  - `n8n-deploy server ssl production --skip-verify`
+  - `n8n-deploy server ssl production --verify`
+  - Resolution priority:
+    1. CLI flag (`--skip-ssl-verify`)
+    2. Server's stored setting (`skip_ssl_verify` column)
+    3. Default: verify SSL certificates
 
 ### Directory Configuration
-- `--app-dir` / `N8N_DEPLOY_APP_DIR`
+- `--data-dir` / `N8N_DEPLOY_DATA_DIR`
   - Application data directory (database, backups)
-  - Default: Depends on system configuration
+  - **Required**: Must be set via CLI or environment
 
-- `--flow-dir` / `N8N_DEPLOY_FLOW_DIR`
+- `--flow-dir` / `N8N_DEPLOY_FLOWS_DIR`
   - Directory containing workflow JSON files
-  - Default: Current working directory
+  - Resolution priority:
+    1. CLI explicit (`--flow-dir ./foo`)
+    2. Workflow's stored `file_folder` from database
+    3. Environment variable (`N8N_DEPLOY_FLOWS_DIR`)
+    4. Current working directory (with warning)
 
 ### Environment Configuration
 - `ENVIRONMENT`
@@ -95,9 +117,38 @@ n8n-deploy wf push "My Workflow" --scripts ./scripts
 
 Configuration options are evaluated in this order:
 1. CLI Flags (Highest Priority)
-2. Environment Variables
-3. .env Files (Development Mode Only)
-4. Default Values (Lowest Priority)
+2. Database-stored values (workflow `file_folder`, `server_id`, server `skip_ssl_verify`)
+3. Environment Variables
+4. .env Files (Development Mode Only)
+5. Default Values (Lowest Priority)
+
+## 🔗 Updating Stored Configuration
+
+Use `wf link` to update workflow metadata without push/pull:
+
+```bash
+# Update stored flow directory
+n8n-deploy wf link my-workflow --flow-dir ./new-location
+
+# Link to different server
+n8n-deploy wf link my-workflow --server production
+
+# Set remote scripts path
+n8n-deploy wf link my-workflow --scripts-path /opt/n8n/scripts/custom
+
+# Combine options
+n8n-deploy wf link my-workflow --flow-dir ./workflows --server staging
+```
+
+Use `server ssl` to configure per-server SSL settings:
+
+```bash
+# Skip SSL verification for server
+n8n-deploy server ssl production --skip-verify
+
+# Re-enable SSL verification
+n8n-deploy server ssl production --verify
+```
 
 ## 💡 Pro Tips
 
