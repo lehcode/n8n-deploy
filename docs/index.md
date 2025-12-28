@@ -23,11 +23,6 @@ A Python CLI that remembers your workflow configuration. Set up once, deploy any
   - Per-server SSL verification settings
   - API keys linked to specific servers
 
-- **Script Synchronization**
-  - Sync external scripts (.js, .cjs, .py) alongside workflows
-  - SFTP transport with verbose logging
-  - Git-based change detection
-
 ## Quick Start
 
 ### Installation

@@ -125,7 +125,6 @@ The `wf link` command updates stored workflow metadata without performing push/p
 
 - Changing the stored flow directory
 - Associating a workflow with a different server
-- Updating the remote scripts path
 
 ### Update Flow Directory
 
@@ -145,16 +144,6 @@ n8n-deploy wf link my-workflow --server production
 
 # Future push uses this server automatically
 n8n-deploy wf push my-workflow  # No --remote needed
-```
-
-### Update Scripts Path
-
-```bash
-# Set custom remote scripts path
-n8n-deploy wf link my-workflow --scripts-path /opt/n8n/scripts/custom
-
-# Script sync will use this path instead of default
-n8n-deploy wf push my-workflow --scripts ./scripts
 ```
 
 {: .tip }

@@ -89,30 +89,6 @@ N8N_DEPLOY_FLOW_DIR=/path/to/workflows
   - Set to `1` to prevent default workflow initialization during tests
   - Useful for test environments
 
-### Script Sync Configuration
-
-Used with `wf push --scripts` to sync external scripts to remote server.
-
-**Remote path:** Scripts upload to `<base-path>/<workflow-name>/`
-
-| CLI Flag | Environment Variable | Description | Default |
-|----------|---------------------|-------------|---------|
-| `--scripts-host` | `N8N_SCRIPTS_HOST` | Remote SSH host | (required) |
-| `--scripts-user` | `N8N_SCRIPTS_USER` | SSH username | (required) |
-| `--scripts-port` | `N8N_SCRIPTS_PORT` | SSH port | 22 |
-| `--scripts-key` | `N8N_SCRIPTS_KEY` | SSH key file path | (required) |
-| `--scripts-base-path` | `N8N_SCRIPTS_BASE_PATH` | Remote base directory | /opt/n8n/scripts |
-
-Example:
-```bash
-export N8N_SCRIPTS_HOST=n8n.example.com
-export N8N_SCRIPTS_USER=deploy
-export N8N_SCRIPTS_KEY=~/.ssh/id_rsa
-export N8N_SCRIPTS_BASE_PATH=/mnt/n8n/scripts
-
-n8n-deploy wf push "My Workflow" --scripts ./scripts
-```
-
 ## 🔍 Configuration Precedence
 
 Configuration options are evaluated in this order:
@@ -132,9 +108,6 @@ n8n-deploy wf link my-workflow --flow-dir ./new-location
 
 # Link to different server
 n8n-deploy wf link my-workflow --server production
-
-# Set remote scripts path
-n8n-deploy wf link my-workflow --scripts-path /opt/n8n/scripts/custom
 
 # Combine options
 n8n-deploy wf link my-workflow --flow-dir ./workflows --server staging

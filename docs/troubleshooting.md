@@ -137,26 +137,6 @@ n8n-deploy folder sync --dry-run
 {: .note }
 > Folder sync uses n8n's internal API (cookie-based auth), which is different from the public API (API key auth). You must authenticate separately for folder operations.
 
-### 7. Script Sync Issues
-
-**Symptom**: Scripts not syncing with workflow push
-
-**Solutions**:
-
-```bash
-# Use dry-run to preview what would sync
-n8n-deploy wf push my-workflow --scripts ./scripts --dry-run
-
-# Use verbose mode for SFTP details
-n8n-deploy -vv wf push my-workflow --scripts ./scripts \
-  --scripts-host n8n.example.com \
-  --scripts-user deploy \
-  --scripts-key ~/.ssh/id_rsa
-
-# Sync all scripts (not just git-changed)
-n8n-deploy wf push my-workflow --scripts ./scripts --scripts-all
-```
-
 ## Debugging Techniques
 
 ### Verbose Mode
@@ -164,7 +144,7 @@ n8n-deploy wf push my-workflow --scripts ./scripts --scripts-all
 n8n-deploy supports two levels of verbosity for debugging:
 
 ```bash
-# Basic verbose - shows HTTP requests and SFTP operations
+# Basic verbose - shows HTTP requests and operations
 n8n-deploy -v wf push my-workflow
 
 # Extended verbose - shows request/response details and timing

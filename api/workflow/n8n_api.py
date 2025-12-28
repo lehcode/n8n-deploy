@@ -324,7 +324,6 @@ class N8nAPI:
                     created_at=datetime.now(timezone.utc),
                     updated_at=datetime.now(timezone.utc),
                     last_synced=datetime.now(timezone.utc),
-                    scripts_path=None,
                 )
                 self.db.add_workflow(wf)
             else:
@@ -385,7 +384,6 @@ class N8nAPI:
             n8n_version_id=self.get_n8n_version(),
             push_count=(db_workflow.push_count or 0) + 1,
             pull_count=db_workflow.pull_count or 0,
-            scripts_path=db_workflow.scripts_path,
         )
 
         # Update the JSON file with new server ID (keep same filename)

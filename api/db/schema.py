@@ -59,7 +59,6 @@ class SchemaApi(BaseDB):
                     n8n_version_id TEXT,
                     push_count INTEGER DEFAULT 0,
                     pull_count INTEGER DEFAULT 0,
-                    scripts_path TEXT,
                     FOREIGN KEY (server_id) REFERENCES servers(id) ON DELETE SET NULL
                 )
             """
@@ -315,21 +314,16 @@ class SchemaApi(BaseDB):
                 )
                 conn.commit()
 
-            # Migration from version 6 to 7: Add scripts_path to workflows
+            # Migration from version 6 to 7: Reserved (scripts_path removed)
             if current_version < 7:
-                try:
-                    conn.execute("ALTER TABLE workflows ADD COLUMN scripts_path TEXT")
-                    conn.execute(
-                        """
-                        INSERT OR REPLACE INTO schema_info (version, applied_at, description)
-                        VALUES (?, ?, ?)
-                        """,
-                        (7, datetime.now(), "Workflow scripts path"),
-                    )
-                    conn.commit()
-                except sqlite3.OperationalError:
-                    # Column already exists
-                    pass
+                conn.execute(
+                    """
+                    INSERT OR REPLACE INTO schema_info (version, applied_at, description)
+                    VALUES (?, ?, ?)
+                    """,
+                    (7, datetime.now(), "Reserved"),
+                )
+                conn.commit()
 
             # Migration from version 7 to 8: Add skip_ssl_verify to servers
             if current_version < 8:
