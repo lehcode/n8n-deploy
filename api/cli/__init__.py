@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-CLI module for n8n-deploy wf management
+CLI module for n8n-deploy workflow management
 
 This module provides modular CLI commands organized by functional areas:
 - main: Base CLI application with version/help handling

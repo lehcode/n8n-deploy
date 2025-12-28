@@ -1,6 +1,6 @@
 """
 n8n_deploy_ - a simple N8N Workflow Manager
-Simple n8n wf deployment tool with SQLite metadata store
+Simple n8n workflow deployment tool with SQLite metadata store
 """
 
 from .models import Workflow

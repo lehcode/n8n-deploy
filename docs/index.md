@@ -9,23 +9,26 @@ permalink: /
 
 > "Complexity is the enemy of reliability." — Arthur Bloch, Murphy's Laws
 
-Welcome to n8n-deploy, a powerful Python CLI tool for managing n8n workflows with a SQLite metadata store.
+A Python CLI that remembers your workflow configuration. Set up once, deploy anytime.
 
-## 🌟 Key Features
+## Key Features
 
-- **Database-First Management**
-  - SQLite as the single source of truth for workflow metadata
-  - Efficient workflow management, metadata organization, and versioning
+- **Smart Configuration Storage**
+  - SQLite database stores workflow paths, server links, and SSL settings
+  - Push and pull by workflow name or ID (copy from n8n UI URL)
+  - Override stored settings anytime with explicit flags
 
-- **Remote Server Integration**
-  - Seamless push/pull operations with n8n servers
-  - Flexible configuration for multiple server environments
+- **Multi-Server Support**
+  - Manage workflows across multiple n8n servers
+  - Per-server SSL verification settings
+  - API keys linked to specific servers
 
-- **API Key Management**
-  - Simple, secure lifecycle management
-  - Plain text storage with easy configuration
+- **Script Synchronization**
+  - Sync external scripts (.js, .cjs, .py) alongside workflows
+  - SFTP transport with verbose logging
+  - Git-based change detection
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Installation
 
@@ -35,19 +38,41 @@ pip install n8n-deploy
 
 Full details in the [Installation Guide](user-guide/installation/)
 
-### Initialize Database
+### One-Time Setup
 
 ```bash
-n8n-deploy db init
+# Initialize database
+n8n-deploy db init --data-dir ~/.n8n-deploy
+
+# Create server configuration
+n8n-deploy server create production https://n8n.example.com
+
+# Add API key linked to server
+n8n-deploy apikey add "your-api-key" --name "prod-key" --server production
+
+# Optional: Skip SSL verification for self-signed certificates
+n8n-deploy server ssl production --skip-verify
 ```
 
-### Add API Key
+### Daily Workflow Operations
 
 ```bash
-echo "your_n8n_api_key" | n8n-deploy apikey add my_server
+# Add workflow with server link (stores configuration)
+n8n-deploy wf add workflow.json --flow-dir ./workflows --link-remote production
+
+# Push and pull by name or ID
+n8n-deploy wf push my-workflow
+n8n-deploy wf pull my-workflow
+
+# Update stored configuration without syncing
+n8n-deploy wf link my-workflow --flow-dir ./new-location
+n8n-deploy wf link my-workflow --server staging
 ```
 
-## 📖 Documentation
+{: .tip }
+> After initial setup, most workflow management commands need only the workflow name or ID. The database handles paths and server selection automatically.
+
+## Documentation
 
 ### User Guides
 - [Installation Guide](user-guide/installation/)
@@ -67,7 +92,7 @@ echo "your_n8n_api_key" | n8n-deploy apikey add my_server
 ### Quick Reference
 - [Database Commands](quick-reference/database-commands/) - CLI cheat sheet
 
-## 🤝 Contributing
+## Contributing
 
 Interested in contributing? Check out our:
 
@@ -76,6 +101,6 @@ Interested in contributing? Check out our:
 - [Changelog](https://github.com/lehcode/n8n-deploy/blob/master/CHANGELOG.md) - Project history
 - [TODO](https://github.com/lehcode/n8n-deploy/blob/master/TODO.md) - Planned features
 
-## 📝 License
+## License
 
 MIT License. See [LICENSE](https://github.com/lehcode/n8n-deploy/blob/master/LICENSE) for details.

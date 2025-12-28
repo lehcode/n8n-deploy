@@ -2,7 +2,7 @@
 """
 Workflow management commands for n8n-deploy CLI
 
-Provides a consistent 'wf' command group for all wf operations including:
+Provides a consistent 'wf' command group for all workflow operations including:
 - Basic operations: add, list, delete, search, stats
 - Server operations: pull, push, server
 """
@@ -17,11 +17,9 @@ from rich.console import Console
 from rich.json import JSON
 from rich.table import Table
 
-from ..config import get_config, AppConfig, NOT_PROVIDED
+from ..config import NOT_PROVIDED, AppConfig, get_config
 from ..workflow import WorkflowApi
 from .app import (
-    cli_data_dir_help,
-    handle_verbose_flag,
     HELP_DB_FILENAME,
     HELP_FLOW_DIR,
     HELP_JSON,
@@ -30,11 +28,11 @@ from .app import (
     HELP_TABLE,
     CustomCommand,
     CustomGroup,
+    cli_data_dir_help,
+    handle_verbose_flag,
 )
 from .output import (
     cli_error,
-    print_workflow_search_table,
-    print_workflow_table,
     print_error,
     print_success,
     print_workflow_search_table,
@@ -180,7 +178,7 @@ def wf() -> None:
     pass
 
 
-# Basic wf operations
+# Basic workflow operations
 @wf.command(cls=CustomCommand)
 @click.argument("workflow_file")
 @click.option("--data-dir", type=click.Path(), help=cli_data_dir_help)
@@ -443,14 +441,14 @@ def search(
     output_table: bool,
     no_emoji: bool,
 ) -> None:
-    """🔍 Search workflows by name or wf ID
+    """🔍 Search workflows by name or workflow ID
 
     Searches both:
     - User-friendly names assigned in n8n-deploy (e.g., 'signup-flow')
-    - n8n wf IDs (e.g., 'deAVBp391wvomsWY' or partial matches)
+    - n8n workflow IDs (e.g., 'deAVBp391wvomsWY' or partial matches)
 
     Results are ordered by relevance: exact matches first, then partial matches.
-    Use exact n8n wf IDs for direct operations like pull/push/delete.
+    Use exact n8n workflow IDs for direct operations like pull/push/delete.
     """
     # JSON output implies no emoji
     if output_json:
@@ -502,12 +500,12 @@ def stats(
     output_table: bool,
     no_emoji: bool,
 ) -> None:
-    """📊 Show wf statistics
+    """📊 Show workflow statistics
 
-    Shows overall wf statistics if no wf-id is provided,
-    or detailed statistics for a specific wf if wf-id is given.
+    Shows overall workflow statistics if no workflow-id is provided,
+    or detailed statistics for a specific workflow if workflow-id is given.
 
-    The wf-id should be the actual n8n wf ID (e.g., 'deAVBp391wvomsWY'),
+    The workflow-id should be the actual n8n workflow ID (e.g., 'deAVBp391wvomsWY'),
     not the user-friendly name assigned in n8n-deploy.
     """
     # JSON output implies no emoji
@@ -587,9 +585,9 @@ def pull(
     filename: Optional[str],
     no_emoji: bool,
 ) -> None:
-    """📥 Download wf from n8n server
+    """📥 Download workflow from n8n server
 
-    Downloads a wf using its n8n wf ID (e.g., 'deAVBp391wvomsWY') or workflow name.
+    Downloads a workflow using its n8n workflow ID (e.g., 'deAVBp391wvomsWY') or workflow name.
 
     Server Resolution Priority (lowest to highest):
     1. Workflow's linked server (if workflow exists in database)
@@ -603,9 +601,9 @@ def pull(
     If not provided, you will be prompted to enter one.
 
     Examples:
-      n8n-deploy wf pull workflow-name              # Uses linked server
-      n8n-deploy wf pull workflow-name --remote staging  # Override to staging
-      n8n-deploy wf pull abc123 --filename my-workflow.json  # Custom filename
+      n8n-deploy workflow pull workflow-name              # Uses linked server
+      n8n-deploy workflow pull workflow-name --remote staging  # Override to staging
+      n8n-deploy workflow pull abc123 --filename my-workflow.json  # Custom filename
     """
     try:
         # Use sentinel to distinguish "not provided" from explicit --flow-dir
@@ -651,13 +649,13 @@ def pull(
         success = manager.pull_workflow(workflow_id, filename=target_filename)
 
         if success:
-            success_msg = f"Pulled wf '{workflow_id}' from server"
+            success_msg = f"Pulled workflow '{workflow_id}' from server"
             if no_emoji:
                 console.print(success_msg)
             else:
                 console.print(f"[green]✓ {success_msg}[/green]")
         else:
-            error_msg = f"Failed to pull wf '{workflow_id}'"
+            error_msg = f"Failed to pull workflow '{workflow_id}'"
             if no_emoji:
                 console.print(error_msg)
             else:
@@ -755,9 +753,9 @@ def push(
     scripts_all: bool,
     dry_run: bool,
 ) -> None:
-    """📤 Upload wf to n8n server
+    """📤 Upload workflow to n8n server
 
-    Uploads a wf using its n8n wf ID (e.g., 'deAVBp391wvomsWY') or workflow name.
+    Uploads a workflow using its n8n workflow ID (e.g., 'deAVBp391wvomsWY') or workflow name.
 
     Server Resolution Priority (lowest to highest):
     1. Workflow's linked server (set via 'wf add --link-remote')
@@ -773,9 +771,9 @@ def push(
     Uses git to detect changed scripts (use --scripts-all to sync all).
 
     Examples:
-      n8n-deploy wf push workflow-name              # Uses linked server
-      n8n-deploy wf push workflow-name --remote staging  # Override to staging
-      n8n-deploy wf push workflow-name --scripts ./scripts --scripts-host n8n.example.com --scripts-user deploy --scripts-key ~/.ssh/id_rsa
+      n8n-deploy workflow push workflow-name              # Uses linked server
+      n8n-deploy workflow push workflow-name --remote staging  # Override to staging
+      n8n-deploy workflow push workflow-name --scripts ./scripts --scripts-host n8n.example.com --scripts-user deploy --scripts-key ~/.ssh/id_rsa
     """
     try:
         # Use sentinel to distinguish "not provided" from explicit --flow-dir
@@ -793,13 +791,13 @@ def push(
         success = manager.push_workflow(workflow_id)
 
         if success:
-            success_msg = f"Pushed wf '{workflow_id}' to server"
+            success_msg = f"Pushed workflow '{workflow_id}' to server"
             if no_emoji:
                 console.print(success_msg)
             else:
                 console.print(f"[green]✓ {success_msg}[/green]")
         else:
-            error_msg = f"Failed to push wf '{workflow_id}'"
+            error_msg = f"Failed to push workflow '{workflow_id}'"
             if no_emoji:
                 console.print(error_msg)
             else:
@@ -825,7 +823,7 @@ def push(
     except click.Abort:
         raise  # Re-raise without additional message
     except Exception as e:
-        error_msg = f"Failed to push wf: {e}"
+        error_msg = f"Failed to push workflow: {e}"
         if no_emoji:
             console.print(error_msg)
         else:

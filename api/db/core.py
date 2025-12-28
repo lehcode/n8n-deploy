@@ -12,7 +12,7 @@ from api.models import DatabaseStats, Workflow, WorkflowStatus
 
 
 class DBApi(BaseDB):
-    """Core database manager for wf CRUD operations"""
+    """Core database manager for workflow CRUD operations"""
 
     def __init__(self, config: Optional[AppConfig] = None, db_path: Optional[Union[str, Path]] = None):
         """Initialize with database path and schema manager"""
@@ -27,7 +27,7 @@ class DBApi(BaseDB):
         self.schema_api = SchemaApi(db_path=self.db_path)
 
     def add_workflow(self, wf: Workflow) -> str:
-        """Add a new wf to the database"""
+        """Add a new workflow to the database"""
         with self.get_connection() as conn:
             conn.execute(
                 """
@@ -49,7 +49,7 @@ class DBApi(BaseDB):
             return wf.id
 
     def get_workflow(self, workflow_id: str) -> Optional[Workflow]:
-        """Get a wf by its ID"""
+        """Get a workflow by its ID"""
         with self.get_connection() as conn:
             cursor = conn.execute("SELECT * FROM workflows WHERE id = ?", (workflow_id,))
             row = cursor.fetchone()
@@ -197,7 +197,7 @@ class DBApi(BaseDB):
             return bool(cursor.rowcount > 0)
 
     def delete_workflow(self, workflow_id: str) -> bool:
-        """Delete a wf by ID"""
+        """Delete a workflow by ID"""
         with self.get_connection() as conn:
             cursor = conn.execute(
                 """
@@ -292,7 +292,7 @@ class DBApi(BaseDB):
 
     # Push/Pull count tracking
     def increment_push_count(self, workflow_id: str) -> bool:
-        """Increment push count for a wf and update last_used"""
+        """Increment push count for a workflow and update last_used"""
         with self.get_connection() as conn:
             cursor = conn.execute(
                 """
@@ -308,7 +308,7 @@ class DBApi(BaseDB):
             return bool(cursor.rowcount > 0)
 
     def increment_pull_count(self, workflow_id: str) -> bool:
-        """Increment pull count for a wf and update last_used"""
+        """Increment pull count for a workflow and update last_used"""
         with self.get_connection() as conn:
             cursor = conn.execute(
                 """

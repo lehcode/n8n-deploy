@@ -7,7 +7,7 @@ description: "Common issues and solutions for n8n-deploy"
 
 This guide helps you resolve common issues when using n8n-deploy.
 
-## 🚨 Common Problems and Solutions
+## Common Problems and Solutions
 
 ### 1. API Key Issues
 
@@ -17,14 +17,17 @@ This guide helps you resolve common issues when using n8n-deploy.
 
 ```bash
 # Test API key
-n8n-deploy apikey test my_server
+n8n-deploy apikey test my_key
 
-# Verify server URL
-n8n-deploy --server-url http://n8n.example.com:5678 wf list-server
+# Verify with verbose output
+n8n-deploy -v apikey test my_key
 
-# Use verbose flag for more details
-n8n-deploy --verbose apikey test my_server
+# List linked servers
+n8n-deploy server list
 ```
+
+{: .tip }
+> If your workflow is linked to a server (`wf add --link-remote`), the API key is used automatically.
 
 ### 2. Database Initialization Problems
 
@@ -42,34 +45,57 @@ n8n-deploy db init --import
 # Check database status
 n8n-deploy db status
 
-# Specify custom app directory
-n8n-deploy --data-dir /custom/path db init
+# Specify custom data directory
+n8n-deploy db init --data-dir ~/.n8n-deploy
 ```
 
 ### 3. Workflow Pull/Push Failures
 
 **Symptom**: Cannot pull or push workflows
 
-{: .warning }
-> **Warning**: SSL verification issues? Use `--skip-ssl-verify` flag for self-signed certificates, but be aware of security implications.
-
 {: .note }
-> **Read-only fields**: n8n-deploy automatically strips read-only fields (`id`, `triggerCount`, `updatedAt`, `createdAt`, `versionId`, `staticData`, `tags`, `meta`) before push operations. If you encounter 400 errors with manually edited workflow files, ensure you're using the latest version.
+> **Read-only fields**: n8n-deploy automatically strips read-only fields (`id`, `triggerCount`, `updatedAt`, `createdAt`, `versionId`, `staticData`, `tags`, `meta`) before push operations.
 
 **Solutions**:
 
 ```bash
-# Check server connectivity
-n8n-deploy --server-url http://n8n.example.com:5678 wf list-server
+# If workflow is linked to server, just use the name
+n8n-deploy wf push my-workflow
 
-# Skip SSL verification (for self-signed certs)
-n8n-deploy --server-url https://n8n.example.com:5678 --skip-ssl-verify wf list-server
+# Override server if needed
+n8n-deploy wf push my-workflow --remote staging
 
-# Verify workflow name exactly
-n8n-deploy wf pull "Exact Workflow Name"
+# Check linked server
+n8n-deploy wf list
+
+# For self-signed certificates, configure SSL once
+n8n-deploy server ssl production --skip-verify
+
+# Or use per-command flag
+n8n-deploy wf push my-workflow --skip-ssl-verify
 ```
 
-### 4. Configuration Verification
+### 4. SSL Certificate Issues
+
+**Symptom**: SSL verification errors with self-signed certificates
+
+**Solutions**:
+
+```bash
+# Configure SSL setting per server (persistent)
+n8n-deploy server ssl production --skip-verify
+
+# Or use per-command flag (one-time)
+n8n-deploy wf push my-workflow --skip-ssl-verify
+
+# Re-enable verification
+n8n-deploy server ssl production --verify
+```
+
+{: .warning }
+> Skipping SSL verification reduces security. Use only for trusted internal servers with self-signed certificates.
+
+### 5. Configuration Verification
 
 **Symptom**: Unexpected configuration behavior
 
@@ -85,9 +111,10 @@ n8n-deploy env --json
 # Check environment variables
 echo $N8N_SERVER_URL
 echo $N8N_DEPLOY_FLOWS_DIR
+echo $N8N_DEPLOY_DATA_DIR
 ```
 
-### 5. Folder Sync Issues
+### 6. Folder Sync Issues
 
 **Symptom**: Cannot sync folders or authentication fails
 
@@ -97,7 +124,7 @@ echo $N8N_DEPLOY_FLOWS_DIR
 # Authenticate with n8n server first
 n8n-deploy folder auth myserver --email user@example.com
 
-# Or use browser cookie
+# Or use browser cookie (DevTools → Application → Cookies → n8n-auth)
 n8n-deploy folder auth myserver --cookie "n8n-auth=..."
 
 # List folders to verify connection
@@ -110,6 +137,26 @@ n8n-deploy folder sync --dry-run
 {: .note }
 > Folder sync uses n8n's internal API (cookie-based auth), which is different from the public API (API key auth). You must authenticate separately for folder operations.
 
+### 7. Script Sync Issues
+
+**Symptom**: Scripts not syncing with workflow push
+
+**Solutions**:
+
+```bash
+# Use dry-run to preview what would sync
+n8n-deploy wf push my-workflow --scripts ./scripts --dry-run
+
+# Use verbose mode for SFTP details
+n8n-deploy -vv wf push my-workflow --scripts ./scripts \
+  --scripts-host n8n.example.com \
+  --scripts-user deploy \
+  --scripts-key ~/.ssh/id_rsa
+
+# Sync all scripts (not just git-changed)
+n8n-deploy wf push my-workflow --scripts ./scripts --scripts-all
+```
+
 ## Debugging Techniques
 
 ### Verbose Mode
@@ -117,16 +164,16 @@ n8n-deploy folder sync --dry-run
 n8n-deploy supports two levels of verbosity for debugging:
 
 ```bash
-# Basic verbose - shows HTTP requests
-n8n-deploy -v wf push workflow-name --remote production
+# Basic verbose - shows HTTP requests and SFTP operations
+n8n-deploy -v wf push my-workflow
 
-# Extended verbose - shows request/response details
-n8n-deploy -vv wf push workflow-name --remote production
+# Extended verbose - shows request/response details and timing
+n8n-deploy -vv wf push my-workflow
 
-# Verbose flag can be used at root or subcommand level
-n8n-deploy -v wf push workflow-name    # Root level
-n8n-deploy wf -v push workflow-name    # Subcommand level (same effect)
-n8n-deploy db -vv status               # Works on any subcommand group
+# Verbose flag works at root or subcommand level
+n8n-deploy -v wf push my-workflow    # Root level
+n8n-deploy wf -v push my-workflow    # Subcommand level
+n8n-deploy db -vv status             # Works on any subcommand
 ```
 
 ### Environment Debugging
@@ -135,7 +182,7 @@ n8n-deploy db -vv status               # Works on any subcommand group
 N8N_DEPLOY_TESTING=1 n8n-deploy <command>
 ```
 
-## 📋 System Requirements Check
+## System Requirements Check
 
 ### Verify Python Version
 ```bash
@@ -147,13 +194,14 @@ python --version  # Should be 3.9+
 pip list | grep -E "n8n-deploy|click|rich|pydantic|requests"
 ```
 
-## 🆘 Getting Help
+## Getting Help
 
 ### CLI Help
 ```bash
 n8n-deploy --help
 n8n-deploy wf --help
-n8n-deploy apikey --help
+n8n-deploy wf push --help
+n8n-deploy server ssl --help
 ```
 
 ### Online Resources
@@ -162,26 +210,23 @@ n8n-deploy apikey --help
 - [Documentation](https://lehcode.github.io/n8n-deploy/)
 
 {: .tip }
-> **Tip**: Always use the latest version of n8n-deploy for bug fixes and new features.
+> Always use the latest version of n8n-deploy for bug fixes and new features.
 
-{: .note }
-> Use environment variables for consistent configuration across terminal sessions. Run `n8n-deploy env` to verify your settings.
+## Known Limitations
 
-## 🚧 Known Limitations
-
-- Limited to n8n workflow management
 - Requires API key for server operations
-- No automatic workflow synchronization
+- Folder sync requires separate cookie-based authentication
 - Supports SQLite backend only
 
-## 📖 Related Guides
+## Related Guides
 
 - [Configuration](configuration/)
 - [Workflow Management](core-features/workflows/)
+- [Server Management](core-features/servers/)
 - [Folder Synchronization](core-features/folders/)
 - [API Key Management](core-features/apikeys/)
 
-## 🐛 Reporting Issues
+## Reporting Issues
 
 1. Check existing GitHub issues
 2. Collect relevant logs and configuration details

@@ -21,7 +21,7 @@ os.environ["N8N_DEPLOY_TESTING"] = "1"
 class TestDiscoveredNoneTypeErrors:
     """Test fixes for NoneType errors discovered during testing"""
 
-    @pytest.mark.skip(reason="TODO: Implement test for wf meta null handling")
+    @pytest.mark.skip(reason="TODO: Implement test for workflow meta null handling")
     def test_workflow_sync_meta_none_error_fix(self, test_config: AppConfig) -> None:
         """
         Test fix for: 'NoneType' object has no attribute 'get'
@@ -40,12 +40,12 @@ class TestDiscoveredNoneTypeErrors:
         # TODO: Mock n8n API call and test sync_to_database
         pass
 
-    @pytest.mark.skip(reason="TODO: Implement test for missing wf fields handling")
+    @pytest.mark.skip(reason="TODO: Implement test for missing workflow fields handling")
     def test_workflow_sync_missing_fields_handling(self, test_config: AppConfig) -> None:
         """
-        Test that wf data handling (pull operations) handles missing or null fields gracefully
+        Test that workflow data handling (pull operations) handles missing or null fields gracefully
 
-        Scenario: n8n API returns wf with various missing optional fields
+        Scenario: n8n API returns workflow with various missing optional fields
         Expected: Pull operation succeeds with appropriate defaults for missing fields
 
         TODO: Implement test with workflows missing:
@@ -78,7 +78,7 @@ class TestDiscoveredDatabaseSchemaIssues:
         schema = SchemaApi(config=test_config)
         schema.initialize_database()
 
-        # Create wf with counter fields
+        # Create workflow with counter fields
         wf = Workflow(
             id="test_counters",
             name="Test Workflow",
@@ -89,7 +89,7 @@ class TestDiscoveredDatabaseSchemaIssues:
             pull_count=0,
         )
 
-        # Add wf - should not raise column error
+        # Add workflow - should not raise column error
         db.add_workflow(wf)
 
         # Retrieve and verify counters exist and are 0
@@ -115,7 +115,7 @@ class TestDiscoveredDatabaseSchemaIssues:
         schema = SchemaApi(config=test_config)
         schema.initialize_database()
 
-        # Create wf with initial counters at 0
+        # Create workflow with initial counters at 0
         wf = Workflow(
             id="test_increment",
             name="Test Workflow",
@@ -264,7 +264,7 @@ class TestDiscoveredDisplayIssues:
         schema = SchemaApi(config=test_config)
         schema.initialize_database()
 
-        # Create wf with null last_used
+        # Create workflow with null last_used
         wf = Workflow(
             id="test_never",
             name="Test Never Display",
@@ -372,9 +372,9 @@ class TestDiscoveredConfigurationIssues:
 # Utility functions for discovered issue tests
 def create_problematic_workflow_data() -> Dict[str, Any]:
     """
-    Create wf data that reproduces discovered issues
+    Create workflow data that reproduces discovered issues
 
-    Returns wf data with null meta field and other problematic values
+    Returns workflow data with null meta field and other problematic values
     that were encountered during end-to-end testing session
     """
     return {

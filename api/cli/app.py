@@ -15,11 +15,11 @@ from .verbose import set_verbose
 console = Console()
 
 # Program name constant for consistent CLI help messages
-PROG_NAME = "n8n-deploy|./n8n-deploy"
+PROG_NAME = "n8n-deploy"
 
 # Common CLI option help texts
 cli_data_dir_help = "Data directory for database and backups"
-HELP_FLOW_DIR = "Plain directory where wf JSON files are located"
+HELP_FLOW_DIR = "Plain directory where workflow JSON files are located"
 HELP_DB_FILENAME = "Database filename (default: n8n-deploy.db)"
 HELP_SERVER_URL = "n8n server URL (overrides N8N_SERVER_URL)"
 HELP_NO_EMOJI = "Disable emoji output for automation/scripting"
@@ -57,9 +57,9 @@ class CustomCommand(click.Command):
                 args_str = " " + " ".join(args)
 
         if command_path:
-            usage_line = f"n8n-deploy|./n8n-deploy {command_path}{args_str} [OPTIONS]..."
+            usage_line = f"n8n-deploy {command_path}{args_str} [OPTIONS]..."
         else:
-            usage_line = "n8n-deploy|./n8n-deploy COMMAND [OPTIONS]..."
+            usage_line = "n8n-deploy COMMAND [OPTIONS]..."
 
         formatter.write(f"Usage: {usage_line}\n\n")
 
@@ -86,7 +86,7 @@ class CustomGroup(click.Group):
     def format_usage(self, ctx: click.Context, formatter: click.HelpFormatter) -> None:
         """Override format_usage to completely control the output"""
         # Build the complete usage string we want
-        usage_line = "n8n-deploy|./n8n-deploy COMMAND [OPTIONS]..."
+        usage_line = "n8n-deploy COMMAND [OPTIONS]..."
 
         # Write it directly
         formatter.write(f"Usage: {usage_line}\n\n")
@@ -189,7 +189,7 @@ def cli() -> None:
 
     \b
     Flow Directory ('--flow-dir'):
-      Contains wf JSON files
+      Contains workflow JSON files
       Priority: '--flow-dir' CLI option > N8N_DEPLOY_FLOWS_DIR env var > current directory
       Default: current directory
 

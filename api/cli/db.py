@@ -319,7 +319,7 @@ def _perform_db_init(config: AppConfig, output_json: bool, no_emoji: bool) -> No
 def db() -> None:
     """🎭 Database management commands
 
-    Manage the SQLite database that stores wf metadata.
+    Manage the SQLite database that stores workflow metadata.
     Use 'n8n-deploy db COMMAND --help' for specific command options.
     """
     pass

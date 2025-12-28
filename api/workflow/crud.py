@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Core wf CRUD operations and metadata management
+Core workflow CRUD operations and metadata management
 
-Handles: add, remove, list, sync, search, stats wf operations
+Handles: add, remove, list, sync, search, stats workflow operations
 """
 
 import json
@@ -16,7 +16,7 @@ from ..models import Workflow
 
 
 class WorkflowCRUD:
-    """Core wf CRUD operations"""
+    """Core workflow CRUD operations"""
 
     def __init__(self, db: DBApi, config: AppConfig):
         self.db = db
@@ -26,7 +26,7 @@ class WorkflowCRUD:
     def add_workflow(
         self, workflow_id: str, name: str, filename: Optional[str] = None, n8n_version_id: Optional[str] = None
     ) -> None:
-        """Add a new wf to database
+        """Add a new workflow to database
 
         Args:
             workflow_id: The workflow ID (from n8n or draft_*)
@@ -34,7 +34,7 @@ class WorkflowCRUD:
             filename: Custom filename (e.g., 'my-workflow.json'). If None, defaults to '{id}.json'
             n8n_version_id: Optional n8n version ID
         """
-        # Check if wf already exists
+        # Check if workflow already exists
         existing = self.db.get_workflow(workflow_id)
         if existing:
             raise ValueError(f"Workflow with ID '{workflow_id}' already exists")
@@ -55,7 +55,7 @@ class WorkflowCRUD:
         self.db.add_workflow(wf)
 
     def add_workflow_from_file(self, json_file_path: str, name: str) -> None:
-        """Add wf from JSON file path
+        """Add workflow from JSON file path
 
         Stores the actual filename (not derived from ID) for custom filename support.
         """
@@ -72,12 +72,12 @@ class WorkflowCRUD:
         # Capture the actual filename for storage
         actual_filename = file_path.name
 
-        # Read and parse JSON file to get wf ID
+        # Read and parse JSON file to get workflow ID
         try:
             with open(file_path, "r", encoding="utf-8") as f:
                 workflow_data = json.load(f)
 
-            # Extract wf ID from JSON, generate draft UUID for new workflows
+            # Extract workflow ID from JSON, generate draft UUID for new workflows
             workflow_id = workflow_data.get("id")
             if not workflow_id:
                 import uuid
@@ -87,16 +87,16 @@ class WorkflowCRUD:
 
             n8n_version_id = workflow_data.get("n8n_version_id")
 
-            # Add wf using the extracted ID and actual filename
+            # Add workflow using the extracted ID and actual filename
             self.add_workflow(workflow_id, name, filename=actual_filename, n8n_version_id=n8n_version_id)
 
         except json.JSONDecodeError as e:
-            raise ValueError(f"Invalid JSON in wf file {file_path}: {e}")
+            raise ValueError(f"Invalid JSON in workflow file {file_path}: {e}")
         except Exception as e:
-            raise ValueError(f"Failed to read wf file {file_path}: {e}")
+            raise ValueError(f"Failed to read workflow file {file_path}: {e}")
 
     def remove_workflow(self, workflow_id: str) -> None:
-        """Remove wf from database (file remains untouched)"""
+        """Remove workflow from database (file remains untouched)"""
         wf = self.db.get_workflow(workflow_id)
         if not wf:
             raise ValueError(f"Workflow {workflow_id} not found")
@@ -160,14 +160,14 @@ class WorkflowCRUD:
         return workflows
 
     def get_workflow_info(self, id_or_alias: str) -> Dict[str, Any]:
-        """Get wf information by ID, name, or alias from database"""
+        """Get workflow information by ID, name, or alias from database"""
         if id_or_alias == "main":
             workflows = self.db.list_workflows()
             main_workflows = [w for w in workflows if "main" in w.name.lower()]
             if main_workflows:
                 id_or_alias = main_workflows[0].id
             else:
-                raise ValueError("No main wf found")
+                raise ValueError("No main workflow found")
 
         wf = self.db.get_workflow_by_name_or_id(id_or_alias)
 
@@ -177,7 +177,7 @@ class WorkflowCRUD:
             for wf in all_workflows:
                 available.append(f"  {wf.id}: {wf.name}")
 
-            raise ValueError(f"Unknown wf ID: {id_or_alias}\nAvailable workflows:\n" + "\n".join(available))
+            raise ValueError(f"Unknown workflow ID: {id_or_alias}\nAvailable workflows:\n" + "\n".join(available))
 
         return {
             "id": wf.id,
@@ -190,9 +190,9 @@ class WorkflowCRUD:
         return self.db.search_workflows(query)
 
     def get_workflow_stats(self, workflow_id: Optional[str] = None) -> Dict[str, Any]:
-        """Get wf statistics"""
+        """Get workflow statistics"""
         if workflow_id:
-            # Individual wf stats
+            # Individual workflow stats
             wf = self.db.get_workflow(workflow_id)
             if not wf:
                 raise ValueError(f"Workflow {workflow_id} not found")

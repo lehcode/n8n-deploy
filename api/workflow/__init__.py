@@ -2,8 +2,8 @@
 """
 Workflow module for n8n-deploy
 
-This module provides modular wf operations:
-- crud: Core wf CRUD operations and metadata management
+This module provides modular workflow operations:
+- crud: Core workflow CRUD operations and metadata management
 - n8n_api: n8n server API integration for push/pull operations
 """
 

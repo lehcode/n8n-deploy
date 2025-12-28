@@ -28,7 +28,7 @@ body:
       description: What problem would this feature solve?
       placeholder: |
         Describe the problem you're trying to solve or the use case this feature would enable.
-        Example: "As a wf manager, I need to..."
+        Example: "As a workflow manager, I need to..."
     validations:
       required: true
 

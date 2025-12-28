@@ -5,15 +5,15 @@ nav_order: 2
 description: "First steps with n8n-deploy CLI tool"
 ---
 
-Welcome to n8n-deploy! This guide will help you get up and running quickly with our workflow management CLI.
+Welcome to n8n-deploy! This guide walks you through setup and your first workflow operations.
 
-## 🎯 Prerequisites
+## Prerequisites
 
-- **Python Version**: 3.8+
-- **n8n Server**: Local or remote installation
-- **Basic Understanding**: Familiarity with n8n workflows and API concepts
+- **Python**: 3.9+
+- **n8n Server**: Local or remote installation with API access
+- **API Key**: Generated from n8n Settings → API
 
-## 🔧 Installation Methods
+## Installation
 
 ### Option 1: Pip Install (Recommended)
 ```bash
@@ -27,64 +27,88 @@ cd n8n-deploy
 pip install .
 ```
 
-## 🚀 First-Time Setup
+## One-Time Setup
 
 ### 1. Initialize Database
 ```bash
-n8n-deploy db init
+n8n-deploy db init --data-dir ~/.n8n-deploy
 ```
 
-This creates a new SQLite database to track your workflows.
+Creates a SQLite database to store workflow metadata, server configurations, and API keys.
 
-### 2. Configure n8n Server API Key
+### 2. Create Server Configuration
 ```bash
-# Interactive key entry
-echo "your_n8n_api_key" | n8n-deploy apikey add my_server
+n8n-deploy server create production https://n8n.example.com
 ```
 
-### 3. Verify Configuration
+### 3. Add API Key Linked to Server
 ```bash
-# Check environment configuration
-n8n-deploy env
-```
-
-## 🌈 Basic Workflow Operations
-
-### List Local Workflows
-```bash
-n8n-deploy wf list
-```
-
-### List Remote Server Workflows
-```bash
-n8n-deploy --server-url http://n8n.example.com:5678 wf list-server
-```
-
-### Pull a Workflow from Remote Server
-```bash
-n8n-deploy --server-url http://n8n.example.com:5678 wf pull "My Workflow"
-```
-
-### Push a Workflow to Remote Server
-```bash
-n8n-deploy --server-url http://n8n.example.com:5678 wf push "Deploy Workflow"
+n8n-deploy apikey add "your-n8n-api-key" --name "prod-key" --server production
 ```
 
 {: .tip }
-> **Tip**: Use the `--no-emoji` flag for script-friendly output when integrating with automation scripts.
+> For security, use stdin to avoid the key in shell history: `echo "key" | n8n-deploy apikey add - --name "prod-key" --server production`
+
+### 4. Configure SSL (Optional)
+For servers with self-signed certificates:
+```bash
+n8n-deploy server ssl production --skip-verify
+```
+
+### 5. Verify Configuration
+```bash
+n8n-deploy env
+```
+
+## Workflow Operations
+
+### Add a Workflow
+```bash
+# Add and link to server (stores path and server configuration)
+n8n-deploy wf add workflow.json --flow-dir ./workflows --link-remote production
+```
+
+### Push and Pull
+```bash
+# By name or ID — database handles the rest
+n8n-deploy wf push my-workflow
+n8n-deploy wf pull my-workflow
+```
+
+### List Workflows
+```bash
+# Local database
+n8n-deploy wf list
+
+# Remote server
+n8n-deploy wf list-server --remote production
+```
+
+### Update Stored Configuration
+```bash
+# Change flow directory
+n8n-deploy wf link my-workflow --flow-dir ./new-location
+
+# Switch to different server
+n8n-deploy wf link my-workflow --server staging
+```
+
+{: .tip }
+> Use `-v` or `-vv` flags for verbose output when debugging operations.
 
 {: .note }
-> Configure environment variables for persistent settings across terminal sessions.
+> Use `--no-emoji` flag for script-friendly output in automation pipelines.
 
-## 🆘 Troubleshooting
+## Troubleshooting
 
-If you encounter any issues:
+If you encounter issues:
 - Check your Python version (`python --version`)
 - Verify n8n server connectivity
 - Review the [Troubleshooting Guide](troubleshooting/)
 
-## 📖 Next Steps
+## Next Steps
 
-- [Configuration Guide](configuration/)
-- [Workflow Management](core-features/workflows/)
-- [API Key Management](core-features/apikeys/)
+- [Configuration Guide](configuration/) - Environment variables and precedence
+- [Workflow Management](core-features/workflows/) - Advanced workflow operations
+- [API Key Management](core-features/apikeys/) - Key lifecycle management
+- [Troubleshooting](troubleshooting/) - Common issues and solutions

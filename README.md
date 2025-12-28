@@ -30,7 +30,7 @@ The database knows where your workflow lives and which server it belongs to.
 
 - 🧠 **Smart Configuration**
   - Stores workflow paths, server links, and SSL settings
-  - Push/pull with just the workflow name
+  - Push/pull by workflow name or ID
   - Override anytime with explicit flags
 
 - 🚀 **Multi-Server Support**
@@ -46,7 +46,7 @@ The database knows where your workflow lives and which server it belongs to.
 - 📜 **Script Synchronization** (NEW)
   - Sync external scripts (.js, .cjs, .py) referenced by Execute Command nodes
   - Git-based change detection (only sync modified scripts)
-  - Extensible transport plugin system (SCP included)
+  - Extensible transport plugin system (SFTP included)
   - Automatic remote folder creation per workflow
 
 - 💻 **Versatile CLI Interface**
@@ -75,7 +75,9 @@ n8n-deploy db init --data-dir ~/.n8n-deploy
 
 # Create server and add API key
 n8n-deploy server create production https://n8n.example.com
-echo "your-n8n-api-key" | n8n-deploy apikey add - --name "prod-key"
+n8n-deploy apikey add "your-n8n-api-key" --name "prod-key" --server production
+# Or via stdin (key not saved in shell history)
+# echo "your-n8n-api-key" | n8n-deploy apikey add - --name "prod-key" --server production
 
 # Configure SSL for self-signed certificates (optional)
 n8n-deploy server ssl production --skip-verify

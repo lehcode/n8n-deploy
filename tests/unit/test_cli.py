@@ -300,7 +300,7 @@ class TestCustomGroupMethods:
         # Test help output contains our custom format
         result = self.runner.invoke(test_group, ["--help"])
         assert result.exit_code == 0
-        # The format should be "n8n-deploy|./n8n-deploy COMMAND [OPTIONS]..."
+        # The format should be "n8n-deploy COMMAND [OPTIONS]..."
         assert "COMMAND [OPTIONS]..." in result.output
 
     def test_format_usage_real_cli(self):
@@ -308,7 +308,7 @@ class TestCustomGroupMethods:
         result = self.runner.invoke(cli, ["--help"])
         assert result.exit_code == 0
         # Verify our custom usage line is present
-        assert "Usage: n8n-deploy|./n8n-deploy COMMAND [OPTIONS]..." in result.output
+        assert "Usage: n8n-deploy COMMAND [OPTIONS]..." in result.output
 
     def test_custom_group_handles_version_help_mutual_exclusion(self):
         """Test CustomGroup.parse_args handles --help --version mutual exclusion"""

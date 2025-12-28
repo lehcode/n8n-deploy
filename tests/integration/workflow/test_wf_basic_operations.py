@@ -29,7 +29,7 @@ class TestWorkflowBasicOps(WorkflowTestHelpers):
     """Test Workflow Basic Operations tests"""
 
     def test_workflow_add_requires_file(self) -> None:
-        """Test that wf add command requires local workflow file"""
+        """Test that workflow add command requires local workflow file"""
         self.setup_database()
 
         # wf add registers a local workflow file, so without the file it should fail

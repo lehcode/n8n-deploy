@@ -174,7 +174,7 @@ def print_workflow_table(workflows: List[Dict[str, Any]], no_emoji: bool = False
     """Print workflows in a formatted table
 
     Args:
-        workflows: List of wf dictionaries
+        workflows: List of workflow dictionaries
         no_emoji: If True, shows plain message when no workflows found
     """
     if not workflows:
@@ -224,7 +224,7 @@ def print_workflow_table(workflows: List[Dict[str, Any]], no_emoji: bool = False
 
 
 def print_workflow_search_table(workflows: List[Any], no_emoji: bool = False, query: str = "") -> None:
-    """Print wf search results in a formatted table
+    """Print workflow search results in a formatted table
 
     Args:
         workflows: List of Workflow objects

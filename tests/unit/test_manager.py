@@ -8,11 +8,11 @@ from typing import Any, Dict, List
 from unittest.mock import Mock, patch
 
 import pytest
-from api.workflow import WorkflowApi
 from assertpy import assert_that
 
 from api.config import AppConfig
 from api.models import Workflow
+from api.workflow import WorkflowApi
 
 
 # === Manager Initialization Tests ===
@@ -97,7 +97,7 @@ class TestWorkflowOperations:
         assert set(workflow_ids) == set(expected_ids)
 
     def test_get_workflow_info_existing(self, test_manager: WorkflowApi, mock_workflow_data: Dict[str, Any]) -> None:
-        """Test getting wf info for existing wf"""
+        """Test getting workflow info for existing wf"""
         wf = Workflow(**mock_workflow_data)
         test_manager.db.add_workflow(wf)
 
@@ -108,8 +108,8 @@ class TestWorkflowOperations:
         assert info["name"] == wf.name
 
     def test_get_workflow_info_nonexistent(self, test_manager: WorkflowApi) -> None:
-        """Test getting wf info for non-existent wf"""
-        with pytest.raises(ValueError, match="Unknown wf ID"):
+        """Test getting workflow info for non-existent workflow"""
+        with pytest.raises(ValueError, match="Unknown workflow ID"):
             test_manager.get_workflow_info("nonexistent_workflow")
 
 

@@ -72,7 +72,7 @@ def test_db(test_config: AppConfig) -> DBApi:
 
 @pytest.fixture
 def test_manager(test_config: AppConfig) -> WorkflowApi:
-    """Create a test wf manager instance"""
+    """Create a test workflow manager instance"""
     manager = WorkflowApi(config=test_config)
     manager.db.schema_api.initialize_database()
     return manager
@@ -94,11 +94,11 @@ def cli_runner() -> CliRunner:
 
 @pytest.fixture
 def mock_workflow_data() -> Dict[str, Any]:
-    """Mock wf data for testing"""
+    """Mock workflow data for testing"""
     return create_test_workflow_data(
         workflow_id="test_workflow_123",
         name="Test Workflow",
-        description="A test wf",
+        description="A test workflow",
         file_path="workflows/test_workflow.json",
         tags=["test", "automation"],
     )
@@ -106,13 +106,13 @@ def mock_workflow_data() -> Dict[str, Any]:
 
 @pytest.fixture
 def sample_workflow_json() -> Dict[str, Any]:
-    """Sample n8n wf JSON structure"""
+    """Sample n8n workflow JSON structure"""
     return create_test_workflow_json(workflow_id="test_workflow_123", name="Test Workflow", versionId="abc123")
 
 
 @pytest.fixture
 def mock_n8n_response() -> Dict[str, Any]:
-    """Mock n8n API response for wf operations"""
+    """Mock n8n API response for workflow operations"""
     return {
         "data": {
             "id": "test_workflow_123",
@@ -127,7 +127,7 @@ def mock_n8n_response() -> Dict[str, Any]:
 
 @pytest.fixture
 def test_workflow_file(test_config: AppConfig) -> Path:
-    """Create a test wf file"""
+    """Create a test workflow file"""
     return create_workflow_file(
         test_config,
         "test_workflow_123",

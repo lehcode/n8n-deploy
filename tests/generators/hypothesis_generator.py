@@ -58,7 +58,7 @@ workflow_names = st.text(
     alphabet=st.characters(whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters=" -_()[]"),
 )
 
-# Strategy: Malicious wf names (injection attempts)
+# Strategy: Malicious workflow names (injection attempts)
 malicious_names = st.sampled_from(
     [
         "'; DROP TABLE workflows--",
@@ -74,7 +74,7 @@ malicious_names = st.sampled_from(
     ]
 )
 
-# Strategy: Tags for wf filtering
+# Strategy: Tags for workflow filtering
 workflow_tags = st.text(
     min_size=1,
     max_size=30,

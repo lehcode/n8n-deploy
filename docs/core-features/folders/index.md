@@ -33,11 +33,20 @@ n8n-deploy folder auth myserver --email user@example.com --password "secret"
 
 ### Using Session Cookie
 
-Extract the session cookie from your browser's developer tools:
+Extract the session cookie from your browser:
+
+1. Log in to your n8n web interface
+2. Open browser DevTools (F12 or right-click → Inspect)
+3. Go to **Application** tab (Chrome/Edge) or **Storage** tab (Firefox)
+4. Expand **Cookies** → select your n8n domain
+5. Find the `n8n-auth` cookie and copy its value
 
 ```bash
-n8n-deploy folder auth myserver --cookie "n8n-auth=abc123..."
+n8n-deploy folder auth myserver --cookie "n8n-auth=eyJhbGciOi..."
 ```
+
+{: .tip }
+> The cookie method is useful when your n8n instance uses SSO or external authentication that doesn't support email/password login.
 
 ---
 

@@ -125,7 +125,7 @@ class SchemaApi(BaseDB):
             """
             )
 
-            # Create dependencies table for wf dependencies
+            # Create dependencies table for workflow dependencies
             conn.execute(
                 """
                 CREATE TABLE IF NOT EXISTS dependencies (

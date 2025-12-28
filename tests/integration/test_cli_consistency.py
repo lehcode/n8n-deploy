@@ -15,7 +15,7 @@ import pytest
 os.environ["N8N_DEPLOY_TESTING"] = "1"
 
 # Expected usage text that should appear in all help messages
-EXPECTED_USAGE = "Usage: n8n-deploy|./n8n-deploy COMMAND [OPTIONS]..."
+EXPECTED_USAGE = "Usage: n8n-deploy COMMAND [OPTIONS]..."
 
 
 def get_all_commands() -> List[List[str]]:
@@ -91,8 +91,8 @@ class TestCLIHelpConsistency:
         Test that every command's help shows consistent usage format.
 
         This ensures consistent help output across all commands.
-        Command groups show: "Usage: n8n-deploy|./n8n-deploy COMMAND [OPTIONS]..."
-        Specific commands show: "Usage: n8n-deploy|./n8n-deploy wf add [OPTIONS]..."
+        Command groups show: "Usage: n8n-deploy COMMAND [OPTIONS]..."
+        Specific commands show: "Usage: n8n-deploy wf add [OPTIONS]..."
         """
         cmd = ["./n8n-deploy"] + command_path + ["--help"]
 
@@ -108,8 +108,8 @@ class TestCLIHelpConsistency:
 
         output = result.stdout + result.stderr
 
-        # All help should start with "Usage: n8n-deploy|./n8n-deploy"
-        assert output.startswith("Usage: n8n-deploy|./n8n-deploy"), (
+        # All help should start with "Usage: n8n-deploy"
+        assert output.startswith("Usage: n8n-deploy"), (
             f"Command {' '.join(command_path or ['root'])} help does not start with expected usage prefix.\n"
             f"Got output:\n{output[:200]}"
         )

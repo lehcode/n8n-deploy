@@ -544,7 +544,7 @@ Examples:
   python run_tests.py --baseline               # Build testmon baseline (run all tests)
   python run_tests.py --integration --class TestE2EDatabase  # Run specific test class
   python run_tests.py --integration --class TestE2EEnv       # Run env tests only
-  python run_tests.py --integration --class TestE2EWorkflows # Run wf tests only
+  python run_tests.py --integration --class TestE2EWorkflows # Run workflows tests only
   python run_tests.py --integration --class TestE2EAPIKeys   # Run API key tests only
   python run_tests.py --integration --class TestE2EServer    # Run server tests only
   python run_tests.py --hypothesis             # Run property-based tests with Hypothesis
