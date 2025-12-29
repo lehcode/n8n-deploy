@@ -38,6 +38,15 @@ repos:
         pass_filenames: false
 
 
+      - id: code-quality-check
+        name: Code Quality Analysis
+        entry: python scripts/code-quality-check.py
+        language: python
+        stages: [pre-push]
+        always_run: true
+        pass_filenames: false
+        verbose: true
+
       - id: run-ci-simulation
         name: Run CI simulation
         entry: ./scripts/run-like-ci.sh

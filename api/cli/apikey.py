@@ -26,6 +26,100 @@ from .output import cli_error
 console = Console()
 
 
+def _validate_apikey_name(name: str, no_emoji: bool) -> str:
+    """Validate and return stripped API key name.
+
+    Raises click.Abort on validation failure.
+    """
+    stripped_name = name.strip()
+
+    if len(stripped_name) == 0:
+        cli_error("API key name cannot be empty", no_emoji)
+        raise click.Abort()
+
+    if len(name) > 100:
+        cli_error("API key name too long (maximum 100 characters)", no_emoji)
+        raise click.Abort()
+
+    # Allow UTF-8 characters and spaces, only block security risks
+    if any(c in stripped_name for c in "\x00/\\"):
+        cli_error("API key name cannot contain null bytes or path separators (/ \\)", no_emoji)
+        raise click.Abort()
+
+    return stripped_name
+
+
+def _validate_apikey_value(key: Optional[str], no_emoji: bool) -> str:
+    """Validate and return the API key value.
+
+    Reads from stdin if key is None or "-".
+    Raises click.Abort on validation failure.
+    """
+    # Read from stdin if needed
+    if key is None or key == "-":
+        key = sys.stdin.read().strip()
+        if not key:
+            cli_error("No API key provided via stdin", no_emoji)
+            raise click.Abort()
+
+    key = key.strip()
+
+    if len(key) == 0:
+        cli_error("API key cannot be empty", no_emoji)
+        raise click.Abort()
+
+    if len(key) > 2000:
+        cli_error("API key too long (maximum 2000 characters)", no_emoji)
+        raise click.Abort()
+
+    # Check for basic JWT pattern
+    jwt_parts = key.split(".")
+    if len(jwt_parts) != 3:
+        cli_error("API key must be a valid JWT token (format: header.payload.signature)", no_emoji)
+        raise click.Abort()
+
+    # Validate each part contains only valid JWT characters
+    jwt_char_pattern = r"^[A-Za-z0-9_-]*$"
+    for i, part in enumerate(jwt_parts):
+        if not re.match(jwt_char_pattern, part):
+            cli_error(f"Invalid characters in JWT token part {i + 1}", no_emoji)
+            raise click.Abort()
+
+    return key
+
+
+def _link_apikey_to_server(config: Any, key_name: str, server: str, no_emoji: bool) -> None:
+    """Link API key to a server, with helpful error message if server not found."""
+    from ..db.servers import ServerCrud
+
+    server_api = ServerCrud(config=config)
+    try:
+        server_api.link_api_key(server, key_name)
+        if no_emoji:
+            console.print(f"API key '{key_name}' linked to server '{server}'")
+        else:
+            console.print(f"🔗 API key '{key_name}' linked to server '{server}'")
+    except ValueError as e:
+        if no_emoji:
+            console.print(f"Warning: {e}")
+            console.print(f"Server '{server}' not found. Create it with:")
+            console.print(f"  n8n-deploy server create {server} <url>")
+        else:
+            console.print(f"⚠️  {e}")
+            console.print(f"   Server '{server}' not found. Create it with:")
+            console.print(f"   n8n-deploy server create {server} <url>")
+
+
+def _output_apikey_success(key_name: str, key_id: int, no_emoji: bool) -> None:
+    """Output success message after adding API key."""
+    if no_emoji:
+        console.print(f"API key '{key_name}' added successfully")
+        console.print(f"ID: {key_id}")
+    else:
+        console.print(f"✅ API key '{key_name}' added successfully")
+        console.print(f"   ID: {key_id}")
+
+
 def _get_key_created_date(key: Dict[str, Any]) -> str:
     """Extract created date from JWT or fallback to database timestamp."""
     api_key_value = key.get("api_key")
@@ -176,85 +270,27 @@ def add_apikey(
       echo "eyJhbGci..." | n8n-deploy apikey add - --name my_key --server staging
       N8N_SERVER_URL=http://n8n.local n8n-deploy apikey add - --name my_key
     """
-    # Read key from stdin if no key argument provided or if key argument is "-"
-    if key is None or key == "-":
-        key = sys.stdin.read().strip()
-        if not key:
-            cli_error("No API key provided via stdin", no_emoji)
-
-    # Validate API key name format - handle edge cases gracefully
-    stripped_name = name.strip()
-
-    if len(stripped_name) == 0:
-        cli_error("API key name cannot be empty", no_emoji)
-
-    if len(name) > 100:  # Reasonable limit for name length
-        cli_error("API key name too long (maximum 100 characters)", no_emoji)
-
-    # Allow UTF-8 characters and spaces, only block security risks (null bytes, path separators)
-    if any(c in stripped_name for c in "\x00/\\"):
-        cli_error("API key name cannot contain null bytes or path separators (/ \\)", no_emoji)
-
-    # Validate API key format - handle edge cases gracefully
-    key = key.strip()  # Remove whitespace
-
-    if len(key) == 0:
-        cli_error("API key cannot be empty", no_emoji)
-
-    if len(key) > 2000:  # Reasonable limit for JWT tokens
-        cli_error("API key too long (maximum 2000 characters)", no_emoji)
-
-    # Check for basic JWT pattern but be more lenient for testing
-    # JWT tokens should have 3 parts separated by dots
-    jwt_parts = key.split(".")
-    if len(jwt_parts) != 3:
-        cli_error("API key must be a valid JWT token (format: header.payload.signature)", no_emoji)
-
-    # Validate each part contains only valid JWT characters
-    jwt_char_pattern = r"^[A-Za-z0-9_-]*$"  # Allow empty parts for edge case testing
-    for i, part in enumerate(jwt_parts):
-        if not re.match(jwt_char_pattern, part):
-            cli_error(f"Invalid characters in JWT token part {i + 1}", no_emoji)
+    # Validate inputs using helper functions
+    _validate_apikey_name(name, no_emoji)
+    validated_key = _validate_apikey_value(key, no_emoji)
 
     try:
-        from ..db.servers import ServerCrud
-
-        # Use default config from environment variables
         config = get_config(base_folder=data_dir, db_filename=db_filename)
         db_api = DBApi(config=config)
         key_api = KeyApi(db=db_api, config=config)
         key_id = key_api.add_api_key(
             name=name,
-            api_key=key,
+            api_key=validated_key,
             description=description,
         )
 
-        if no_emoji:
-            console.print(f"API key '{name}' added successfully")
-            console.print(f"ID: {key_id}")
-        else:
-            console.print(f"✅ API key '{name}' added successfully")
-            console.print(f"   ID: {key_id}")
+        _output_apikey_success(name, key_id, no_emoji)
 
-        # Link to server if --server specified
         if server:
-            server_api = ServerCrud(config=config)
-            try:
-                server_api.link_api_key(server, name)
-                if no_emoji:
-                    console.print(f"API key '{name}' linked to server '{server}'")
-                else:
-                    console.print(f"🔗 API key '{name}' linked to server '{server}'")
-            except ValueError as e:
-                if no_emoji:
-                    console.print(f"Warning: {e}")
-                    console.print(f"Server '{server}' not found. Create it with:")
-                    console.print(f"  n8n-deploy server create {server} <url>")
-                else:
-                    console.print(f"⚠️  {e}")
-                    console.print(f"   Server '{server}' not found. Create it with:")
-                    console.print(f"   n8n-deploy server create {server} <url>")
+            _link_apikey_to_server(config, name, server, no_emoji)
 
+    except click.Abort:
+        raise
     except Exception as e:
         if no_emoji:
             console.print(f"Error: Failed to add API key: {e}")

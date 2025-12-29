@@ -30,6 +30,83 @@ except ImportError:
     HAS_DOTENV = False
 
 
+def _resolve_base_path(base_folder: Optional[Union[str, Path]]) -> Path:
+    """Resolve base folder path from parameter or environment.
+
+    Priority:
+    1. Explicit base_folder parameter
+    2. N8N_DEPLOY_DATA_DIR environment variable
+    3. Current working directory (default)
+    """
+    if base_folder is not None:
+        return Path(base_folder).resolve()
+
+    if "N8N_DEPLOY_DATA_DIR" in os.environ:
+        base_path = Path(os.environ["N8N_DEPLOY_DATA_DIR"]).resolve()
+        if base_path.exists() and base_path.is_dir():
+            return base_path
+
+    return Path.cwd()
+
+
+def _resolve_flow_path(
+    flow_folder: Optional[Union[str, Path, "_NotProvided"]],
+) -> tuple[Optional[Path], bool]:
+    """Resolve flow folder path from parameter or environment.
+
+    Returns:
+        Tuple of (resolved path or None, is_explicit flag)
+
+    Priority:
+    1. Explicit flow_folder parameter
+    2. N8N_DEPLOY_FLOWS_DIR environment variable
+    3. None (defer to DB-stored workflow file_folder)
+    """
+    if not isinstance(flow_folder, _NotProvided):
+        if flow_folder is not None:
+            return Path(flow_folder).resolve(), True
+        return None, True
+
+    if "N8N_DEPLOY_FLOWS_DIR" in os.environ:
+        flow_path = Path(os.environ["N8N_DEPLOY_FLOWS_DIR"]).resolve()
+        if flow_path.exists() and flow_path.is_dir():
+            return flow_path, True
+
+    return None, False
+
+
+def _resolve_n8n_url(n8n_url: Optional[str]) -> Optional[str]:
+    """Resolve n8n API URL from parameter or environment.
+
+    Priority:
+    1. Explicit n8n_url parameter
+    2. N8N_SERVER_URL environment variable
+    3. None
+    """
+    url = n8n_url if n8n_url is not None else os.environ.get("N8N_SERVER_URL")
+
+    if url is None:
+        return None
+
+    url = url.rstrip("/")
+    if not url.startswith("http"):
+        url = f"http://{url}"
+    return url
+
+
+def _resolve_db_filename(db_filename: Optional[str]) -> str:
+    """Resolve database filename from parameter or environment.
+
+    Priority:
+    1. Explicit db_filename parameter
+    2. N8N_DEPLOY_DB_FILENAME environment variable
+    3. n8n-deploy.db (default)
+    """
+    if db_filename is not None:
+        return db_filename
+    return os.environ.get("N8N_DEPLOY_DB_FILENAME", "n8n-deploy.db")
+
+
 @dataclass
 class AppConfig:
     """Configuration container for n8n_deploy_ paths and settings"""
@@ -117,67 +194,20 @@ def get_config(
     2. N8N_DEPLOY_DB_FILENAME environment variable
     3. n8n-deploy.db (default)
     """
-    # Load .env file if available, then check ENVIRONMENT variable
+    # Load .env file if available
     if HAS_DOTENV:
         load_dotenv(dotenv_path=Path.cwd() / ".env", override=False)
-        # Only use .env values if ENVIRONMENT=development
-        if os.getenv("ENVIRONMENT", "").lower() != "development":
-            # Clear .env-loaded vars in production mode (keep system env vars)
-            pass  # For now, just load but document that ENVIRONMENT should be set
 
-    if base_folder is not None:
-        base_path = Path(base_folder).resolve()
-    elif "N8N_DEPLOY_DATA_DIR" in os.environ:
-        base_path = Path(os.environ["N8N_DEPLOY_DATA_DIR"]).resolve()
-        # Default to cwd if path doesn't exist or isn't a directory
-        if not base_path.exists() or not base_path.is_dir():
-            base_path = Path.cwd()
-    else:
-        base_path = Path.cwd()
-
-    # Flow folder: distinguish "not provided" from "explicitly provided"
-    # When not explicit, defer to DB-stored workflow file_folder
-    flow_folder_explicit = False
-    flow_path: Optional[Path] = None
-
-    if not isinstance(flow_folder, _NotProvided):
-        # User explicitly provided --flow-dir (could be path string)
-        flow_folder_explicit = True
-        if flow_folder is not None:
-            flow_path = Path(flow_folder).resolve()
-    elif "N8N_DEPLOY_FLOWS_DIR" in os.environ:
-        # Environment variable counts as explicit
-        flow_folder_explicit = True
-        flow_path = Path(os.environ["N8N_DEPLOY_FLOWS_DIR"]).resolve()
-        # Default to None (defer to DB) if path doesn't exist
-        if not flow_path.exists() or not flow_path.is_dir():
-            flow_path = None
-            flow_folder_explicit = False
-    # else: flow_path stays None, defer to DB-stored file_folder
-
-    if n8n_url is not None:
-        api_url = n8n_url.rstrip("/")
-        if not api_url.startswith("http"):
-            api_url = f"http://{api_url}"
-    elif "N8N_SERVER_URL" in os.environ:
-        api_url = os.environ["N8N_SERVER_URL"].rstrip("/")
-        if not api_url.startswith("http"):
-            api_url = f"http://{api_url}"
-    else:
-        api_url = None
-
-    # Database filename resolution
-    if db_filename is not None:
-        filename = db_filename
-    elif "N8N_DEPLOY_DB_FILENAME" in os.environ:
-        filename = os.environ["N8N_DEPLOY_DB_FILENAME"]
-    else:
-        filename = "n8n-deploy.db"
+    # Resolve all configuration values using helper functions
+    base_path = _resolve_base_path(base_folder)
+    flow_path, flow_explicit = _resolve_flow_path(flow_folder)
+    api_url = _resolve_n8n_url(n8n_url)
+    filename = _resolve_db_filename(db_filename)
 
     config = AppConfig(
         base_folder=base_path,
         flow_folder=flow_path,
-        flow_folder_explicit=flow_folder_explicit,
+        flow_folder_explicit=flow_explicit,
         n8n_url=api_url,
         db_filename=filename,
     )

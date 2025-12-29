@@ -25,6 +25,41 @@ class ApiKey:
     description: Optional[str] = None
 
 
+def _test_key_output(message: str, no_emoji: bool, emoji: str = "", indent: bool = False) -> None:
+    """Output a message with optional emoji prefix.
+
+    Args:
+        message: The message text to output
+        no_emoji: If True, output without emoji
+        emoji: Emoji to prepend if no_emoji is False
+        indent: If True, add indentation for sub-messages
+    """
+    prefix = "   " if indent else ""
+    if no_emoji:
+        print(f"{prefix}{message}")
+    else:
+        emoji_prefix = f"{emoji} " if emoji else ""
+        print(f"{prefix}{emoji_prefix}{message}")
+
+
+def _test_key_basic_validity(api_key: str) -> bool:
+    """Test basic validity when no server URL is available."""
+    print(f"   Testing basic validity only:")
+    print(f"   Key length: {len(api_key)} characters")
+    if len(api_key) > 8:
+        print(f"   Key prefix: {api_key[:8]}...")
+    else:
+        print(f"   Key: {api_key}")
+    return True
+
+
+def _test_key_parse_response(data: Any) -> int:
+    """Parse response data and return workflow count."""
+    if isinstance(data, dict):
+        return len(data.get("data", []))
+    return len(data)
+
+
 class KeyApi:
     """API key storage and management (business logic layer)"""
 
@@ -118,98 +153,80 @@ class KeyApi:
         """
         import os
         import requests
+        from api.cli.verbose import log_error, log_request, log_response
 
         # Get API key from database
         api_key = self.get_api_key(key_name)
         if not api_key:
-            if no_emoji:
-                print(f"API key not found: {key_name}")
-            else:
-                print(f"❌ API key not found: {key_name}")
+            _test_key_output(f"API key not found: {key_name}", no_emoji, "❌")
             return False
 
         # Determine server URL
         test_server = server_url or os.getenv("N8N_SERVER_URL")
         if not test_server:
-            if no_emoji:
-                print("No server URL specified. Use --server-url option or set N8N_SERVER_URL environment variable")
-            else:
-                print("⚠️  No server URL specified. Use --server-url option or set N8N_SERVER_URL environment variable")
-            print(f"   Testing basic validity only:")
-            print(f"   Key length: {len(api_key)} characters")
-            print(f"   Key prefix: {api_key[:8]}..." if len(api_key) > 8 else f"   Key: {api_key}")
-            return True
+            _test_key_output(
+                "No server URL specified. Use --server-url option or set N8N_SERVER_URL environment variable",
+                no_emoji,
+                "⚠️",
+            )
+            return _test_key_basic_validity(api_key)
 
-        # Test against n8n server
-        if no_emoji:
-            print(f"Testing API key '{key_name}' against server: {test_server}")
-        else:
-            print(f"🧪 Testing API key '{key_name}' against server: {test_server}")
+        _test_key_output(f"Testing API key '{key_name}' against server: {test_server}", no_emoji, "🧪")
+
+        return self._execute_api_test(test_server, api_key, skip_ssl_verify, no_emoji, log_request, log_response, log_error)
+
+    def _execute_api_test(
+        self,
+        test_server: str,
+        api_key: str,
+        skip_ssl_verify: bool,
+        no_emoji: bool,
+        log_request: Any,
+        log_response: Any,
+        log_error: Any,
+    ) -> bool:
+        """Execute the actual API test request."""
+        import requests
+
+        url = f"{test_server.rstrip('/')}/api/v1/workflows"
+        headers = {"X-N8N-API-KEY": api_key, "Content-Type": "application/json"}
 
         try:
-            from api.cli.verbose import log_error, log_request, log_response
-
-            # Make a simple authenticated request to /api/v1/workflows
-            url = f"{test_server.rstrip('/')}/api/v1/workflows"
-            headers = {
-                "X-N8N-API-KEY": api_key,
-                "Content-Type": "application/json",
-            }
-
             start_time = log_request("GET", url, headers)
             response = requests.get(url, headers=headers, verify=not skip_ssl_verify, timeout=10)
             log_response(response.status_code, dict(response.headers), start_time)
             response.raise_for_status()
 
-            # Parse response
-            data = response.json()
-            workflow_count = len(data.get("data", [])) if isinstance(data, dict) else len(data)
-
-            if no_emoji:
-                print(f"API key is valid and authenticated successfully")
-                print(f"Server responded with {workflow_count} workflows")
-            else:
-                print(f"✅ API key is valid and authenticated successfully")
-                print(f"   Server responded with {workflow_count} workflows")
-
+            workflow_count = _test_key_parse_response(response.json())
+            _test_key_output("API key is valid and authenticated successfully", no_emoji, "✅")
+            _test_key_output(f"Server responded with {workflow_count} workflows", no_emoji, indent=True)
             return True
 
         except requests.exceptions.Timeout:
-            log_error("TIMEOUT", f"Connection timed out after 10 seconds")
-            if no_emoji:
-                print(f"Connection to {test_server} timed out after 10 seconds")
-            else:
-                print(f"❌ Connection to {test_server} timed out after 10 seconds")
+            log_error("TIMEOUT", "Connection timed out after 10 seconds")
+            _test_key_output(f"Connection to {test_server} timed out after 10 seconds", no_emoji, "❌")
             return False
+
         except requests.exceptions.SSLError as e:
             log_error("SSL", str(e))
-            if no_emoji:
-                print(f"SSL certificate verification failed: {e}")
-                print("Use --skip-ssl-verify to bypass SSL verification (not recommended for production)")
-            else:
-                print(f"❌ SSL certificate verification failed: {e}")
-                print("   Use --skip-ssl-verify to bypass SSL verification (not recommended for production)")
+            _test_key_output(f"SSL certificate verification failed: {e}", no_emoji, "❌")
+            _test_key_output(
+                "Use --skip-ssl-verify to bypass SSL verification (not recommended for production)", no_emoji, indent=True
+            )
             return False
+
         except requests.exceptions.HTTPError as e:
             log_error("HTTP", str(e))
-            if no_emoji:
-                print(f"Authentication failed: {e}")
-                print("The API key may be invalid or expired")
-            else:
-                print(f"❌ Authentication failed: {e}")
-                print("   The API key may be invalid or expired")
+            _test_key_output(f"Authentication failed: {e}", no_emoji, "❌")
+            _test_key_output("The API key may be invalid or expired", no_emoji, indent=True)
             return False
+
         except requests.exceptions.RequestException as e:
             log_error("REQUEST", str(e))
-            if no_emoji:
-                print(f"Failed to connect to server: {e}")
-            else:
-                print(f"❌ Failed to connect to server: {e}")
+            _test_key_output(f"Failed to connect to server: {e}", no_emoji, "❌")
             return False
+
         except Exception as e:
             log_error("UNKNOWN", str(e))
-            if no_emoji:
-                print(f"Unexpected error during API key test: {e}")
-            else:
-                print(f"❌ Unexpected error during API key test: {e}")
+            _test_key_output(f"Unexpected error during API key test: {e}", no_emoji, "❌")
             return False

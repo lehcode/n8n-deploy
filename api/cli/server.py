@@ -22,6 +22,55 @@ from .output import format_server_table
 console = Console()
 
 
+def _output_error(message: str, output_json: bool, no_emoji: bool = False) -> None:
+    """Output an error message in the appropriate format."""
+    if output_json:
+        console.print(json.dumps({"success": False, "error": message}))
+    elif no_emoji:
+        console.print(message)
+    else:
+        console.print(f"[red]❌ {message}[/red]")
+
+
+def _validate_ssl_options(skip_verify: bool, verify: bool, output_json: bool) -> None:
+    """Validate mutually exclusive SSL options.
+
+    Raises click.Abort on validation failure.
+    """
+    if skip_verify and verify:
+        error_msg = "Cannot use both --skip-verify and --verify"
+        _output_error(error_msg, output_json)
+        raise click.Abort()
+
+    if not skip_verify and not verify:
+        error_msg = "Must specify either --skip-verify or --verify"
+        if output_json:
+            console.print(json.dumps({"success": False, "error": error_msg}))
+        else:
+            console.print(f"[yellow]{error_msg}[/yellow]")
+        raise click.Abort()
+
+
+def _output_ssl_success(server_name: str, skip_ssl: bool, output_json: bool, no_emoji: bool) -> None:
+    """Output success message for SSL setting update."""
+    result = {
+        "success": True,
+        "server": server_name,
+        "skip_ssl_verify": skip_ssl,
+        "message": f"SSL verification {'disabled' if skip_ssl else 'enabled'} for {server_name}",
+    }
+
+    if output_json:
+        console.print(json.dumps(result, indent=2))
+    elif no_emoji:
+        console.print(f"SSL verification {'disabled' if skip_ssl else 'enabled'} for {server_name}")
+    else:
+        if skip_ssl:
+            console.print(f"⚠️  SSL verification [yellow]disabled[/yellow] for {server_name}")
+        else:
+            console.print(f"✅ SSL verification [green]enabled[/green] for {server_name}")
+
+
 @click.group(name="server", cls=CustomGroup)
 @click.option(
     "-v",
@@ -355,26 +404,10 @@ def server_ssl(
       n8n-deploy server ssl production --skip-verify
       n8n-deploy server ssl production --verify
     """
-    # JSON output implies no emoji
     if output_json:
         no_emoji = True
 
-    # Validate mutually exclusive options
-    if skip_verify and verify:
-        error_msg = "Cannot use both --skip-verify and --verify"
-        if output_json:
-            console.print(json.dumps({"success": False, "error": error_msg}))
-        else:
-            console.print(f"[red]{error_msg}[/red]")
-        raise click.Abort()
-
-    if not skip_verify and not verify:
-        error_msg = "Must specify either --skip-verify or --verify"
-        if output_json:
-            console.print(json.dumps({"success": False, "error": error_msg}))
-        else:
-            console.print(f"[yellow]{error_msg}[/yellow]")
-        raise click.Abort()
+    _validate_ssl_options(skip_verify, verify, output_json)
 
     try:
         config = get_config(base_folder=data_dir, db_filename=db_filename)
@@ -388,48 +421,21 @@ def server_ssl(
         # Check server exists
         existing = server_api.get_server_by_name(server_name)
         if not existing:
-            error_msg = f"Server '{server_name}' not found"
-            if output_json:
-                console.print(json.dumps({"success": False, "error": error_msg}))
-            else:
-                console.print(f"[red]❌ {error_msg}[/red]")
+            _output_error(f"Server '{server_name}' not found", output_json, no_emoji)
             raise click.Abort()
 
         # Update SSL setting
-        new_skip_ssl = skip_verify  # True for --skip-verify, False for --verify
+        new_skip_ssl = skip_verify
         success = server_api.set_server_ssl_verify(server_name, new_skip_ssl)
 
         if not success:
-            error_msg = f"Failed to update SSL setting for '{server_name}'"
-            if output_json:
-                console.print(json.dumps({"success": False, "error": error_msg}))
-            else:
-                console.print(f"[red]❌ {error_msg}[/red]")
+            _output_error(f"Failed to update SSL setting for '{server_name}'", output_json, no_emoji)
             raise click.Abort()
 
-        result = {
-            "success": True,
-            "server": server_name,
-            "skip_ssl_verify": new_skip_ssl,
-            "message": f"SSL verification {'disabled' if new_skip_ssl else 'enabled'} for {server_name}",
-        }
-
-        if output_json:
-            console.print(json.dumps(result, indent=2))
-        elif no_emoji:
-            console.print(f"SSL verification {'disabled' if new_skip_ssl else 'enabled'} for {server_name}")
-        else:
-            if new_skip_ssl:
-                console.print(f"⚠️  SSL verification [yellow]disabled[/yellow] for {server_name}")
-            else:
-                console.print(f"✅ SSL verification [green]enabled[/green] for {server_name}")
+        _output_ssl_success(server_name, new_skip_ssl, output_json, no_emoji)
 
     except click.Abort:
         raise
     except Exception as e:
-        error_msg = f"Error updating SSL setting: {e}"
-        if output_json:
-            console.print(json.dumps({"success": False, "error": error_msg}))
-        else:
-            console.print(f"[red]❌ {error_msg}[/red]")
+        _output_error(f"Error updating SSL setting: {e}", output_json, no_emoji)
         raise click.Abort()

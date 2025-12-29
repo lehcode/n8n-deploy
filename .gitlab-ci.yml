@@ -363,7 +363,7 @@ quality:black:
 test:affected:
   stage: test
   tags:
-    - linux
+    - heavy
     - tests
   cache:
     # Use multiple caches: venv (branch-specific) + testmondata (shared)
