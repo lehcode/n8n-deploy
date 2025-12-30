@@ -205,3 +205,61 @@ class TestAPIKeyCommands:
 
         assert result.exit_code == 0
         mock_manager_instance.delete_api_key.assert_called_once_with("test_key", force=True, no_emoji=False)
+
+
+class TestAPIKeyDeleteNonInteractive:
+    """Tests for delete command non-interactive behavior."""
+
+    def setup_method(self) -> None:
+        """Set up test environment."""
+        self.runner = CliRunner()
+        self.temp_dir = tempfile.mkdtemp()
+
+    def teardown_method(self) -> None:
+        """Clean up test environment."""
+        if os.path.exists(self.temp_dir):
+            import shutil
+
+            shutil.rmtree(self.temp_dir)
+
+    @patch("api.cli.apikey.KeyApi")
+    @patch("api.cli.apikey.DBApi")
+    @patch("api.cli.apikey.get_config")
+    @patch("api.cli.apikey.is_interactive_mode")
+    def test_delete_non_interactive_without_force_aborts(
+        self, mock_is_interactive: MagicMock, mock_get_config: MagicMock, mock_db_api: MagicMock, mock_key_api: MagicMock
+    ) -> None:
+        """Test that delete aborts in non-interactive mode without --force."""
+        mock_is_interactive.return_value = False
+
+        mock_config_instance = MagicMock()
+        mock_config_instance.base_folder = Path(self.temp_dir)
+        mock_get_config.return_value = mock_config_instance
+
+        result = self.runner.invoke(apikey, ["delete", "test_key"])
+
+        assert result.exit_code == 1
+        assert "Use --force flag" in result.output
+
+    @patch("api.cli.apikey.KeyApi")
+    @patch("api.cli.apikey.DBApi")
+    @patch("api.cli.apikey.get_config")
+    @patch("api.cli.apikey.is_interactive_mode")
+    def test_delete_non_interactive_with_force_succeeds(
+        self, mock_is_interactive: MagicMock, mock_get_config: MagicMock, mock_db_api: MagicMock, mock_key_api: MagicMock
+    ) -> None:
+        """Test that delete succeeds in non-interactive mode with --force."""
+        mock_is_interactive.return_value = False
+
+        mock_config_instance = MagicMock()
+        mock_config_instance.base_folder = Path(self.temp_dir)
+        mock_get_config.return_value = mock_config_instance
+
+        mock_key_api_instance = MagicMock()
+        mock_key_api.return_value = mock_key_api_instance
+        mock_key_api_instance.delete_api_key.return_value = True
+
+        result = self.runner.invoke(apikey, ["delete", "test_key", "--force"])
+
+        assert result.exit_code == 0
+        mock_key_api_instance.delete_api_key.assert_called_once()

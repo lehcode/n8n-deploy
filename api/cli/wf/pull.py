@@ -6,6 +6,7 @@ from typing import Optional
 import click
 from rich.console import Console
 
+from ..db import is_interactive_mode
 from ...config import NOT_PROVIDED, get_config
 from ...workflow import WorkflowApi
 from ..app import (
@@ -20,8 +21,19 @@ console = Console()
 
 
 def _prompt_for_filename(workflow_id: str, no_emoji: bool) -> str:
-    """Prompt user for filename for new workflow."""
+    """Prompt user for filename for new workflow.
+
+    In non-interactive mode, returns default filename without prompting.
+    """
     default_filename = f"{workflow_id}.json"
+
+    # Non-interactive mode: use default without prompting
+    if not is_interactive_mode():
+        prefix = "" if no_emoji else "Info: "
+        console.print(f"{prefix}Using default filename: {default_filename}")
+        return default_filename
+
+    # Interactive mode: prompt user
     if no_emoji:
         console.print(f"New workflow detected. Enter filename (default: {default_filename}):")
     else:

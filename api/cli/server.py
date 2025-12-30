@@ -15,6 +15,7 @@ from rich.table import Table
 from ..api_keys import KeyApi
 from ..config import AppConfig, get_config
 from .app import cli_data_dir_help, handle_verbose_flag, HELP_DB_FILENAME, HELP_JSON, HELP_TABLE, CustomCommand, CustomGroup
+from .db import is_interactive_mode
 from ..db.core import DBApi
 from ..db.servers import ServerCrud
 from .output import format_server_table
@@ -210,6 +211,11 @@ def _handle_api_key_decision(
     console.print("\nWhat should happen to these API keys?")
     console.print("  [1] Preserve (keep API keys, just unlink them)")
     console.print("  [2] Delete (remove API keys that are ONLY linked to this server)")
+
+    # Non-interactive mode: default to preserve (safe option)
+    if not is_interactive_mode():
+        console.print("Non-interactive mode: preserving API keys (use --key-action to specify)")
+        return "preserve"
 
     choice = cast(int, click.prompt("Enter choice", type=int, default="1"))
     return "preserve" if choice == 1 else "delete"

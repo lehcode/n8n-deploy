@@ -21,6 +21,7 @@ from ..config import get_config
 from ..db import DBApi
 from ..jwt_utils import check_jwt_expiration, format_expiration_date, get_jwt_issued_at
 from .app import cli_data_dir_help, handle_verbose_flag, HELP_DB_FILENAME, HELP_JSON, HELP_NO_EMOJI, CustomCommand, CustomGroup
+from .db import is_interactive_mode
 from .output import cli_error
 
 console = Console()
@@ -404,6 +405,15 @@ def delete_apikey(key_name: str, force: bool, data_dir: Optional[str], db_filena
 
         # If not forced, ask for confirmation
         if not force:
+            # Non-interactive mode without --force: abort safely
+            if not is_interactive_mode():
+                error_msg = "Use --force flag to delete API keys in non-interactive mode"
+                if no_emoji:
+                    console.print(f"Error: {error_msg}")
+                else:
+                    console.print(f"[red]Error: {error_msg}[/red]")
+                raise click.Abort()
+
             if no_emoji:
                 console.print(f"About to permanently delete API key: {key_name}")
                 console.print("Type 'yes' to confirm: ", end="")
