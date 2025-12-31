@@ -20,15 +20,20 @@ from ..app import (
 console = Console()
 
 
-def _prompt_for_filename(workflow_id: str, no_emoji: bool) -> str:
+def _prompt_for_filename(workflow_id: str, no_emoji: bool, non_interactive: bool = False) -> str:
     """Prompt user for filename for new workflow.
 
     In non-interactive mode, returns default filename without prompting.
+
+    Args:
+        workflow_id: The workflow ID (used for default filename)
+        no_emoji: Whether to suppress emoji in output
+        non_interactive: Force non-interactive mode (suppress prompts)
     """
     default_filename = f"{workflow_id}.json"
 
     # Non-interactive mode: use default without prompting
-    if not is_interactive_mode():
+    if non_interactive or not is_interactive_mode():
         prefix = "" if no_emoji else "Info: "
         console.print(f"{prefix}Using default filename: {default_filename}")
         return default_filename
@@ -50,6 +55,8 @@ def _prompt_for_filename(workflow_id: str, no_emoji: bool) -> str:
 @click.command(cls=CustomCommand)
 @click.option(
     "--remote",
+    "--server",
+    "remote",
     metavar="N8N_SERVER_NAME|N8N_SERVER_URL",
     help="n8n server (name or URL) - uses linked API key if name provided",
 )
@@ -57,7 +64,14 @@ def _prompt_for_filename(workflow_id: str, no_emoji: bool) -> str:
 @click.option("--data-dir", type=click.Path(), help=cli_data_dir_help)
 @click.option("--flow-dir", type=click.Path(), help=HELP_FLOW_DIR)
 @click.option("--db-filename", type=str, help=HELP_DB_FILENAME)
-@click.option("--filename", metavar="FILENAME", help="Custom filename for new workflows (e.g., 'my-workflow.json')")
+@click.option(
+    "--filename",
+    "--output",
+    "filename",
+    metavar="FILENAME",
+    help="Custom filename for new workflows (e.g., 'my-workflow.json')",
+)
+@click.option("--non-interactive", is_flag=True, help="Suppress prompts, use defaults for automation")
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
 @click.argument("workflow_id", metavar="WORKFLOW_ID|WORKFLOW_NAME")
 def pull(
@@ -68,6 +82,7 @@ def pull(
     flow_dir: Optional[str],
     db_filename: Optional[str],
     filename: Optional[str],
+    non_interactive: bool,
     no_emoji: bool,
 ) -> None:
     """📥 Download workflow from n8n server
@@ -113,7 +128,7 @@ def pull(
         except ValueError:
             # New workflow - prompt for filename if not provided
             if not target_filename:
-                target_filename = _prompt_for_filename(workflow_id, no_emoji)
+                target_filename = _prompt_for_filename(workflow_id, no_emoji, non_interactive)
 
         success = manager.pull_workflow(workflow_id, filename=target_filename)
 

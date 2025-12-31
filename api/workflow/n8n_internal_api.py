@@ -15,12 +15,20 @@ than API keys. The internal API is used for:
 For standard workflow CRUD operations, use the public API via n8n_api.py.
 """
 
-import warnings
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 import requests
-from urllib3.exceptions import InsecureRequestWarning
+
+from .folder_path import build_folder_path, find_folder_by_path, split_path_parts
+from .ssl_utils import configure_ssl_verification
+
+
+# Status code messages for error handling
+_STATUS_MESSAGES: Dict[int, str] = {
+    401: "Session expired or invalid - please re-authenticate",
+    403: "Access denied - insufficient permissions",
+}
 
 
 class N8nInternalClient:
@@ -50,9 +58,7 @@ class N8nInternalClient:
         self._session_cookie: Optional[str] = None
         self._session: requests.Session = requests.Session()
 
-        if skip_ssl_verify:
-            warnings.filterwarnings("ignore", category=InsecureRequestWarning)
-            self._session.verify = False
+        configure_ssl_verification(skip_ssl_verify, self._session)
 
     @property
     def is_authenticated(self) -> bool:
@@ -128,6 +134,40 @@ class N8nInternalClient:
         # Default: assume 24 hours from now
         return datetime.now(timezone.utc).replace(hour=23, minute=59, second=59)
 
+    def _get_method_dispatcher(self) -> Dict[str, Callable[..., requests.Response]]:
+        """Return HTTP method dispatcher for the session."""
+        return {
+            "GET": lambda url, data: self._session.get(url, timeout=self.DEFAULT_TIMEOUT),
+            "POST": lambda url, data: self._session.post(url, json=data, timeout=self.DEFAULT_TIMEOUT),
+            "PUT": lambda url, data: self._session.put(url, json=data, timeout=self.DEFAULT_TIMEOUT),
+            "PATCH": lambda url, data: self._session.patch(url, json=data, timeout=self.DEFAULT_TIMEOUT),
+            "DELETE": lambda url, data: self._session.delete(url, timeout=self.DEFAULT_TIMEOUT),
+        }
+
+    def _handle_status_code(self, status_code: int, response_text: str, silent: bool) -> Optional[Dict[str, Any]]:
+        """Handle HTTP status codes and return appropriate result.
+
+        Returns empty dict for 204, None for errors, raises for success (caller continues).
+        """
+        # Known error status codes
+        if status_code in _STATUS_MESSAGES:
+            if not silent:
+                print(_STATUS_MESSAGES[status_code])
+            return None
+
+        # Generic error
+        if status_code >= 400:
+            if not silent:
+                print(f"API error: {status_code} - {response_text}")
+            return None
+
+        # No content
+        if status_code == 204:
+            return {}
+
+        # Success - return None to signal caller should parse JSON
+        return None
+
     def _make_request(
         self,
         method: str,
@@ -152,39 +192,24 @@ class N8nInternalClient:
             return None
 
         url = f"{self.base_url}/rest/{endpoint.lstrip('/')}"
+        method_upper = method.upper()
 
         try:
-            if method.upper() == "GET":
-                response = self._session.get(url, timeout=self.DEFAULT_TIMEOUT)
-            elif method.upper() == "POST":
-                response = self._session.post(url, json=data, timeout=self.DEFAULT_TIMEOUT)
-            elif method.upper() == "PUT":
-                response = self._session.put(url, json=data, timeout=self.DEFAULT_TIMEOUT)
-            elif method.upper() == "PATCH":
-                response = self._session.patch(url, json=data, timeout=self.DEFAULT_TIMEOUT)
-            elif method.upper() == "DELETE":
-                response = self._session.delete(url, timeout=self.DEFAULT_TIMEOUT)
-            else:
+            dispatcher = self._get_method_dispatcher()
+            if method_upper not in dispatcher:
                 raise ValueError(f"Unsupported HTTP method: {method}")
 
-            if response.status_code == 401:
-                if not silent:
-                    print("Session expired or invalid - please re-authenticate")
-                return None
+            response = dispatcher[method_upper](url, data)
 
-            if response.status_code == 403:
-                if not silent:
-                    print("Access denied - insufficient permissions")
-                return None
+            # Handle error status codes
+            if response.status_code in _STATUS_MESSAGES or response.status_code >= 400:
+                return self._handle_status_code(response.status_code, response.text, silent)
 
-            if response.status_code >= 400:
-                if not silent:
-                    print(f"API error: {response.status_code} - {response.text}")
-                return None
-
+            # Handle 204 No Content
             if response.status_code == 204:
                 return {}
 
+            # Parse and return JSON
             json_response: Dict[str, Any] = response.json()
             return json_response
 
@@ -366,47 +391,19 @@ class N8nInternalClient:
         return result is not None
 
     # ==================== UTILITY METHODS ====================
+    # These delegate to module-level functions for better testability
 
     def build_folder_path(self, folders: List[Dict[str, Any]], folder_id: str) -> str:
-        """Build full folder path from folder list
-
-        Args:
-            folders: List of all folders
-            folder_id: Target folder ID
-
-        Returns:
-            Full path like "parent/child/folder"
-        """
-        folder_map = {f["id"]: f for f in folders}
-        path_parts: List[str] = []
-        current_id: Optional[str] = folder_id
-
-        while current_id and current_id in folder_map:
-            folder = folder_map[current_id]
-            path_parts.insert(0, folder.get("name", ""))
-            current_id = folder.get("parentId")
-
-        return "/".join(path_parts)
+        """Build full folder path from folder list. Delegates to folder_path module."""
+        return build_folder_path(folders, folder_id)
 
     def find_folder_by_path(
         self,
         folders: List[Dict[str, Any]],
         path: str,
     ) -> Optional[Dict[str, Any]]:
-        """Find folder by its full path
-
-        Args:
-            folders: List of all folders
-            path: Path like "parent/child/folder"
-
-        Returns:
-            Folder dict or None if not found
-        """
-        for folder in folders:
-            folder_path = self.build_folder_path(folders, folder["id"])
-            if folder_path == path:
-                return folder
-        return None
+        """Find folder by its full path. Delegates to folder_path module."""
+        return find_folder_by_path(folders, path)
 
     def get_or_create_folder_path(
         self,
@@ -426,13 +423,13 @@ class N8nInternalClient:
         if folders is None:
             return None
 
-        parts = [p for p in path.split("/") if p]
+        parts = split_path_parts(path)
         parent_id: Optional[str] = None
         current_path = ""
 
         for part in parts:
             current_path = f"{current_path}/{part}" if current_path else part
-            existing = self.find_folder_by_path(folders, current_path)
+            existing = find_folder_by_path(folders, current_path)
 
             if existing:
                 parent_id = existing["id"]

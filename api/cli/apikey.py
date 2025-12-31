@@ -405,8 +405,22 @@ def delete_apikey(key_name: str, force: bool, data_dir: Optional[str], db_filena
 
         # If not forced, ask for confirmation
         if not force:
-            # Non-interactive mode without --force: abort safely
-            if not is_interactive_mode():
+            interactive = is_interactive_mode()
+
+            if interactive:
+                # Interactive mode: prompt user
+                if no_emoji:
+                    console.print(f"About to permanently delete API key: {key_name}")
+                    console.print("Type 'yes' to confirm: ", end="")
+                else:
+                    console.print(f"⚠️  About to permanently delete API key: {key_name}")
+                    console.print("   Type 'yes' to confirm: ", end="")
+
+            # Try to read confirmation (works for both TTY and piped stdin)
+            try:
+                confirmation = input().strip().lower()
+            except EOFError:
+                # No input available in non-interactive mode
                 error_msg = "Use --force flag to delete API keys in non-interactive mode"
                 if no_emoji:
                     console.print(f"Error: {error_msg}")
@@ -414,14 +428,6 @@ def delete_apikey(key_name: str, force: bool, data_dir: Optional[str], db_filena
                     console.print(f"[red]Error: {error_msg}[/red]")
                 raise click.Abort()
 
-            if no_emoji:
-                console.print(f"About to permanently delete API key: {key_name}")
-                console.print("Type 'yes' to confirm: ", end="")
-            else:
-                console.print(f"⚠️  About to permanently delete API key: {key_name}")
-                console.print("   Type 'yes' to confirm: ", end="")
-
-            confirmation = input().strip().lower()
             if confirmation != "yes":
                 if no_emoji:
                     console.print("Deletion cancelled")

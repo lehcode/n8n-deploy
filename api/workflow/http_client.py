@@ -6,12 +6,11 @@ Provides a unified HTTP layer for making authenticated requests to n8n servers.
 Extracted from n8n_api.py to reduce complexity and improve testability.
 """
 
-import warnings
 from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple
 
 import requests
-from urllib3.exceptions import InsecureRequestWarning
 
+from .ssl_utils import configure_ssl_verification
 from .types import N8nApiErrorType, N8nApiResult
 
 if TYPE_CHECKING:
@@ -69,10 +68,7 @@ class N8nHttpClient:
             skip_ssl_verify: If True, disable SSL certificate verification
         """
         self.skip_ssl_verify = skip_ssl_verify
-
-        # Suppress InsecureRequestWarning when SSL verification is disabled
-        if skip_ssl_verify:
-            warnings.filterwarnings("ignore", category=InsecureRequestWarning)
+        configure_ssl_verification(skip_ssl_verify)
 
     def request(
         self,
