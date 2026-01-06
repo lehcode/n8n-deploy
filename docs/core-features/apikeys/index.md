@@ -111,7 +111,7 @@ Validate an API key against an n8n server:
 n8n-deploy apikey test production_key
 
 # Test with specific server
-n8n-deploy --server-url http://n8n.example.com:5678 apikey test staging_key
+n8n-deploy apikey test staging_key --server-url http://n8n.example.com:5678
 ```
 
 **What testing checks:**
@@ -198,16 +198,16 @@ Typical setup for DevOps teams:
 
 ```bash
 # Development Environment
-n8n-deploy server create http://n8n-dev.internal:5678 --name "Development"
+n8n-deploy server create "Development" http://n8n-dev.internal:5678
 n8n-deploy apikey add - --name dev_key --server "Development"
 
 # Staging Environment
-n8n-deploy server create http://n8n-staging.internal:5678 --name "Staging"
+n8n-deploy server create "Staging" http://n8n-staging.internal:5678
 n8n-deploy apikey add - --name staging_key --server "Staging"
 
 # Production Environment
-n8n-deploy server create https://n8n.example.com --name "Production 🚀"
-n8n-deploy apikey add - --name prod_key --server "Production 🚀"
+n8n-deploy server create "Production" https://n8n.example.com
+n8n-deploy apikey add - --name prod_key --server "Production"
 
 # List all configurations
 n8n-deploy server list

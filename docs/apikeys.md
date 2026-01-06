@@ -12,8 +12,11 @@ n8n-deploy provides a simple and secure way to manage API keys for n8n server in
 
 ### Add API Key
 ```bash
-# Interactive key entry
-echo "your_n8n_api_key" | n8n-deploy apikey add my_server
+# Add API key from stdin
+echo "your_n8n_api_key" | n8n-deploy apikey add - --name my_key
+
+# Add API key and link to server
+echo "your_n8n_api_key" | n8n-deploy apikey add - --name my_key --server my_server
 ```
 
 ### List API Keys
@@ -81,17 +84,21 @@ Columns:
 ## 💻 API Key Management Workflow
 
 ```bash
-# Add API key for multiple servers
-echo "production_key" | n8n-deploy apikey add production_server
-echo "staging_key" | n8n-deploy apikey add staging_server
+# Create servers first
+n8n-deploy server create production http://prod.n8n.com
+n8n-deploy server create staging http://staging.n8n.com
+
+# Add API keys and link to servers
+echo "production_key" | n8n-deploy apikey add - --name prod_key --server production
+echo "staging_key" | n8n-deploy apikey add - --name staging_key --server staging
 
 # List and verify keys
 n8n-deploy apikey list
 
 # Test keys with specific servers
-n8n-deploy apikey test production_server --server-url http://prod.n8n.com
-n8n-deploy apikey test staging_server --server-url http://staging.n8n.com
+n8n-deploy apikey test prod_key --server-url http://prod.n8n.com
+n8n-deploy apikey test staging_key --server-url http://staging.n8n.com
 
 # Remove unused key
-n8n-deploy apikey delete old_server --confirm
+n8n-deploy apikey delete old_key --confirm
 ```

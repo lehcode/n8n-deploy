@@ -26,6 +26,8 @@ n8n-deploy wf push my-workflow
 
 The database knows where your workflow lives and which server it belongs to.
 
+[![asciicast](https://asciinema.org/a/bVgdzcx0tt2tLBUTXeQpOAaIz.svg)](https://asciinema.org/a/bVgdzcx0tt2tLBUTXeQpOAaIz)
+
 ### Key Features
 
 - 🧠 **Smart Configuration**

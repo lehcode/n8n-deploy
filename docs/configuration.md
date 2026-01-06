@@ -14,7 +14,7 @@ n8n-deploy uses a local SQLite database to store workflow paths, server links, a
 Highest priority configuration method.
 
 ```bash
-n8n-deploy --server-url http://n8n.example.com:5678 wf list-server
+n8n-deploy wf list-server --remote http://n8n.example.com:5678
 ```
 
 ### 2. Environment Variables

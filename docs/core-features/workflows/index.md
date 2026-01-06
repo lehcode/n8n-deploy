@@ -51,20 +51,20 @@ n8n-deploy wf list
 #### Remote Server Workflows
 
 ```bash
-n8n-deploy --server-url http://n8n.example.com:5678 wf list-server
+n8n-deploy wf list-server --remote http://n8n.example.com:5678
 ```
 
 ### Pull Workflow from Remote Server
 
 ```bash
 # Pull specific workflow
-n8n-deploy --server-url http://n8n.example.com:5678 wf pull "Customer Onboarding"
+n8n-deploy wf pull "Customer Onboarding" --remote http://n8n.example.com:5678
 
 # Pull with custom filename (for new workflows)
-n8n-deploy wf pull "Customer Onboarding" --filename customer-onboarding.json
+n8n-deploy wf pull "Customer Onboarding" --remote production --filename customer-onboarding.json
 
 # Pull with custom flow directory
-n8n-deploy --flow-dir /path/to/workflows wf pull "Customer Onboarding"
+n8n-deploy wf pull "Customer Onboarding" --remote production --flow-dir /path/to/workflows
 ```
 
 {: .note }
@@ -265,14 +265,15 @@ n8n-deploy wf -vv pull workflow-name   # Works at subcommand level
 ## 💻 Example Workflow Management Scenario
 
 ```bash
-# Add API key for server
-echo "your-api-key" | n8n-deploy apikey add my_server
+# Create server and add API key
+n8n-deploy server create my_server http://n8n.example.com:5678
+echo "your-api-key" | n8n-deploy apikey add - --name my_key --server my_server
 
 # List remote workflows
-n8n-deploy --server-url http://n8n.example.com:5678 wf list-server
+n8n-deploy wf list-server --remote my_server
 
 # Pull a specific workflow
-n8n-deploy wf pull "Customer Onboarding"
+n8n-deploy wf pull "Customer Onboarding" --remote my_server
 
 # Search workflows
 n8n-deploy wf search "customer"

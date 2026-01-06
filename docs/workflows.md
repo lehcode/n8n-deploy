@@ -19,25 +19,25 @@ n8n-deploy wf list
 
 #### Remote Server Workflows
 ```bash
-n8n-deploy --server-url http://n8n.example.com:5678 wf list-server
+n8n-deploy wf list-server --remote http://n8n.example.com:5678
 ```
 
 ### Pull Workflow from Remote Server
 ```bash
 # Pull specific workflow
-n8n-deploy --server-url http://n8n.example.com:5678 wf pull "Customer Onboarding"
+n8n-deploy wf pull "Customer Onboarding" --remote http://n8n.example.com:5678
 
 # Pull with custom flow directory
-n8n-deploy --flow-dir /path/to/workflows wf pull "Customer Onboarding"
+n8n-deploy wf pull "Customer Onboarding" --remote http://n8n.example.com:5678 --flow-dir /path/to/workflows
 ```
 
 ### Push Workflow to Remote Server
 ```bash
 # Push specific workflow
-n8n-deploy --server-url http://n8n.example.com:5678 wf push "Deployment Pipeline"
+n8n-deploy wf push "Deployment Pipeline" --remote http://n8n.example.com:5678
 
 # Push with custom flow directory
-n8n-deploy --flow-dir /path/to/workflows wf push "Deployment Pipeline"
+n8n-deploy wf push "Deployment Pipeline" --remote http://n8n.example.com:5678 --flow-dir /path/to/workflows
 ```
 
 ### Script Synchronization
@@ -144,14 +144,15 @@ n8n-deploy wf stats
 ## 💻 Example Workflow Management Scenario
 
 ```bash
-# Add API key for server
-echo "your-api-key" | n8n-deploy apikey add my_server
+# Create server and add API key
+n8n-deploy server create my_server http://n8n.example.com:5678
+echo "your-api-key" | n8n-deploy apikey add - --name my_key --server my_server
 
 # List remote workflows
-n8n-deploy --server-url http://n8n.example.com:5678 wf list-server
+n8n-deploy wf list-server --remote my_server
 
 # Pull a specific workflow
-n8n-deploy wf pull "Customer Onboarding"
+n8n-deploy wf pull "Customer Onboarding" --remote my_server
 
 # Backup all workflows
 n8n-deploy wf backup
