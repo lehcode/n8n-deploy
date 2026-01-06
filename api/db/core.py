@@ -1,11 +1,33 @@
 #!/usr/bin/env python3
 
+import re
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 from api.config import AppConfig, get_config
+
+
+def normalize_to_slug(text: str) -> str:
+    """Convert text to slug format for fuzzy matching.
+
+    "Graphiti Query" -> "graphiti-query"
+    "data_processing_job" -> "data-processing-job"
+
+    Args:
+        text: Input text to normalize
+
+    Returns:
+        Lowercase slug with spaces/underscores replaced by hyphens
+    """
+    result = text.lower()
+    result = re.sub(r"[\s_]+", "-", result)
+    result = re.sub(r"[^a-z0-9-]", "", result)
+    result = re.sub(r"-+", "-", result)
+    return result.strip("-")
+
+
 from api.db.base import BaseDB
 from api.db.schema import SchemaApi
 from api.models import DatabaseStats, Workflow, WorkflowStatus
@@ -25,6 +47,30 @@ class DBApi(BaseDB):
             super().__init__(config=get_config())
 
         self.schema_api = SchemaApi(db_path=self.db_path)
+
+    def _row_to_workflow(self, row: sqlite3.Row) -> Workflow:
+        """Convert a database row to a Workflow object.
+
+        Args:
+            row: SQLite Row object from query result
+
+        Returns:
+            Workflow instance populated from row data
+        """
+        return Workflow(
+            id=row["id"],
+            name=row["name"],
+            file=row["file"] if "file" in row.keys() else None,
+            file_folder=row["file_folder"],
+            server_id=row["server_id"] if "server_id" in row.keys() else None,
+            status=WorkflowStatus(row["status"]),
+            created_at=datetime.fromisoformat(row["created_at"]),
+            updated_at=datetime.fromisoformat(row["updated_at"]),
+            last_synced=datetime.fromisoformat(row["last_synced"]) if row["last_synced"] else None,
+            n8n_version_id=row["n8n_version_id"],
+            push_count=row["push_count"] or 0,
+            pull_count=row["pull_count"] or 0,
+        )
 
     def add_workflow(self, wf: Workflow) -> str:
         """Add a new workflow to the database"""
@@ -71,59 +117,90 @@ class DBApi(BaseDB):
             return None
 
     def get_workflow_by_name_or_id(self, name_or_id: str) -> Optional[Workflow]:
-        """Get a workflow by its name, ID, or filename"""
-        # First try by ID
+        """Get a workflow by its name, ID, or filename with smart matching.
+
+        Lookup priority:
+        1. Exact ID match
+        2. Exact name match
+        3. Case-insensitive name match
+        4. Slug-normalized name match (e.g., "graphiti-query" matches "Graphiti Query")
+        5. Exact filename match
+        6. Filename with .json appended
+        7. Basename match (for paths like 'subdir/workflow.json')
+        8. Basename with .json appended
+
+        Args:
+            name_or_id: Workflow identifier - can be ID, name, slug, or filename
+
+        Returns:
+            Workflow if found, None otherwise
+        """
+        # 1. Try by exact ID match
         wf = self.get_workflow(name_or_id)
         if wf:
             return wf
 
-        # Then try by exact name match
         with self.get_connection() as conn:
+            # 2. Try by exact name match
             cursor = conn.execute("SELECT * FROM workflows WHERE name = ?", (name_or_id,))
             row = cursor.fetchone()
             if row:
-                return Workflow(
-                    id=row["id"],
-                    name=row["name"],
-                    file=row["file"] if "file" in row.keys() else None,
-                    file_folder=row["file_folder"],
-                    server_id=row["server_id"] if "server_id" in row.keys() else None,
-                    status=WorkflowStatus(row["status"]),
-                    created_at=datetime.fromisoformat(row["created_at"]),
-                    updated_at=datetime.fromisoformat(row["updated_at"]),
-                    last_synced=datetime.fromisoformat(row["last_synced"]) if row["last_synced"] else None,
-                    n8n_version_id=row["n8n_version_id"],
-                    push_count=row["push_count"] or 0,
-                    pull_count=row["pull_count"] or 0,
-                )
+                return self._row_to_workflow(row)
 
-            # Then try by filename (exact match first, then basename match)
+            # 3. Try case-insensitive name match
+            cursor = conn.execute(
+                "SELECT * FROM workflows WHERE LOWER(name) = LOWER(?)",
+                (name_or_id,),
+            )
+            row = cursor.fetchone()
+            if row:
+                return self._row_to_workflow(row)
+
+            # 4. Try slug-normalized name match
+            input_slug = normalize_to_slug(name_or_id)
+            if input_slug:
+                cursor = conn.execute("SELECT * FROM workflows")
+                for row in cursor.fetchall():
+                    if normalize_to_slug(row["name"]) == input_slug:
+                        return self._row_to_workflow(row)
+
+            # 5. Try by exact filename match
             cursor = conn.execute("SELECT * FROM workflows WHERE file = ?", (name_or_id,))
             row = cursor.fetchone()
+            if row:
+                return self._row_to_workflow(row)
 
-            # If no exact match, try basename match (for paths like 'subdir/workflow.json')
-            if not row:
+            # 6. Try with .json appended
+            if not name_or_id.endswith(".json"):
+                filename_with_json = f"{name_or_id}.json"
                 cursor = conn.execute(
-                    "SELECT * FROM workflows WHERE file LIKE ? OR file LIKE ?",
-                    (f"%/{name_or_id}", f"%\\{name_or_id}"),  # Unix and Windows paths
+                    "SELECT * FROM workflows WHERE file = ?",
+                    (filename_with_json,),
                 )
                 row = cursor.fetchone()
+                if row:
+                    return self._row_to_workflow(row)
 
+            # 7. Try basename match (for paths like 'subdir/workflow.json')
+            cursor = conn.execute(
+                "SELECT * FROM workflows WHERE file LIKE ? OR file LIKE ?",
+                (f"%/{name_or_id}", f"%\\{name_or_id}"),  # Unix and Windows paths
+            )
+            row = cursor.fetchone()
             if row:
-                return Workflow(
-                    id=row["id"],
-                    name=row["name"],
-                    file=row["file"] if "file" in row.keys() else None,
-                    file_folder=row["file_folder"],
-                    server_id=row["server_id"] if "server_id" in row.keys() else None,
-                    status=WorkflowStatus(row["status"]),
-                    created_at=datetime.fromisoformat(row["created_at"]),
-                    updated_at=datetime.fromisoformat(row["updated_at"]),
-                    last_synced=datetime.fromisoformat(row["last_synced"]) if row["last_synced"] else None,
-                    n8n_version_id=row["n8n_version_id"],
-                    push_count=row["push_count"] or 0,
-                    pull_count=row["pull_count"] or 0,
+                return self._row_to_workflow(row)
+
+            # 8. Try basename with .json appended
+            if not name_or_id.endswith(".json"):
+                filename_with_json = f"{name_or_id}.json"
+                cursor = conn.execute(
+                    "SELECT * FROM workflows WHERE file LIKE ? OR file LIKE ?",
+                    (f"%/{filename_with_json}", f"%\\{filename_with_json}"),
                 )
+                row = cursor.fetchone()
+                if row:
+                    return self._row_to_workflow(row)
+
             return None
 
     def list_workflows(self, workflow_type: Optional[str] = None) -> List[Workflow]:

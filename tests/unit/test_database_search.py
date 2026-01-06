@@ -367,3 +367,229 @@ class TestGetWorkflowByNameOrId:
         result = temp_db.get_workflow_by_name_or_id("wf001")
         assert result is not None
         assert result.id == "wf001"  # Got the one with matching ID, not name
+
+
+class TestSmartLookup:
+    """Test smart lookup functionality for get_workflow_by_name_or_id"""
+
+    @pytest.fixture
+    def temp_db(self, tmp_path: Path) -> DBApi:
+        """Create a temporary database for testing"""
+        db_path = tmp_path / "test_smart_lookup.db"
+        config = AppConfig(base_folder=tmp_path, flow_folder=tmp_path)
+        db = DBApi(config=config, db_path=db_path)
+        db.schema_api.initialize_database()
+        return db
+
+    @pytest.fixture
+    def workflows_for_smart_lookup(self, temp_db: DBApi) -> List[Workflow]:
+        """Create workflows with various naming patterns for smart lookup testing"""
+        workflows = [
+            # Human-readable names with spaces
+            Workflow(
+                id="wf-001",
+                name="Graphiti Query",
+                file="graphiti-query.json",
+                status=WorkflowStatus.ACTIVE,
+            ),
+            Workflow(
+                id="wf-002",
+                name="My Test Workflow",
+                file="my-test-workflow.json",
+                status=WorkflowStatus.ACTIVE,
+            ),
+            # Mixed case names
+            Workflow(
+                id="wf-003",
+                name="API Integration",
+                file="api-integration.json",
+                status=WorkflowStatus.ACTIVE,
+            ),
+            # Already slug-style name
+            Workflow(
+                id="wf-004",
+                name="simple-workflow",
+                file="simple-workflow.json",
+                status=WorkflowStatus.ACTIVE,
+            ),
+            # Name with underscores
+            Workflow(
+                id="wf-005",
+                name="data_processing_job",
+                file="data_processing_job.json",
+                status=WorkflowStatus.ACTIVE,
+            ),
+            # Nested file path
+            Workflow(
+                id="wf-006",
+                name="Nested Workflow",
+                file="subdir/nested-workflow.json",
+                status=WorkflowStatus.ACTIVE,
+            ),
+        ]
+
+        for wf in workflows:
+            temp_db.add_workflow(wf)
+
+        return workflows
+
+    # Case-insensitive name tests
+    def test_lookup_case_insensitive_lowercase(self, temp_db: DBApi, workflows_for_smart_lookup: List[Workflow]):
+        """Test case-insensitive lookup with lowercase input"""
+        result = temp_db.get_workflow_by_name_or_id("graphiti query")
+        assert result is not None
+        assert result.id == "wf-001"
+        assert result.name == "Graphiti Query"
+
+    def test_lookup_case_insensitive_uppercase(self, temp_db: DBApi, workflows_for_smart_lookup: List[Workflow]):
+        """Test case-insensitive lookup with uppercase input"""
+        result = temp_db.get_workflow_by_name_or_id("GRAPHITI QUERY")
+        assert result is not None
+        assert result.id == "wf-001"
+
+    def test_lookup_case_insensitive_mixed(self, temp_db: DBApi, workflows_for_smart_lookup: List[Workflow]):
+        """Test case-insensitive lookup with mixed case input"""
+        result = temp_db.get_workflow_by_name_or_id("Api Integration")
+        assert result is not None
+        assert result.id == "wf-003"
+
+    # Slug-style name tests
+    def test_lookup_by_slug_from_spaces(self, temp_db: DBApi, workflows_for_smart_lookup: List[Workflow]):
+        """Test slug-style lookup for name with spaces"""
+        result = temp_db.get_workflow_by_name_or_id("graphiti-query")
+        assert result is not None
+        assert result.id == "wf-001"
+        assert result.name == "Graphiti Query"
+
+    def test_lookup_by_slug_with_multiple_words(self, temp_db: DBApi, workflows_for_smart_lookup: List[Workflow]):
+        """Test slug-style lookup for multi-word name"""
+        result = temp_db.get_workflow_by_name_or_id("my-test-workflow")
+        assert result is not None
+        assert result.id == "wf-002"
+        assert result.name == "My Test Workflow"
+
+    def test_lookup_by_slug_from_underscores(self, temp_db: DBApi, workflows_for_smart_lookup: List[Workflow]):
+        """Test slug-style lookup for name with underscores"""
+        result = temp_db.get_workflow_by_name_or_id("data-processing-job")
+        assert result is not None
+        assert result.id == "wf-005"
+        assert result.name == "data_processing_job"
+
+    # Filename without .json tests
+    def test_lookup_filename_without_json_extension(self, temp_db: DBApi, workflows_for_smart_lookup: List[Workflow]):
+        """Test lookup by filename without .json extension"""
+        result = temp_db.get_workflow_by_name_or_id("api-integration")
+        assert result is not None
+        assert result.id == "wf-003"
+
+    def test_lookup_filename_without_json_nested_path(self, temp_db: DBApi, workflows_for_smart_lookup: List[Workflow]):
+        """Test lookup by basename without .json from nested path"""
+        result = temp_db.get_workflow_by_name_or_id("nested-workflow")
+        assert result is not None
+        assert result.id == "wf-006"
+        assert result.file == "subdir/nested-workflow.json"
+
+    # Priority tests
+    def test_exact_match_priority_over_case_insensitive(self, temp_db: DBApi, workflows_for_smart_lookup: List[Workflow]):
+        """Test that exact name match takes priority over case-insensitive"""
+        result = temp_db.get_workflow_by_name_or_id("simple-workflow")
+        assert result is not None
+        assert result.name == "simple-workflow"  # Exact, not case-transformed
+
+    def test_exact_match_priority_over_slug(self, temp_db: DBApi, tmp_path: Path):
+        """Test that exact name match takes priority over slug match"""
+        db_path = tmp_path / "test_priority.db"
+        config = AppConfig(base_folder=tmp_path, flow_folder=tmp_path)
+        db = DBApi(config=config, db_path=db_path)
+        db.schema_api.initialize_database()
+
+        # Create two workflows: one with exact name, one that would slug-match
+        wf_exact = Workflow(
+            id="exact-id",
+            name="my-workflow",
+            file="exact.json",
+            status=WorkflowStatus.ACTIVE,
+        )
+        wf_slug = Workflow(
+            id="slug-id",
+            name="My Workflow",  # Would slug to "my-workflow"
+            file="slug.json",
+            status=WorkflowStatus.ACTIVE,
+        )
+        db.add_workflow(wf_exact)
+        db.add_workflow(wf_slug)
+
+        # Exact name match should win
+        result = db.get_workflow_by_name_or_id("my-workflow")
+        assert result is not None
+        assert result.id == "exact-id"
+
+    # Edge cases
+    def test_lookup_empty_string(self, temp_db: DBApi, workflows_for_smart_lookup: List[Workflow]):
+        """Test lookup with empty string returns None"""
+        result = temp_db.get_workflow_by_name_or_id("")
+        assert result is None
+
+    def test_lookup_no_match(self, temp_db: DBApi, workflows_for_smart_lookup: List[Workflow]):
+        """Test lookup returns None for non-existent workflow"""
+        result = temp_db.get_workflow_by_name_or_id("totally-nonexistent-workflow-xyz")
+        assert result is None
+
+
+class TestNormalizeToSlug:
+    """Test the slug normalization utility function"""
+
+    def test_spaces_to_hyphens(self):
+        """Test spaces are converted to hyphens"""
+        from api.db.core import normalize_to_slug
+
+        assert normalize_to_slug("Graphiti Query") == "graphiti-query"
+
+    def test_underscores_to_hyphens(self):
+        """Test underscores are converted to hyphens"""
+        from api.db.core import normalize_to_slug
+
+        assert normalize_to_slug("data_processing_job") == "data-processing-job"
+
+    def test_lowercase_conversion(self):
+        """Test uppercase is converted to lowercase"""
+        from api.db.core import normalize_to_slug
+
+        assert normalize_to_slug("API Integration") == "api-integration"
+
+    def test_multiple_spaces_collapsed(self):
+        """Test multiple spaces become single hyphen"""
+        from api.db.core import normalize_to_slug
+
+        assert normalize_to_slug("my   workflow") == "my-workflow"
+
+    def test_special_chars_removed(self):
+        """Test special characters are removed"""
+        from api.db.core import normalize_to_slug
+
+        assert normalize_to_slug("test@workflow#1!") == "testworkflow1"
+
+    def test_leading_trailing_hyphens_stripped(self):
+        """Test leading/trailing hyphens are stripped"""
+        from api.db.core import normalize_to_slug
+
+        assert normalize_to_slug(" workflow ") == "workflow"
+        assert normalize_to_slug("-workflow-") == "workflow"
+
+    def test_empty_string(self):
+        """Test empty string returns empty"""
+        from api.db.core import normalize_to_slug
+
+        assert normalize_to_slug("") == ""
+
+    def test_already_slug(self):
+        """Test already-slugified string unchanged"""
+        from api.db.core import normalize_to_slug
+
+        assert normalize_to_slug("my-workflow") == "my-workflow"
+
+    def test_mixed_separators(self):
+        """Test mixed spaces and underscores"""
+        from api.db.core import normalize_to_slug
+
+        assert normalize_to_slug("my_test workflow") == "my-test-workflow"
