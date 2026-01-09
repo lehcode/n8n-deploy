@@ -99,6 +99,9 @@ class N8nHttpClient:
         """
         # Use per-request override if provided, otherwise instance default
         effective_skip_ssl = skip_ssl_verify if skip_ssl_verify is not None else self.skip_ssl_verify
+        # Ensure SSL warnings are suppressed for this request if needed
+        if effective_skip_ssl:
+            configure_ssl_verification(True)
         try:
             response, start_time = self._execute_request(method, url, headers, data, timeout, effective_skip_ssl)
             response_body = response.text if response.content else None
@@ -280,29 +283,10 @@ class N8nHttpClient:
         Returns:
             True if deletion successful (including 404 - already deleted)
         """
-        # Use per-request override if provided, otherwise instance default
-        effective_skip_ssl = skip_ssl_verify if skip_ssl_verify is not None else self.skip_ssl_verify
-        start_time = _log_request("DELETE", url, headers)
-        try:
-            response = requests.delete(
-                url,
-                headers=headers,
-                verify=not effective_skip_ssl,
-                timeout=timeout,
-            )
-            response_body = response.text if response.content else None
-            _log_response(response.status_code, dict(response.headers), start_time, response_body)
-            response.raise_for_status()
+        result = self.request("DELETE", url, headers, silent=True, timeout=timeout, skip_ssl_verify=skip_ssl_verify)
+        # Success or 404 (already deleted) = True
+        if result.success or result.error_type == N8nApiErrorType.NOT_FOUND:
             return True
-
-        except requests.exceptions.HTTPError as e:
-            if e.response is not None and e.response.status_code == 404:
-                # Consider 404 as success - workflow is gone
-                return True
-            _log_error("HTTP", str(e))
-            print(f"❌ Failed to delete workflow: {e}")
-            return False
-        except requests.exceptions.RequestException as e:
-            _log_error("REQUEST", str(e))
-            print(f"❌ Failed to delete workflow: {e}")
-            return False
+        # Print error message for other failures
+        print(f"❌ Failed to delete workflow: {result.error_message}")
+        return False
