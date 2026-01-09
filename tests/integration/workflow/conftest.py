@@ -209,3 +209,50 @@ class WorkflowTestHelpers(E2ETestBase):
         # Count non-header, non-empty lines that look like workflow entries
         count = sum(1 for line in lines if line.strip() and not line.startswith("─") and not line.startswith("│ Name"))
         return count
+
+    def run_wf_push(
+        self,
+        workflow_ids: List[str],
+        remote: Optional[str] = None,
+        flow_dir: Optional[str] = None,
+        skip_ssl_verify: bool = False,
+        no_emoji: bool = False,
+    ) -> Tuple[int, str, str]:
+        """Execute 'wf push' command with common parameters"""
+        args = ["wf", "push"] + workflow_ids
+
+        if remote:
+            args.extend(["--remote", remote])
+        if flow_dir:
+            args.extend(["--flow-dir", flow_dir])
+        if skip_ssl_verify:
+            args.append("--skip-ssl-verify")
+        if no_emoji:
+            args.append("--no-emoji")
+
+        return self.run_cli_command(args)
+
+    def run_wf_pull(
+        self,
+        workflow_ids: List[str],
+        remote: Optional[str] = None,
+        flow_dir: Optional[str] = None,
+        skip_ssl_verify: bool = False,
+        non_interactive: bool = True,
+        no_emoji: bool = False,
+    ) -> Tuple[int, str, str]:
+        """Execute 'wf pull' command with common parameters"""
+        args = ["wf", "pull"] + workflow_ids
+
+        if remote:
+            args.extend(["--remote", remote])
+        if flow_dir:
+            args.extend(["--flow-dir", flow_dir])
+        if skip_ssl_verify:
+            args.append("--skip-ssl-verify")
+        if non_interactive:
+            args.append("--non-interactive")
+        if no_emoji:
+            args.append("--no-emoji")
+
+        return self.run_cli_command(args)
