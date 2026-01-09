@@ -7,6 +7,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2026-01-09
+
+### Added
+
+- **Multi-workflow push/pull support** - Push or pull multiple workflows in a single command
+  - `n8n-deploy wf push wf1 wf2 wf3 --remote myserver`
+  - `n8n-deploy wf pull wf1 wf2 wf3 --remote myserver`
+  - Progress indicators `[1/3]`, `[2/3]`, `[3/3]` for batch operations
+  - Summary table showing OK/FAIL status for each workflow
+  - Continue processing all workflows even if some fail
+  - Exit code 1 if any workflow fails, 0 if all succeed
+  - Full backwards compatibility with single workflow usage
+- `--non-interactive` flag for `wf pull` to suppress prompts in automation
+
+### Changed
+
+- `--filename` option for `wf pull` only works with single workflow (warning shown if used with multiple)
+- Default filenames (`{workflow_id}.json`) used for multi-workflow pulls
+
 ## [0.2.0] - 2025-12-08
 
 ### Added
@@ -83,6 +102,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[0.9.0]: https://github.com/lehcode/n8n-deploy/compare/v0.2.0...v0.9.0
 [0.2.0]: https://github.com/lehcode/n8n-deploy/compare/v0.1.7...v0.2.0
 [0.1.7]: https://github.com/lehcode/n8n-deploy/compare/v0.1.5...v0.1.7
 [0.1.5]: https://github.com/lehcode/n8n-deploy/releases/tag/v0.1.5

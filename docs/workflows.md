@@ -27,8 +27,14 @@ n8n-deploy wf list-server --remote http://n8n.example.com:5678
 # Pull specific workflow
 n8n-deploy wf pull "Customer Onboarding" --remote http://n8n.example.com:5678
 
+# Pull multiple workflows at once (NEW in v0.9.0)
+n8n-deploy wf pull wf1 wf2 wf3 --remote http://n8n.example.com:5678
+
 # Pull with custom flow directory
 n8n-deploy wf pull "Customer Onboarding" --remote http://n8n.example.com:5678 --flow-dir /path/to/workflows
+
+# Non-interactive mode (uses default filenames, no prompts)
+n8n-deploy wf pull wf1 wf2 --remote production --non-interactive
 ```
 
 ### Push Workflow to Remote Server
@@ -36,8 +42,30 @@ n8n-deploy wf pull "Customer Onboarding" --remote http://n8n.example.com:5678 --
 # Push specific workflow
 n8n-deploy wf push "Deployment Pipeline" --remote http://n8n.example.com:5678
 
+# Push multiple workflows at once (NEW in v0.9.0)
+n8n-deploy wf push wf1 wf2 wf3 --remote http://n8n.example.com:5678
+
 # Push with custom flow directory
 n8n-deploy wf push "Deployment Pipeline" --remote http://n8n.example.com:5678 --flow-dir /path/to/workflows
+```
+
+**Multi-workflow output example:**
+```text
+[1/3] Processing: wf1
+Pushed workflow 'wf1' to server
+
+[2/3] Processing: wf2
+Pushed workflow 'wf2' to server
+
+[3/3] Processing: wf3
+Pushed workflow 'wf3' to server
+
+=== Push Summary ===
+  OK   wf1
+  OK   wf2
+  OK   wf3
+
+All 3 workflow(s) pushed successfully
 ```
 
 ### Script Synchronization

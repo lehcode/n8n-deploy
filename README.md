@@ -40,6 +40,11 @@ The database knows where your workflow lives and which server it belongs to.
   - Per-server SSL verification settings
   - API key management with server linking
 
+- 📦 **Batch Operations** (NEW in v0.9.0)
+  - Push or pull multiple workflows in a single command
+  - Progress indicators and summary tables for batch operations
+  - Continue processing even if some workflows fail
+
 - 📁 **Folder Synchronization** (NEW in v0.2.0)
   - Bidirectional folder sync between local and n8n server
   - `folder` CLI command group for folder operations
@@ -84,6 +89,10 @@ n8n-deploy wf add workflow.json --flow-dir ./workflows --link-remote production
 # Push/pull uses linked server AND stored flow-dir automatically!
 n8n-deploy wf push workflow-name  # No --flow-dir or --remote needed!
 n8n-deploy wf pull workflow-name  # Uses stored paths automatically
+
+# Push/pull multiple workflows at once (NEW in v0.9.0)
+n8n-deploy wf push wf1 wf2 wf3 --remote production
+n8n-deploy wf pull wf1 wf2 wf3 --remote staging
 
 # Update workflow metadata without push/pull
 n8n-deploy wf link my-workflow --flow-dir ./new-location

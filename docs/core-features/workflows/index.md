@@ -60,15 +60,21 @@ n8n-deploy wf list-server --remote http://n8n.example.com:5678
 # Pull specific workflow
 n8n-deploy wf pull "Customer Onboarding" --remote http://n8n.example.com:5678
 
-# Pull with custom filename (for new workflows)
+# Pull multiple workflows at once (NEW in v0.9.0)
+n8n-deploy wf pull wf1 wf2 wf3 --remote http://n8n.example.com:5678
+
+# Pull with custom filename (for new workflows, single workflow only)
 n8n-deploy wf pull "Customer Onboarding" --remote production --filename customer-onboarding.json
 
 # Pull with custom flow directory
 n8n-deploy wf pull "Customer Onboarding" --remote production --flow-dir /path/to/workflows
+
+# Non-interactive mode (uses default filenames, no prompts)
+n8n-deploy wf pull wf1 wf2 --remote production --non-interactive
 ```
 
 {: .note }
-> When pulling a new workflow, you'll be prompted to enter a filename. Use `--filename` to specify it directly.
+> When pulling a new workflow, you'll be prompted to enter a filename. Use `--filename` to specify it directly. Note: `--filename` only works with single workflow; for multiple workflows, default filenames are used.
 
 ### Push Workflow to Remote Server
 
@@ -81,6 +87,28 @@ n8n-deploy wf push deAVBp391wvomsWY --remote production
 
 # Push by filename
 n8n-deploy wf push my-workflow.json --remote production
+
+# Push multiple workflows at once (NEW in v0.9.0)
+n8n-deploy wf push wf1 wf2 wf3 --remote production
+```
+
+**Multi-workflow output example:**
+```text
+[1/3] Processing: wf1
+Pushed workflow 'wf1' to server
+
+[2/3] Processing: wf2
+Pushed workflow 'wf2' to server
+
+[3/3] Processing: wf3
+Pushed workflow 'wf3' to server
+
+=== Push Summary ===
+  OK   wf1
+  OK   wf2
+  OK   wf3
+
+All 3 workflow(s) pushed successfully
 ```
 
 {: .tip }
