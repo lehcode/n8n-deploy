@@ -119,30 +119,33 @@ All 3 workflow(s) pushed successfully
 
 ### Delete Workflow
 
-Remove a workflow from both the n8n server and the local database:
+Remove a workflow from the n8n server and/or local database. **Breaking change in v0.9.0**: At least one flag is now required.
 
 ```bash
-# Delete by workflow name
-n8n-deploy wf delete "Customer Onboarding"
+# Remove from database only (untrack)
+n8n-deploy wf delete "Customer Onboarding" --db
 
-# Delete by workflow ID
-n8n-deploy wf delete deAVBp391wvomsWY
+# Delete from server only (keep in database)
+n8n-deploy wf delete "Customer Onboarding" --server
 
-# Delete by filename
-n8n-deploy wf delete my-workflow.json
+# Delete from both server and database
+n8n-deploy wf delete "Customer Onboarding" --db --server
 
 # Skip confirmation prompt
-n8n-deploy wf delete "Customer Onboarding" --yes
+n8n-deploy wf delete "Customer Onboarding" --db --server --yes
 
 # Override server
-n8n-deploy wf delete workflow-name --remote staging
+n8n-deploy wf delete workflow-name --server --remote staging
 
 # Self-signed certificates
-n8n-deploy wf delete workflow-name --skip-ssl-verify
+n8n-deploy wf delete workflow-name --server --skip-ssl-verify
 ```
 
 {: .warning }
-> The `wf delete` command removes the workflow from the n8n server first, then from the local database. The JSON file is NOT deleted - you manage files yourself (via git).
+> **Breaking Change (v0.9.0)**: The `wf delete` command now requires at least one of `--db` or `--server` flags. This prevents accidental deletions and gives you explicit control over what gets removed.
+
+{: .note }
+> The local JSON file is NEVER deleted. You manage workflow files via version control (git).
 
 {: .note }
 > **Draft workflows**: Workflows with draft IDs (`draft_*`) are only removed from the database since they don't exist on any server yet.
@@ -204,6 +207,32 @@ n8n-deploy wf push my-workflow --remote staging
 | Server | CLI flag > Database > Environment |
 
 Explicit flags always take precedence.
+
+---
+
+## 🔍 Smart Workflow Lookup
+
+All workflow commands support flexible name matching (new in v0.9.0):
+
+```bash
+# All of these resolve to the same workflow "My Workflow"
+n8n-deploy wf push "My Workflow"      # Exact name
+n8n-deploy wf push "my workflow"      # Case-insensitive
+n8n-deploy wf push my-workflow        # Slug-style (hyphens)
+n8n-deploy wf push my_workflow        # Slug-style (underscores)
+n8n-deploy wf push my-workflow.json   # Filename lookup
+```
+
+**Lookup Priority:**
+
+1. **Workflow ID** - Exact match (e.g., `deAVBp391wvomsWY`)
+2. **Workflow name** - Exact match (e.g., `My Workflow`)
+3. **Case-insensitive** - Ignores case (e.g., `my workflow`)
+4. **Slug-style** - Converts spaces/dashes/underscores (e.g., `my-workflow`)
+5. **Filename** - Auto-appends `.json` if missing (e.g., `my-workflow.json`)
+
+{: .tip }
+> This makes commands more forgiving. You can type `n8n-deploy wf push customer-onboarding` instead of remembering the exact capitalization "Customer Onboarding".
 
 ---
 

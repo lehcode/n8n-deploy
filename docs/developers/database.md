@@ -13,9 +13,9 @@ description: "Details about Database in n8n-deploy"
 
 ## Schema Overview
 
-n8n-deploy uses a lightweight, efficient SQLite database (schema v6) to manage workflow metadata, configurations, and folder synchronization.
+n8n-deploy uses a lightweight, efficient SQLite database (schema v8) to manage workflow metadata, configurations, and folder synchronization.
 
-### Database Tables (Schema v6)
+### Database Tables (Schema v8)
 
 ```mermaid
 erDiagram
@@ -49,6 +49,7 @@ erDiagram
         TEXT url
         TEXT name UK
         INTEGER is_active
+        BOOLEAN skip_ssl_verify
         DATETIME created_at
         DATETIME last_used
     }
@@ -133,6 +134,7 @@ erDiagram
   - `url`: Server URL (e.g., `http://n8n.example.com:5678`)
   - `name`: Unique server name (UTF-8 supported, emojis allowed)
   - `is_active`: Active status (1=active, 0=inactive)
+  - `skip_ssl_verify`: Skip SSL verification for self-signed certificates (default: FALSE) [v8]
   - `created_at`: Server creation timestamp
   - `last_used`: Last connection timestamp
 
@@ -200,11 +202,34 @@ erDiagram
   - `created_at`: Creation timestamp
   - `updated_at`: Last update timestamp
 
+## Recent Schema Changes
+
+### Schema v8 (Current)
+- **Added**: `skip_ssl_verify` column to `servers` table
+- **Purpose**: Per-server SSL verification control for self-signed certificates
+- **Default**: FALSE (verify SSL certificates)
+- **Usage**: Set via `n8n-deploy server ssl --skip-verify` command
+
+### Schema v7
+- **Added**: `scripts_path` column to `workflows` table
+- **Purpose**: Store remote script path for workflow-specific script deployment
+- **Migration**: Auto-migrates from v6, all workflows get NULL initial value
+
+### Schema v6
+- **Added**: `n8n_folders`, `folder_mappings`, `server_credentials` tables
+- **Purpose**: Enable folder synchronization and server authentication
+- **Impact**: Enables batch workflow management via folder structures
+
+{: .note }
+> Migrations are automatic and backward-compatible. Your database is updated on first run after upgrade.
+
+---
+
 ## Schema Versioning
 
 ```python
 # Example schema version management
-SCHEMA_VERSION = 6  # Current database schema version
+SCHEMA_VERSION = 8  # Current database schema version
 
 def check_schema_version(current_version: int) -> bool:
     """Check and potentially migrate database schema."""

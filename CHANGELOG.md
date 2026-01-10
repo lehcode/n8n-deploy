@@ -19,12 +19,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Continue processing all workflows even if some fail
   - Exit code 1 if any workflow fails, 0 if all succeed
   - Full backwards compatibility with single workflow usage
+- **Per-server SSL verification** - Configure SSL settings per server (schema v8)
+  - `n8n-deploy server ssl <name> --skip-verify` to disable verification
+  - `n8n-deploy server ssl <name> --verify` to enable verification
+  - Priority: CLI flag > server setting > default (verify)
+- **Workflow link command** - Update workflow metadata without push/pull
+  - `n8n-deploy wf link <workflow> --flow-dir <path>` to update stored path
+  - `n8n-deploy wf link <workflow> --server <name>` to change linked server
+- **Smart workflow lookup** - Flexible workflow name matching
+  - Case-insensitive matching: `my workflow` finds `My Workflow`
+  - Slug-style matching: `my-workflow` finds `My Workflow`
+  - Auto-append `.json` for filename lookup
+  - Priority: ID → exact name → case-insensitive → slug → filename
 - `--non-interactive` flag for `wf pull` to suppress prompts in automation
+- `--db` and `--server` flags for `wf delete` for granular control
 
 ### Changed
 
+- **BREAKING**: `wf delete` now requires `--db` and/or `--server` flags
+  - `--db`: remove from local database only
+  - `--server`: delete from n8n server only
+  - Both flags: delete from server first, then database
+  - Local JSON files are never deleted
 - `--filename` option for `wf pull` only works with single workflow (warning shown if used with multiple)
 - Default filenames (`{workflow_id}.json`) used for multi-workflow pulls
+
+### Removed
+
+- Script synchronization feature (--scripts flags removed from wf push)
 
 ## [0.2.0] - 2025-12-08
 
