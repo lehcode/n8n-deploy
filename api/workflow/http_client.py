@@ -61,14 +61,16 @@ class N8nHttpClient:
 
     DEFAULT_TIMEOUT = 10
 
-    def __init__(self, skip_ssl_verify: bool = False) -> None:
+    def __init__(self, skip_ssl_verify: bool = False, json_mode: bool = False) -> None:
         """Initialize HTTP client
 
         Args:
             skip_ssl_verify: If True, disable SSL certificate verification
+            json_mode: If True, suppress all messages (JSON output only)
         """
         self.skip_ssl_verify = skip_ssl_verify
-        configure_ssl_verification(skip_ssl_verify)
+        self.json_mode = json_mode
+        configure_ssl_verification(skip_ssl_verify, quiet=json_mode)
 
     def request(
         self,
@@ -101,7 +103,7 @@ class N8nHttpClient:
         effective_skip_ssl = skip_ssl_verify if skip_ssl_verify is not None else self.skip_ssl_verify
         # Ensure SSL warnings are suppressed for this request if needed
         if effective_skip_ssl:
-            configure_ssl_verification(True)
+            configure_ssl_verification(True, quiet=self.json_mode)
         try:
             response, start_time = self._execute_request(method, url, headers, data, timeout, effective_skip_ssl)
             response_body = response.text if response.content else None
@@ -110,7 +112,7 @@ class N8nHttpClient:
 
         except requests.exceptions.Timeout:
             _log_error("TIMEOUT", f"Request timed out after {timeout} seconds")
-            if not silent:
+            if not silent and not self.json_mode:
                 print(f"❌ n8n API request timed out after {timeout} seconds")
             return N8nApiResult(
                 success=False,
@@ -119,7 +121,7 @@ class N8nHttpClient:
             )
         except requests.exceptions.ConnectionError as e:
             _log_error("CONNECTION", str(e))
-            if not silent:
+            if not silent and not self.json_mode:
                 print(f"❌ n8n API connection error: {e}")
             return N8nApiResult(
                 success=False,
@@ -128,7 +130,7 @@ class N8nHttpClient:
             )
         except requests.exceptions.RequestException as e:
             _log_error("REQUEST", str(e))
-            if not silent:
+            if not silent and not self.json_mode:
                 print(f"❌ n8n API request failed: {e}")
             return N8nApiResult(
                 success=False,
@@ -287,6 +289,7 @@ class N8nHttpClient:
         # Success or 404 (already deleted) = True
         if result.success or result.error_type == N8nApiErrorType.NOT_FOUND:
             return True
-        # Print error message for other failures
-        print(f"❌ Failed to delete workflow: {result.error_message}")
+        # Print error message for other failures (unless in quiet/JSON mode)
+        if not self.json_mode:
+            print(f"❌ Failed to delete workflow: {result.error_message}")
         return False

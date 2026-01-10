@@ -37,6 +37,7 @@ class ServerResolver:
         api_manager: KeyApi,
         remote: Optional[str] = None,
         skip_ssl_verify: bool = False,
+        json_mode: bool = False,
     ) -> None:
         """Initialize server resolver
 
@@ -46,17 +47,24 @@ class ServerResolver:
             api_manager: API key manager
             remote: Optional --remote CLI flag value
             skip_ssl_verify: CLI override for SSL verification (from --skip-ssl-verify)
+            json_mode: If True, suppress all messages (JSON output only)
         """
         self.config = config
         self.db = db
         self.api_manager = api_manager
         self.remote = remote
         self.cli_skip_ssl_verify = skip_ssl_verify  # CLI override
+        self.json_mode = json_mode
 
         # Cache resolved values
         self._cached_url: Optional[str] = None
         self._cached_api_key: Optional[str] = None
         self._cached_skip_ssl_verify: Optional[bool] = None
+
+    def _print(self, message: str) -> None:
+        """Print message unless in JSON mode."""
+        if not self.json_mode:
+            print(message)
 
     def clear_cache(self) -> None:
         """Clear cached server URL, API key, and SSL setting"""
@@ -99,7 +107,7 @@ class ServerResolver:
             else:
                 resolved_url, resolved_key, resolved_ssl = self.resolve(workflow_id=workflow_id)
                 if not resolved_url or not resolved_key:
-                    print("⚠️  No API key available for the specified server")
+                    self._print("⚠️  No API key available for the specified server")
                     return None
                 # Cache the values
                 self._cached_url = resolved_url
@@ -119,7 +127,7 @@ class ServerResolver:
                 },
             }
         except Exception as e:
-            print(f"❌ Failed to retrieve API key: {e}")
+            self._print(f"❌ Failed to retrieve API key: {e}")
             return None
 
     def _resolve_without_remote(self, workflow_id: Optional[str]) -> Tuple[Optional[str], Optional[str], bool]:
@@ -156,8 +164,8 @@ class ServerResolver:
         if server:
             api_key = server_api.get_api_key_for_server(remote)
             if not api_key:
-                print(f"⚠️  No API key linked to server '{remote}'")
-                print(f"   Use: n8n-deploy server link {remote} <key_name>")
+                self._print(f"⚠️  No API key linked to server '{remote}'")
+                self._print(f"   Use: n8n-deploy server link {remote} <key_name>")
                 return (None, None, False)
             self._check_expiration(api_key)
             # CLI flag overrides server setting
@@ -168,8 +176,8 @@ class ServerResolver:
         if remote.startswith("http://") or remote.startswith("https://"):
             return self._resolve_from_url(server_api, remote)
 
-        print(f"❌ Server '{remote}' not found")
-        print(f"   Add it with: n8n-deploy server add {remote} <url>")
+        self._print(f"❌ Server '{remote}' not found")
+        self._print(f"   Add it with: n8n-deploy server add {remote} <url>")
         return (None, None, False)
 
     def _resolve_from_workflow(self, workflow_id: str) -> Tuple[Optional[str], Optional[str], bool]:
@@ -191,8 +199,8 @@ class ServerResolver:
             return (server["url"], api_key, skip_ssl)
 
         # Linked server but no API key
-        print(f"⚠️  No API key linked to server '{server['name']}'")
-        print(f"   Use: n8n-deploy server link {server['name']} <key_name>")
+        self._print(f"⚠️  No API key linked to server '{server['name']}'")
+        self._print(f"   Use: n8n-deploy server link {server['name']} <key_name>")
         return (None, None, False)
 
     def _resolve_from_api_keys(self, server_url: str) -> Tuple[Optional[str], Optional[str], bool]:
@@ -240,6 +248,6 @@ class ServerResolver:
 
         is_expired, exp_datetime, warning = check_jwt_expiration(api_key)
         if warning:
-            print(f"{warning}")
+            self._print(f"{warning}")
             if is_expired:
-                print("Generate a new API key from your n8n server settings")
+                self._print("Generate a new API key from your n8n server settings")

@@ -295,9 +295,9 @@ class TestPushCommand:
 
         # Exit code non-zero because one failed
         assert result.exit_code != 0
-        # Strip "Aborted!" from click.Abort()
-        json_output = result.output.replace("Aborted!", "").strip()
-        output = json.loads(json_output)
+        # JSON mode uses sys.exit(1) instead of click.Abort(), so no "Aborted!" message
+        assert "Aborted!" not in result.output
+        output = json.loads(result.output.strip())
         assert output["summary"]["total"] == 3
         assert output["summary"]["succeeded"] == 2
         assert output["summary"]["failed"] == 1
@@ -315,3 +315,59 @@ class TestPushCommand:
         # Progress indicators should not appear in JSON output
         assert "[1/2]" not in result.output
         assert "[2/2]" not in result.output
+
+    def test_json_output_config_error(self, runner: CliRunner) -> None:
+        """Test --json outputs error as JSON when config fails."""
+        import json
+
+        with patch.object(push_module, "get_config") as mock_config:
+            mock_config.side_effect = ValueError("Invalid data directory")
+
+            result = runner.invoke(push_module.push, ["wf1", "--data-dir", "/invalid", "--json"])
+
+        assert result.exit_code != 0
+        output = json.loads(result.output.strip())
+        assert "error" in output
+        assert "Invalid data directory" in output["error"]
+
+    def test_json_output_all_fail(self, runner: CliRunner) -> None:
+        """Test --json with all workflows failing."""
+        import json
+
+        with patch.object(push_module, "get_config") as mock_config:
+            with patch.object(push_module, "WorkflowApi") as mock_api:
+                mock_config.return_value = MagicMock()
+                mock_api.return_value.push_workflow.return_value = False
+
+                result = runner.invoke(push_module.push, ["wf1", "wf2", "--data-dir", "/tmp", "--json"])
+
+        assert result.exit_code != 0
+        assert "Aborted!" not in result.output
+        output = json.loads(result.output.strip())
+        assert output["summary"]["total"] == 2
+        assert output["summary"]["succeeded"] == 0
+        assert output["summary"]["failed"] == 2
+
+    def test_json_output_exception_handling(self, runner: CliRunner) -> None:
+        """Test --json handles exceptions gracefully."""
+        import json
+
+        with patch.object(push_module, "get_config") as mock_config:
+            with patch.object(push_module, "WorkflowApi") as mock_api:
+                mock_config.return_value = MagicMock()
+                mock_api.return_value.push_workflow.side_effect = [
+                    True,
+                    Exception("Network error"),
+                    True,
+                ]
+
+                result = runner.invoke(push_module.push, ["wf1", "wf2", "wf3", "--data-dir", "/tmp", "--json"])
+
+        assert result.exit_code != 0
+        output = json.loads(result.output.strip())
+        assert output["summary"]["total"] == 3
+        assert output["summary"]["succeeded"] == 2
+        assert output["summary"]["failed"] == 1
+        # Error message should be in results
+        failed_result = [r for r in output["results"] if not r["success"]][0]
+        assert "Network error" in failed_result["message"]

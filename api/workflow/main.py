@@ -22,6 +22,7 @@ class WorkflowApi:
         base_path: Optional[Path] = None,
         skip_ssl_verify: bool = False,
         remote: Optional[str] = None,
+        json_mode: bool = False,
     ) -> None:
         if config is not None:
             self.config: Optional[AppConfig] = config
@@ -39,7 +40,7 @@ class WorkflowApi:
 
         # Initialize modular components
         self.crud = WorkflowCRUD(self.db, self.config)
-        self.n8n_api = N8nAPI(self.db, self.config, self.key_api, skip_ssl_verify, remote)
+        self.n8n_api = N8nAPI(self.db, self.config, self.key_api, skip_ssl_verify, remote, json_mode)
 
     # Delegate to CRUD operations
     def add_workflow(self, workflow_id: str, name: str, filename: Optional[str] = None) -> None:

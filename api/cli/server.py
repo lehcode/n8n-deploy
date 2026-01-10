@@ -236,11 +236,8 @@ def _delete_linked_api_keys(linked_keys: List[Dict[str, Any]], config: "AppConfi
     for key in linked_keys:
         # Check if this key is linked to other servers
         # For now, just delete the key (we can add a check for multiple servers later)
-        key_api.delete_api_key(key["name"])
-        if no_emoji:
-            console.print(f"Deleted API key: {key['name']}")
-        else:
-            console.print(f"🗑️  Deleted API key: {key['name']}")
+        # delete_api_key with force=True prints its own success message
+        key_api.delete_api_key(key["name"], force=True, no_emoji=no_emoji)
 
 
 @server.command(name="remove", cls=CustomCommand)

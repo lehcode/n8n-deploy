@@ -303,9 +303,9 @@ class TestPullCommand:
 
         # Exit code non-zero because one failed
         assert result.exit_code != 0
-        # Strip "Aborted!" from click.Abort()
-        json_output = result.output.replace("Aborted!", "").strip()
-        output = json.loads(json_output)
+        # JSON mode uses sys.exit(1) instead of click.Abort(), so no "Aborted!" message
+        assert "Aborted!" not in result.output
+        output = json.loads(result.output.strip())
         assert output["summary"]["total"] == 3
         assert output["summary"]["succeeded"] == 2
         assert output["summary"]["failed"] == 1
@@ -325,3 +325,82 @@ class TestPullCommand:
         # Progress indicators should not appear in JSON output
         assert "[1/2]" not in result.output
         assert "[2/2]" not in result.output
+
+    def test_json_output_new_workflow_no_filename_message(self, runner: CliRunner) -> None:
+        """Test --json suppresses 'Using default filename' message for new workflows."""
+        import json
+
+        with patch.object(pull_module, "get_config") as mock_config:
+            with patch("api.cli.db.check_database_exists"):
+                with patch.object(pull_module, "WorkflowApi") as mock_api:
+                    mock_config.return_value = MagicMock()
+                    # Simulate new workflow (not in database)
+                    mock_api.return_value.get_workflow_info.side_effect = ValueError("Not found")
+                    mock_api.return_value.pull_workflow.return_value = True
+
+                    result = runner.invoke(pull_module.pull, ["wf1", "--data-dir", "/tmp", "--json"])
+
+        assert result.exit_code == 0
+        # "Using default filename" message should not appear in JSON output
+        assert "Using default filename" not in result.output
+        # Output should be valid JSON
+        output = json.loads(result.output.strip())
+        assert output["summary"]["succeeded"] == 1
+
+    def test_json_output_config_error(self, runner: CliRunner) -> None:
+        """Test --json outputs error as JSON when config fails."""
+        import json
+
+        with patch.object(pull_module, "get_config") as mock_config:
+            mock_config.side_effect = ValueError("Invalid data directory")
+
+            result = runner.invoke(pull_module.pull, ["wf1", "--data-dir", "/invalid", "--json"])
+
+        assert result.exit_code != 0
+        output = json.loads(result.output.strip())
+        assert "error" in output
+        assert "Invalid data directory" in output["error"]
+
+    def test_json_mode_implies_non_interactive(self, runner: CliRunner) -> None:
+        """Test --json implies non-interactive mode (no prompts)."""
+        import json
+
+        with patch.object(pull_module, "get_config") as mock_config:
+            with patch("api.cli.db.check_database_exists"):
+                with patch.object(pull_module, "WorkflowApi") as mock_api:
+                    with patch.object(pull_module.click, "prompt") as mock_prompt:
+                        mock_config.return_value = MagicMock()
+                        mock_api.return_value.get_workflow_info.side_effect = ValueError("Not found")
+                        mock_api.return_value.pull_workflow.return_value = True
+
+                        result = runner.invoke(pull_module.pull, ["wf1", "--data-dir", "/tmp", "--json"])
+
+        # click.prompt should never be called in JSON mode
+        mock_prompt.assert_not_called()
+        assert result.exit_code == 0
+        output = json.loads(result.output.strip())
+        assert output["summary"]["succeeded"] == 1
+
+
+class TestPromptForFilenameJsonMode:
+    """Tests for _prompt_for_filename with json_mode parameter."""
+
+    def test_json_mode_suppresses_output(self) -> None:
+        """Test json_mode=True suppresses all output."""
+        with patch.object(pull_module, "is_interactive_mode", return_value=False):
+            with patch.object(pull_module, "console") as mock_console:
+                result = pull_module._prompt_for_filename("test123", no_emoji=False, json_mode=True)
+
+        assert result == "test123.json"
+        # console.print should NOT be called in json_mode
+        mock_console.print.assert_not_called()
+
+    def test_json_mode_with_non_interactive(self) -> None:
+        """Test json_mode with non_interactive flag."""
+        with patch.object(pull_module, "is_interactive_mode", return_value=True):
+            with patch.object(pull_module, "console") as mock_console:
+                result = pull_module._prompt_for_filename("wf_abc", no_emoji=False, non_interactive=True, json_mode=True)
+
+        assert result == "wf_abc.json"
+        # No output in json_mode
+        mock_console.print.assert_not_called()

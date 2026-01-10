@@ -19,6 +19,7 @@ _ssl_warning_shown = False
 def configure_ssl_verification(
     skip_verify: bool,
     session: Optional[Session] = None,
+    quiet: bool = False,
 ) -> None:
     """Configure SSL verification and show warning once.
 
@@ -28,6 +29,7 @@ def configure_ssl_verification(
     Args:
         skip_verify: If True, disable SSL certificate verification
         session: Optional requests Session to configure
+        quiet: If True, suppress warning message (for JSON output mode)
     """
     global _ssl_warning_shown
 
@@ -41,8 +43,8 @@ def configure_ssl_verification(
     if session is not None:
         session.verify = False
 
-    # Show custom warning once
-    if not _ssl_warning_shown:
+    # Show custom warning once (unless in quiet/JSON mode)
+    if not _ssl_warning_shown and not quiet:
         print("⚠️  SSL verification disabled - using insecure connection")
         _ssl_warning_shown = True
 

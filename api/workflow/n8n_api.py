@@ -23,20 +23,27 @@ class N8nAPI:
     """n8n server API integration"""
 
     def __init__(
-        self, db: "DBApi", config: AppConfig, api_manager: KeyApi, skip_ssl_verify: bool = False, remote: Optional[str] = None
+        self,
+        db: "DBApi",
+        config: AppConfig,
+        api_manager: KeyApi,
+        skip_ssl_verify: bool = False,
+        remote: Optional[str] = None,
+        json_mode: bool = False,
     ):
         self.db = db
         self.config = config
         self.api_manager = api_manager
         self.skip_ssl_verify = skip_ssl_verify
         self.remote = remote
+        self.json_mode = json_mode
         # base_path may be None if flow_folder was not explicitly provided
         self.base_path: Optional[Path] = config.flow_folder
         # Track if flow folder was explicitly provided (--flow-dir or env var)
         self.base_path_explicit = config.flow_folder_explicit
 
         # HTTP client for API requests
-        self._http_client = N8nHttpClient(skip_ssl_verify=skip_ssl_verify)
+        self._http_client = N8nHttpClient(skip_ssl_verify=skip_ssl_verify, json_mode=json_mode)
 
         # Server resolver for URL and API key resolution
         self._server_resolver = ServerResolver(
@@ -45,7 +52,13 @@ class N8nAPI:
             api_manager=api_manager,
             remote=remote,
             skip_ssl_verify=skip_ssl_verify,
+            json_mode=json_mode,
         )
+
+    def _print(self, message: str) -> None:
+        """Print message unless in JSON mode (JSON output only)."""
+        if not self.json_mode:
+            print(message)
 
     def _get_n8n_credentials(self, workflow_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
         """Get n8n API credentials using remote-based resolution
@@ -208,7 +221,7 @@ class N8nAPI:
             return False
 
         server_url = credentials.get("server_url", "unknown")
-        print(f"🗑️  Deleting workflow {workflow_id} from {server_url}...")
+        self._print(f"🗑️  Deleting workflow {workflow_id} from {server_url}...")
 
         base_url = server_url.rstrip("/")
         url = f"{base_url}/api/v1/workflows/{workflow_id}"
@@ -259,19 +272,19 @@ class N8nAPI:
             # Print pull message
             try:
                 info = crud.get_workflow_info(actual_id)
-                print(f"🔄 Pulling workflow {actual_id} ({info['name']}) from {server_url}...")
+                self._print(f"🔄 Pulling workflow {actual_id} ({info['name']}) from {server_url}...")
             except ValueError:
-                print(f"🔄 Pulling workflow {actual_id} from {server_url}...")
+                self._print(f"🔄 Pulling workflow {actual_id} from {server_url}...")
 
             workflow_data = self.get_n8n_workflow(actual_id)
 
             if not workflow_data:
-                print(f"❌ Workflow {actual_id} not found on server")
+                self._print(f"❌ Workflow {actual_id} not found on server")
                 return False
 
-            print(f"📋 Workflow: {workflow_data.get('name', 'Unknown')} ({workflow_data.get('id', actual_id)})")
-            print(f"🎯 Active: {workflow_data.get('active', False)}")
-            print(f"📊 Nodes: {len(workflow_data.get('nodes', []))}")
+            self._print(f"📋 Workflow: {workflow_data.get('name', 'Unknown')} ({workflow_data.get('id', actual_id)})")
+            self._print(f"🎯 Active: {workflow_data.get('active', False)}")
+            self._print(f"📊 Nodes: {len(workflow_data.get('nodes', []))}")
 
             # Determine filename for saving
             # Priority: 1) existing workflow's stored filename, 2) --filename option, 3) {id}.json
@@ -300,13 +313,13 @@ class N8nAPI:
             else:
                 # Ultimate fallback to current directory with warning
                 save_folder = Path.cwd()
-                print(f"⚠️  No flow directory specified, using current directory: {save_folder}")
+                self._print(f"⚠️  No flow directory specified, using current directory: {save_folder}")
 
             workflow_path = save_folder / target_filename
             with open(workflow_path, "w", encoding="utf-8") as f:
                 json.dump(workflow_data, f, indent=2, ensure_ascii=False)
 
-            print(f"📄 Saved to: {workflow_path}")
+            self._print(f"📄 Saved to: {workflow_path}")
 
             # Get n8n server version for tracking
             n8n_version = self.get_n8n_version()
@@ -335,12 +348,12 @@ class N8nAPI:
 
             # Increment pull counter
             self.db.increment_pull_count(actual_id)
-            print("✅ Workflow pulled successfully")
+            self._print("✅ Workflow pulled successfully")
             return True
 
         except Exception as e:
             # Print specific error details, but let CLI handle the summary message
-            print(f"❌ Error: {e}")
+            self._print(f"❌ Error: {e}")
             return False
 
     def _update_workflow_id_after_recreate(
@@ -367,7 +380,7 @@ class N8nAPI:
         # Get the current workflow data from database
         db_workflow = self.db.get_workflow(old_id)
         if not db_workflow:
-            print(f"⚠️  Could not find workflow {old_id} in database")
+            self._print(f"⚠️  Could not find workflow {old_id} in database")
             return False
 
         # Create new workflow entry with server ID
@@ -394,14 +407,14 @@ class N8nAPI:
                 workflow_content["id"] = new_id
                 with open(file_path, "w", encoding="utf-8") as f:
                     json.dump(workflow_content, f, indent=2, ensure_ascii=False)
-                print(f"📄 Updated workflow ID in file: {file_path.name}")
+                self._print(f"📄 Updated workflow ID in file: {file_path.name}")
             except (json.JSONDecodeError, IOError) as e:
-                print(f"⚠️  Could not update workflow file: {e}")
+                self._print(f"⚠️  Could not update workflow file: {e}")
 
         # Update database: remove old ID, add new ID
         self.db.delete_workflow(old_id)
         self.db.add_workflow(new_wf)
-        print(f"🔄 Workflow ID updated in database: {old_id} → {new_id}")
+        self._print(f"🔄 Workflow ID updated in database: {old_id} → {new_id}")
         return True
 
     def push_workflow(self, workflow_id: str) -> bool:
@@ -430,14 +443,14 @@ class N8nAPI:
             else:
                 # Ultimate fallback to current directory with warning
                 flow_folder = Path.cwd()
-                print(f"⚠️  No flow directory specified, using current directory: {flow_folder}")
+                self._print(f"⚠️  No flow directory specified, using current directory: {flow_folder}")
 
             # Use stored filename or fallback to {id}.json
             filename = crud.get_workflow_filename(wf)
             file_path = flow_folder / filename
 
             if not file_path.exists():
-                print(f"❌ Workflow file not found: {file_path}")
+                self._print(f"❌ Workflow file not found: {file_path}")
                 return False
 
             with open(file_path, "r", encoding="utf-8") as f:
@@ -449,9 +462,9 @@ class N8nAPI:
                 return False
 
             server_url = credentials.get("server_url", "unknown server")
-            print(f"🔄 Pushing workflow {actual_id} to {server_url}...")
-            print(f"📋 Workflow: {info['name']}")
-            print(f"📄 File: {file_path}")
+            self._print(f"🔄 Pushing workflow {actual_id} to {server_url}...")
+            self._print(f"📋 Workflow: {info['name']}")
+            self._print(f"📄 File: {file_path}")
 
             # Check if workflow exists on server using typed result
             # This allows us to distinguish 404 (stale ID) from network errors
@@ -460,26 +473,26 @@ class N8nAPI:
 
             if server_check.success:
                 # Workflow exists on server - update it
-                print("🔄 Updating existing workflow on server...")
+                self._print("🔄 Updating existing workflow on server...")
                 result = self.update_n8n_workflow(actual_id, workflow_data)
             elif server_check.is_not_found:
                 # 404: Workflow ID is stale - it doesn't exist on server anymore
                 # This happens when workflow was deleted/archived on server
-                print(f"⚠️  Workflow {actual_id} not found on server (may have been deleted)")
-                print("🆕 Creating new workflow on server...")
+                self._print(f"⚠️  Workflow {actual_id} not found on server (may have been deleted)")
+                self._print("🆕 Creating new workflow on server...")
                 result = self.create_n8n_workflow(workflow_data)
                 workflow_recreated = True
             elif server_check.is_network_error:
                 # Network/connection issue - don't create new workflow, abort
-                print("❌ Cannot verify workflow on server (network error)")
-                print(f"   Error: {server_check.error_message}")
-                print("   Push aborted - please check your network connection")
+                self._print("❌ Cannot verify workflow on server (network error)")
+                self._print(f"   Error: {server_check.error_message}")
+                self._print("   Push aborted - please check your network connection")
                 return False
             else:
                 # Other error (auth, server error, etc.) - don't create new workflow
-                print("❌ Cannot verify workflow on server")
-                print(f"   Error: {server_check.error_message}")
-                print("   Push aborted - please check server status and credentials")
+                self._print("❌ Cannot verify workflow on server")
+                self._print(f"   Error: {server_check.error_message}")
+                self._print("   Push aborted - please check server status and credentials")
                 return False
 
             if result:
@@ -487,12 +500,12 @@ class N8nAPI:
                 new_server_id = result.get("id")
                 if new_server_id and new_server_id != actual_id:
                     if workflow_recreated:
-                        print(f"🔄 Updating stale ID {actual_id} to new server ID {new_server_id}...")
+                        self._print(f"🔄 Updating stale ID {actual_id} to new server ID {new_server_id}...")
                     else:
-                        print(f"🔄 Updating draft ID {actual_id} to server ID {new_server_id}...")
+                        self._print(f"🔄 Updating draft ID {actual_id} to server ID {new_server_id}...")
 
                     self._update_workflow_id_after_recreate(actual_id, new_server_id, file_path, flow_folder)
-                    print("✅ Workflow pushed successfully (recreated with new ID)")
+                    self._print("✅ Workflow pushed successfully (recreated with new ID)")
                     return True
 
                 # Get n8n server version and update wf
@@ -506,14 +519,14 @@ class N8nAPI:
 
                 # Increment push counter
                 self.db.increment_push_count(actual_id)
-                print("✅ Workflow pushed successfully")
+                self._print("✅ Workflow pushed successfully")
                 return True
             else:
-                print("❌ Failed to push workflow to server")
+                self._print("❌ Failed to push workflow to server")
                 return False
 
         except Exception as e:
-            print(f"❌ Failed to push workflow {workflow_id}: {e}")
+            self._print(f"❌ Failed to push workflow {workflow_id}: {e}")
             return False
 
     def get_n8n_version(self) -> Optional[str]:

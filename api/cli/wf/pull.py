@@ -2,6 +2,7 @@
 """Pull workflow command."""
 
 import json
+import sys
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -56,7 +57,7 @@ def _output_pull_json(results: List[PullResult]) -> None:
     console.print(json.dumps(output, indent=2))
 
 
-def _prompt_for_filename(workflow_id: str, no_emoji: bool, non_interactive: bool = False) -> str:
+def _prompt_for_filename(workflow_id: str, no_emoji: bool, non_interactive: bool = False, json_mode: bool = False) -> str:
     """Prompt user for filename for new workflow.
 
     In non-interactive mode, returns default filename without prompting.
@@ -65,13 +66,15 @@ def _prompt_for_filename(workflow_id: str, no_emoji: bool, non_interactive: bool
         workflow_id: The workflow ID (used for default filename)
         no_emoji: Whether to suppress emoji in output
         non_interactive: Force non-interactive mode (suppress prompts)
+        json_mode: If True, suppress all messages (JSON output only)
     """
     default_filename = f"{workflow_id}.json"
 
     # Non-interactive mode: use default without prompting
     if non_interactive or not is_interactive_mode():
-        prefix = "" if no_emoji else "Info: "
-        console.print(f"{prefix}Using default filename: {default_filename}")
+        if not json_mode:
+            prefix = "" if no_emoji else "Info: "
+            console.print(f"{prefix}Using default filename: {default_filename}")
         return default_filename
 
     # Interactive mode: prompt user
@@ -229,9 +232,10 @@ def pull(
     except ValueError as e:
         if output_json:
             console.print(json.dumps({"error": str(e)}))
+            sys.exit(1)
         else:
             console.print(f"[red]{e}[/red]")
-        raise click.Abort()
+            raise click.Abort()
 
     from ..db import check_database_exists
 
@@ -247,7 +251,7 @@ def pull(
 
     try:
         # Initialize manager once (shares remote/ssl config for all pulls)
-        manager = WorkflowApi(config=config, skip_ssl_verify=skip_ssl_verify, remote=remote)
+        manager = WorkflowApi(config=config, skip_ssl_verify=skip_ssl_verify, remote=remote, json_mode=output_json)
 
         # Track results
         results: List[PullResult] = []
@@ -274,7 +278,9 @@ def pull(
                 except ValueError:
                     # New workflow - prompt for filename if not provided (single workflow only)
                     if not target_filename:
-                        target_filename = _prompt_for_filename(workflow_id, no_emoji, effective_non_interactive)
+                        target_filename = _prompt_for_filename(
+                            workflow_id, no_emoji, effective_non_interactive, json_mode=output_json
+                        )
 
                 success = manager.pull_workflow(workflow_id, filename=target_filename)
 
@@ -294,6 +300,8 @@ def pull(
         # Exit code: non-zero if any failed
         failed_count = sum(1 for r in results if not r.success)
         if failed_count > 0:
+            if output_json:
+                sys.exit(1)
             raise click.Abort()
 
     except click.Abort:
@@ -302,6 +310,7 @@ def pull(
         error_msg = f"Failed to pull workflow: {e}"
         if output_json:
             console.print(json.dumps({"error": error_msg}))
+            sys.exit(1)
         elif no_emoji:
             console.print(error_msg)
         else:

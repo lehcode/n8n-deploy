@@ -2,6 +2,7 @@
 """Push workflow command."""
 
 import json
+import sys
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -178,13 +179,14 @@ def push(
     except ValueError as e:
         if output_json:
             console.print(json.dumps({"error": str(e)}))
+            sys.exit(1)
         else:
             console.print(f"[red]{e}[/red]")
-        raise click.Abort()
+            raise click.Abort()
 
     try:
         # Initialize manager once (shares remote/ssl config for all pushes)
-        manager = WorkflowApi(config=config, skip_ssl_verify=skip_ssl_verify, remote=remote)
+        manager = WorkflowApi(config=config, skip_ssl_verify=skip_ssl_verify, remote=remote, json_mode=output_json)
 
         # Track results
         results: List[PushResult] = []
@@ -218,6 +220,8 @@ def push(
         # Exit code: non-zero if any failed
         failed_count = sum(1 for r in results if not r.success)
         if failed_count > 0:
+            if output_json:
+                sys.exit(1)
             raise click.Abort()
 
     except click.Abort:
@@ -226,6 +230,7 @@ def push(
         error_msg = f"Failed to push workflow: {e}"
         if output_json:
             console.print(json.dumps({"error": error_msg}))
+            sys.exit(1)
         elif no_emoji:
             console.print(error_msg)
         else:
