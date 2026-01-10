@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Pull workflow command."""
 
+import json
 from dataclasses import dataclass
-from typing import List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import click
 from rich.console import Console
@@ -13,6 +14,7 @@ from ...workflow import WorkflowApi
 from ..app import (
     HELP_DB_FILENAME,
     HELP_FLOW_DIR,
+    HELP_JSON,
     HELP_NO_EMOJI,
     CustomCommand,
     cli_data_dir_help,
@@ -28,6 +30,30 @@ class PullResult:
     workflow_id: str
     success: bool
     message: str
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for JSON serialization."""
+        return {
+            "workflow_id": self.workflow_id,
+            "success": self.success,
+            "message": self.message,
+        }
+
+
+def _output_pull_json(results: List[PullResult]) -> None:
+    """Output pull results as JSON."""
+    success_count = sum(1 for r in results if r.success)
+    failed_count = len(results) - success_count
+
+    output = {
+        "results": [r.to_dict() for r in results],
+        "summary": {
+            "total": len(results),
+            "succeeded": success_count,
+            "failed": failed_count,
+        },
+    }
+    console.print(json.dumps(output, indent=2))
 
 
 def _prompt_for_filename(workflow_id: str, no_emoji: bool, non_interactive: bool = False) -> str:
@@ -146,6 +172,7 @@ def _output_pull_summary(results: List[PullResult], no_emoji: bool) -> None:
     metavar="FILENAME",
     help="Custom filename for new workflows (only for single workflow)",
 )
+@click.option("--json", "output_json", is_flag=True, help=HELP_JSON)
 @click.option("--non-interactive", is_flag=True, help="Suppress prompts, use defaults for automation")
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
 @click.argument("workflow_ids", metavar="WORKFLOW_ID|WORKFLOW_NAME", nargs=-1, required=True)
@@ -157,6 +184,7 @@ def pull(
     flow_dir: Optional[str],
     db_filename: Optional[str],
     filename: Optional[str],
+    output_json: bool,
     non_interactive: bool,
     no_emoji: bool,
 ) -> None:
@@ -187,6 +215,11 @@ def pull(
       n8n-deploy wf pull wf1 wf2 --remote staging        # All from same server
       n8n-deploy wf pull abc123 --filename my-wf.json    # Custom filename (single only)
     """
+    # JSON mode implies no-emoji and non-interactive
+    if output_json:
+        no_emoji = True
+        non_interactive = True
+
     try:
         config = get_config(
             base_folder=data_dir,
@@ -194,15 +227,18 @@ def pull(
             db_filename=db_filename,
         )
     except ValueError as e:
-        console.print(f"[red]{e}[/red]")
+        if output_json:
+            console.print(json.dumps({"error": str(e)}))
+        else:
+            console.print(f"[red]{e}[/red]")
         raise click.Abort()
 
     from ..db import check_database_exists
 
-    check_database_exists(config.database_path, output_json=False, no_emoji=no_emoji)
+    check_database_exists(config.database_path, output_json=output_json, no_emoji=no_emoji)
 
-    # Warn if --filename provided with multiple workflows
-    if filename and len(workflow_ids) > 1:
+    # Warn if --filename provided with multiple workflows (suppress in JSON mode)
+    if filename and len(workflow_ids) > 1 and not output_json:
         if no_emoji:
             console.print("Warning: --filename ignored when pulling multiple workflows")
         else:
@@ -222,8 +258,8 @@ def pull(
 
         # Process each workflow
         for idx, workflow_id in enumerate(workflow_ids, 1):
-            # Progress indicator for multiple workflows
-            if total > 1:
+            # Progress indicator for multiple workflows (suppress in JSON mode)
+            if total > 1 and not output_json:
                 if no_emoji:
                     console.print(f"\n[{idx}/{total}] Processing: {workflow_id}")
                 else:
@@ -250,7 +286,10 @@ def pull(
                 results.append(PullResult(workflow_id=workflow_id, success=False, message=str(e)))
 
         # Output summary
-        _output_pull_summary(results, no_emoji)
+        if output_json:
+            _output_pull_json(results)
+        else:
+            _output_pull_summary(results, no_emoji)
 
         # Exit code: non-zero if any failed
         failed_count = sum(1 for r in results if not r.success)
@@ -261,7 +300,9 @@ def pull(
         raise
     except Exception as e:
         error_msg = f"Failed to pull workflow: {e}"
-        if no_emoji:
+        if output_json:
+            console.print(json.dumps({"error": error_msg}))
+        elif no_emoji:
             console.print(error_msg)
         else:
             console.print(f"[red]{error_msg}[/red]")

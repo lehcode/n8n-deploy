@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Push workflow command."""
 
+import json
 from dataclasses import dataclass
-from typing import List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import click
 from rich.console import Console
@@ -12,6 +13,7 @@ from ...workflow import WorkflowApi
 from ..app import (
     HELP_DB_FILENAME,
     HELP_FLOW_DIR,
+    HELP_JSON,
     HELP_NO_EMOJI,
     CustomCommand,
     cli_data_dir_help,
@@ -27,6 +29,30 @@ class PushResult:
     workflow_id: str
     success: bool
     message: str
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for JSON serialization."""
+        return {
+            "workflow_id": self.workflow_id,
+            "success": self.success,
+            "message": self.message,
+        }
+
+
+def _output_push_json(results: List[PushResult]) -> None:
+    """Output push results as JSON."""
+    success_count = sum(1 for r in results if r.success)
+    failed_count = len(results) - success_count
+
+    output = {
+        "results": [r.to_dict() for r in results],
+        "summary": {
+            "total": len(results),
+            "succeeded": success_count,
+            "failed": failed_count,
+        },
+    }
+    console.print(json.dumps(output, indent=2))
 
 
 def _output_push_summary(results: List[PushResult], no_emoji: bool) -> None:
@@ -104,6 +130,7 @@ def _output_push_summary(results: List[PushResult], no_emoji: bool) -> None:
 @click.option("--data-dir", type=click.Path(), help=cli_data_dir_help)
 @click.option("--flow-dir", type=click.Path(), help=HELP_FLOW_DIR)
 @click.option("--db-filename", type=str, help=HELP_DB_FILENAME)
+@click.option("--json", "output_json", is_flag=True, help=HELP_JSON)
 @click.option("--no-emoji", is_flag=True, help=HELP_NO_EMOJI)
 @click.argument("workflow_ids", metavar="WORKFLOW_ID|WORKFLOW_NAME", nargs=-1, required=True)
 def push(
@@ -113,6 +140,7 @@ def push(
     data_dir: Optional[str],
     flow_dir: Optional[str],
     db_filename: Optional[str],
+    output_json: bool,
     no_emoji: bool,
 ) -> None:
     """Upload one or more workflows to n8n server
@@ -137,6 +165,10 @@ def push(
       n8n-deploy wf push wf1 wf2 wf3                     # Multiple workflows
       n8n-deploy wf push wf1 wf2 --remote staging        # All to same server
     """
+    # JSON mode implies no-emoji
+    if output_json:
+        no_emoji = True
+
     try:
         config = get_config(
             base_folder=data_dir,
@@ -144,7 +176,10 @@ def push(
             db_filename=db_filename,
         )
     except ValueError as e:
-        console.print(f"[red]{e}[/red]")
+        if output_json:
+            console.print(json.dumps({"error": str(e)}))
+        else:
+            console.print(f"[red]{e}[/red]")
         raise click.Abort()
 
     try:
@@ -157,8 +192,8 @@ def push(
 
         # Process each workflow
         for idx, workflow_id in enumerate(workflow_ids, 1):
-            # Progress indicator for multiple workflows
-            if total > 1:
+            # Progress indicator for multiple workflows (suppress in JSON mode)
+            if total > 1 and not output_json:
                 if no_emoji:
                     console.print(f"\n[{idx}/{total}] Processing: {workflow_id}")
                 else:
@@ -175,7 +210,10 @@ def push(
                 results.append(PushResult(workflow_id=workflow_id, success=False, message=str(e)))
 
         # Output summary
-        _output_push_summary(results, no_emoji)
+        if output_json:
+            _output_push_json(results)
+        else:
+            _output_push_summary(results, no_emoji)
 
         # Exit code: non-zero if any failed
         failed_count = sum(1 for r in results if not r.success)
@@ -186,7 +224,9 @@ def push(
         raise
     except Exception as e:
         error_msg = f"Failed to push workflow: {e}"
-        if no_emoji:
+        if output_json:
+            console.print(json.dumps({"error": error_msg}))
+        elif no_emoji:
             console.print(error_msg)
         else:
             console.print(f"[red]{error_msg}[/red]")

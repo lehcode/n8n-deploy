@@ -21,6 +21,12 @@ class TestPushResult:
         assert result.success is True
         assert result.message == "Pushed successfully"
 
+    def test_push_result_to_dict(self) -> None:
+        """Test PushResult.to_dict() method."""
+        result = push_module.PushResult(workflow_id="wf123", success=True, message="OK")
+        d = result.to_dict()
+        assert d == {"workflow_id": "wf123", "success": True, "message": "OK"}
+
 
 class TestOutputPushSummary:
     """Tests for _output_push_summary function."""
@@ -256,3 +262,56 @@ class TestPushCommand:
         mock_api.assert_called_once()
         call_kwargs = mock_api.call_args[1]
         assert call_kwargs["skip_ssl_verify"] is True
+
+    def test_json_output_single_success(self, runner: CliRunner) -> None:
+        """Test --json outputs valid JSON for single workflow."""
+        import json
+
+        with patch.object(push_module, "get_config") as mock_config:
+            with patch.object(push_module, "WorkflowApi") as mock_api:
+                mock_config.return_value = MagicMock()
+                mock_api.return_value.push_workflow.return_value = True
+
+                result = runner.invoke(push_module.push, ["wf1", "--data-dir", "/tmp", "--json"])
+
+        assert result.exit_code == 0
+        output = json.loads(result.output)
+        assert "results" in output
+        assert "summary" in output
+        assert output["summary"]["total"] == 1
+        assert output["summary"]["succeeded"] == 1
+        assert output["summary"]["failed"] == 0
+
+    def test_json_output_multiple_workflows(self, runner: CliRunner) -> None:
+        """Test --json outputs valid JSON for multiple workflows."""
+        import json
+
+        with patch.object(push_module, "get_config") as mock_config:
+            with patch.object(push_module, "WorkflowApi") as mock_api:
+                mock_config.return_value = MagicMock()
+                mock_api.return_value.push_workflow.side_effect = [True, False, True]
+
+                result = runner.invoke(push_module.push, ["wf1", "wf2", "wf3", "--data-dir", "/tmp", "--json"])
+
+        # Exit code non-zero because one failed
+        assert result.exit_code != 0
+        # Strip "Aborted!" from click.Abort()
+        json_output = result.output.replace("Aborted!", "").strip()
+        output = json.loads(json_output)
+        assert output["summary"]["total"] == 3
+        assert output["summary"]["succeeded"] == 2
+        assert output["summary"]["failed"] == 1
+        assert len(output["results"]) == 3
+
+    def test_json_output_no_progress_indicators(self, runner: CliRunner) -> None:
+        """Test --json suppresses progress indicators."""
+        with patch.object(push_module, "get_config") as mock_config:
+            with patch.object(push_module, "WorkflowApi") as mock_api:
+                mock_config.return_value = MagicMock()
+                mock_api.return_value.push_workflow.return_value = True
+
+                result = runner.invoke(push_module.push, ["wf1", "wf2", "--data-dir", "/tmp", "--json"])
+
+        # Progress indicators should not appear in JSON output
+        assert "[1/2]" not in result.output
+        assert "[2/2]" not in result.output
